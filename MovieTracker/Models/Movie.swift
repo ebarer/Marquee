@@ -168,7 +168,7 @@ extension Movie {
     }
 }
 
-struct MovieTrailer {
+struct MovieTrailer: Identifiable {
     var id: String
     var title: String
     var key: String
@@ -191,5 +191,10 @@ struct MovieTrailer {
     var url: URL? {
         let trailerURL = URL(string: "https://www.youtube.com/embed")
         return trailerURL?.appendingPathComponent(key)
+    }
+
+    /// Standard YouTube watch URL, suitable for opening in Safari.
+    var watchURL: URL? {
+        URL(string: "https://www.youtube.com/watch?v=\(key)")
     }
 }

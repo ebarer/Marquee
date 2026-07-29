@@ -126,6 +126,7 @@ struct FeaturedView: View {
         }
         .background(Color.appBackground)
         .navigationTitle(collection.title)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

@@ -41,16 +41,13 @@ struct RootView: View {
 
 extension View {
     /// Registers the shared movie/person navigation destinations on a stack.
-    /// While the detail screens are still UIKit, these resolve to bridges.
     func movieTrackerDestinations() -> some View {
         self
             .navigationDestination(for: Movie.self) { movie in
-                MovieDetailBridge(movie: movie)
-                    .ignoresSafeArea()
-                    .toolbar(.hidden, for: .navigationBar)
+                MovieDetailView(movie: movie)
             }
             .navigationDestination(for: Person.self) { person in
-                PersonDetailBridge(person: person)
+                PersonDetailView(person: person)
             }
     }
 }

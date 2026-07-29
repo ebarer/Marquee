@@ -24,12 +24,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 
-    // MARK: - Image Cache
-
-    lazy var imageCache: NSCache<NSNumber, AnyObject> = {
-        return NSCache<NSNumber, AnyObject>()
-    }()
-
     // MARK: - Core Data stack
 
     lazy var persistentContainer: NSPersistentContainer = {
