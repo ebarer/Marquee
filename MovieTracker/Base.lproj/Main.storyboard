@@ -84,7 +84,7 @@
         <!--Movie Detail View Controller-->
         <scene sceneID="0Jv-f9-0O0">
             <objects>
-                <viewController title="Movie Detail View Controller" id="fVR-qT-4O4" customClass="MovieDetailViewController" customModule="MovieTracker" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Movie Detail View Controller" storyboardIdentifier="MovieDetailViewController" id="fVR-qT-4O4" customClass="MovieDetailViewController" customModule="MovieTracker" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="c7F-ww-a1I">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="1200"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -561,7 +561,7 @@ Title</string>
         <!--Person Detail View Controller-->
         <scene sceneID="gFe-kj-7yj">
             <objects>
-                <viewController title="Person Detail View Controller" id="c2O-qE-9qp" customClass="PersonDetailViewController" customModule="MovieTracker" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Person Detail View Controller" storyboardIdentifier="PersonDetailViewController" id="c2O-qE-9qp" customClass="PersonDetailViewController" customModule="MovieTracker" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="9vl-iz-8OO">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="1000"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
