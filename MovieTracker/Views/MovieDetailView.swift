@@ -11,6 +11,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @MainActor
 @Observable
@@ -47,6 +48,7 @@ struct MovieDetailView: View {
         self.movieTitle = movie.title
     }
 
+    @Environment(\.modelContext) private var context
     @State private var model = MovieDetailModel()
     @Namespace private var zoomNamespace
     @State private var showPoster = false
@@ -95,11 +97,11 @@ struct MovieDetailView: View {
             }
         }
         .task {
+            // Initialize the Track/Seen state from the persisted Watch List entry.
+            let entry = WatchListStore.entry(for: movieID, in: context)
+            tracked = entry?.tracked ?? false
+            seen = entry?.watched ?? false
             await model.load(id: movieID)
-            if let movie = model.movie {
-                tracked = movie.tracked
-                seen = movie.watched
-            }
         }
     }
 
@@ -255,7 +257,7 @@ struct MovieDetailView: View {
         HStack(spacing: 8) {
             Button {
                 tracked.toggle()
-                movie.tracked = tracked
+                WatchListStore.setTracked(tracked, for: movie, in: context)
             } label: {
                 Label(tracked ? "Tracking" : "Track", systemImage: tracked ? "bookmark.fill" : "bookmark")
             }
@@ -275,7 +277,9 @@ struct MovieDetailView: View {
         let label = Label("Seen", systemImage: seen ? "checkmark.circle.fill" : "checkmark.circle")
         let toggle = {
             seen.toggle()
-            movie.watched = seen
+            // Marking seen clears the tracked state (the store enforces the same rule).
+            if seen { tracked = false }
+            WatchListStore.setWatched(seen, for: movie, in: context)
         }
         // Prominent when seen, bordered otherwise (the two styles are distinct types,
         // so they can't share a ternary).

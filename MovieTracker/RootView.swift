@@ -9,18 +9,30 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct RootView: View {
+    /// Shared SwiftData container for the Watch List, synced through the app's
+    /// private CloudKit database. Built once and attached to the whole scene.
+    static let sharedContainer: ModelContainer = {
+        let configuration = ModelConfiguration(cloudKitDatabase: .automatic)
+        do {
+            return try ModelContainer(for: WatchListEntry.self, configurations: configuration)
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
+    }()
+
     var body: some View {
         TabView {
-            Tab("Featured", systemImage: "film") {
+            Tab("Discovery", systemImage: "film") {
                 NavigationStack {
                     FeaturedView()
                         .movieTrackerDestinations()
                 }
             }
 
-            Tab("Watch List", systemImage: "checklist") {
+            Tab("Lists", systemImage: "checklist") {
                 NavigationStack {
                     WatchListView()
                         .movieTrackerDestinations()
@@ -36,6 +48,7 @@ struct RootView: View {
         }
         .tint(.appAccent)
         .preferredColorScheme(.dark)
+        .modelContainer(Self.sharedContainer)
     }
 }
 

@@ -24,9 +24,7 @@ class Movie: NSObject {
     var trailers: [MovieTrailer]?
     var bonusCredits: Credits = Credits(during: false, after: false)
     var team: [Person]
-    var tracked: Bool = false
-    var watched: Bool = false
-    
+
     var duration: String? {
         guard runtime != nil else { return nil }
         return "\(self.runtime! / 60) hr \(self.runtime! % 60) min"

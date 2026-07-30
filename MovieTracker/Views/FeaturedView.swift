@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 enum FeaturedCollection: Int, CaseIterable, Identifiable {
     case nowPlaying
@@ -26,10 +27,6 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
         case .nowPlaying: return "popcorn.fill"
         case .comingSoon: return "calendar"
         }
-    }
-
-    var toggled: FeaturedCollection {
-        self == .nowPlaying ? .comingSoon : .nowPlaying
     }
 }
 
@@ -92,6 +89,7 @@ final class FeaturedModel {
 }
 
 struct FeaturedView: View {
+    @Environment(\.modelContext) private var context
     @State private var model = FeaturedModel()
     @State private var collection: FeaturedCollection = .nowPlaying
 
@@ -107,12 +105,12 @@ struct FeaturedView: View {
                     .buttonStyle(.plain)
                     .contextMenu {
                         Button {
-                            movie.tracked = true
+                            WatchListStore.setTracked(true, for: movie, in: context)
                         } label: {
                             Label("Want to Watch", systemImage: "bookmark")
                         }
                         Button {
-                            movie.watched = true
+                            WatchListStore.setWatched(true, for: movie, in: context)
                         } label: {
                             Label("Watched", systemImage: "checkmark.circle")
                         }
@@ -127,12 +125,10 @@ struct FeaturedView: View {
         .background(Color.appBackground)
         .navigationTitle(collection.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    collection = collection.toggled
-                } label: {
-                    Label("Show \(collection.toggled.title)", systemImage: collection.toggled.symbol)
+        .toolbarTitleMenu {
+            Picker("Collection", selection: $collection) {
+                ForEach(FeaturedCollection.allCases) { option in
+                    Label(option.title, systemImage: option.symbol).tag(option)
                 }
             }
         }

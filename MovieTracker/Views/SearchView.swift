@@ -65,21 +65,26 @@ final class SearchModel {
 struct SearchView: View {
     @State private var model = SearchModel()
     @State private var query = ""
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         List {
             switch model.scope {
             case .movies:
-                ForEach(model.movies, id: \.id) { movie in
+                ForEach(Array(model.movies.enumerated()), id: \.element.id) { index, movie in
                     NavigationLink(value: movie) {
                         MovieRow(movie: movie)
                     }
+                    .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
+                    .listRowSeparator(index == model.movies.count - 1 ? .hidden : .automatic, edges: .bottom)
                 }
             case .people:
-                ForEach(model.people, id: \.id) { person in
+                ForEach(Array(model.people.enumerated()), id: \.element.id) { index, person in
                     NavigationLink(value: person) {
                         PersonRow(person: person)
                     }
+                    .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
+                    .listRowSeparator(index == model.people.count - 1 ? .hidden : .automatic, edges: .bottom)
                 }
             }
         }
@@ -87,11 +92,13 @@ struct SearchView: View {
         .scrollContentBackground(.hidden)
         .background(Color.appBackground)
         .navigationTitle("Search")
+        .navigationBarTitleDisplayMode(.inline)
         .searchable(
             text: $query,
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: model.scope.placeholder
         )
+        .searchFocused($searchFocused)
         .searchScopes($model.scope) {
             ForEach(SearchModel.Scope.allCases) { scope in
                 Text(scope.rawValue).tag(scope)
@@ -102,6 +109,10 @@ struct SearchView: View {
         }
         .onChange(of: model.scope) { _, _ in
             model.search(query)
+        }
+        .onAppear {
+            // Activate the search field as soon as the tab appears.
+            searchFocused = true
         }
     }
 }

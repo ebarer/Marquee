@@ -9,10 +9,10 @@
 /* Begin PBXBuildFile section */
 		CE1F628020CFA65A0075B686 /* TMDBWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE1F627F20CFA65A0075B686 /* TMDBWrapper.swift */; };
 		CE78BD5320C087F2001E6DB6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE78BD5220C087F2001E6DB6 /* AppDelegate.swift */; };
-		CE78BD5B20C087F2001E6DB6 /* MovieTracker.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = CE78BD5920C087F2001E6DB6 /* MovieTracker.xcdatamodeld */; };
 		CE78BD5D20C087F4001E6DB6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CE78BD5C20C087F4001E6DB6 /* Assets.xcassets */; };
 		CE78BD6020C087F4001E6DB6 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CE78BD5E20C087F4001E6DB6 /* LaunchScreen.storyboard */; };
 		CE78BD8420C112D8001E6DB6 /* Movie.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE78BD8320C112D8001E6DB6 /* Movie.swift */; };
+		CE8C0C90301AD31100F08C6A /* WatchListEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8C0C8F301AD31100F08C6A /* WatchListEntry.swift */; };
 		CEB0923220D0CA3E0050D39E /* DateFormatter+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE1F628520CFC6A60075B686 /* DateFormatter+Extension.swift */; };
 		CEDA8BC121997F2A006BB3CD /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEDA8BC021997F2A006BB3CD /* Person.swift */; };
 		CEDA8BC321997F71006BB3CD /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEDA8BC221997F71006BB3CD /* String+Extension.swift */; };
@@ -37,11 +37,12 @@
 		CE1F628520CFC6A60075B686 /* DateFormatter+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DateFormatter+Extension.swift"; sourceTree = "<group>"; };
 		CE78BD4F20C087F2001E6DB6 /* MovieTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MovieTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE78BD5220C087F2001E6DB6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		CE78BD5A20C087F2001E6DB6 /* MovieTracker.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MovieTracker.xcdatamodel; sourceTree = "<group>"; };
 		CE78BD5C20C087F4001E6DB6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CE78BD5F20C087F4001E6DB6 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		CE78BD6120C087F4001E6DB6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CE78BD8320C112D8001E6DB6 /* Movie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Movie.swift; sourceTree = "<group>"; };
+		CE8C0C8F301AD31100F08C6A /* WatchListEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchListEntry.swift; sourceTree = "<group>"; };
+		CE8C0C91301AD33000F08C6A /* MovieTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MovieTracker.entitlements; sourceTree = "<group>"; };
 		CEDA8BC021997F2A006BB3CD /* Person.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Person.swift; sourceTree = "<group>"; };
 		CEDA8BC221997F71006BB3CD /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
 		CEEAFCDE3019D0A900D06E0E /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -75,11 +76,11 @@
 		CE59561520CA69230047BC39 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				CE78BD5920C087F2001E6DB6 /* MovieTracker.xcdatamodeld */,
 				CE1F627F20CFA65A0075B686 /* TMDBWrapper.swift */,
 				CEEAFCE23019D11E00D06E0E /* TMDBWrapper+Async.swift */,
 				CE78BD8320C112D8001E6DB6 /* Movie.swift */,
 				CEDA8BC021997F2A006BB3CD /* Person.swift */,
+				CE8C0C8F301AD31100F08C6A /* WatchListEntry.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -103,6 +104,7 @@
 		CE78BD5120C087F2001E6DB6 /* MovieTracker */ = {
 			isa = PBXGroup;
 			children = (
+				CE8C0C91301AD33000F08C6A /* MovieTracker.entitlements */,
 				CEEE5B6521AE3B35008C8EAE /* README.md */,
 				CE78BD6120C087F4001E6DB6 /* Info.plist */,
 				CE78BD5C20C087F4001E6DB6 /* Assets.xcassets */,
@@ -226,11 +228,11 @@
 			files = (
 				CEEAFCFD3019DEBF00D06E0E /* MovieDetailView.swift in Sources */,
 				CEEAFCE43019D11E00D06E0E /* TMDBWrapper+Async.swift in Sources */,
+				CE8C0C90301AD31100F08C6A /* WatchListEntry.swift in Sources */,
 				CEDA8BC321997F71006BB3CD /* String+Extension.swift in Sources */,
 				CEEAFCFF3019DEE200D06E0E /* PersonDetailView.swift in Sources */,
 				CEEAFCE83019D1D100D06E0E /* Color+ProjectColors.swift in Sources */,
 				CE1F628020CFA65A0075B686 /* TMDBWrapper.swift in Sources */,
-				CE78BD5B20C087F2001E6DB6 /* MovieTracker.xcdatamodeld in Sources */,
 				CEEAFCF73019D2F900D06E0E /* MovieRows.swift in Sources */,
 				CEEAFCEE3019D1F800D06E0E /* FeaturedView.swift in Sources */,
 				CEEAFCF53019D2F100D06E0E /* RemoteImages.swift in Sources */,
@@ -382,6 +384,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MovieTracker/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2026.07.29.1;
@@ -405,6 +408,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MovieTracker/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2026.07.29.1;
@@ -446,19 +450,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCVersionGroup section */
-		CE78BD5920C087F2001E6DB6 /* MovieTracker.xcdatamodeld */ = {
-			isa = XCVersionGroup;
-			children = (
-				CE78BD5A20C087F2001E6DB6 /* MovieTracker.xcdatamodel */,
-			);
-			currentVersion = CE78BD5A20C087F2001E6DB6 /* MovieTracker.xcdatamodel */;
-			path = MovieTracker.xcdatamodeld;
-			sourceTree = "<group>";
-			versionGroupType = wrapper.xcdatamodel;
-		};
-/* End XCVersionGroup section */
 	};
 	rootObject = CE78BD4720C087F2001E6DB6 /* Project object */;
 }
