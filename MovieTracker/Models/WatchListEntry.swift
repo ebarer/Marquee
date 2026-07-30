@@ -2,14 +2,13 @@
 //  WatchListEntry.swift
 //  MovieTracker
 //
-//  SwiftData model for the user's Watch List, synced via CloudKit. Each entry
-//  is a lightweight snapshot of a movie (id/title/poster/release date) plus its
-//  list state: `tracked` (To Watch) and `watched` (Watched). An entry that is
-//  neither tracked nor watched is orphaned and gets deleted.
+//  A movie's membership in one MovieList, synced via CloudKit. Each entry is a
+//  lightweight snapshot of the movie (id/title/poster/release date) plus the
+//  list it belongs to. A movie on N lists has N entries.
 //
-//  CloudKit requires every stored property to have a default value or be
-//  optional, and forbids `@Attribute(.unique)` — so de-duplication is done by
-//  fetching an existing entry for a movie id rather than a unique constraint.
+//  CloudKit requires every stored property to have a default or be optional and
+//  forbids @Attribute(.unique) — de-duplication is done by looking through a
+//  list's entries rather than a unique constraint.
 //
 
 import Foundation
@@ -21,10 +20,11 @@ final class WatchListEntry {
     var title: String = ""
     var posterPath: String?
     var releaseDate: Date?
-    var tracked: Bool = false      // on the "To Watch" list
-    var watched: Bool = false      // on the "Watched" list
     var dateAdded: Date = Date()
     var dateWatched: Date?
+
+    /// The list this entry belongs to (inverse of `MovieList.entries`).
+    var list: MovieList?
 
     init(movie: Movie) {
         self.movieID = movie.id
@@ -42,55 +42,114 @@ final class WatchListEntry {
 
 // MARK: - Store helpers
 
-/// Central place for the small set of Watch List mutations, keeping the
-/// delete-if-orphaned rule in one spot. All calls run on the context's actor
-/// (the main context in this app).
+/// Central place for list/membership mutations. The two built-in lists (To Watch
+/// and Watched) are mutually exclusive with each other; custom lists are additive.
+/// All calls run on the context's actor (the main context in this app).
 enum WatchListStore {
-    /// The existing entry for a movie id, if any.
-    static func entry(for movieID: Int, in context: ModelContext) -> WatchListEntry? {
-        var descriptor = FetchDescriptor<WatchListEntry>(
-            predicate: #Predicate { $0.movieID == movieID }
+
+    // MARK: Lists
+
+    /// Ensures the two built-in lists exist with their canonical name/icon,
+    /// creating any that are missing and normalizing any that already exist.
+    @discardableResult
+    static func ensureDefaultLists(in context: ModelContext) -> (toWatch: MovieList, watched: MovieList) {
+        let toWatch = defaultList(kind: .toWatch, name: "Watch List", symbol: "bookmark", sortOrder: 0, in: context)
+        let watched = defaultList(kind: .watched, name: "Watched", symbol: "checkmark.rectangle.stack", sortOrder: 1, in: context)
+        return (toWatch, watched)
+    }
+
+    /// Fetches a built-in list, creating it if missing and keeping its name/icon
+    /// canonical (so renames from older versions propagate on launch).
+    private static func defaultList(kind: ListKind, name: String, symbol: String,
+                                    sortOrder: Int, in context: ModelContext) -> MovieList {
+        if let existing = list(kind: kind, in: context) {
+            if existing.name != name { existing.name = name }
+            if existing.symbol != symbol { existing.symbol = symbol }
+            return existing
+        }
+        return insert(MovieList(name: name, symbol: symbol, kind: kind, sortOrder: sortOrder), in: context)
+    }
+
+    /// All lists in display order.
+    static func allLists(in context: ModelContext) -> [MovieList] {
+        let descriptor = FetchDescriptor<MovieList>(
+            sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]
         )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    /// The built-in list of a given kind, if it exists.
+    static func list(kind: ListKind, in context: ModelContext) -> MovieList? {
+        let raw = kind.rawValue
+        var descriptor = FetchDescriptor<MovieList>(predicate: #Predicate { $0.kindRaw == raw })
         descriptor.fetchLimit = 1
         return (try? context.fetch(descriptor))?.first
     }
 
-    /// The existing entry for a movie, or a freshly-inserted one.
-    private static func entryOrCreate(for movie: Movie, in context: ModelContext) -> WatchListEntry {
-        if let existing = entry(for: movie.id, in: context) {
-            return existing
+    // MARK: Membership
+
+    /// The entry for a movie within a specific list, if any.
+    static func entry(for movieID: Int, in list: MovieList) -> WatchListEntry? {
+        (list.entries ?? []).first { $0.movieID == movieID }
+    }
+
+    /// Whether a movie is on a given list.
+    static func isMember(_ movieID: Int, of list: MovieList) -> Bool {
+        entry(for: movieID, in: list) != nil
+    }
+
+    /// Adds a movie to a list. Adding to a built-in list removes the movie from
+    /// the opposite built-in list (To Watch ↔ Watched); custom lists are additive.
+    static func add(_ movie: Movie, to list: MovieList, in context: ModelContext) {
+        switch list.kind {
+        case .toWatch: removeMovie(movie.id, fromKind: .watched, in: context)
+        case .watched: removeMovie(movie.id, fromKind: .toWatch, in: context)
+        case .custom: break
         }
+
+        guard entry(for: movie.id, in: list) == nil else { return }
+
         let entry = WatchListEntry(movie: movie)
+        if list.tracksWatchedDate { entry.dateWatched = Date() }
+        entry.list = list
         context.insert(entry)
-        return entry
     }
 
-    /// Adds or removes the movie from the To Watch list.
-    static func setTracked(_ tracked: Bool, for movie: Movie, in context: ModelContext) {
-        let entry = entryOrCreate(for: movie, in: context)
-        entry.tracked = tracked
-        if tracked { entry.watched = false; entry.dateWatched = nil }
-        pruneIfOrphaned(entry, in: context)
+    /// Removes a movie from a list (no-op if it isn't on it).
+    static func remove(_ movie: Movie, from list: MovieList, in context: ModelContext) {
+        if let entry = entry(for: movie.id, in: list) {
+            delete(entry, in: context)
+        }
     }
 
-    /// Adds or removes the movie from the Watched list, stamping/clearing the
-    /// watched date. Marking watched also clears the tracked flag.
-    static func setWatched(_ watched: Bool, for movie: Movie, in context: ModelContext) {
-        let entry = entryOrCreate(for: movie, in: context)
-        entry.watched = watched
-        if watched {
-            entry.tracked = false
-            entry.dateWatched = Date()
+    /// Toggles a movie's membership in a list.
+    static func toggle(_ movie: Movie, in list: MovieList, in context: ModelContext) {
+        if entry(for: movie.id, in: list) != nil {
+            remove(movie, from: list, in: context)
         } else {
-            entry.dateWatched = nil
+            add(movie, to: list, in: context)
         }
-        pruneIfOrphaned(entry, in: context)
     }
 
-    /// Deletes an entry that is on neither list.
-    private static func pruneIfOrphaned(_ entry: WatchListEntry, in context: ModelContext) {
-        if !entry.tracked && !entry.watched {
-            context.delete(entry)
-        }
+    /// Deletes a specific entry (used by row swipe-to-remove). Clearing the
+    /// relationship first updates the owning list's `entries` array immediately,
+    /// so membership checks reflect the removal without waiting for a save.
+    static func delete(_ entry: WatchListEntry, in context: ModelContext) {
+        entry.list = nil
+        context.delete(entry)
+    }
+
+    // MARK: - Private
+
+    private static func removeMovie(_ movieID: Int, fromKind kind: ListKind, in context: ModelContext) {
+        guard let list = list(kind: kind, in: context),
+              let entry = entry(for: movieID, in: list) else { return }
+        delete(entry, in: context)
+    }
+
+    @discardableResult
+    private static func insert(_ list: MovieList, in context: ModelContext) -> MovieList {
+        context.insert(list)
+        return list
     }
 }

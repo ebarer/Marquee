@@ -17,15 +17,19 @@ struct RootView: View {
     static let sharedContainer: ModelContainer = {
         let configuration = ModelConfiguration(cloudKitDatabase: .automatic)
         do {
-            return try ModelContainer(for: WatchListEntry.self, configurations: configuration)
+            return try ModelContainer(for: WatchListEntry.self, MovieList.self, configurations: configuration)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
     }()
 
+    // Search state is shared with the search tab. The query lives on the model
+    // so tapping a recent search can repopulate the field.
+    @State private var searchModel = SearchModel()
+
     var body: some View {
         TabView {
-            Tab("Discovery", systemImage: "film") {
+            Tab("Discover", systemImage: "film") {
                 NavigationStack {
                     FeaturedView()
                         .movieTrackerDestinations()
@@ -41,14 +45,38 @@ struct RootView: View {
 
             Tab("Search", systemImage: "magnifyingglass", role: .search) {
                 NavigationStack {
-                    SearchView()
+                    SearchView(model: searchModel)
                         .movieTrackerDestinations()
+                }
+                // Declare the search field only on the search tab, so it never
+                // appears above the Discover or Lists content.
+                .searchable(text: $searchModel.query, prompt: searchModel.scope.placeholder)
+                .searchScopes($searchModel.scope) {
+                    ForEach(SearchModel.Scope.allCases) { scope in
+                        Text(scope.rawValue).tag(scope)
+                    }
+                }
+                .onChange(of: searchModel.query) { _, newValue in
+                    searchModel.search(newValue)
+                }
+                .onChange(of: searchModel.scope) { _, _ in
+                    searchModel.search(searchModel.query)
+                }
+                .onSubmit(of: .search) {
+                    searchModel.commit()
                 }
             }
         }
+        // Selecting the search tab activates its search field (and dismissing
+        // search returns to the previously selected tab).
+        .tabViewSearchActivation(.searchTabSelection)
         .tint(.appAccent)
         .preferredColorScheme(.dark)
         .modelContainer(Self.sharedContainer)
+        .task {
+            // Make sure the two built-in lists exist before any screen appears.
+            WatchListStore.ensureDefaultLists(in: Self.sharedContainer.mainContext)
+        }
     }
 }
 

@@ -13,30 +13,6 @@
 import SwiftUI
 import SwiftData
 
-@MainActor
-@Observable
-final class MovieDetailModel {
-    private(set) var movie: Movie?
-    private(set) var tint: Color = .appAccent
-
-    private var loaded = false
-
-    func load(id: Int) async {
-        guard !loaded else { return }
-        loaded = true
-        do {
-            let full = try await TMDBWrapper.getMovie(id: id)
-            movie = full
-            if let url = full.posterURL(.w342),
-               let data = try? await TMDBWrapper.imageData(from: url) {
-                tint = Color.averageColor(from: data)
-            }
-        } catch {
-            print("Movie detail load error: \(error)")
-        }
-    }
-}
-
 struct MovieDetailView: View {
     /// All that's needed to present the screen: the id to fetch the full movie,
     /// and the title to show while it loads.
@@ -49,14 +25,30 @@ struct MovieDetailView: View {
     }
 
     @Environment(\.modelContext) private var context
+    @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
+    private var lists: [MovieList]
     @State private var model = MovieDetailModel()
     @Namespace private var zoomNamespace
+    @Namespace private var glassNamespace
     @State private var showPoster = false
     @State private var selectedTrailer: MovieTrailer?
     @State private var overviewExpanded = false
     @State private var showNavTitle = false
     @State private var tracked = false
     @State private var seen = false
+    /// Whether the movie was on the Watch List when it was last marked Watched,
+    /// so unmarking Watched can restore it there (and only then).
+    @State private var wasOnWatchList = false
+
+    private var toWatchList: MovieList? { lists.first { $0.kind == .toWatch } }
+    private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
+    private var customLists: [MovieList] { lists.filter { $0.kind == .custom } }
+
+    /// Refreshes the Track/Seen button state from current list membership.
+    private func refreshMembership() {
+        tracked = toWatchList.map { WatchListStore.isMember(movieID, of: $0) } ?? false
+        seen = watchedList.map { WatchListStore.isMember(movieID, of: $0) } ?? false
+    }
 
     // Header layout constants.
     private static let posterHeight: CGFloat = 150
@@ -97,10 +89,8 @@ struct MovieDetailView: View {
             }
         }
         .task {
-            // Initialize the Track/Seen state from the persisted Watch List entry.
-            let entry = WatchListStore.entry(for: movieID, in: context)
-            tracked = entry?.tracked ?? false
-            seen = entry?.watched ?? false
+            WatchListStore.ensureDefaultLists(in: context)
+            refreshMembership()
             await model.load(id: movieID)
         }
     }
@@ -253,41 +243,87 @@ struct MovieDetailView: View {
 
     // MARK: - Action buttons (beside the poster)
 
-    private func actionButtons(movie: Movie) -> some View {
-        HStack(spacing: 8) {
-            Button {
-                tracked.toggle()
-                WatchListStore.setTracked(tracked, for: movie, in: context)
-            } label: {
-                Label(tracked ? "Tracking" : "Track", systemImage: tracked ? "bookmark.fill" : "bookmark")
-            }
-            .buttonStyle(.bordered)
-            .disabled(seen)
-            .opacity(seen ? 0.4 : 1)
+    private static let actionButtonSize: CGFloat = 52
+    private static let actionButtonSpacing: CGFloat = 12
 
-            seenButton(movie: movie)
+    /// Plus (Watch List) and checkmark (Watched) as Liquid Glass toggles sharing
+    /// a container so they metaball together. Marking Watched removes the plus and
+    /// morphs the checkmark leftward into a pill spanning both slots.
+    private func actionButtons(movie: Movie) -> some View {
+        GlassEffectContainer(spacing: Self.actionButtonSpacing) {
+            HStack(spacing: Self.actionButtonSpacing) {
+                if !seen {
+                    // Tap toggles the Watch List; press-and-hold opens the list menu.
+                    Menu {
+                        listsMenu(movie: movie)
+                    } label: {
+                        glassIcon(system: tracked ? "bookmark.fill" : "bookmark", isOn: tracked)
+                    } primaryAction: {
+                        guard let toWatch = toWatchList else { return }
+                        WatchListStore.toggle(movie, in: toWatch, in: context)
+                        refreshMembership()
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(tracked ? .regular.tint(model.tint).interactive() : .regular.interactive(),
+                                 in: Circle())
+                    .glassEffectID("plus", in: glassNamespace)
+                    .glassEffectTransition(.matchedGeometry)
+                }
+
+                glassButton(system: "checkmark", isOn: seen,
+                            width: seen ? Self.actionButtonSize * 2 + Self.actionButtonSpacing
+                                        : Self.actionButtonSize,
+                            shape: Capsule()) {
+                    // Marking Watched moves the movie off the Watch List. Unmarking
+                    // restores it there only if it was on the Watch List beforehand.
+                    guard let watched = watchedList else { return }
+                    if seen {
+                        WatchListStore.remove(movie, from: watched, in: context)
+                        if wasOnWatchList, let toWatch = toWatchList {
+                            WatchListStore.add(movie, to: toWatch, in: context)
+                        }
+                    } else {
+                        wasOnWatchList = tracked
+                        WatchListStore.add(movie, to: watched, in: context)
+                    }
+                    refreshMembership()
+                }
+                .glassEffectID("watched", in: glassNamespace)
+            }
         }
-        .controlSize(.small)
-        .buttonBorderShape(.capsule)
-        .font(.subheadline)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: seen)
     }
 
-    @ViewBuilder
-    private func seenButton(movie: Movie) -> some View {
-        let label = Label("Seen", systemImage: seen ? "checkmark.circle.fill" : "checkmark.circle")
-        let toggle = {
-            seen.toggle()
-            // Marking seen clears the tracked state (the store enforces the same rule).
-            if seen { tracked = false }
-            WatchListStore.setWatched(seen, for: movie, in: context)
+    /// Icon content for a glass action control.
+    private func glassIcon(system: String, isOn: Bool,
+                           width: CGFloat = MovieDetailView.actionButtonSize) -> some View {
+        Image(systemName: system)
+            .font(.system(size: 20, weight: .semibold))
+            .foregroundStyle(isOn ? .white : model.tint)
+            .frame(width: width, height: Self.actionButtonSize)
+            .contentShape(Rectangle())
+    }
+
+    /// A Liquid Glass icon toggle, tinted with the poster color when on.
+    private func glassButton(system: String, isOn: Bool,
+                             width: CGFloat = MovieDetailView.actionButtonSize,
+                             shape: some Shape,
+                             action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            glassIcon(system: system, isOn: isOn, width: width)
         }
-        // Prominent when seen, bordered otherwise (the two styles are distinct types,
-        // so they can't share a ternary).
-        if seen {
-            Button(action: toggle) { label }.buttonStyle(.borderedProminent)
-        } else {
-            Button(action: toggle) { label }.buttonStyle(.bordered)
-        }
+        .buttonStyle(.plain)
+        .glassEffect(isOn ? .regular.tint(model.tint).interactive() : .regular.interactive(),
+                     in: shape)
+    }
+
+    /// Long-press menu on the plus: the Watch List up top, a separator, then any
+    /// custom lists. Membership shows a checkmark alongside each list's icon.
+    private func listsMenu(movie: Movie) -> some View {
+        // Watched has its own dedicated toggle above, so it's omitted here.
+        ListMembershipMenu(movie: movie, watchList: toWatchList, watchedList: nil,
+                           customLists: customLists, context: context,
+                           onChange: { refreshMembership() })
     }
 
     // MARK: - Overview
@@ -401,82 +437,10 @@ struct MovieDetailView: View {
     }
 }
 
-// MARK: - Metadata card strip
-
-private struct MovieMetadataStrip: View {
-    let movie: Movie
-
-    var body: some View {
-        VStack(spacing: 0) {
-            hairline
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 0) {
-                    cell(header: "RATING") {
-                        if let cert = movie.certification, let image = UIImage(named: "Cert-\(cert)") {
-                            Image(uiImage: image)
-                                .renderingMode(.template)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: 24)
-                                .foregroundStyle(.white)
-                        } else {
-                            valueText("N/A")
-                        }
-                    }
-                    divider
-                    cell(header: "CREDIT CLIPS") { valueText(movie.bonusString) }
-                    divider
-                    cell(header: "TMDB.org") { valueText(tmdbScore) }
-                    divider
-                    cell(header: "GENRE") { valueText(movie.genresString) }
-                }
-            }
-            // Always allow elastic scrolling, even when the cells fit within the width.
-            .scrollBounceBehavior(.always, axes: .horizontal)
-            hairline
-        }
+#Preview {
+    NavigationStack {
+        MovieDetailView(movie: .preview)
     }
-
-    private var tmdbScore: String {
-        if let rating = movie.rating, rating > 0 {
-            return String(format: "%.1f / 5", rating / 2)
-        }
-        return "N/A"
-    }
-
-    // Equal-width column: title label at the top, value beneath it.
-    private func cell<Content: View>(header: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(spacing: 10) {
-            Text(header)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-            content()
-                .font(.system(size: 14))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-        }
-        .frame(width: 104, alignment: .top)
-        .padding(.vertical, 14)
-    }
-
-    private func valueText(_ text: String) -> some View {
-        Text(text).multilineTextAlignment(.center)
-    }
-
-    // Full-width top/bottom rule.
-    private var hairline: some View {
-        Rectangle()
-            .fill(Color.appSeparator)
-            .frame(height: 0.5)
-    }
-
-    // Vertical rule between columns. Inset top/bottom by the same amount as the cell's vertical
-    // text padding so it doesn't touch the top/bottom hairlines.
-    private var divider: some View {
-        Rectangle()
-            .fill(Color.appSeparator)
-            .frame(width: 0.5)
-            .frame(maxHeight: .infinity)
-            .padding(.vertical, 14)
-    }
+    .modelContainer(previewModelContainer)
+    .preferredColorScheme(.dark)
 }

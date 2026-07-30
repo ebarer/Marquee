@@ -2,67 +2,33 @@
 //  WatchListView.swift
 //  MovieTracker
 //
-//  The user's Watch List, backed by SwiftData (+ CloudKit). A toolbar toggle
-//  flips between the "To Watch" and "Watched" collections; a sort menu flips
-//  ascending/descending and (for Watched) chooses release date vs. date
-//  watched. Swipe actions move entries between lists or remove them.
+//  The user's movie lists, backed by SwiftData (+ CloudKit). The navigation
+//  title is a menu that switches between lists and offers New/Edit List actions.
+//  Two built-in lists always exist (To Watch, Watched); the user can add custom
+//  ones. A sort menu flips ascending/descending and — on Watched — chooses
+//  release date vs. date watched. Swipe actions move or remove entries.
 //
 
 import SwiftUI
 import SwiftData
 
-enum WatchListCollection: Int, CaseIterable, Identifiable {
-    case toWatch
-    case watched
-
-    var id: Int { rawValue }
-
-    var title: String {
-        switch self {
-        case .toWatch: return "To Watch"
-        case .watched: return "Watched"
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .toWatch: return "bookmark"
-        case .watched: return "checkmark.circle"
-        }
-    }
-
-    var emptyMessage: String {
-        switch self {
-        case .toWatch: return "Movies you track will appear here."
-        case .watched: return "Movies you mark as seen will appear here."
-        }
-    }
-}
-
-/// Sort key available for the Watched list (the To Watch list always sorts by release date).
-enum WatchedSortKey: String {
-    case releaseDate
-    case dateWatched
-
-    var title: String {
-        switch self {
-        case .releaseDate: return "Release Date"
-        case .dateWatched: return "Date Watched"
-        }
-    }
-}
-
 struct WatchListView: View {
     @Environment(\.modelContext) private var context
-    @Query private var entries: [WatchListEntry]
+    @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
+    private var lists: [MovieList]
 
-    @State private var collection: WatchListCollection = .toWatch
+    @State private var selectedListUUID: UUID?
+    @State private var editor: ListEditor?
+
+    /// Inline text used to narrow the current list down to matching titles.
+    @State private var filterText = ""
+
     @AppStorage("watchListSortAscending") private var sortAscending = true
     @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .releaseDate
 
     // Remembers the last-viewed list and when it was last seen, so re-entering
     // the tab restores it — unless it's gone stale (defaults back to To Watch).
-    @AppStorage("watchListLastCollection") private var lastCollectionRaw = WatchListCollection.toWatch.rawValue
+    @AppStorage("watchListLastListUUID") private var lastListUUID = ""
     @AppStorage("watchListLastViewedAt") private var lastViewedAt = 0.0
 
     /// After this long away, the list resets to To Watch on the next visit.
@@ -72,68 +38,110 @@ struct WatchListView: View {
         List {
             ForEach(sections) { section in
                 Section(section.title) {
-                    ForEach(section.entries) { entry in
-                        NavigationLink(value: Movie(id: entry.movieID, title: entry.title)) {
-                            WatchListRow(entry: entry, collection: collection, sortKey: watchedSortKey)
-                        }
-                        .listRowBackground(Color.appBackground)
-                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                            leadingAction(for: entry)
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                remove(entry)
-                            } label: {
-                                Label("Remove", systemImage: "trash")
+                    ForEach(Array(section.entries.enumerated()), id: \.element.id) { index, entry in
+                        MovieListCell(
+                            movie: movie(from: entry),
+                            subtitle: subtitle(for: entry),
+                            lists: lists,
+                            context: context,
+                            leadingActions: { leadingAction(for: entry) },
+                            trailingActions: {
+                                Button(role: .destructive) {
+                                    WatchListStore.delete(entry, in: context)
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .tint(.red)
+                                }
                             }
-                        }
+                        )
+                        .listRowSeparator(index == section.entries.count - 1 ? .hidden : .automatic, edges: .bottom)
                     }
                 }
             }
         }
         .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(Color.appBackground)
-        .navigationTitle(collection.title)
+        .navigationTitle(selectedList?.name ?? "Lists")
         .toolbarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
-            Picker("List", selection: $collection) {
-                ForEach(WatchListCollection.allCases) { option in
-                    Label(option.title, systemImage: option.symbol).tag(option)
-                }
-            }
+            titleMenu
+                .tint(.primary)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 sortMenu
             }
         }
+        .searchable(text: $filterText, prompt: "Filter \(selectedList?.name ?? "list")")
         .overlay {
-            if sections.isEmpty {
+            if let list = selectedList, (list.entries ?? []).isEmpty {
                 ContentUnavailableView {
-                    Label(collection.title, systemImage: collection.symbol)
+                    Label(list.name, systemImage: list.symbol)
                 } description: {
-                    Text(collection.emptyMessage)
+                    Text(emptyMessage(for: list))
                 }
+            } else if !filterText.isEmpty, sections.isEmpty {
+                ContentUnavailableView.search(text: filterText)
+            }
+        }
+        .sheet(item: $editor) { mode in
+            NavigationStack {
+                ListEditorView(
+                    existing: mode.list,
+                    nextSortOrder: (lists.map(\.sortOrder).max() ?? 1) + 1,
+                    onSaved: { newList in
+                        // If invoked from a movie's context menu, add it to the new list.
+                        if let movie = mode.movieToAdd {
+                            WatchListStore.add(movie, to: newList, in: context)
+                        }
+                        select(newList)
+                    },
+                    onDeleted: { select(WatchListStore.list(kind: .toWatch, in: context)) }
+                )
             }
         }
         .onAppear {
-            // Restore the last-viewed list, unless it's been too long — then reset
-            // to To Watch. Either way, mark this as the latest visit.
-            let elapsed = Date.timeIntervalSinceReferenceDate - lastViewedAt
-            let stored = WatchListCollection(rawValue: lastCollectionRaw) ?? .toWatch
-            collection = elapsed > Self.staleInterval ? .toWatch : stored
-            recordVisit()
+            WatchListStore.ensureDefaultLists(in: context)
+            restoreSelection()
         }
-        .onChange(of: collection) { _, _ in
+        .onChange(of: selectedListUUID) { _, _ in
             recordVisit()
         }
     }
 
-    /// Persists the current list and the time it was viewed.
-    private func recordVisit() {
-        lastCollectionRaw = collection.rawValue
-        lastViewedAt = Date.timeIntervalSinceReferenceDate
+    // MARK: - Title menu
+
+    @ViewBuilder
+    private var titleMenu: some View {
+        Picker("List", selection: $selectedListUUID) {
+            ForEach(defaultLists) { list in
+                Label(list.name, systemImage: list.symbol).tag(Optional(list.uuid))
+            }
+        }
+
+        if !customLists.isEmpty {
+            Divider()
+            Picker("Custom List", selection: $selectedListUUID) {
+                ForEach(customLists) { list in
+                    Label(list.name, systemImage: list.symbol).tag(Optional(list.uuid))
+                }
+            }
+        }
+
+        Divider()
+
+        Button {
+            editor = .create(addMovie: nil)
+        } label: {
+            Label("New List…", systemImage: "plus")
+        }
+
+        if let list = selectedList, list.isEditable {
+            Button {
+                editor = .edit(list)
+            } label: {
+                Label("Edit List…", systemImage: "pencil")
+            }
+        }
     }
 
     // MARK: - Sorting menu
@@ -145,7 +153,7 @@ struct WatchListView: View {
                 Text("Descending").tag(false)
             }
 
-            if collection == .watched {
+            if selectedList?.tracksWatchedDate == true {
                 Picker("Sort By", selection: $watchedSortKey) {
                     Text(WatchedSortKey.releaseDate.title).tag(WatchedSortKey.releaseDate)
                     Text(WatchedSortKey.dateWatched.title).tag(WatchedSortKey.dateWatched)
@@ -154,6 +162,51 @@ struct WatchListView: View {
         } label: {
             Label("Sort", systemImage: "arrow.up.arrow.down")
         }
+    }
+
+    // MARK: - Selection
+
+    private var selectedList: MovieList? {
+        if let id = selectedListUUID, let match = lists.first(where: { $0.uuid == id }) {
+            return match
+        }
+        return lists.first { $0.kind == .toWatch } ?? lists.first
+    }
+
+    /// The two built-in lists (To Watch, Watched), in order.
+    private var defaultLists: [MovieList] { lists.filter { $0.kind != .custom } }
+
+    /// User-created lists.
+    private var customLists: [MovieList] { lists.filter { $0.kind == .custom } }
+
+    private var watchList: MovieList? { lists.first { $0.kind == .toWatch } }
+    private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
+
+    private var showsWatchedDate: Bool {
+        selectedList?.tracksWatchedDate == true && watchedSortKey == .dateWatched
+    }
+
+    private func select(_ list: MovieList?) {
+        selectedListUUID = list?.uuid
+    }
+
+    /// Restores the last-viewed list, resetting to To Watch if it's been too long.
+    private func restoreSelection() {
+        let elapsed = Date.timeIntervalSinceReferenceDate - lastViewedAt
+        if elapsed > Self.staleInterval {
+            select(lists.first { $0.kind == .toWatch })
+        } else if let stored = UUID(uuidString: lastListUUID),
+                  lists.contains(where: { $0.uuid == stored }) {
+            selectedListUUID = stored
+        } else {
+            select(lists.first { $0.kind == .toWatch })
+        }
+        recordVisit()
+    }
+
+    private func recordVisit() {
+        lastListUUID = selectedListUUID?.uuidString ?? ""
+        lastViewedAt = Date.timeIntervalSinceReferenceDate
     }
 
     // MARK: - Data
@@ -165,14 +218,16 @@ struct WatchListView: View {
         let entries: [WatchListEntry]
     }
 
-    /// Entries for the current collection, grouped into month/year sections and
+    /// Entries for the selected list, grouped into month/year sections and
     /// ordered (both sections and rows within them) per the ascending toggle.
     private var sections: [MonthSection] {
-        let filtered = entries.filter { collection == .toWatch ? $0.tracked : $0.watched }
+        let allEntries = selectedList?.entries ?? []
+        let entries = filterText.isEmpty
+            ? allEntries
+            : allEntries.filter { $0.title.localizedCaseInsensitiveContains(filterText) }
 
-        let grouped = Dictionary(grouping: filtered) { entry -> DateComponents in
-            let date = sortValue(for: entry)
-            return Calendar.current.dateComponents([.year, .month], from: date)
+        let grouped = Dictionary(grouping: entries) { entry -> DateComponents in
+            Calendar.current.dateComponents([.year, .month], from: sortValue(for: entry))
         }
 
         let sortedKeys = grouped.keys.sorted { a, b in
@@ -189,80 +244,83 @@ struct WatchListView: View {
         }
     }
 
-    /// The date the current collection/sort key orders and groups by. Missing dates
-    /// sort last in ascending order (they become `.distantFuture`).
+    /// The date the selected list orders and groups by. Missing dates sort last
+    /// in ascending order (they become `.distantFuture`).
     private func sortValue(for entry: WatchListEntry) -> Date {
-        if collection == .watched, watchedSortKey == .dateWatched {
+        if selectedList?.tracksWatchedDate == true, watchedSortKey == .dateWatched {
             return entry.dateWatched ?? .distantFuture
         }
         return entry.releaseDate ?? .distantFuture
     }
 
-    // MARK: - Swipe actions
-
-    @ViewBuilder
-    private func leadingAction(for entry: WatchListEntry) -> some View {
-        let movie = Movie(id: entry.movieID, title: entry.title)
-        if collection == .toWatch {
-            Button {
-                WatchListStore.setWatched(true, for: movie, in: context)
-            } label: {
-                Label("Watched", systemImage: "checkmark.circle")
-            }
-            .tint(.green)
-        } else {
-            Button {
-                WatchListStore.setTracked(true, for: movie, in: context)
-            } label: {
-                Label("To Watch", systemImage: "bookmark")
-            }
-            .tint(.appAccent)
+    private func emptyMessage(for list: MovieList) -> String {
+        switch list.kind {
+        case .toWatch: return "Movies you want to watch will appear here."
+        case .watched: return "Movies you have watched will appear here."
+        case .custom: return "Movies you add to “\(list.name)” will appear here."
         }
     }
 
-    private func remove(_ entry: WatchListEntry) {
-        context.delete(entry)
+    // MARK: - Swipe actions
+
+    /// Leading swipe: on Watched, send the movie back to the Watch List; on any
+    /// other list, mark it Watched. Uses the same buttons as Search results.
+    @ViewBuilder
+    private func leadingAction(for entry: WatchListEntry) -> some View {
+        let movie = movie(from: entry)
+        if selectedList?.kind == .watched {
+            WatchListSwipeButton(movie: movie, watchList: watchList, context: context)
+        } else {
+            WatchedSwipeButton(movie: movie, watchedList: watchedList, context: context)
+        }
+    }
+
+    /// When the list sorts by date watched, surface that date; otherwise let the
+    /// row fall back to the movie's release date.
+    private func subtitle(for entry: WatchListEntry) -> String? {
+        guard showsWatchedDate else { return nil }
+        return entry.dateWatched.map { "Watched \($0.toString())" }
+    }
+
+    /// Rebuilds a Movie snapshot from an entry so moves preserve poster/date.
+    private func movie(from entry: WatchListEntry) -> Movie {
+        let movie = Movie(id: entry.movieID, title: entry.title)
+        movie.poster = entry.posterPath
+        movie.releaseDate = entry.releaseDate
+        return movie
+    }
+
+    /// Drives the create/edit sheet.
+    private enum ListEditor: Identifiable {
+        case create(addMovie: Movie?)
+        case edit(MovieList)
+
+        var id: String {
+            switch self {
+            case .create: return "create"
+            case .edit(let list): return list.uuid.uuidString
+            }
+        }
+
+        var list: MovieList? {
+            switch self {
+            case .create: return nil
+            case .edit(let list): return list
+            }
+        }
+
+        var movieToAdd: Movie? {
+            if case .create(let movie) = self { return movie }
+            return nil
+        }
     }
 }
 
-// MARK: - Row
-
-private struct WatchListRow: View {
-    let entry: WatchListEntry
-    let collection: WatchListCollection
-    let sortKey: WatchedSortKey
-
-    var body: some View {
-        HStack(spacing: 12) {
-            PosterImage(url: entry.posterURL(.w185))
-                .frame(width: 55, height: 82)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(entry.title)
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-
-                if let subtitle {
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 4)
+#Preview {
+    NavigationStack {
+        WatchListView()
+            .movieTrackerDestinations()
     }
-
-    /// Watched rows sorted by date-watched surface that date; everything else
-    /// shows the release date.
-    private var subtitle: String? {
-        if collection == .watched, sortKey == .dateWatched {
-            return entry.dateWatched.map { "Watched \($0.toString())" }
-        }
-        return entry.releaseDate?.toString()
-    }
+    .modelContainer(previewModelContainer)
+    .preferredColorScheme(.dark)
 }

@@ -17,3 +17,8 @@ struct SafariView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
 }
+
+#Preview {
+    SafariView(url: URL(string: "https://www.themoviedb.org")!)
+        .ignoresSafeArea()
+}

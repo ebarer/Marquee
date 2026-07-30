@@ -162,3 +162,9 @@ struct PosterDetailView: View {
         lastOffset = .zero
     }
 }
+
+#Preview {
+    @Previewable @Namespace var namespace
+    PosterDetailView(movie: .preview, zoomSourceID: 1, zoomNamespace: namespace)
+        .preferredColorScheme(.dark)
+}

@@ -2,117 +2,134 @@
 //  SearchView.swift
 //  MovieTracker
 //
-//  Unified search over movies and people with a scope selector.
-//  Replaces both SearchTableViewController and GlobalSearchResultsController.
+//  Results list for the unified movie/people search. The search field,
+//  scope selector, and query state are owned by RootView's TabView so the
+//  search-role tab drives a single search bar for the whole app. When there's
+//  no active query, recent searches fill the space instead.
 //
 
 import SwiftUI
-
-@MainActor
-@Observable
-final class SearchModel {
-    enum Scope: String, CaseIterable, Identifiable {
-        case movies = "Movies"
-        case people = "People"
-
-        var id: String { rawValue }
-
-        var placeholder: String {
-            switch self {
-            case .movies: return "Enter movie title"
-            case .people: return "Enter name of cast/crew"
-            }
-        }
-    }
-
-    var scope: Scope = .movies
-    private(set) var movies: [Movie] = []
-    private(set) var people: [Person] = []
-
-    private var searchTask: Task<Void, Never>?
-
-    func search(_ rawQuery: String) {
-        searchTask?.cancel()
-
-        let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !query.isEmpty else {
-            movies = []
-            people = []
-            return
-        }
-
-        searchTask = Task {
-            do {
-                switch scope {
-                case .movies:
-                    let result = try await TMDBWrapper.searchForMovies(query: query)
-                    guard !Task.isCancelled else { return }
-                    movies = result.items
-                case .people:
-                    let result = try await TMDBWrapper.searchForPeople(query: query)
-                    guard !Task.isCancelled else { return }
-                    people = result.items
-                }
-            } catch {
-                if !Task.isCancelled {
-                    print("Search error: \(error)")
-                }
-            }
-        }
-    }
-}
+import SwiftData
 
 struct SearchView: View {
-    @State private var model = SearchModel()
-    @State private var query = ""
-    @FocusState private var searchFocused: Bool
+    let model: SearchModel
+
+    @Environment(\.modelContext) private var context
+    @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
+    private var lists: [MovieList]
 
     var body: some View {
         List {
-            switch model.scope {
-            case .movies:
-                ForEach(Array(model.movies.enumerated()), id: \.element.id) { index, movie in
-                    NavigationLink(value: movie) {
-                        MovieRow(movie: movie)
-                    }
-                    .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
-                    .listRowSeparator(index == model.movies.count - 1 ? .hidden : .automatic, edges: .bottom)
-                }
-            case .people:
-                ForEach(Array(model.people.enumerated()), id: \.element.id) { index, person in
-                    NavigationLink(value: person) {
-                        PersonRow(person: person)
-                    }
-                    .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
-                    .listRowSeparator(index == model.people.count - 1 ? .hidden : .automatic, edges: .bottom)
-                }
+            if isSearching {
+                resultRows
+            } else {
+                recentRows
             }
         }
         .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(Color.appBackground)
-        .navigationTitle("Search")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(
-            text: $query,
-            placement: .navigationBarDrawer(displayMode: .always),
-            prompt: model.scope.placeholder
-        )
-        .searchFocused($searchFocused)
-        .searchScopes($model.scope) {
-            ForEach(SearchModel.Scope.allCases) { scope in
-                Text(scope.rawValue).tag(scope)
+        .overlay {
+            // Nothing typed yet and no history: gently explain the screen.
+            if !isSearching && model.recentSearches.isEmpty {
+                ContentUnavailableView(
+                    "Search Movies & People",
+                    systemImage: "magnifyingglass",
+                    description: Text("Find movies and cast or crew. Your recent searches will show up here.")
+                )
             }
         }
-        .onChange(of: query) { _, newValue in
-            model.search(newValue)
-        }
-        .onChange(of: model.scope) { _, _ in
-            model.search(query)
-        }
-        .onAppear {
-            // Activate the search field as soon as the tab appears.
-            searchFocused = true
+    }
+
+    // MARK: - Results
+
+    @ViewBuilder
+    private var resultRows: some View {
+        switch model.scope {
+        case .movies:
+            ForEach(Array(model.movies.enumerated()), id: \.element.id) { index, movie in
+                MovieListCell(
+                    movie: movie,
+                    lists: lists,
+                    context: context,
+                    // Opening a result counts as committing the search term.
+                    onSelect: { model.commit() },
+                    leadingActions: {
+                        WatchedSwipeButton(movie: movie, watchedList: watchedList, context: context)
+                    },
+                    trailingActions: {
+                        WatchListSwipeButton(movie: movie, watchList: watchList, context: context)
+                    }
+                )
+                .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
+                .listRowSeparator(index == model.movies.count - 1 ? .hidden : .automatic, edges: .bottom)
+            }
+        case .people:
+            ForEach(Array(model.people.enumerated()), id: \.element.id) { index, person in
+                NavigationLink(value: person) {
+                    PersonRow(person: person)
+                }
+                .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
+                .listRowSeparator(index == model.people.count - 1 ? .hidden : .automatic, edges: .bottom)
+                .simultaneousGesture(TapGesture().onEnded { model.commit() })
+            }
         }
     }
+
+    // MARK: - Recent searches
+
+    @ViewBuilder
+    private var recentRows: some View {
+        if !model.recentSearches.isEmpty {
+            Section {
+                ForEach(Array(model.recentSearches.enumerated()), id: \.element) { index, term in
+                    Button {
+                        model.selectRecent(term)
+                    } label: {
+                        Label(term, systemImage: "clock.arrow.circlepath")
+                            .foregroundStyle(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .listRowSeparator(index == model.recentSearches.count - 1 ? .hidden : .automatic, edges: .bottom)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            model.removeRecent(term)
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                    }
+                }
+            } header: {
+                HStack {
+                    Text("Recent")
+                    Spacer()
+                    Button("Clear") {
+                        model.clearRecents()
+                    }
+                    .textCase(nil)
+                }
+            }
+        }
+    }
+
+    // MARK: - List membership
+
+    private var watchList: MovieList? { lists.first { $0.kind == .toWatch } }
+    private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
+
+    // MARK: - Helpers
+
+    private var isSearching: Bool {
+        !model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
+#Preview {
+    NavigationStack {
+        SearchView(model: SearchModel())
+            .movieTrackerDestinations()
+    }
+    .modelContainer(previewModelContainer)
+    .preferredColorScheme(.dark)
 }
