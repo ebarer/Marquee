@@ -31,6 +31,14 @@ extension TMDBWrapper {
         }
     }
 
+    static func moviesPopular(page: Int) async throws -> PagedResult<Movie> {
+        try await withCheckedThrowingContinuation { continuation in
+            getMoviesPopular(page: page) { movies, error, pagination in
+                continuation.resume(with: Self.pagedResult(movies, error, pagination))
+            }
+        }
+    }
+
     static func moviesNowPlaying(page: Int) async throws -> PagedResult<Movie> {
         try await withCheckedThrowingContinuation { continuation in
             getMoviesNowPlaying(page: page) { movies, error, pagination in

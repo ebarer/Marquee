@@ -14,7 +14,7 @@ struct FeaturedView: View {
     @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
     private var lists: [MovieList]
     @State private var model = FeaturedModel()
-    @State private var collection: FeaturedCollection = .nowPlaying
+    @State private var collection: FeaturedCollection = .popular
 
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 10)]
 

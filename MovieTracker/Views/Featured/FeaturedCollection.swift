@@ -8,6 +8,7 @@
 import Foundation
 
 enum FeaturedCollection: Int, CaseIterable, Identifiable {
+    case popular
     case nowPlaying
     case comingSoon
 
@@ -15,6 +16,7 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .popular: return "Popular"
         case .nowPlaying: return "Now Playing"
         case .comingSoon: return "Coming Soon"
         }
@@ -22,6 +24,7 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
+        case .popular: return "star.fill"
         case .nowPlaying: return "popcorn.fill"
         case .comingSoon: return "calendar"
         }

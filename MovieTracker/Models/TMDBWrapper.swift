@@ -91,6 +91,34 @@ extension TMDBWrapper {
         }
     }
     
+    static func getMoviesPopular(page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
+        guard page > 0 else {
+            completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)
+            return
+        }
+
+        var searchURLComponents = URLComponents(string: self.baseURL)!
+        searchURLComponents.path = "\(self.apiVersion)/movie/popular"
+        searchURLComponents.queryItems = [
+            URLQueryItem(name: "page", value: String(page))
+        ]
+
+        self.fetchMovieData(url: searchURLComponents) { (data, error) in
+            guard error == nil, let data = data else {
+                completionHandler(nil, error, nil)
+                return
+            }
+
+            do {
+                let root = try decoder.decode(RootRaw<MovieRaw>.self, from: data)
+                let movies = root.results.map({ self.translate(movie: $0) })
+                completionHandler(movies, nil, (root.totalResults, root.totalPages))
+            } catch {
+                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"), nil)
+            }
+        }
+    }
+    
     static func getMoviesComingSoon(page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
         guard page > 0 else {
             completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)

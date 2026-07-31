@@ -13,7 +13,7 @@ final class FeaturedModel {
     private(set) var movies: [Movie] = []
     private(set) var isLoading = false
 
-    private var collection: FeaturedCollection = .nowPlaying
+    private var collection: FeaturedCollection = .popular
     private var lastPageFetched = 0
     private var totalPages = 1
 
@@ -50,6 +50,7 @@ final class FeaturedModel {
         do {
             let result: PagedResult<Movie>
             switch collection {
+            case .popular: result = try await TMDBWrapper.moviesPopular(page: page)
             case .nowPlaying: result = try await TMDBWrapper.moviesNowPlaying(page: page)
             case .comingSoon: result = try await TMDBWrapper.moviesComingSoon(page: page)
             }
