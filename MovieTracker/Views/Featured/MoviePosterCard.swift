@@ -9,6 +9,9 @@ import SwiftUI
 
 struct MoviePosterCard: View {
     let movie: Movie
+    /// Number of lines reserved for the title. Narrow layouts (e.g. the
+    /// "Known For" strip) need more lines to avoid truncating long titles.
+    var titleLineLimit: Int = 2
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -21,7 +24,7 @@ struct MoviePosterCard: View {
                 .fontWeight(.medium)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white)
-                .lineLimit(2, reservesSpace: true)
+                .lineLimit(titleLineLimit, reservesSpace: true)
                 .frame(maxWidth: .infinity, alignment: .center)
         }
     }

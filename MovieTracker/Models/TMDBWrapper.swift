@@ -439,6 +439,7 @@ extension TMDBWrapper {
         person.popularity = p.popularity
         person.profilePicture = p.profilePicture
         person.birthday = p.birthday
+        person.placeOfBirth = p.placeOfBirth
         person.bio = p.biography
         person.imdbID = p.imdbID
         
@@ -703,6 +704,7 @@ extension TMDBWrapper {
         var popularity: Float
         var profilePicture: String?
         var birthday: Date?
+        var placeOfBirth: String?
         var biography: String?
         var imdbID: String?
         var test: String?
@@ -719,6 +721,7 @@ extension TMDBWrapper {
                     let credit = Movie(id: movie.id, title: movie.title)
                     credit.poster = movie.poster
                     credit.creditRole = movie.role
+                    credit.popularity = movie.popularity
                     if let releaseDateString = movie.releaseDateString {
                         if releaseDateString.isEmpty == false {
                             credit.releaseDate = releaseDateString.toDate(format: .iso8601DAw)
@@ -743,6 +746,7 @@ extension TMDBWrapper {
             case imdbID = "imdb_id"
             case creditsRaw = "movie_credits"
             case profilePicture = "profile_path"
+            case placeOfBirth = "place_of_birth"
         }
         
         struct CreditsRaw: Codable {
@@ -757,12 +761,13 @@ extension TMDBWrapper {
                 var poster: String?
                 var character: String?
                 var job: String?
+                var popularity: Double?
 
                 /// Cast credits carry a `character`; crew credits carry a `job`.
                 var role: String? { character ?? job }
 
                 enum CodingKeys: String, CodingKey {
-                    case id, title, overview, character, job
+                    case id, title, overview, character, job, popularity
                     case releaseDateString = "release_date"
                     case poster = "poster_path"
                 }

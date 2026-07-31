@@ -16,10 +16,20 @@ class Person: NSObject {
     var role: String?
     var profilePicture: String?
     var birthday: Date?
+    var placeOfBirth: String?
     var imdbID: String?
     var bio: String?
     var credits: [Movie]?
-    
+
+    /// The person's most notable movie credits (their "known for"), sorted by
+    /// popularity. Excludes talk-show "Self" and "Thanks" credits and anything
+    /// without a poster so the row reads as a clean poster strip.
+    var knownFor: [Movie] {
+        (credits ?? [])
+            .filter { !$0.isExtraneousCredit && $0.poster != nil }
+            .sorted { ($0.popularity ?? 0) > ($1.popularity ?? 0) }
+    }
+
     enum PersonType {
         case Cast
         case Crew

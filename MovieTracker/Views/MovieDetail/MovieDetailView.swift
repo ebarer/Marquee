@@ -231,9 +231,12 @@ struct MovieDetailView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 titleView(movie.title)
+                    // Start at the larger .title; long titles shrink toward
+                    // ~.title2 (0.79) or slightly below to stay within 2 lines.
                     .font(.title.bold())
                     .foregroundStyle(.white)
-                    .lineLimit(3)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
                     .onGeometryChange(for: Bool.self) { proxy in
                         // Reveal the nav-bar title once the on-page title's bottom edge has
                         // crossed above the nav bar's bottom edge — i.e. the on-page title is

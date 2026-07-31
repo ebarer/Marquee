@@ -57,6 +57,7 @@ extension Person {
         person.role = "Director"
         person.type = .Crew
         person.birthday = DateComponents(calendar: .current, year: 1970, month: 7, day: 30).date
+        person.placeOfBirth = "London, England, UK"
         person.bio = "Christopher Nolan is a British-American filmmaker known for his "
             + "distinctive nonlinear storytelling and large-format cinematography."
         person.credits = [
@@ -64,18 +65,24 @@ extension Person {
                 let m = Movie(id: 1, title: "The Odyssey")
                 m.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 17).date
                 m.creditRole = "Director"
+                m.poster = "/placeholder.jpg"
+                m.popularity = 120
                 return m
             }(),
             {
                 let m = Movie(id: 20, title: "Oppenheimer")
                 m.releaseDate = DateComponents(calendar: .current, year: 2023, month: 7, day: 21).date
                 m.creditRole = "Director"
+                m.poster = "/placeholder.jpg"
+                m.popularity = 98
                 return m
             }(),
             {
                 let m = Movie(id: 21, title: "Tenet")
                 m.releaseDate = DateComponents(calendar: .current, year: 2020, month: 9, day: 3).date
                 m.creditRole = "Writer"
+                m.poster = "/placeholder.jpg"
+                m.popularity = 76
                 return m
             }()
         ]

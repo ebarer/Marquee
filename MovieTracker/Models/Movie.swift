@@ -32,7 +32,18 @@ class Movie: NSObject {
         guard runtime != nil else { return nil }
         return "\(self.runtime! / 60) hr \(self.runtime! % 60) min"
     }
-    
+
+    /// True for non-acting "noise" credits in a filmography — talk-show "Self"
+    /// appearances (and variants like "Self - Guest") and "Thanks" credits — so a
+    /// filter can hide them. Keyed off `creditRole`, so only meaningful on movies
+    /// built as a person credit.
+    var isExtraneousCredit: Bool {
+        guard let role = creditRole?.lowercased() else { return false }
+        if role == "self" || role.hasPrefix("self ") || role.hasPrefix("self-") { return true }
+        if role.contains("thanks") { return true }
+        return false
+    }
+
     var genresString: String {
         switch self.genres?.count {
         case 1:
