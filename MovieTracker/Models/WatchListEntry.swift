@@ -22,6 +22,9 @@ final class WatchListEntry {
     var releaseDate: Date?
     var dateAdded: Date = Date()
     var dateWatched: Date?
+    /// The user's personal rating in stars (0.5–5.0 in half steps, e.g. 3.5).
+    /// `nil` when unrated. Only meaningful on a Watched-list entry.
+    var userRating: Double?
 
     /// The list this entry belongs to (inverse of `MovieList.entries`).
     var list: MovieList?
@@ -98,6 +101,19 @@ enum WatchListStore {
     /// Whether a movie is on a given list.
     static func isMember(_ movieID: Int, of list: MovieList) -> Bool {
         entry(for: movieID, in: list) != nil
+    }
+
+    /// The user's personal rating in stars (0.5–5.0 in half steps), if set.
+    static func rating(for movieID: Int, in list: MovieList) -> Double? {
+        entry(for: movieID, in: list)?.userRating
+    }
+
+    /// Sets (or clears, with `nil`/≤0) the user's personal rating for a movie on
+    /// a list, in stars. Snaps to the nearest half star. No-op if the movie isn't
+    /// on the list.
+    static func setRating(_ stars: Double?, for movieID: Int, in list: MovieList) {
+        let snapped = stars.flatMap { $0 > 0 ? ($0 * 2).rounded() / 2 : nil }
+        entry(for: movieID, in: list)?.userRating = snapped
     }
 
     /// Adds a movie to a list. Adding to a built-in list removes the movie from

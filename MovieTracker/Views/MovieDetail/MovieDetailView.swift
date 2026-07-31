@@ -148,7 +148,8 @@ struct MovieDetailView: View {
                 VStack(spacing: 0) {
                     header(movie: movie, imageHeight: imageHeight, headerHeight: headerHeight,
                            width: width, navBarBottom: navBarBottom)
-                    MovieMetadataStrip(movie: movie)
+                    MovieMetadataStrip(movie: movie, watchedList: watchedList, context: context,
+                                       tint: model.tint, isWatched: seen)
                         .padding(.vertical, 8)
                     overviewSection(movie: movie)
                     castSection(movie: movie)
@@ -229,7 +230,7 @@ struct MovieDetailView: View {
                 .onTapGesture { showPoster = true }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(movie.title)
+                titleView(movie.title)
                     .font(.title.bold())
                     .foregroundStyle(.white)
                     .lineLimit(3)
@@ -252,6 +253,27 @@ struct MovieDetailView: View {
             }
 
             Spacer(minLength: 0)
+        }
+    }
+
+    /// The movie title, laid out to read well. When it has a "Subtitle: Title"
+    /// colon and won't fit on one line, we break right after the colon (e.g.
+    /// "Spider-Man:" / "Brand New Day") rather than letting it wrap mid-phrase.
+    /// Titles that fit on one line, or have no colon, are left to lay out normally.
+    @ViewBuilder
+    private func titleView(_ title: String) -> some View {
+        if let colon = title.range(of: ": ") {
+            let broken = title.replacingCharacters(in: colon, with: ":\n")
+            ViewThatFits(in: .horizontal) {
+                // Preferred: the whole title on one line, if it fits the width.
+                Text(title)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                // Otherwise: break at the colon.
+                Text(broken)
+            }
+        } else {
+            Text(title)
         }
     }
 
@@ -306,9 +328,10 @@ struct MovieDetailView: View {
                 }
                 .glassEffectID("watched", in: glassNamespace)
 
-                // Other lists, always present. With a single custom list the
-                // button becomes that list's icon and toggles membership directly
-                // (highlighting when a member); with two or more it opens a menu.
+                // Other lists. Hidden entirely when there are no custom lists.
+                // With a single custom list the button becomes that list's icon
+                // and toggles membership directly (highlighting when a member);
+                // with two or more it opens a menu.
                 if customLists.count == 1, let list = customLists.first {
                     let member = WatchListStore.isMember(movieID, of: list)
                     glassButton(system: member ? filledSymbol(list.symbol) : list.symbol,
@@ -317,7 +340,7 @@ struct MovieDetailView: View {
                         WatchListStore.toggle(movie, in: list, in: context)
                     }
                     .glassEffectID("plus", in: glassNamespace)
-                } else {
+                } else if !customLists.isEmpty {
                     glassButton(system: "plus", isOn: false, shape: Circle()) {
                         showListPicker = true
                     }

@@ -49,8 +49,16 @@ final class MovieList {
 
     var kind: ListKind { ListKind(rawValue: kindRaw) ?? .custom }
 
-    /// The list's tint from the shared palette.
-    var color: Color { Color.listColor(colorIndex) }
+    /// The list's tint. Built-in lists have fixed brand colors; custom lists use
+    /// their chosen palette color.
+    var color: Color {
+        switch kind {
+        case .toWatch: return .appAccent
+        case .watched: return Color(red255: 90, green255: 200, blue255: 250)
+        case .viewed: return .gray
+        case .custom: return Color.listColor(colorIndex)
+        }
+    }
 
     /// Built-in lists (To Watch / Watched) can't be renamed or deleted.
     var isEditable: Bool { kind == .custom }

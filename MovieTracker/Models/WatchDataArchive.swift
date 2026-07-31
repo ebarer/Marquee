@@ -43,6 +43,43 @@ struct WatchDataArchive: Codable {
         var releaseDate: Date?
         var dateAdded: Date
         var dateWatched: Date?
+        /// Personal rating in stars (half-step). Optional so older files without
+        /// it still import.
+        var userRating: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case movieID, title, posterPath, releaseDate, dateAdded, dateWatched, userRating
+        }
+
+        init(movieID: Int, title: String, posterPath: String?, releaseDate: Date?,
+             dateAdded: Date, dateWatched: Date?, userRating: Double?) {
+            self.movieID = movieID
+            self.title = title
+            self.posterPath = posterPath
+            self.releaseDate = releaseDate
+            self.dateAdded = dateAdded
+            self.dateWatched = dateWatched
+            self.userRating = userRating
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            movieID = try c.decode(Int.self, forKey: .movieID)
+            title = try c.decode(String.self, forKey: .title)
+            posterPath = try c.decodeIfPresent(String.self, forKey: .posterPath)
+            releaseDate = try c.decodeIfPresent(Date.self, forKey: .releaseDate)
+            dateAdded = try c.decode(Date.self, forKey: .dateAdded)
+            dateWatched = try c.decodeIfPresent(Date.self, forKey: .dateWatched)
+            // Accept a decimal rating, or map a whole integer (e.g. legacy
+            // whole-star scores) to a Double.
+            if let d = try? c.decode(Double.self, forKey: .userRating) {
+                userRating = d
+            } else if let i = try? c.decode(Int.self, forKey: .userRating) {
+                userRating = Double(i)
+            } else {
+                userRating = nil
+            }
+        }
     }
 }
 
@@ -154,7 +191,8 @@ extension WatchListStore {
                         posterPath: entry.posterPath,
                         releaseDate: entry.releaseDate,
                         dateAdded: entry.dateAdded,
-                        dateWatched: entry.dateWatched
+                        dateWatched: entry.dateWatched,
+                        userRating: entry.userRating
                     )
                 }
             )
@@ -220,6 +258,7 @@ extension WatchListStore {
         entry.releaseDate = archived.releaseDate
         entry.dateAdded = archived.dateAdded
         entry.dateWatched = archived.dateWatched
+        entry.userRating = archived.userRating
         entry.list = list
         context.insert(entry)
     }

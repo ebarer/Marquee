@@ -62,8 +62,9 @@ struct ListIcon: View {
     let color: Color
     /// Diameter of the colored circle.
     var size: CGFloat = 30
-    /// Point size of the glyph. Independent of `size` so the circle can grow
-    /// without the symbol growing with it; defaults proportional to the circle.
+    /// The glyph's bounding-box extent. Independent of `size` so the circle can
+    /// grow without the symbol growing with it; defaults proportional to the
+    /// circle, leaving even padding on all sides.
     var symbolSize: CGFloat?
 
     var body: some View {
@@ -74,13 +75,24 @@ struct ListIcon: View {
                 Text(symbol)
                     .font(.system(size: size * 0.72))
             } else {
+                // Fit every symbol into the same square box regardless of its
+                // intrinsic shape, so a tall `bookmark.fill` and a wide
+                // `checkmark` share consistent padding inside the circle.
                 Image(systemName: ListSymbol.solid(symbol))
-                    .font(.system(size: symbolSize ?? size * 0.5, weight: .semibold))
+                    .resizable()
+                    .scaledToFit()
+                    .fontWeight(.semibold)
                     .foregroundStyle(.white)
+                    .frame(width: glyphExtent, height: glyphExtent)
             }
         }
         .frame(width: size, height: size)
         .background(gradient, in: Circle())
+    }
+
+    /// The largest dimension the glyph may occupy inside the circle.
+    private var glyphExtent: CGFloat {
+        symbolSize ?? size * 0.44
     }
 
     /// A soft top-lit gradient derived from the single chosen color: a lighter,

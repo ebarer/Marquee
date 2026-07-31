@@ -80,11 +80,31 @@ struct WatchListView: View {
         .tint(activeListColor)
         .navigationTitle(selectedList?.name ?? "Lists")
         .toolbarTitleDisplayMode(.inline)
-        .toolbarTitleMenu {
-            titleMenu
-                .tint(.primary)
-        }
         .toolbar {
+            // Title switcher rendered ourselves so the list name can carry the
+            // list's color (the system navigation title can't be tinted).
+            ToolbarItem(placement: .principal) {
+                Menu {
+                    titleMenu
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(selectedList?.name ?? "Lists")
+                            .font(.headline)
+                            .foregroundStyle(activeListColor)
+                        // Mimic the system title-menu chevron: a small glyph in a
+                        // subtle filled circle.
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.secondary)
+                            .padding(5)
+                            .background(Color(.tertiarySystemFill), in: Circle())
+                            // The system title-menu chevron sits a hair below the
+                            // title's optical center.
+                            .offset(y: 1)
+                    }
+                }
+                .tint(.primary)
+            }
             ToolbarItem(placement: .topBarLeading) {
                 listActionsMenu
                     .tint(activeListColor)
@@ -101,7 +121,7 @@ struct WatchListView: View {
                     Label {
                         Text(list.name)
                     } icon: {
-                        ListIcon(symbol: list.symbol, color: listColor(for: list), size: 56)
+                        ListIcon(symbol: list.symbol, color: listColor(for: list), size: 64)
                     }
                 } description: {
                     Text(emptyMessage(for: list))
@@ -229,12 +249,13 @@ struct WatchListView: View {
                 Label("New List", systemImage: "plus")
             }
 
-            Button {
-                showListManager = true
-            } label: {
-                Label("Edit Lists", systemImage: "pencil")
+            if !customLists.isEmpty {
+                Button {
+                    showListManager = true
+                } label: {
+                    Label("Edit Lists", systemImage: "pencil")
+                }
             }
-            .disabled(customLists.isEmpty)
 
             // Clearing only applies to the rotating Viewed history.
             if let list = selectedList, list.kind == .viewed, !(list.entries ?? []).isEmpty {
@@ -336,10 +357,10 @@ struct WatchListView: View {
     /// The built-in Viewed history, shown below the custom lists.
     private var viewedList: MovieList? { lists.first { $0.kind == .viewed } }
 
-    /// The accent color for a list: its own palette color for custom lists, or
-    /// the app accent for the two built-in lists (whose stored index is unused).
+    /// The accent color for a list — each list's own tint (built-ins carry fixed
+    /// brand colors, custom lists their chosen palette color).
     private func listColor(for list: MovieList) -> Color {
-        list.kind == .custom ? list.color : .appAccent
+        list.color
     }
 
     /// Accent color for the currently selected list, used to theme the screen.
