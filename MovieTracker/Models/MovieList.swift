@@ -13,11 +13,13 @@
 import SwiftUI
 import SwiftData
 
-/// Distinguishes the two built-in lists from user-created ones.
+/// Distinguishes the built-in lists from user-created ones.
 enum ListKind: Int {
     case custom = 0
     case toWatch = 1
     case watched = 2
+    /// A rotating history of recently browsed movies (see `WatchListStore.recordView`).
+    case viewed = 3
 }
 
 @Model

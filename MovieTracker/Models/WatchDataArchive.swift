@@ -137,7 +137,8 @@ struct WatchDataDocument: FileDocument {
 extension WatchListStore {
     /// Builds a complete archive of every list and entry, in display order.
     static func exportArchive(from context: ModelContext) -> WatchDataArchive {
-        let lists = allLists(in: context).map { list in
+        // The Viewed list is transient browse history, not something to back up.
+        let lists = allLists(in: context).filter { $0.kind != .viewed }.map { list in
             WatchDataArchive.List(
                 uuid: list.uuid,
                 name: list.name,
@@ -193,7 +194,7 @@ extension WatchListStore {
                                       summary: inout ImportSummary) -> MovieList? {
         let kind = ListKind(rawValue: archived.kind) ?? .custom
         switch kind {
-        case .toWatch, .watched:
+        case .toWatch, .watched, .viewed:
             return list(kind: kind, in: context)
         case .custom:
             if let existing = allLists(in: context).first(where: { $0.uuid == archived.uuid }) {

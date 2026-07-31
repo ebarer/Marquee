@@ -107,6 +107,11 @@ struct MovieDetailView: View {
             WatchListStore.ensureDefaultLists(in: context)
             refreshMembership()
             await model.load(id: movieID)
+            // Once the full movie is loaded, log the visit to the Viewed history
+            // (with poster/title/date) so the rotating list shows real artwork.
+            if let movie = model.movie {
+                WatchListStore.recordView(movie, in: context)
+            }
         }
     }
 

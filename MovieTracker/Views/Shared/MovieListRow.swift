@@ -19,6 +19,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     var subtitle: String? = nil
     /// Optional secondary line below the subtitle (e.g. the person's role in a filmography).
     var role: String? = nil
+    /// When false, the row shows no subtitle line at all (no release-date fallback).
+    var showsSubtitle: Bool = true
     let lists: [MovieList]
     let context: ModelContext
     @ViewBuilder var leadingActions: () -> Leading
@@ -26,7 +28,7 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
 
     var body: some View {
         NavigationLink(value: movie) {
-            MovieRow(movie: movie, subtitle: subtitle, role: role)
+            MovieRow(movie: movie, subtitle: subtitle, role: role, showsSubtitle: showsSubtitle)
         }
         // Halve the default plain-list vertical padding (~11pt) while keeping the
         // standard horizontal inset so alignment and separators are unchanged.

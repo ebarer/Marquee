@@ -168,7 +168,8 @@ struct WatchListView: View {
         if let stored = UserDefaults.standard.object(forKey: Self.sortKey(for: list)) as? Bool {
             sortAscending = stored
         } else {
-            sortAscending = list.kind != .watched
+            // Watched and Viewed read best newest-first; everything else oldest-first.
+            sortAscending = list.kind != .watched && list.kind != .viewed
         }
     }
 
@@ -205,6 +206,15 @@ struct WatchListView: View {
                 }
             }
         }
+
+        // The Viewed history always sits below the custom lists.
+        if let viewed = viewedList {
+            Divider()
+            Picker("Viewed", selection: $selectedListUUID) {
+                Label(viewed.name, systemImage: ListSymbol.outline(viewed.symbol))
+                    .tag(Optional(viewed.uuid))
+            }
+        }
     }
 
     // MARK: - List actions menu
@@ -225,6 +235,19 @@ struct WatchListView: View {
                 Label("Edit Lists", systemImage: "pencil")
             }
             .disabled(customLists.isEmpty)
+
+            // Clearing only applies to the rotating Viewed history.
+            if let list = selectedList, list.kind == .viewed, !(list.entries ?? []).isEmpty {
+                Divider()
+
+                Button(role: .destructive) {
+                    WatchListStore.clear(list, in: context)
+                } label: {
+                    Label("Clear Viewed", systemImage: "trash")
+                }
+                // Override the menu's accent tint so the trash icon reads red too.
+                .tint(.red)
+            }
 
             Divider()
 
@@ -310,6 +333,9 @@ struct WatchListView: View {
     /// User-created lists.
     private var customLists: [MovieList] { lists.filter { $0.kind == .custom } }
 
+    /// The built-in Viewed history, shown below the custom lists.
+    private var viewedList: MovieList? { lists.first { $0.kind == .viewed } }
+
     /// The accent color for a list: its own palette color for custom lists, or
     /// the app accent for the two built-in lists (whose stored index is unused).
     private func listColor(for list: MovieList) -> Color {
@@ -370,6 +396,10 @@ struct WatchListView: View {
     /// The date the selected list orders and groups by. Missing dates sort last
     /// in ascending order (they become `.distantFuture`).
     private func sortValue(for entry: WatchListEntry) -> Date {
+        // Viewed orders and groups by when the movie was browsed.
+        if selectedList?.kind == .viewed {
+            return entry.dateAdded
+        }
         if selectedList?.tracksWatchedDate == true, watchedSortKey == .dateWatched {
             return entry.dateWatched ?? .distantFuture
         }
@@ -380,6 +410,7 @@ struct WatchListView: View {
         switch list.kind {
         case .toWatch: return "Movies you want to watch will appear here."
         case .watched: return "Movies you have watched will appear here."
+        case .viewed: return "Movies you browse will appear here."
         case .custom: return "Movies you add to “\(list.name)” will appear here."
         }
     }
@@ -403,6 +434,12 @@ struct WatchListView: View {
     private func subtitle(for entry: WatchListEntry) -> String? {
         guard showsWatchedDate else { return nil }
         return entry.dateWatched.map { "Watched \($0.toString())" }
+    }
+
+    /// Viewed is a browse history where the release date only adds noise, so its
+    /// rows hide the subtitle. Other lists show it (or their own override).
+    private var showsRowSubtitle: Bool {
+        selectedList?.kind != .viewed
     }
 
     /// Rebuilds a Movie snapshot from an entry so moves preserve poster/date.

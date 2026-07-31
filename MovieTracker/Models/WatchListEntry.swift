@@ -49,12 +49,14 @@ enum WatchListStore {
 
     // MARK: Lists
 
-    /// Ensures the two built-in lists exist with their canonical name/icon,
-    /// creating any that are missing and normalizing any that already exist.
+    /// Ensures the built-in lists exist with their canonical name/icon, creating
+    /// any that are missing and normalizing any that already exist. The Viewed
+    /// list gets a high sort order so it always trails the user's custom lists.
     @discardableResult
     static func ensureDefaultLists(in context: ModelContext) -> (toWatch: MovieList, watched: MovieList) {
         let toWatch = defaultList(kind: .toWatch, name: "Watch List", symbol: "bookmark", sortOrder: 0, in: context)
         let watched = defaultList(kind: .watched, name: "Watched", symbol: "checkmark.rectangle.stack", sortOrder: 1, in: context)
+        _ = defaultList(kind: .viewed, name: "Viewed", symbol: "clock.arrow.circlepath", sortOrder: 1000, in: context)
         return (toWatch, watched)
     }
 
@@ -104,7 +106,7 @@ enum WatchListStore {
         switch list.kind {
         case .toWatch: removeMovie(movie.id, fromKind: .watched, in: context)
         case .watched: removeMovie(movie.id, fromKind: .toWatch, in: context)
-        case .custom: break
+        case .custom, .viewed: break
         }
 
         guard entry(for: movie.id, in: list) == nil else { return }
@@ -128,6 +130,37 @@ enum WatchListStore {
             remove(movie, from: list, in: context)
         } else {
             add(movie, to: list, in: context)
+        }
+    }
+
+    /// Records that a movie's detail page was browsed, keeping the Viewed list a
+    /// rotating history of the most recent `limit` movies. Re-viewing a movie
+    /// already on the list moves it back to the top (by re-dating its entry), and
+    /// anything past the limit is trimmed off the tail.
+    static func recordView(_ movie: Movie, in context: ModelContext, keeping limit: Int = 20) {
+        guard let list = list(kind: .viewed, in: context) else { return }
+
+        // Drop any existing entry so re-viewing rotates the movie back to the top.
+        if let existing = entry(for: movie.id, in: list) {
+            delete(existing, in: context)
+        }
+
+        let entry = WatchListEntry(movie: movie)
+        entry.list = list
+        context.insert(entry)
+
+        // Keep only the most-recently-viewed entries.
+        let ordered = (list.entries ?? []).sorted { $0.dateAdded > $1.dateAdded }
+        for stale in ordered.dropFirst(limit) {
+            delete(stale, in: context)
+        }
+    }
+
+    /// Removes every entry from a list, leaving the list itself in place. Used to
+    /// clear the Viewed history.
+    static func clear(_ list: MovieList, in context: ModelContext) {
+        for entry in list.entries ?? [] {
+            delete(entry, in: context)
         }
     }
 
