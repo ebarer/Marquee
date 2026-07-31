@@ -18,10 +18,7 @@ final class SearchModel {
         var id: String { rawValue }
 
         var placeholder: String {
-            switch self {
-            case .movies: return "Enter movie title"
-            case .people: return "Enter name of cast/crew"
-            }
+            return "Movies, People, etc."
         }
     }
 

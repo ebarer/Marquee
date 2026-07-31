@@ -718,6 +718,7 @@ extension TMDBWrapper {
                 for movie in collection {
                     let credit = Movie(id: movie.id, title: movie.title)
                     credit.poster = movie.poster
+                    credit.creditRole = movie.role
                     if let releaseDateString = movie.releaseDateString {
                         if releaseDateString.isEmpty == false {
                             credit.releaseDate = releaseDateString.toDate(format: .iso8601DAw)
@@ -754,9 +755,14 @@ extension TMDBWrapper {
                 var releaseDateString: String?
                 var overview: String?
                 var poster: String?
-                
+                var character: String?
+                var job: String?
+
+                /// Cast credits carry a `character`; crew credits carry a `job`.
+                var role: String? { character ?? job }
+
                 enum CodingKeys: String, CodingKey {
-                    case id, title, overview
+                    case id, title, overview, character, job
                     case releaseDateString = "release_date"
                     case poster = "poster_path"
                 }

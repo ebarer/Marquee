@@ -51,7 +51,17 @@ struct ListMembershipMenu: View {
                 onChange()
             }
         )) {
-            Label(list.name, systemImage: list.symbol)
+            Label {
+                Text(list.name)
+            } icon: {
+                // Emoji and the flip-prone smiley need a prebuilt image; ordinary
+                // symbols render fine via `systemName`.
+                if let image = ListSymbol.menuImage(list.symbol) {
+                    Image(uiImage: image)
+                } else {
+                    Image(systemName: ListSymbol.outline(list.symbol))
+                }
+            }
         }
     }
 }

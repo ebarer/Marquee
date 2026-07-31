@@ -25,14 +25,16 @@ struct ListEditorView: View {
     @State private var name: String
     @State private var symbol: String
     @State private var colorIndex: Int
+    /// Raises the emoji keyboard to pick a single-emoji icon.
+    @State private var emojiKeyboardActive = false
 
     /// A palette of icons suited to movie lists and leisure.
     private static let symbols = [
-        "list.bullet", "star", "heart", "bookmark", "flag", "gift",
+        "list.bullet", "star", "heart", "bookmark", "flag", "archivebox",
         "film", "popcorn", "ticket", "tv", "music.note", "gamecontroller",
         "graduationcap", "books.vertical", "crown", "sparkles", "flame", "eye",
-        "clock", "moon.stars", "face.smiling", "hand.thumbsup", "figure.run", "fork.knife",
-        "wineglass", "cup.and.saucer", "birthday.cake", "house", "building.2", "building.columns"
+        "clock", "moon.stars", "theatermasks", "hand.thumbsup", "figure.run", "fork.knife",
+        "wineglass", "cup.and.saucer", "birthday.cake", "house", "building.2"
     ]
 
     private let symbolColumns = [GridItem(.adaptive(minimum: 52), spacing: 12)]
@@ -48,21 +50,13 @@ struct ListEditorView: View {
         self.onDeleted = onDeleted
         _name = State(initialValue: existing?.name ?? "")
         let storedSymbol = existing?.symbol ?? Self.symbols.first!
-        // Selector works with outline base names; strip any stored `.fill` suffix.
-        _symbol = State(initialValue: storedSymbol.hasSuffix(".fill")
-                        ? String(storedSymbol.dropLast(5))
-                        : storedSymbol)
+        // The picker works in canonical base names; normalize any stored
+        // `.fill`/`.inverse` suffix (and legacy variants) back to the base.
+        _symbol = State(initialValue: ListSymbol.canonical(storedSymbol))
         _colorIndex = State(initialValue: existing?.colorIndex ?? 0)
     }
 
     private var selectedColor: Color { Color.listColor(colorIndex) }
-
-    /// The filled variant of an SF Symbol when one exists, otherwise the base
-    /// name. New lists prefer `.fill` icons; the selector still shows outlines.
-    private func filled(_ base: String) -> String {
-        let candidate = base + ".fill"
-        return UIImage(systemName: candidate) != nil ? candidate : base
-    }
 
     var body: some View {
         Form {
@@ -94,9 +88,12 @@ struct ListEditorView: View {
             if existing != nil {
                 Section {
                     Button(role: .destructive, action: delete) {
+                        // Color the label directly so the trash glyph turns red
+                        // too — in a Form the symbol otherwise takes the app's
+                        // accent tint, not the button's destructive role.
                         Label("Delete List", systemImage: "trash")
+                            .foregroundStyle(.red)
                     }
-                    .tint(.red)
                 }
             }
         }
@@ -116,17 +113,19 @@ struct ListEditorView: View {
     // MARK: - Icon preview
 
     private var iconPreview: some View {
-        ZStack {
-            Circle()
-                .fill(selectedColor)
-                .frame(width: 90, height: 90)
-            Image(systemName: filled(symbol))
-                .font(.system(size: 40))
-                .foregroundStyle(.white)
-        }
-        .shadow(color: .black.opacity(0.5), radius: 8, y: 4)
+        // Matches how the icon appears elsewhere: a filled glyph (or the chosen
+        // emoji) on the colored circle.
+        ListIcon(symbol: symbol, color: selectedColor, size: 90, symbolSize: 40)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
+        // The emoji keyboard's hidden field lives up here (not in the symbol grid)
+        // so raising it doesn't scroll the form down and hide this preview.
+        .background {
+            EmojiField(isActive: $emojiKeyboardActive) { emoji in
+                symbol = emoji
+            }
+            .frame(width: 0, height: 0)
+        }
     }
 
     // MARK: - Color picker
@@ -155,6 +154,7 @@ struct ListEditorView: View {
 
     private var symbolPicker: some View {
         LazyVGrid(columns: symbolColumns, spacing: 12) {
+            emojiCell
             ForEach(Self.symbols, id: \.self) { option in
                 symbolCell(option)
             }
@@ -162,18 +162,43 @@ struct ListEditorView: View {
         .padding(.vertical, 4)
     }
 
+    /// The leading cell (Reminders-style): tap to pick a single emoji instead of
+    /// an SF Symbol. Shows the chosen emoji once one is set.
+    private var emojiCell: some View {
+        let hasEmoji = ListSymbol.isEmoji(symbol)
+        return Group {
+            if hasEmoji {
+                Text(symbol).font(.title3)
+            } else {
+                Image(systemName: "face.smiling.inverse")
+                    .font(.title3)
+                    .foregroundStyle(.black)
+            }
+        }
+        .frame(width: 48, height: 48)
+        .background(hasEmoji ? selectedColor : Color.appAccent, in: Circle())
+        .overlay {
+            if hasEmoji {
+                Circle().stroke(selectedColor, lineWidth: 2).padding(-3)
+            }
+        }
+        .contentShape(Circle())
+        .onTapGesture { emojiKeyboardActive = true }
+    }
+
     private func symbolCell(_ option: String) -> some View {
         let isSelected = option == symbol
-        return Image(systemName: option)
+        // The picker shows filled variants, matching the icon's final appearance.
+        return Image(systemName: ListSymbol.solid(option))
             .font(.title3)
             .foregroundStyle(.white)
             .frame(width: 48, height: 48)
-            .background(Color.appSeparator.opacity(0.6), in: Circle())
+            .background(isSelected ? selectedColor : Color.appSeparator.opacity(0.6), in: Circle())
             .overlay {
                 if isSelected {
                     Circle()
                         .stroke(selectedColor, lineWidth: 2)
-                        .padding(-3)
+                        .padding(-4)
                 }
             }
             .contentShape(Circle())
@@ -189,11 +214,11 @@ struct ListEditorView: View {
     private func save() {
         if let existing {
             existing.name = trimmedName
-            existing.symbol = filled(symbol)
+            existing.symbol = symbol
             existing.colorIndex = colorIndex
             onSaved(existing)
         } else {
-            let list = MovieList(name: trimmedName, symbol: filled(symbol), kind: .custom,
+            let list = MovieList(name: trimmedName, symbol: symbol, kind: .custom,
                                  sortOrder: nextSortOrder, colorIndex: colorIndex)
             context.insert(list)
             onSaved(list)

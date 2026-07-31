@@ -10,6 +10,12 @@ import SwiftUI
 struct MovieRow: View {
     let movie: Movie
     var subtitle: String? = nil
+    /// An optional secondary line below the subtitle, e.g. the person's role in
+    /// this movie when shown in a filmography.
+    var role: String? = nil
+    /// When false, the row shows no subtitle line at all — no explicit subtitle
+    /// and no release-date fallback.
+    var showsSubtitle: Bool = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -25,10 +31,17 @@ struct MovieRow: View {
                     .font(.body)
                     .lineLimit(2)
 
-                if let displayedSubtitle {
+                if showsSubtitle, let displayedSubtitle {
                     Text(displayedSubtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                }
+
+                if let role, !role.isEmpty {
+                    Text(role)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
 

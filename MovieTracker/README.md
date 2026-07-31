@@ -1,12 +1,9 @@
 # To-Do
 
 Important
-- [ ] Data Import/export
-- [ ] New App Icon
-
-Search
-- [ ] Search History
-- [ ] Bottom-aligned search bar
+- [x] Data Import/export
+- [ ] Fix list management, it's clunky (1 location for editing all, sorting, etc.)
+- [ ] Fix list add popover, not enough padding, no morph, etc.
 
 Other
 - [ ] Movie: add personal (local) rating

@@ -11,6 +11,7 @@
 
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct WatchListView: View {
     @Environment(\.modelContext) private var context
@@ -23,25 +24,33 @@ struct WatchListView: View {
     /// Inline text used to narrow the current list down to matching titles.
     @State private var filterText = ""
 
-    @AppStorage("watchListSortAscending") private var sortAscending = true
+    // Sort direction is remembered per list (keyed by UUID in UserDefaults):
+    // Watched defaults to descending, every other list to ascending.
+    @State private var sortAscending = true
     @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .releaseDate
 
-    // Remembers the last-viewed list and when it was last seen, so re-entering
-    // the tab restores it — unless it's gone stale (defaults back to To Watch).
-    @AppStorage("watchListLastListUUID") private var lastListUUID = ""
-    @AppStorage("watchListLastViewedAt") private var lastViewedAt = 0.0
+    // Backup import/export. The export document is built on demand from the
+    // current library; import/error results drive their own result alerts.
+    @State private var exportDocument: WatchDataDocument?
+    @State private var showExporter = false
+    @State private var showImporter = false
+    @State private var importSummary: ImportSummary?
+    @State private var transferError: String?
 
-    /// After this long away, the list resets to To Watch on the next visit.
-    private static let staleInterval: TimeInterval = 3 * 60 * 60
+    /// Presents the Edit Lists modal (reorder/delete/edit custom lists).
+    @State private var showListManager = false
 
-    var body: some View {
+    /// The list of month/year sections for the selected list. Extracted from
+    /// `body` to keep the modifier chain type-checkable.
+    private var listContent: some View {
         List {
             ForEach(sections) { section in
-                Section(section.title) {
+                Section {
                     ForEach(Array(section.entries.enumerated()), id: \.element.id) { index, entry in
                         MovieListRow(
                             movie: movie(from: entry),
                             subtitle: subtitle(for: entry),
+                            showsSubtitle: showsRowSubtitle,
                             lists: lists,
                             context: context,
                             leadingActions: { leadingAction(for: entry) },
@@ -56,10 +65,19 @@ struct WatchListView: View {
                         )
                         .listRowSeparator(index == section.entries.count - 1 ? .hidden : .automatic, edges: .bottom)
                     }
+                } header: {
+                    Text(section.title)
+                        .foregroundStyle(activeListColor)
                 }
             }
         }
+    }
+
+    var body: some View {
+        listContent
         .listStyle(.plain)
+        // Accent the nav-bar controls (title menu, sort) with the active list color.
+        .tint(activeListColor)
         .navigationTitle(selectedList?.name ?? "Lists")
         .toolbarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
@@ -67,15 +85,24 @@ struct WatchListView: View {
                 .tint(.primary)
         }
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                listActionsMenu
+                    .tint(activeListColor)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 sortMenu
+                    .tint(activeListColor)
             }
         }
-        .searchable(text: $filterText, prompt: "Filter \(selectedList?.name ?? "list")")
+        .searchable(text: $filterText, prompt: "Search \(selectedList?.name ?? "list")")
         .overlay {
             if let list = selectedList, (list.entries ?? []).isEmpty {
                 ContentUnavailableView {
-                    Label(list.name, systemImage: list.symbol)
+                    Label {
+                        Text(list.name)
+                    } icon: {
+                        ListIcon(symbol: list.symbol, color: listColor(for: list), size: 56)
+                    }
                 } description: {
                     Text(emptyMessage(for: list))
                 }
@@ -99,22 +126,62 @@ struct WatchListView: View {
                 )
             }
         }
+        .sheet(isPresented: $showListManager) {
+            ListManagerView()
+        }
+        .modifier(BackupTransferModifier(
+            showExporter: $showExporter,
+            showImporter: $showImporter,
+            exportDocument: exportDocument,
+            exportFilename: exportFilename,
+            importSummary: $importSummary,
+            transferError: $transferError,
+            onImport: handleImport
+        ))
         .onAppear {
             WatchListStore.ensureDefaultLists(in: context)
-            restoreSelection()
+            // The selection lives only in @State — it survives tab switches this
+            // session but resets to the Watch List on a fresh launch.
+            if selectedListUUID == nil {
+                selectedListUUID = WatchListStore.list(kind: .toWatch, in: context)?.uuid
+            }
         }
         .onChange(of: selectedListUUID) { _, _ in
-            recordVisit()
+            loadSort()
+        }
+        .onChange(of: sortAscending) { _, newValue in
+            guard let list = selectedList else { return }
+            UserDefaults.standard.set(newValue, forKey: Self.sortKey(for: list))
+        }
+    }
+
+    // MARK: - Per-list sort direction
+
+    private static func sortKey(for list: MovieList) -> String {
+        "watchListSortAscending_\(list.uuid.uuidString)"
+    }
+
+    /// Loads the stored sort direction for the current list, falling back to the
+    /// per-kind default (Watched descending, all others ascending) when unset.
+    private func loadSort() {
+        guard let list = selectedList else { return }
+        if let stored = UserDefaults.standard.object(forKey: Self.sortKey(for: list)) as? Bool {
+            sortAscending = stored
+        } else {
+            sortAscending = list.kind != .watched
         }
     }
 
     // MARK: - Title menu
 
+    /// The navigation-title menu is now just the list switcher — the two built-in
+    /// lists up top and any custom lists below. Creating/editing/importing lives
+    /// in the leading toolbar buttons instead.
     @ViewBuilder
     private var titleMenu: some View {
         Picker("List", selection: $selectedListUUID) {
-            ForEach(defaultLists) { list in
-                Label(list.name, systemImage: list.symbol).tag(Optional(list.uuid))
+            ForEach(topLists) { list in
+                Label(list.name, systemImage: ListSymbol.outline(list.symbol)).tag(Optional(list.uuid))
             }
         }
 
@@ -122,25 +189,89 @@ struct WatchListView: View {
             Divider()
             Picker("Custom List", selection: $selectedListUUID) {
                 ForEach(customLists) { list in
-                    Label(list.name, systemImage: list.symbol).tag(Optional(list.uuid))
+                    Label {
+                        Text(list.name)
+                    } icon: {
+                        // Emoji and the flip-prone smiley need a prebuilt image;
+                        // ordinary symbols render fine via `systemName`.
+                        if let image = ListSymbol.menuImage(list.symbol) {
+                            Image(uiImage: image)
+                        } else {
+                            Image(systemName: ListSymbol.outline(list.symbol))
+                                .foregroundStyle(list.color)
+                        }
+                    }
+                    .tag(Optional(list.uuid))
                 }
             }
         }
+    }
 
-        Divider()
+    // MARK: - List actions menu
 
-        Button {
-            editor = .create(addMovie: nil)
-        } label: {
-            Label("New List…", systemImage: "plus")
-        }
-
-        if let list = selectedList, list.isEditable {
+    /// The leading ellipsis menu: create or manage lists, then import/export the
+    /// whole library.
+    private var listActionsMenu: some View {
+        Menu {
             Button {
-                editor = .edit(list)
+                editor = .create(addMovie: nil)
             } label: {
-                Label("Edit List…", systemImage: "pencil")
+                Label("New List", systemImage: "plus")
             }
+
+            Button {
+                showListManager = true
+            } label: {
+                Label("Edit Lists", systemImage: "pencil")
+            }
+            .disabled(customLists.isEmpty)
+
+            Divider()
+
+            Button {
+                showImporter = true
+            } label: {
+                Label("Import", systemImage: "square.and.arrow.down")
+            }
+
+            Button {
+                prepareExport()
+            } label: {
+                Label("Export", systemImage: "square.and.arrow.up")
+            }
+        } label: {
+            Label("More", systemImage: "ellipsis")
+        }
+    }
+
+    // MARK: - Backup import/export
+
+    /// A dated, filesystem-safe default name for the exported backup file.
+    private var exportFilename: String {
+        let stamp = Date().formatted(.iso8601.year().month().day().dateSeparator(.dash))
+        return "MovieTracker Backup \(stamp)"
+    }
+
+    /// Snapshots the whole library and presents the system export sheet.
+    private func prepareExport() {
+        exportDocument = WatchDataDocument(archive: WatchListStore.exportArchive(from: context))
+        showExporter = true
+    }
+
+    /// Reads the chosen file, merges it, and surfaces the result (or an error).
+    private func handleImport(_ result: Result<URL, Error>) {
+        switch result {
+        case .success(let url):
+            do {
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                let archive = try WatchDataArchive(json: try Data(contentsOf: url))
+                importSummary = WatchListStore.importArchive(archive, into: context)
+            } catch {
+                transferError = error.localizedDescription
+            }
+        case .failure(let error):
+            transferError = error.localizedDescription
         }
     }
 
@@ -173,11 +304,22 @@ struct WatchListView: View {
         return lists.first { $0.kind == .toWatch } ?? lists.first
     }
 
-    /// The two built-in lists (To Watch, Watched), in order.
-    private var defaultLists: [MovieList] { lists.filter { $0.kind != .custom } }
+    /// The two built-in lists shown above custom lists (To Watch, Watched).
+    private var topLists: [MovieList] { lists.filter { $0.kind == .toWatch || $0.kind == .watched } }
 
     /// User-created lists.
     private var customLists: [MovieList] { lists.filter { $0.kind == .custom } }
+
+    /// The accent color for a list: its own palette color for custom lists, or
+    /// the app accent for the two built-in lists (whose stored index is unused).
+    private func listColor(for list: MovieList) -> Color {
+        list.kind == .custom ? list.color : .appAccent
+    }
+
+    /// Accent color for the currently selected list, used to theme the screen.
+    private var activeListColor: Color {
+        selectedList.map(listColor) ?? .appAccent
+    }
 
     private var watchList: MovieList? { lists.first { $0.kind == .toWatch } }
     private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
@@ -188,25 +330,6 @@ struct WatchListView: View {
 
     private func select(_ list: MovieList?) {
         selectedListUUID = list?.uuid
-    }
-
-    /// Restores the last-viewed list, resetting to To Watch if it's been too long.
-    private func restoreSelection() {
-        let elapsed = Date.timeIntervalSinceReferenceDate - lastViewedAt
-        if elapsed > Self.staleInterval {
-            select(lists.first { $0.kind == .toWatch })
-        } else if let stored = UUID(uuidString: lastListUUID),
-                  lists.contains(where: { $0.uuid == stored }) {
-            selectedListUUID = stored
-        } else {
-            select(lists.first { $0.kind == .toWatch })
-        }
-        recordVisit()
-    }
-
-    private func recordVisit() {
-        lastListUUID = selectedListUUID?.uuidString ?? ""
-        lastViewedAt = Date.timeIntervalSinceReferenceDate
     }
 
     // MARK: - Data
@@ -313,6 +436,47 @@ struct WatchListView: View {
             if case .create(let movie) = self { return movie }
             return nil
         }
+    }
+}
+
+/// The file exporter, importer, and their result alerts, split out of
+/// `WatchListView.body` so the main modifier chain stays type-checkable.
+private struct BackupTransferModifier: ViewModifier {
+    @Binding var showExporter: Bool
+    @Binding var showImporter: Bool
+    let exportDocument: WatchDataDocument?
+    let exportFilename: String
+    @Binding var importSummary: ImportSummary?
+    @Binding var transferError: String?
+    let onImport: (Result<URL, Error>) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .fileExporter(isPresented: $showExporter, document: exportDocument,
+                          contentType: .json, defaultFilename: exportFilename) { result in
+                if case .failure(let error) = result {
+                    transferError = error.localizedDescription
+                }
+            }
+            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json], onCompletion: onImport)
+            .alert("Import Complete", isPresented: importCompleteBinding, presenting: importSummary) { _ in
+                Button("OK", role: .cancel) {}
+            } message: { summary in
+                Text(summary.message)
+            }
+            .alert("Something Went Wrong", isPresented: transferErrorBinding, presenting: transferError) { _ in
+                Button("OK", role: .cancel) {}
+            } message: { message in
+                Text(message)
+            }
+    }
+
+    private var importCompleteBinding: Binding<Bool> {
+        Binding(get: { importSummary != nil }, set: { if !$0 { importSummary = nil } })
+    }
+
+    private var transferErrorBinding: Binding<Bool> {
+        Binding(get: { transferError != nil }, set: { if !$0 { transferError = nil } })
     }
 }
 

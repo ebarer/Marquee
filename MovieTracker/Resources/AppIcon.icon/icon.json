@@ -19,7 +19,7 @@
           "blend-mode" : "normal",
           "fill" : {
             "linear-gradient" : [
-              "display-p3:0.97656,0.97656,0.97656,1.00000",
+              "display-p3:0.97647,0.97656,0.97656,1.00000",
               "display-p3:0.89404,0.89404,0.89404,1.00000"
             ],
             "orientation" : {
@@ -127,36 +127,6 @@
             "translation-in-points" : [
               0,
               0
-            ]
-          }
-        },
-        {
-          "blend-mode" : "normal",
-          "fill" : {
-            "linear-gradient" : [
-              "display-p3:0.78431,0.70588,0.50980,1.00000",
-              "display-p3:0.89404,0.89404,0.89404,1.00000"
-            ],
-            "orientation" : {
-              "start" : {
-                "x" : 0.8288517355980306,
-                "y" : 0.21041433286802771
-              },
-              "stop" : {
-                "x" : 0.276066199296624,
-                "y" : 0.8142521538612136
-              }
-            }
-          },
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "Rounded Rectangle 6 copy.png",
-          "name" : "Top",
-          "position" : {
-            "scale" : 1.1,
-            "translation-in-points" : [
-              29.89045555730172,
-              -0.5499999999999545
             ]
           }
         }

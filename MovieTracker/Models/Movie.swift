@@ -24,6 +24,9 @@ class Movie: NSObject {
     var trailers: [MovieTrailer]?
     var bonusCredits: Credits = Credits(during: false, after: false)
     var team: [Person]
+    /// The role (character or job) this movie represents in a person's
+    /// filmography. Only set when the movie is built as a person credit.
+    var creditRole: String?
 
     var duration: String? {
         guard runtime != nil else { return nil }

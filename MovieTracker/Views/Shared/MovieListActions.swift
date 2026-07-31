@@ -12,19 +12,29 @@ import SwiftData
 
 // MARK: - Swipe buttons
 
-/// Leading-swipe action: mark a movie as watched.
+/// Leading-swipe action: toggle a movie's Watched state. When the movie is
+/// already watched (e.g. an entry in a custom list) the action instead unmarks
+/// it, shown with an "unwatch" symbol, rather than pointlessly re-adding it.
 struct WatchedSwipeButton: View {
     let movie: Movie
     let watchedList: MovieList?
     let context: ModelContext
 
+    private var isWatched: Bool {
+        watchedList.map { WatchListStore.isMember(movie.id, of: $0) } ?? false
+    }
+
     var body: some View {
         Button {
             if let watchedList {
-                WatchListStore.add(movie, to: watchedList, in: context)
+                WatchListStore.toggle(movie, in: watchedList, in: context)
             }
         } label: {
-            Image(systemName: "checkmark")
+            if isWatched {
+                Image("checkmark.slashed")
+            } else {
+                Image(systemName: "checkmark")
+            }
         }
         .tint(.appAccent)
     }

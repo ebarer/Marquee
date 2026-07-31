@@ -17,6 +17,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     let movie: Movie
     /// Optional subtitle override (e.g. "Watched <date>"); defaults to release date.
     var subtitle: String? = nil
+    /// Optional secondary line below the subtitle (e.g. the person's role in a filmography).
+    var role: String? = nil
     let lists: [MovieList]
     let context: ModelContext
     @ViewBuilder var leadingActions: () -> Leading
@@ -24,11 +26,18 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
 
     var body: some View {
         NavigationLink(value: movie) {
-            MovieRow(movie: movie, subtitle: subtitle)
+            MovieRow(movie: movie, subtitle: subtitle, role: role)
         }
         // Halve the default plain-list vertical padding (~11pt) while keeping the
         // standard horizontal inset so alignment and separators are unchanged.
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+        // A value-based link renders as "selected" whenever its value is already
+        // on the stack's path — e.g. an actor's filmography that lists the movie
+        // you navigated in from. Since `Movie` is Hashable by id, that match
+        // leaves the row perpetually highlighted. We never drive selection off
+        // these rows, so opt them out of selection entirely to drop the highlight
+        // while keeping normal push navigation.
+        .selectionDisabled()
         .swipeActions(edge: .leading, allowsFullSwipe: true, content: leadingActions)
         .swipeActions(edge: .trailing, allowsFullSwipe: true, content: trailingActions)
         .movieContextMenu(for: movie, lists: lists, context: context)

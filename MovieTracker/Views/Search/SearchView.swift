@@ -27,6 +27,8 @@ struct SearchView: View {
             }
         }
         .listStyle(.plain)
+        .navigationTitle(isSearching ? "Search: \(trimmedQuery)" : "Search")
+        .navigationBarTitleDisplayMode(.inline)
         .overlay {
             // Nothing typed yet and no history: gently explain the screen.
             if !isSearching && model.recentSearches.isEmpty {
@@ -63,7 +65,7 @@ struct SearchView: View {
         case .people:
             ForEach(Array(model.people.enumerated()), id: \.element.id) { index, person in
                 NavigationLink(value: person) {
-                    PersonRow(person: person)
+                    PersonRow(person: person, showRole: false)
                 }
                 .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
                 .listRowSeparator(index == model.people.count - 1 ? .hidden : .automatic, edges: .bottom)
@@ -116,8 +118,12 @@ struct SearchView: View {
 
     // MARK: - Helpers
 
+    private var trimmedQuery: String {
+        model.query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var isSearching: Bool {
-        !model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !trimmedQuery.isEmpty
     }
 }
 

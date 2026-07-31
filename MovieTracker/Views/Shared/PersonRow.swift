@@ -2,13 +2,17 @@
 //  PersonRow.swift
 //  MovieTracker
 //
-//  List row: circular profile beside name + role. Replaces `PersonTableViewCell`.
+//  Shared list row for a person: circular profile beside the name, with an
+//  optional role line. The movie detail's Cast & Crew shows name + role;
+//  Search shows just the name. Replaces `PersonTableViewCell`.
 //
 
 import SwiftUI
 
 struct PersonRow: View {
     let person: Person
+    /// Show the person's role (character/job). Used in the movie detail cast list.
+    var showRole = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -20,7 +24,7 @@ struct PersonRow: View {
                     .font(.body)
                     .foregroundStyle(.white)
 
-                if let role = person.role, !role.isEmpty {
+                if showRole, let role = person.role, !role.isEmpty {
                     Text(role)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)

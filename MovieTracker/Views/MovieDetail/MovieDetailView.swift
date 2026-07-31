@@ -33,12 +33,27 @@ struct MovieDetailView: View {
     @State private var showPoster = false
     @State private var selectedTrailer: MovieTrailer?
     @State private var overviewExpanded = false
+    /// Rendered heights of the overview text at its 5-line limit vs. unclipped,
+    /// used to decide whether the "More" pill is needed at all.
+    @State private var overviewLimitedHeight: CGFloat = 0
+    @State private var overviewFullHeight: CGFloat = 0
+    /// True only when the description actually overflows the collapsed line limit.
+    private var overviewTruncated: Bool { overviewFullHeight > overviewLimitedHeight + 1 }
+    /// Overview body size — a touch smaller than `.body`, but still scaled with
+    /// the user's Dynamic Type setting (relative to `.body`).
+    @ScaledMetric(relativeTo: .body) private var overviewFontSize: CGFloat = 16
+    /// Baseline nudge that lands the "More" pill on the description's last line;
+    /// scaled so it keeps up as the surrounding text grows.
+    @ScaledMetric(relativeTo: .body) private var moreBaselineNudge: CGFloat = 2
+    private var overviewFont: Font { .system(size: overviewFontSize) }
     @State private var showNavTitle = false
     @State private var tracked = false
     @State private var seen = false
     /// Whether the movie was on the Watch List when it was last marked Watched,
     /// so unmarking Watched can restore it there (and only then).
     @State private var wasOnWatchList = false
+    /// Drives the custom-lists popover shown from the third action button.
+    @State private var showListPicker = false
 
     private var toWatchList: MovieList? { lists.first { $0.kind == .toWatch } }
     private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
@@ -228,6 +243,7 @@ struct MovieDetailView: View {
                         .foregroundStyle(model.tint)
                 }
                 actionButtons(movie: movie)
+                    .padding(.top, 2)
             }
 
             Spacer(minLength: 0)
@@ -246,36 +262,31 @@ struct MovieDetailView: View {
     private static let actionButtonSize: CGFloat = 52
     private static let actionButtonSpacing: CGFloat = 12
 
-    /// Plus (Watch List) and checkmark (Watched) as Liquid Glass toggles sharing
-    /// a container so they metaball together. Marking Watched removes the plus and
-    /// morphs the checkmark leftward into a pill spanning both slots.
+    /// Liquid Glass controls sharing a container so they metaball together:
+    /// bookmark (Watch List), checkmark (Watched), and plus (other lists menu).
+    /// Marking Watched removes the bookmark and morphs the checkmark leftward into
+    /// a pill spanning both slots; the plus stays put so an already-watched movie
+    /// can still be added to a custom list.
     private func actionButtons(movie: Movie) -> some View {
         GlassEffectContainer(spacing: Self.actionButtonSpacing) {
             HStack(spacing: Self.actionButtonSpacing) {
+                // Watch List toggle. Absorbed by the Watched pill once seen.
                 if !seen {
-                    // Tap toggles the Watch List; press-and-hold opens the list menu.
-                    Menu {
-                        listsMenu(movie: movie)
-                    } label: {
-                        glassIcon(system: tracked ? "bookmark.fill" : "bookmark", isOn: tracked)
-                    } primaryAction: {
+                    glassButton(system: tracked ? "bookmark.fill" : "bookmark", isOn: tracked, shape: Circle()) {
                         guard let toWatch = toWatchList else { return }
                         WatchListStore.toggle(movie, in: toWatch, in: context)
                         refreshMembership()
                     }
-                    .buttonStyle(.plain)
-                    .glassEffect(tracked ? .regular.tint(model.tint).interactive() : .regular.interactive(),
-                                 in: Circle())
-                    .glassEffectID("plus", in: glassNamespace)
+                    .glassEffectID("bookmark", in: glassNamespace)
                     .glassEffectTransition(.matchedGeometry)
                 }
 
+                // Watched. Marking moves the movie off the Watch List; unmarking
+                // restores it there only if it was on the Watch List beforehand.
                 glassButton(system: "checkmark", isOn: seen,
                             width: seen ? Self.actionButtonSize * 2 + Self.actionButtonSpacing
                                         : Self.actionButtonSize,
                             shape: Capsule()) {
-                    // Marking Watched moves the movie off the Watch List. Unmarking
-                    // restores it there only if it was on the Watch List beforehand.
                     guard let watched = watchedList else { return }
                     if seen {
                         WatchListStore.remove(movie, from: watched, in: context)
@@ -289,9 +300,44 @@ struct MovieDetailView: View {
                     refreshMembership()
                 }
                 .glassEffectID("watched", in: glassNamespace)
+
+                // Other lists, always present. With a single custom list the
+                // button becomes that list's icon and toggles membership directly
+                // (highlighting when a member); with two or more it opens a menu.
+                if customLists.count == 1, let list = customLists.first {
+                    let member = WatchListStore.isMember(movieID, of: list)
+                    glassButton(system: member ? filledSymbol(list.symbol) : list.symbol,
+                                isOn: member,
+                                shape: Circle()) {
+                        WatchListStore.toggle(movie, in: list, in: context)
+                    }
+                    .glassEffectID("plus", in: glassNamespace)
+                } else {
+                    glassButton(system: "plus", isOn: false, shape: Circle()) {
+                        showListPicker = true
+                    }
+                    .glassEffectID("plus", in: glassNamespace)
+                    // Anchor a few points above the button so the cartouche's
+                    // beak doesn't crowd it.
+                    .popover(isPresented: $showListPicker,
+                             attachmentAnchor: .rect(.rect(CGRect(
+                                x: 0, y: -8,
+                                width: Self.actionButtonSize,
+                                height: Self.actionButtonSize)))) {
+                        ListPickerPopover(movie: movie, lists: customLists,
+                                          context: context, tint: model.tint)
+                    }
+                }
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: seen)
+    }
+
+    /// The `.fill` variant of an SF Symbol when one exists, otherwise the base
+    /// name — used to fill a selected list icon like the Watch List's bookmark.
+    private func filledSymbol(_ base: String) -> String {
+        let candidate = base + ".fill"
+        return UIImage(systemName: candidate) != nil ? candidate : base
     }
 
     /// Icon content for a glass action control.
@@ -299,7 +345,7 @@ struct MovieDetailView: View {
                            width: CGFloat = MovieDetailView.actionButtonSize) -> some View {
         Image(systemName: system)
             .font(.system(size: 20, weight: .semibold))
-            .foregroundStyle(isOn ? .white : model.tint)
+            .foregroundStyle(isOn ? .appBackground : model.tint)
             .frame(width: width, height: Self.actionButtonSize)
             .contentShape(Rectangle())
     }
@@ -317,15 +363,6 @@ struct MovieDetailView: View {
                      in: shape)
     }
 
-    /// Long-press menu on the plus: the Watch List up top, a separator, then any
-    /// custom lists. Membership shows a checkmark alongside each list's icon.
-    private func listsMenu(movie: Movie) -> some View {
-        // Watched has its own dedicated toggle above, so it's omitted here.
-        ListMembershipMenu(movie: movie, watchList: toWatchList, watchedList: nil,
-                           customLists: customLists, context: context,
-                           onChange: { refreshMembership() })
-    }
-
     // MARK: - Overview
 
     @ViewBuilder
@@ -333,25 +370,34 @@ struct MovieDetailView: View {
         let overview = movie.overview ?? "No movie description available."
         ZStack(alignment: .bottomTrailing) {
             Text(overview)
-                .font(.body)
+                .font(overviewFont)
                 .foregroundStyle(.white.opacity(0.85))
                 .lineLimit(overviewExpanded ? nil : 5)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .background { overviewTruncationProbe(overview) }
 
-            // Inline "… More" at the end of the truncated text, with a gradient behind it
-            // that masks the text underneath and blends into the background.
-            if !overviewExpanded {
-                Text("… \(Text("More").foregroundStyle(model.tint).fontWeight(.semibold))")
-                    .foregroundStyle(.white.opacity(0.85))
-                    .font(.body)
-                .padding(.leading, 44)
-                .background(
-                    LinearGradient(
-                        colors: [Color.appBackground.opacity(0), .appBackground, .appBackground],
-                        startPoint: .leading,
-                        endPoint: .trailing
+            // A neutral glass "More" pill at the end of the truncated text, with a
+            // gradient behind it that masks the words underneath and blends into the
+            // background. Shown only when the text actually overflows the 5-line limit.
+            if overviewTruncated && !overviewExpanded {
+                Text("More")
+                    .textCase(.uppercase)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 3)
+                    .background(Color.white.opacity(0.12), in: .capsule)
+                    .padding(.leading, 44)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.appBackground.opacity(0), .appBackground, .appBackground],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
                     )
-                )
+                    // Nudge down so "MORE" sits on the description's baseline
+                    // rather than the top of the last line's spacing.
+                    .offset(y: moreBaselineNudge)
             }
         }
         .padding(.horizontal, 16)
@@ -359,6 +405,33 @@ struct MovieDetailView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             withAnimation(.easeInOut) { overviewExpanded.toggle() }
+        }
+    }
+
+    /// Hidden copies of the overview measured at the collapsed 5-line limit and at
+    /// full height; the difference tells us whether a "More" pill is warranted.
+    private func overviewTruncationProbe(_ overview: String) -> some View {
+        ZStack {
+            Text(overview)
+                .font(overviewFont)
+                .lineLimit(5)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background { heightReader { overviewLimitedHeight = $0 } }
+            Text(overview)
+                .font(overviewFont)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background { heightReader { overviewFullHeight = $0 } }
+        }
+        .hidden()
+    }
+
+    /// Reports the measured height of the view it backs.
+    private func heightReader(_ report: @escaping (CGFloat) -> Void) -> some View {
+        GeometryReader { proxy in
+            Color.clear
+                .onAppear { report(proxy.size.height) }
+                .onChange(of: proxy.size.height) { _, new in report(new) }
         }
     }
 
@@ -434,6 +507,63 @@ struct MovieDetailView: View {
             .padding(.horizontal, 16)
             .padding(.top, 16)
             .padding(.bottom, 4)
+    }
+}
+
+// MARK: - Custom-lists popover
+
+/// A tap-anywhere-to-toggle list of the user's custom lists, shown as a popover
+/// from the detail screen's third action button. Unlike a `Menu`, it stays open
+/// so the movie can be added to several lists in a row; tap outside to dismiss.
+private struct ListPickerPopover: View {
+    let movie: Movie
+    let lists: [MovieList]
+    let context: ModelContext
+    let tint: Color
+
+    /// Natural height of the list, so the popover hugs its content while the
+    /// scroll view still rubber-bands. Capped by `maxHeight` for long lists.
+    @State private var contentHeight: CGFloat = 0
+    private static let maxHeight: CGFloat = 320
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(lists) { list in
+                let member = WatchListStore.isMember(movie.id, of: list)
+                Button {
+                    WatchListStore.toggle(movie, in: list, in: context)
+                } label: {
+                    HStack(spacing: 12) {
+                        ListIcon(list, size: 28)
+                        Text(list.name)
+                            .foregroundStyle(.primary)
+                        Spacer(minLength: 24)
+                        Image(systemName: "checkmark")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(tint)
+                            .opacity(member ? 1 : 0)
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                if list.uuid != lists.last?.uuid {
+                    Divider().padding(.leading, 58)
+                }
+            }
+            }
+            // Breathing room so the first/last rows don't hug the popover edges.
+            .padding(.vertical, 6)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+        }
+        // Rubber-band even when the list fits, so it feels like a native scroller.
+        .scrollBounceBehavior(.always)
+        .frame(minWidth: 250)
+        .frame(height: min(max(contentHeight, 1), Self.maxHeight))
+        .presentationCompactAdaptation(.popover)
     }
 }
 
