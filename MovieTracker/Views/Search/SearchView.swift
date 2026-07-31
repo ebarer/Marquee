@@ -27,7 +27,6 @@ struct SearchView: View {
             }
         }
         .listStyle(.plain)
-        .navigationBarTitleDisplayMode(.inline)
         .overlay {
             // Nothing typed yet and no history: gently explain the screen.
             if !isSearching && model.recentSearches.isEmpty {
@@ -47,12 +46,10 @@ struct SearchView: View {
         switch model.scope {
         case .movies:
             ForEach(Array(model.movies.enumerated()), id: \.element.id) { index, movie in
-                MovieListCell(
+                MovieListRow(
                     movie: movie,
                     lists: lists,
                     context: context,
-                    // Opening a result counts as committing the search term.
-                    onSelect: { model.commit() },
                     leadingActions: {
                         WatchedSwipeButton(movie: movie, watchedList: watchedList, context: context)
                     },
@@ -70,7 +67,6 @@ struct SearchView: View {
                 }
                 .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
                 .listRowSeparator(index == model.people.count - 1 ? .hidden : .automatic, edges: .bottom)
-                .simultaneousGesture(TapGesture().onEnded { model.commit() })
             }
         }
     }

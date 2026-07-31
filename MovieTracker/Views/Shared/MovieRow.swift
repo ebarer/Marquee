@@ -14,8 +14,11 @@ struct MovieRow: View {
     var body: some View {
         HStack(spacing: 12) {
             PosterImage(url: movie.posterURL(.w185))
-                .frame(width: 55, height: 82)
+                .frame(width: 51, height: 76)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+                // Slightly shorter poster (3pt top/bottom) so rows breathe and
+                // the first result clears the scope bar.
+                .padding(.vertical, 3)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(movie.title)

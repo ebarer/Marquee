@@ -27,6 +27,10 @@ struct RootView: View {
     // so tapping a recent search can repopulate the field.
     @State private var searchModel = SearchModel()
 
+    // Path for the search tab's stack. Watched so that opening a result (which
+    // pushes a detail) records the current query as a recent search.
+    @State private var searchPath = NavigationPath()
+
     var body: some View {
         TabView {
             Tab("Discover", systemImage: "film") {
@@ -44,7 +48,7 @@ struct RootView: View {
             }
 
             Tab("Search", systemImage: "magnifyingglass", role: .search) {
-                NavigationStack {
+                NavigationStack(path: $searchPath) {
                     SearchView(model: searchModel)
                         .movieTrackerDestinations()
                 }
@@ -61,6 +65,13 @@ struct RootView: View {
                 }
                 .onChange(of: searchModel.scope) { _, _ in
                     searchModel.search(searchModel.query)
+                }
+                .onChange(of: searchPath) { oldPath, newPath in
+                    // Opening a result (pushing onto the stack) counts as
+                    // committing the current query to recent searches.
+                    if newPath.count > oldPath.count {
+                        searchModel.commit()
+                    }
                 }
                 .onSubmit(of: .search) {
                     searchModel.commit()

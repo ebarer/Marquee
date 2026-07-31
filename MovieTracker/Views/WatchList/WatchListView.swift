@@ -39,7 +39,7 @@ struct WatchListView: View {
             ForEach(sections) { section in
                 Section(section.title) {
                     ForEach(Array(section.entries.enumerated()), id: \.element.id) { index, entry in
-                        MovieListCell(
+                        MovieListRow(
                             movie: movie(from: entry),
                             subtitle: subtitle(for: entry),
                             lists: lists,

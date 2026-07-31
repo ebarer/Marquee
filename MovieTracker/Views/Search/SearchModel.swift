@@ -74,8 +74,9 @@ final class SearchModel {
 
     // MARK: - Recent searches
 
-    /// Records the current query as a recent search. Call when the user commits
-    /// a search (submits) or opens a result.
+    /// Records the current query as a recent search, moving it to the top and
+    /// removing any duplicate. Call when the user commits a search (submits) or
+    /// opens a result.
     func commit() {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -88,7 +89,8 @@ final class SearchModel {
         persistRecents()
     }
 
-    /// Re-runs a saved search term, moving it back to the top of the list.
+    /// Re-runs a saved search term by populating the field, exactly as if the
+    /// user had retyped it, and elevates it to the top of the recents list.
     func selectRecent(_ term: String) {
         query = term
         search(term)
