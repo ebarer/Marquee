@@ -285,9 +285,32 @@ struct WatchListView: View {
             } label: {
                 Label("Export", systemImage: "square.and.arrow.up")
             }
+
+            // Non-selectable version footer.
+            Section {
+                Text(appInfo)
+            }
         } label: {
             Label("More", systemImage: "ellipsis")
         }
+    }
+
+    private var appInfo: String {
+        var appInfo: String = ""
+
+        if let releaseVersionNumber = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            appInfo.append(releaseVersionNumber)
+        }
+
+        if let buildVersionNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+            if appInfo.isEmpty {
+                appInfo.append(buildVersionNumber)
+            } else {
+                appInfo.append(" (\(buildVersionNumber))")
+            }
+        }
+
+        return appInfo
     }
 
     // MARK: - Backup import/export
