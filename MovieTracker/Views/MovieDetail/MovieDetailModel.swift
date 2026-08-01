@@ -13,6 +13,15 @@ import SwiftUI
 final class MovieDetailModel {
     private(set) var movie: Movie?
     private(set) var tint: Color = .appAccent
+    /// TMDB "recommendations" for the current movie, shown as a horizontal
+    /// strip. Excludes the movie itself defensively.
+    private(set) var recommendations: [Movie] = []
+    /// The other films in this movie's franchise (chronological), shown as a
+    /// horizontal strip. Empty when the movie isn't part of a collection.
+    private(set) var collection: [Movie] = []
+    /// The franchise's display name (e.g. "The Dark Knight Collection"), used
+    /// as the collection strip's section title.
+    private(set) var collectionName: String?
 
     private var loaded = false
 
@@ -28,6 +37,26 @@ final class MovieDetailModel {
             }
         } catch {
             print("Movie detail load error: \(error)")
+        }
+
+        // Load the franchise members if this movie belongs to a collection.
+        if let franchise = movie?.collection {
+            collectionName = franchise.name
+            do {
+                collection = try await TMDBWrapper.getCollection(id: franchise.id)
+                    .filter { $0.id != id }
+            } catch {
+                print("Movie collection load error: \(error)")
+            }
+        }
+
+        // Load recommendations separately so a failure here doesn't block the
+        // main detail content.
+        do {
+            let page = try await TMDBWrapper.movieRecommendations(id: id)
+            recommendations = page.items.filter { $0.id != id }
+        } catch {
+            print("Movie recommendations load error: \(error)")
         }
     }
 }

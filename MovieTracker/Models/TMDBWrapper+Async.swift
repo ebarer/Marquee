@@ -55,6 +55,22 @@ extension TMDBWrapper {
         }
     }
 
+    static func getCollection(id: Int) async throws -> [Movie] {
+        try await withCheckedThrowingContinuation { continuation in
+            getCollection(id: id) { movies, error in
+                continuation.resume(with: Self.result(movies, error))
+            }
+        }
+    }
+
+    static func movieRecommendations(id: Int, page: Int = 1) async throws -> PagedResult<Movie> {
+        try await withCheckedThrowingContinuation { continuation in
+            getMovieRecommendations(id: id, page: page) { movies, error, pagination in
+                continuation.resume(with: Self.pagedResult(movies, error, pagination))
+            }
+        }
+    }
+
     static func searchForMovies(query: String, page: Int = 1) async throws -> PagedResult<Movie> {
         try await withCheckedThrowingContinuation { continuation in
             searchForMovies(query: query, page: page) { movies, error, pagination in

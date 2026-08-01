@@ -28,6 +28,7 @@
 		CE78BD8420C112D8001E6DB6 /* Movie.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE78BD8320C112D8001E6DB6 /* Movie.swift */; };
 		CE8041A7301D441300F5D6F2 /* EmojiField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8041A6301D441300F5D6F2 /* EmojiField.swift */; };
 		CE8041B4301D93A200F5D6F2 /* GlassScopeBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8041B3301D93A200F5D6F2 /* GlassScopeBar.swift */; };
+		CE8041C4301DA82D00F5D6F2 /* CSVImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8041C3301DA82D00F5D6F2 /* CSVImport.swift */; };
 		CE822F48301CB8C40070F69B /* WatchDataArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F47301CB8C40070F69B /* WatchDataArchive.swift */; };
 		CE822F4C301D13DF0070F69B /* ListManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F4B301D13DF0070F69B /* ListManagerView.swift */; };
 		CE822F4E301D1B450070F69B /* ListIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F4D301D1B450070F69B /* ListIcon.swift */; };
@@ -76,6 +77,7 @@
 		CE78BD8320C112D8001E6DB6 /* Movie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Movie.swift; sourceTree = "<group>"; };
 		CE8041A6301D441300F5D6F2 /* EmojiField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiField.swift; sourceTree = "<group>"; };
 		CE8041B3301D93A200F5D6F2 /* GlassScopeBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassScopeBar.swift; sourceTree = "<group>"; };
+		CE8041C3301DA82D00F5D6F2 /* CSVImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImport.swift; sourceTree = "<group>"; };
 		CE822F47301CB8C40070F69B /* WatchDataArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDataArchive.swift; sourceTree = "<group>"; };
 		CE822F4B301D13DF0070F69B /* ListManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListManagerView.swift; sourceTree = "<group>"; };
 		CE822F4D301D1B450070F69B /* ListIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListIcon.swift; sourceTree = "<group>"; };
@@ -213,6 +215,7 @@
 				CE8C0C8F301AD31100F08C6A /* WatchListEntry.swift */,
 				CE8C0C92301AFE3C00F08C6A /* MovieList.swift */,
 				CE822F47301CB8C40070F69B /* WatchDataArchive.swift */,
+				CE8041C3301DA82D00F5D6F2 /* CSVImport.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -363,6 +366,7 @@
 				CE569766301C1ABF00DF9142 /* SearchModel.swift in Sources */,
 				CE56975C301C1A4500DF9142 /* PersonBioHeader.swift in Sources */,
 				CE56977C301C824D00DF9142 /* MovieListRow.swift in Sources */,
+				CE8041C4301DA82D00F5D6F2 /* CSVImport.swift in Sources */,
 				CEEAFCFB3019DE0500D06E0E /* SafariView.swift in Sources */,
 				CE56974E301C199F00DF9142 /* ProfileImage.swift in Sources */,
 				CE78BD8420C112D8001E6DB6 /* Movie.swift in Sources */,
@@ -526,7 +530,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.07.31.6;
+				CURRENT_PROJECT_VERSION = 2026.07.31.7;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -549,7 +553,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.07.31.6;
+				CURRENT_PROJECT_VERSION = 2026.07.31.7;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (

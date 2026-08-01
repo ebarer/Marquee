@@ -123,7 +123,8 @@ struct PersonDetailView: View {
                 LazyHStack(alignment: .top, spacing: 12) {
                     ForEach(knownFor, id: \.id) { movie in
                         NavigationLink(value: movie) {
-                            MoviePosterCard(movie: movie, titleLineLimit: 3)
+                            MoviePosterCard(movie: movie, titleLineLimit: 3,
+                                            reservesTitleSpace: false)
                                 .frame(width: 90)
                         }
                         .buttonStyle(.plain)

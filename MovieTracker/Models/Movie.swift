@@ -27,6 +27,10 @@ class Movie: NSObject {
     /// The role (character or job) this movie represents in a person's
     /// filmography. Only set when the movie is built as a person credit.
     var creditRole: String?
+    /// The franchise this movie belongs to (e.g. "The Dark Knight Collection"),
+    /// when TMDB groups it into one. Populated from `belongs_to_collection` in
+    /// the movie detail response; nil for standalone films.
+    var collection: MovieCollection?
 
     var duration: String? {
         guard runtime != nil else { return nil }
@@ -133,6 +137,17 @@ extension Movie {
             completionHandler(image, error, self.id)
         }
     }
+}
+
+// MARK: - Collection (franchise)
+
+/// A TMDB movie franchise. The stub form (id, name, artwork) ships inside a
+/// movie's detail payload; the full member list is fetched separately.
+struct MovieCollection {
+    var id: Int
+    var name: String
+    var poster: String?
+    var background: String?
 }
 
 // MARK: - Subclasses

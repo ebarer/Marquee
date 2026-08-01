@@ -54,6 +54,10 @@ struct MovieDetailView: View {
     @State private var wasOnWatchList = false
     /// Drives the custom-lists popover shown from the third action button.
     @State private var showListPicker = false
+    /// Which related-movies strip is shown below the description. Nil follows the
+    /// default (franchise if the movie has one, otherwise recommendations); set
+    /// once the user picks from the title menu.
+    @State private var relatedMode: RelatedMode?
 
     private var toWatchList: MovieList? { lists.first { $0.kind == .toWatch } }
     private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
@@ -152,6 +156,7 @@ struct MovieDetailView: View {
                                        tint: model.tint, isWatched: seen)
                         .padding(.vertical, 8)
                     overviewSection(movie: movie)
+                    relatedSection
                     castSection(movie: movie)
                     trailersSection(movie: movie)
                 }
@@ -538,6 +543,135 @@ struct MovieDetailView: View {
             .padding(.horizontal, 16)
             .padding(.top, 16)
             .padding(.bottom, 4)
+    }
+
+    // MARK: - Related (franchise / recommendations)
+
+    /// The two kinds of related-movies strips, chosen from the section's title
+    /// menu. `Related` is the movie's franchise; `Recommendations` is TMDB's.
+    private enum RelatedMode: CaseIterable {
+        case related, recommendations
+        var title: String {
+            switch self {
+            case .related: return "Related"
+            case .recommendations: return "Recommendations"
+            }
+        }
+    }
+
+    /// Which modes actually have movies to show, in menu order (franchise first).
+    private var availableRelatedModes: [RelatedMode] {
+        var modes: [RelatedMode] = []
+        if !model.collection.isEmpty { modes.append(.related) }
+        if !model.recommendations.isEmpty { modes.append(.recommendations) }
+        return modes
+    }
+
+    /// The mode currently displayed: the user's pick when still available,
+    /// otherwise the default (first available — franchise if present).
+    private var currentRelatedMode: RelatedMode? {
+        if let relatedMode, availableRelatedModes.contains(relatedMode) { return relatedMode }
+        return availableRelatedModes.first
+    }
+
+    private func movies(for mode: RelatedMode) -> [Movie] {
+        switch mode {
+        case .related: return model.collection
+        case .recommendations: return Array(model.recommendations.prefix(20))
+        }
+    }
+
+    /// A single related-movies strip below the description whose title is a menu
+    /// flipping between franchise ("Related") and "Recommendations". Shown only
+    /// when at least one has content; the menu appears only when both do.
+    @ViewBuilder
+    private var relatedSection: some View {
+        if let mode = currentRelatedMode {
+            VStack(alignment: .leading, spacing: 0) {
+                relatedHeader(mode: mode)
+                posterRow(movies(for: mode))
+                    // New identity per mode so switching crossfades the whole
+                    // strip rather than sliding individual posters between spots.
+                    .id(mode)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    /// The strip's title. A tappable menu (title + chevron) when both modes are
+    /// available; a plain section header when only one is.
+    @ViewBuilder
+    private func relatedHeader(mode: RelatedMode) -> some View {
+        let modes = availableRelatedModes
+        if modes.count > 1 {
+            Menu {
+                ForEach(modes, id: \.self) { option in
+                    Button {
+                        withAnimation(.easeInOut) { relatedMode = option }
+                    } label: {
+                        if option == mode {
+                            Label(option.title, systemImage: "checkmark")
+                        } else {
+                            Text(option.title)
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(mode.title)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    Image(systemName: "chevron.down")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(model.tint)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 4)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            sectionHeader(mode.title)
+        }
+    }
+
+    /// A horizontally scrollable strip of poster cards, matching the person
+    /// detail "Known For" strip.
+    private func posterRow(_ movies: [Movie]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: 12) {
+                    ForEach(movies, id: \.id) { movie in
+                        NavigationLink(value: movie) {
+                            VStack(spacing: 4) {
+                                MoviePosterCard(movie: movie, titleLineLimit: 3,
+                                                reservesTitleSpace: false, posterWidth: 90)
+                                if let year = releaseYear(movie) {
+                                    Text(year)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .frame(width: 90)
+                        }
+                        .buttonStyle(.plain)
+                        .movieContextMenu(for: movie, lists: lists, context: context)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
+            }
+        }
+    }
+
+    /// The four-digit release year for a strip poster's caption, or nil when the
+    /// movie has no release date (e.g. an unreleased franchise entry).
+    private func releaseYear(_ movie: Movie) -> String? {
+        guard let date = movie.releaseDate else { return nil }
+        return String(Calendar.current.component(.year, from: date))
     }
 }
 

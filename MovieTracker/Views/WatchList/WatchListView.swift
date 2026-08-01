@@ -36,6 +36,8 @@ struct WatchListView: View {
     @State private var showImporter = false
     @State private var importSummary: ImportSummary?
     @State private var transferError: String?
+    /// Progress of an in-flight CSV import (fetched, total); nil when idle.
+    @State private var importProgress: (done: Int, total: Int)?
 
     /// Presents the Edit Lists modal (reorder/delete/edit custom lists).
     @State private var showListManager = false
@@ -158,6 +160,7 @@ struct WatchListView: View {
             exportFilename: exportFilename,
             importSummary: $importSummary,
             transferError: $transferError,
+            importProgress: importProgress,
             onImport: handleImport
         ))
         .onAppear {
@@ -327,20 +330,59 @@ struct WatchListView: View {
         showExporter = true
     }
 
-    /// Reads the chosen file, merges it, and surfaces the result (or an error).
+    /// Reads the chosen file and merges it, routing to the JSON backup or CSV
+    /// (TodoMovies) importer by file type, then surfaces the result (or an error).
     private func handleImport(_ result: Result<URL, Error>) {
         switch result {
         case .success(let url):
-            do {
-                let scoped = url.startAccessingSecurityScopedResource()
-                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-                let archive = try WatchDataArchive(json: try Data(contentsOf: url))
-                importSummary = WatchListStore.importArchive(archive, into: context)
-            } catch {
-                transferError = error.localizedDescription
+            if url.pathExtension.lowercased() == "csv" {
+                importCSV(from: url)
+            } else {
+                importArchive(from: url)
             }
         case .failure(let error):
             transferError = error.localizedDescription
+        }
+    }
+
+    /// Merges the app's own JSON backup synchronously.
+    private func importArchive(from url: URL) {
+        do {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            let archive = try WatchDataArchive(json: try Data(contentsOf: url))
+            importSummary = WatchListStore.importArchive(archive, into: context)
+        } catch {
+            transferError = error.localizedDescription
+        }
+    }
+
+    /// Parses a TodoMovies CSV export, then merges it while fetching each movie's
+    /// details from TMDB. The file's read upfront; the network work runs in a
+    /// task behind the progress overlay.
+    private func importCSV(from url: URL) {
+        let records: [CSVMovieRecord]
+        do {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            records = try CSVMovieRecord.parse(data: try Data(contentsOf: url))
+        } catch {
+            transferError = error.localizedDescription
+            return
+        }
+
+        guard !records.isEmpty else {
+            transferError = "No movies found in the CSV file."
+            return
+        }
+
+        importProgress = (done: 0, total: records.count)
+        Task {
+            let summary = await WatchListStore.importCSV(records, into: context) { done, total in
+                importProgress = (done: done, total: total)
+            }
+            importProgress = nil
+            importSummary = summary
         }
     }
 
@@ -542,6 +584,8 @@ private struct BackupTransferModifier: ViewModifier {
     let exportFilename: String
     @Binding var importSummary: ImportSummary?
     @Binding var transferError: String?
+    /// Non-nil while a CSV import is fetching movie details, as `(fetched, total)`.
+    let importProgress: (done: Int, total: Int)?
     let onImport: (Result<URL, Error>) -> Void
 
     func body(content: Content) -> some View {
@@ -552,7 +596,15 @@ private struct BackupTransferModifier: ViewModifier {
                     transferError = error.localizedDescription
                 }
             }
-            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json], onCompletion: onImport)
+            // JSON is the app's own backup format; CSV is a TodoMovies export.
+            .fileImporter(isPresented: $showImporter,
+                          allowedContentTypes: [.json, .commaSeparatedText],
+                          onCompletion: onImport)
+            .overlay {
+                if let importProgress {
+                    ImportProgressOverlay(done: importProgress.done, total: importProgress.total)
+                }
+            }
             .alert("Import Complete", isPresented: importCompleteBinding, presenting: importSummary) { _ in
                 Button("OK", role: .cancel) {}
             } message: { summary in
@@ -571,6 +623,30 @@ private struct BackupTransferModifier: ViewModifier {
 
     private var transferErrorBinding: Binding<Bool> {
         Binding(get: { transferError != nil }, set: { if !$0 { transferError = nil } })
+    }
+}
+
+/// A blocking progress card shown while a CSV import fetches movie details from
+/// TMDB. Determinate so the user can gauge how far a large library has to go.
+private struct ImportProgressOverlay: View {
+    let done: Int
+    let total: Int
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.35)
+                .ignoresSafeArea()
+            VStack(spacing: 14) {
+                ProgressView(value: Double(done), total: Double(max(total, 1)))
+                    .progressViewStyle(.linear)
+                    .frame(width: 200)
+                Text("Importing \(done) of \(total)…")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(24)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        }
     }
 }
 
