@@ -21,6 +21,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     var role: String? = nil
     /// When false, the row shows no subtitle line at all (no release-date fallback).
     var showsSubtitle: Bool = true
+    /// An optional duration line (e.g. "2 hr 8 min") shown beneath the subtitle.
+    var duration: String? = nil
     /// The user's personal rating in stars (0.5-step); shown as read-only stars
     /// beneath the subtitle when set.
     var rating: Double? = nil
@@ -34,7 +36,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     var body: some View {
         NavigationLink(value: movie) {
             MovieRow(movie: movie, subtitle: subtitle, role: role,
-                     showsSubtitle: showsSubtitle, rating: rating, ratingTint: ratingTint)
+                     showsSubtitle: showsSubtitle, duration: duration,
+                     rating: rating, ratingTint: ratingTint)
         }
         // Halve the default plain-list vertical padding (~11pt) while keeping the
         // standard horizontal inset so alignment and separators are unchanged.

@@ -25,6 +25,10 @@ final class WatchListEntry {
     /// The user's personal rating in stars (0.5–5.0 in half steps, e.g. 3.5).
     /// `nil` when unrated. Only meaningful on a Watched-list entry.
     var userRating: Double?
+    /// The movie's runtime in minutes, captured when the entry is created so rows
+    /// can show a duration without re-fetching. `nil` for entries saved before
+    /// this was tracked, or when the source movie had no runtime.
+    var runtime: Int?
 
     /// The list this entry belongs to (inverse of `MovieList.entries`).
     var list: MovieList?
@@ -35,6 +39,7 @@ final class WatchListEntry {
         self.posterPath = movie.poster
         self.releaseDate = movie.releaseDate
         self.dateAdded = Date()
+        self.runtime = movie.runtime
     }
 
     /// Poster URL for row artwork, matching the list-thumbnail size used elsewhere.

@@ -75,11 +75,13 @@ struct MovieMetadataStrip: View {
         guard let rating = movie.rating, rating > 0 else {
             return Text("N/A")
         }
-        let score = rating / 2
+        // Round to the one-decimal precision we display first, so a score that
+        // rounds to a whole number (e.g. 3.95 → 4.0) drops the decimal too.
+        let score = (rating / 2 * 10).rounded() / 10
         let formatted = score == score.rounded()
             ? String(format: "%.0f", score)
             : String(format: "%.1f", score)
-        return Text(formatted) + Text(" / 5").foregroundColor(.secondary)
+        return Text("\(formatted)\(Text(" / 5").foregroundColor(.secondary))")
     }
 
     // A column sized to its content: title label at the top, value beneath it.

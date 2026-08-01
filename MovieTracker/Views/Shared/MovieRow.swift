@@ -16,6 +16,9 @@ struct MovieRow: View {
     /// When false, the row shows no subtitle line at all — no explicit subtitle
     /// and no release-date fallback.
     var showsSubtitle: Bool = true
+    /// An optional duration line (e.g. "2 hr 8 min") shown beneath the subtitle,
+    /// formatted like the movie detail page.
+    var duration: String? = nil
     /// The user's personal rating in stars (0.5-step); when set and > 0, a compact
     /// read-only star row appears beneath the subtitle.
     var rating: Double? = nil
@@ -44,6 +47,13 @@ struct MovieRow: View {
 
                 if let role, !role.isEmpty {
                     Text(role)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                if let duration, !duration.isEmpty {
+                    Text(duration)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

@@ -5,8 +5,8 @@
 //  SwiftUI movie detail screen: a parallax backdrop header that scrolls as
 //  one unit (backdrop image stretches on pull-down and scales slightly on
 //  scroll-up while the poster/title/actions stay anchored to it), poster
-//  average-color tint, Track/Seen actions beside the poster, a metadata
-//  card strip, expandable overview, Cast & Crew, and Trailers. Replaces
+//  average-color tint, Track/Seen/Play actions beside the poster, a metadata
+//  card strip, expandable overview, and Cast & Crew. Replaces
 //  the storyboard MovieDetailViewController.
 //
 
@@ -158,7 +158,6 @@ struct MovieDetailView: View {
                     overviewSection(movie: movie)
                     relatedSection
                     castSection(movie: movie)
-                    trailersSection(movie: movie)
                 }
                 .padding(.bottom, 24)
             }
@@ -364,6 +363,13 @@ struct MovieDetailView: View {
                                           context: context, tint: model.tint)
                     }
                 }
+
+                // Play the movie's primary trailer, when one is available.
+                if let trailer = movie.primaryTrailer {
+                    glassButton(system: "play.fill", isOn: false, shape: Circle()) {
+                        selectedTrailer = trailer
+                    }
+                }
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: seen)
@@ -408,7 +414,7 @@ struct MovieDetailView: View {
             Text(overview)
                 .font(overviewFont)
                 .foregroundStyle(.white.opacity(0.85))
-                .lineLimit(overviewExpanded ? nil : 5)
+                .lineLimit(overviewExpanded ? nil : 2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background { overviewTruncationProbe(overview) }
 
@@ -450,7 +456,7 @@ struct MovieDetailView: View {
         ZStack {
             Text(overview)
                 .font(overviewFont)
-                .lineLimit(5)
+                .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background { heightReader { overviewLimitedHeight = $0 } }
             Text(overview)
@@ -500,36 +506,6 @@ struct MovieDetailView: View {
                             .frame(height: 0.5)
                             .padding(.leading, 72)
                     }
-                }
-            }
-        }
-    }
-
-    // MARK: - Trailers
-
-    @ViewBuilder
-    private func trailersSection(movie: Movie) -> some View {
-        if let trailers = movie.trailers, !trailers.isEmpty {
-            sectionHeader("Trailers")
-            LazyVStack(spacing: 0) {
-                ForEach(trailers) { trailer in
-                    Button {
-                        selectedTrailer = trailer
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "play.circle.fill")
-                                .font(.title2)
-                                .foregroundStyle(model.tint)
-                            Text(trailer.title.isEmpty ? trailer.type.rawValue : trailer.title)
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
                 }
             }
         }

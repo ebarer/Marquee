@@ -666,7 +666,10 @@ extension TMDBWrapper {
                 let trailer = MovieTrailer(id: t.id,
                                            title: t.name,
                                            key: t.key,
-                                           type: t.type)
+                                           type: t.type,
+                                           site: t.site,
+                                           official: t.official,
+                                           publishedAt: t.publishedAt)
                 trailers.append(trailer)
             }
 
@@ -800,6 +803,14 @@ extension TMDBWrapper {
                 var name: String
                 var key: String
                 var type: String
+                var site: String
+                var official: Bool
+                var publishedAt: String
+
+                enum CodingKeys: String, CodingKey {
+                    case id, name, key, type, site, official
+                    case publishedAt = "published_at"
+                }
             }
         }
     }

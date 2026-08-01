@@ -53,6 +53,7 @@ struct WatchListView: View {
                             movie: movie(from: entry),
                             subtitle: subtitle(for: entry),
                             showsSubtitle: showsRowSubtitle,
+                            duration: duration(for: entry),
                             rating: rating(for: entry),
                             ratingTint: activeListColor,
                             lists: lists,
@@ -535,6 +536,14 @@ struct WatchListView: View {
         }
     }
 
+    /// The runtime line ("2 hr 8 min") shown on To Watch rows, formatted like the
+    /// movie detail page. Only the To Watch list surfaces it; nil elsewhere or when
+    /// the entry has no stored runtime.
+    private func duration(for entry: WatchListEntry) -> String? {
+        guard selectedList?.kind == .toWatch else { return nil }
+        return movie(from: entry).duration
+    }
+
     /// Viewed is a browse history where the release date only adds noise, so its
     /// rows hide the subtitle. Other lists show it (or their own override).
     private var showsRowSubtitle: Bool {
@@ -546,6 +555,7 @@ struct WatchListView: View {
         let movie = Movie(id: entry.movieID, title: entry.title)
         movie.poster = entry.posterPath
         movie.releaseDate = entry.releaseDate
+        movie.runtime = entry.runtime
         return movie
     }
 

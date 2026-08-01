@@ -37,6 +37,23 @@ class Movie: NSObject {
         return "\(self.runtime! / 60) hr \(self.runtime! % 60) min"
     }
 
+    /// The single most representative trailer for the movie, if any. Considers
+    /// only YouTube trailers/teasers (ignoring clips, featurettes, and other
+    /// extras) and prefers official, full trailers, then the most recent.
+    var primaryTrailer: MovieTrailer? {
+        trailers?
+            .filter { $0.site == "YouTube" && $0.isTrailer }
+            .max { lhs, rhs in
+                // Rank by type/official first; break ties by recency, matching
+                // how TMDB features the newest official trailer. ISO-8601 UTC
+                // timestamps sort chronologically as plain strings.
+                if lhs.primaryScore != rhs.primaryScore {
+                    return lhs.primaryScore < rhs.primaryScore
+                }
+                return lhs.publishedAt < rhs.publishedAt
+            }
+    }
+
     /// True for non-acting "noise" credits in a filmography — talk-show "Self"
     /// appearances (and variants like "Self - Guest") and "Thanks" credits — so a
     /// filter can hide them. Keyed off `creditRole`, so only meaningful on movies
@@ -200,19 +217,53 @@ struct MovieTrailer: Identifiable {
     var title: String
     var key: String
     var type: TrailerType
-    
+    var site: String
+    var official: Bool
+    /// ISO-8601 UTC publish timestamp (e.g. "2026-07-21T16:00:31.000Z"), used
+    /// to prefer the most recent trailer. Compared as a string, which sorts
+    /// chronologically for this fixed format.
+    var publishedAt: String
+
     enum TrailerType: String {
         case Teaser = "Teaser"
         case Trailer = "Trailer"
         case Clip = "Clip"
         case Featurette = "Featurette"
+        /// Any TMDB video type we don't rank as a trailer — e.g. "Behind the
+        /// Scenes", "Bloopers". Unknown types map here so they're never mistaken
+        /// for a real trailer.
+        case other = "Other"
     }
-    
-    init(id: String, title: String, key: String, type: String) {
+
+    init(id: String, title: String, key: String, type: String, site: String, official: Bool, publishedAt: String) {
         self.id = id
         self.title = title
         self.key = key
-        self.type = TrailerType(rawValue: type) ?? .Trailer
+        self.type = TrailerType(rawValue: type) ?? .other
+        self.site = site
+        self.official = official
+        self.publishedAt = publishedAt
+    }
+
+    /// True for genuine trailers and teasers, as opposed to clips, featurettes,
+    /// behind-the-scenes, and other extras. Only these are eligible to be a
+    /// movie's primary trailer.
+    var isTrailer: Bool {
+        type == .Trailer || type == .Teaser
+    }
+
+    /// Ranks how representative this video is as the movie's primary trailer.
+    /// Higher is better: full trailers beat teasers, and official uploads are
+    /// preferred within each tier.
+    var primaryScore: Int {
+        var score: Int
+        switch type {
+        case .Trailer: score = 40
+        case .Teaser: score = 30
+        default: score = 0
+        }
+        if official { score += 5 }
+        return score
     }
     
     var url: URL? {
