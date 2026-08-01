@@ -55,11 +55,9 @@ struct RootView: View {
                 // Declare the search field only on the search tab, so it never
                 // appears above the Discover or Lists content.
                 .searchable(text: $searchModel.query, prompt: searchModel.scope.placeholder)
-                .searchScopes($searchModel.scope) {
-                    ForEach(SearchModel.Scope.allCases) { scope in
-                        Text(scope.rawValue).tag(scope)
-                    }
-                }
+                // The system scope bar (.searchScopes) isn't reliably shown by
+                // the bottom-docked tab search field, so SearchView renders its
+                // own scope picker. Scope changes still re-run the search below.
                 .onChange(of: searchModel.query) { _, newValue in
                     searchModel.search(newValue)
                 }

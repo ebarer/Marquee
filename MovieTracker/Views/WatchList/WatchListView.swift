@@ -51,6 +51,8 @@ struct WatchListView: View {
                             movie: movie(from: entry),
                             subtitle: subtitle(for: entry),
                             showsSubtitle: showsRowSubtitle,
+                            rating: rating(for: entry),
+                            ratingTint: activeListColor,
                             lists: lists,
                             context: context,
                             leadingActions: { leadingAction(for: entry) },
@@ -371,10 +373,6 @@ struct WatchListView: View {
     private var watchList: MovieList? { lists.first { $0.kind == .toWatch } }
     private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
 
-    private var showsWatchedDate: Bool {
-        selectedList?.tracksWatchedDate == true && watchedSortKey == .dateWatched
-    }
-
     private func select(_ list: MovieList?) {
         selectedListUUID = list?.uuid
     }
@@ -450,11 +448,26 @@ struct WatchListView: View {
         }
     }
 
-    /// When the list sorts by date watched, surface that date; otherwise let the
-    /// row fall back to the movie's release date.
+    /// The Watched list always labels each row with the date the movie was watched;
+    /// every other list lets the row fall back to the movie's release date.
     private func subtitle(for entry: WatchListEntry) -> String? {
-        guard showsWatchedDate else { return nil }
+        guard selectedList?.tracksWatchedDate == true else { return nil }
         return entry.dateWatched.map { "Watched \($0.toString())" }
+    }
+
+    /// The personal rating to show on a row, if the movie has been watched. Watched
+    /// rows read their own entry; custom-list rows look the movie up on the Watched
+    /// list so a rating still shows once it's been seen. Other lists show none.
+    private func rating(for entry: WatchListEntry) -> Double? {
+        switch selectedList?.kind {
+        case .watched:
+            return entry.userRating
+        case .custom:
+            guard let watchedList else { return nil }
+            return WatchListStore.rating(for: entry.movieID, in: watchedList)
+        default:
+            return nil
+        }
     }
 
     /// Viewed is a browse history where the release date only adds noise, so its

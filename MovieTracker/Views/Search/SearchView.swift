@@ -12,11 +12,18 @@ import SwiftUI
 import SwiftData
 
 struct SearchView: View {
-    let model: SearchModel
+    @Bindable var model: SearchModel
 
     @Environment(\.modelContext) private var context
     @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
     private var lists: [MovieList]
+
+    /// Measured height of the floating scope bar, used to inset the results so
+    /// the first row starts just below it.
+    @State private var scopeBarHeight: CGFloat = 0
+
+    /// Gap between the bottom of the scope bar and the first result at rest.
+    private let scopeBarGap: CGFloat = 10
 
     var body: some View {
         List {
@@ -27,8 +34,27 @@ struct SearchView: View {
             }
         }
         .listStyle(.plain)
+        // Inset the results so the top row rests just below the floating scope
+        // bar, but still scrolls up underneath it.
+        .contentMargins(.top, isSearching ? scopeBarHeight + scopeBarGap : 0, for: .scrollContent)
         .navigationTitle(isSearching ? "Search: \(trimmedQuery)" : "Search")
         .navigationBarTitleDisplayMode(.inline)
+        .overlay(alignment: .top) {
+            // Own scope bar, z-mounted over the content like the system one,
+            // since the system scope bar isn't shown by the bottom-docked tab
+            // search field. Kept visible whenever a search is active so the
+            // scope can always be switched (e.g. Movies ↔ People).
+            if isSearching {
+                GlassScopeBar(
+                    SearchModel.Scope.allCases,
+                    selection: $model.scope,
+                    title: \.rawValue
+                )
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { scopeBarHeight = $0 }
+            }
+        }
         .overlay {
             // Nothing typed yet and no history: gently explain the screen.
             if !isSearching && model.recentSearches.isEmpty {

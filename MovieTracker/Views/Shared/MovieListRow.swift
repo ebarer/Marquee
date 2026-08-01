@@ -21,6 +21,11 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     var role: String? = nil
     /// When false, the row shows no subtitle line at all (no release-date fallback).
     var showsSubtitle: Bool = true
+    /// The user's personal rating in stars (0.5-step); shown as read-only stars
+    /// beneath the subtitle when set.
+    var rating: Double? = nil
+    /// Fill color for the rating stars.
+    var ratingTint: Color = .appAccent
     let lists: [MovieList]
     let context: ModelContext
     @ViewBuilder var leadingActions: () -> Leading
@@ -28,7 +33,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
 
     var body: some View {
         NavigationLink(value: movie) {
-            MovieRow(movie: movie, subtitle: subtitle, role: role, showsSubtitle: showsSubtitle)
+            MovieRow(movie: movie, subtitle: subtitle, role: role,
+                     showsSubtitle: showsSubtitle, rating: rating, ratingTint: ratingTint)
         }
         // Halve the default plain-list vertical padding (~11pt) while keeping the
         // standard horizontal inset so alignment and separators are unchanged.

@@ -27,6 +27,7 @@
 		CE78BD5320C087F2001E6DB6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE78BD5220C087F2001E6DB6 /* AppDelegate.swift */; };
 		CE78BD8420C112D8001E6DB6 /* Movie.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE78BD8320C112D8001E6DB6 /* Movie.swift */; };
 		CE8041A7301D441300F5D6F2 /* EmojiField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8041A6301D441300F5D6F2 /* EmojiField.swift */; };
+		CE8041B4301D93A200F5D6F2 /* GlassScopeBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8041B3301D93A200F5D6F2 /* GlassScopeBar.swift */; };
 		CE822F48301CB8C40070F69B /* WatchDataArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F47301CB8C40070F69B /* WatchDataArchive.swift */; };
 		CE822F4C301D13DF0070F69B /* ListManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F4B301D13DF0070F69B /* ListManagerView.swift */; };
 		CE822F4E301D1B450070F69B /* ListIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F4D301D1B450070F69B /* ListIcon.swift */; };
@@ -74,6 +75,7 @@
 		CE78BD5220C087F2001E6DB6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		CE78BD8320C112D8001E6DB6 /* Movie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Movie.swift; sourceTree = "<group>"; };
 		CE8041A6301D441300F5D6F2 /* EmojiField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiField.swift; sourceTree = "<group>"; };
+		CE8041B3301D93A200F5D6F2 /* GlassScopeBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassScopeBar.swift; sourceTree = "<group>"; };
 		CE822F47301CB8C40070F69B /* WatchDataArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDataArchive.swift; sourceTree = "<group>"; };
 		CE822F4B301D13DF0070F69B /* ListManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListManagerView.swift; sourceTree = "<group>"; };
 		CE822F4D301D1B450070F69B /* ListIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListIcon.swift; sourceTree = "<group>"; };
@@ -186,6 +188,7 @@
 		CE569782301C873700DF9142 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				CE8041B3301D93A200F5D6F2 /* GlassScopeBar.swift */,
 				CE8041A6301D441300F5D6F2 /* EmojiField.swift */,
 				CE569751301C19AA00DF9142 /* MovieRow.swift */,
 				CE56977B301C824D00DF9142 /* MovieListRow.swift */,
@@ -349,6 +352,7 @@
 				CEEAFCE43019D11E00D06E0E /* TMDBWrapper+Async.swift in Sources */,
 				CE8C0C90301AD31100F08C6A /* WatchListEntry.swift in Sources */,
 				CEDA8BC321997F71006BB3CD /* String+Extension.swift in Sources */,
+				CE8041B4301D93A200F5D6F2 /* GlassScopeBar.swift in Sources */,
 				CE569768301C71FF00DF9142 /* MovieListActions.swift in Sources */,
 				CEEAFCFF3019DEE200D06E0E /* PersonDetailView.swift in Sources */,
 				CEEAFCE83019D1D100D06E0E /* Color+ProjectColors.swift in Sources */,
@@ -514,7 +518,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.07.31.5;
+				CURRENT_PROJECT_VERSION = 2026.07.31.6;
 				DEVELOPMENT_TEAM = 5ZJB9DN7AQ;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
@@ -538,7 +542,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.07.31.5;
+				CURRENT_PROJECT_VERSION = 2026.07.31.6;
 				DEVELOPMENT_TEAM = 5ZJB9DN7AQ;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
