@@ -16,6 +16,11 @@ import SwiftData
 
 @Model
 final class WatchListEntry {
+    /// Stable identity used to collapse duplicate memberships deterministically
+    /// (lowest UUID wins) across devices. A given membership is one shared CloudKit
+    /// record with the same UUID everywhere; two independently-created memberships
+    /// for the same movie have different UUIDs.
+    var uuid: UUID = UUID()
     var movieID: Int = 0
     var title: String = ""
     var posterPath: String?
@@ -34,6 +39,7 @@ final class WatchListEntry {
     var list: MovieList?
 
     init(movie: Movie) {
+        self.uuid = UUID()
         self.movieID = movie.id
         self.title = movie.title
         self.posterPath = movie.poster
@@ -62,6 +68,9 @@ enum WatchListStore {
     /// list gets a high sort order so it always trails the user's custom lists.
     @discardableResult
     static func ensureDefaultLists(in context: ModelContext) -> (toWatch: MovieList, watched: MovieList) {
+        // Collapse any duplicate built-in lists a prior CloudKit sync produced
+        // before normalizing/recreating the canonical ones.
+        deduplicateBuiltInLists(in: context)
         let toWatch = defaultList(kind: .toWatch, name: "Watch List", symbol: "bookmark", sortOrder: 0, in: context)
         let watched = defaultList(kind: .watched, name: "Watched", symbol: "checkmark.rectangle.stack", sortOrder: 1, in: context)
         _ = defaultList(kind: .viewed, name: "Viewed", symbol: "clock.arrow.circlepath", sortOrder: 1000, in: context)
@@ -80,20 +89,134 @@ enum WatchListStore {
         return insert(MovieList(name: name, symbol: symbol, kind: kind, sortOrder: sortOrder), in: context)
     }
 
-    /// All lists in display order.
+    /// All live lists in display order (duplicates awaiting cleanup excluded).
     static func allLists(in context: ModelContext) -> [MovieList] {
         let descriptor = FetchDescriptor<MovieList>(
             sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]
         )
-        return (try? context.fetch(descriptor)) ?? []
+        return ((try? context.fetch(descriptor)) ?? []).filter { !$0.isDeduplicated }
     }
 
-    /// The built-in list of a given kind, if it exists.
+    /// The canonical live list of a given kind, if it exists — the lowest-UUID
+    /// copy that hasn't been marked as a duplicate. Every device agrees on it.
     static func list(kind: ListKind, in context: ModelContext) -> MovieList? {
+        lists(kind: kind, in: context).first
+    }
+
+    /// Live (non-duplicate) lists of a given kind, ordered by UUID. Normally one;
+    /// duplicates a prior CloudKit sync produced are excluded here and cleaned up
+    /// by `deduplicateBuiltInLists`.
+    static func lists(kind: ListKind, in context: ModelContext) -> [MovieList] {
+        listsOfKind(kind, in: context).filter { !$0.isDeduplicated }
+    }
+
+    /// Every list of a kind, including ones already marked as duplicates, ordered
+    /// by UUID so all devices pick the same canonical (first) one.
+    private static func listsOfKind(_ kind: ListKind, in context: ModelContext) -> [MovieList] {
         let raw = kind.rawValue
-        var descriptor = FetchDescriptor<MovieList>(predicate: #Predicate { $0.kindRaw == raw })
-        descriptor.fetchLimit = 1
-        return (try? context.fetch(descriptor))?.first
+        let descriptor = FetchDescriptor<MovieList>(predicate: #Predicate { $0.kindRaw == raw })
+        let fetched = (try? context.fetch(descriptor)) ?? []
+        return fetched.sorted { $0.uuid.uuidString < $1.uuid.uuidString }
+    }
+
+    /// How long a merged-away duplicate list waits before it's actually deleted,
+    /// giving its entry re-parent time to sync so the delete can't race it.
+    private static let deduplicationGracePeriod: TimeInterval = 30
+
+    /// Converges duplicate built-in lists (To Watch / Watched / Viewed) to a
+    /// single record per kind, safely for CloudKit. Two devices that seed their
+    /// defaults before syncing each create their own built-in records; this
+    /// collapses them so every device shows one list with all its movies.
+    ///
+    /// Runs in two phases so a list is never re-parented and deleted in the same
+    /// pass:
+    ///  • Merge — move every duplicate's entries onto the lowest-UUID winner,
+    ///    collapse movies that now appear twice, and mark the duplicate (hiding it
+    ///    from the UI). Marking, not deleting, defers the delete.
+    ///  • Prune — delete a marked duplicate only once it's empty and its mark is
+    ///    older than `deduplicationGracePeriod`, i.e. the entry moves have had
+    ///    time to sync. Because entries are shared CloudKit records, an empty
+    ///    duplicate is empty on every device, so the delete can't drop a movie.
+    ///
+    /// Deterministic (lowest UUID) so all devices converge identically; idempotent.
+    @discardableResult
+    static func deduplicateBuiltInLists(in context: ModelContext) -> Bool {
+        var changed = false
+        for kind in [ListKind.toWatch, .watched, .viewed] {
+            let all = listsOfKind(kind, in: context)
+            guard let winner = all.first(where: { !$0.isDeduplicated }) else {
+                if !all.isEmpty {
+                    SyncLog.logger.log("🔧 dedup kind=\(kind.rawValue): \(all.count) copies, all marked — nothing live")
+                }
+                continue
+            }
+            let duplicateCount = all.count - 1
+            var movedEntries = 0
+            var markedNow = 0
+
+            // Merge: move every other copy's entries onto the winner and mark it.
+            for other in all where other.persistentModelID != winner.persistentModelID {
+                for moving in other.entries ?? [] {
+                    moving.list = winner
+                    movedEntries += 1
+                    changed = true
+                }
+                if other.deduplicatedDate == nil {
+                    other.deduplicatedDate = Date()
+                    markedNow += 1
+                    changed = true
+                }
+            }
+
+            // Collapse movies that now appear on the winner more than once.
+            if dedupeEntries(in: winner, context: context) { changed = true }
+
+            // Prune: remove duplicates whose moves have had time to sync.
+            var pruned = 0
+            for duplicate in all where duplicate.isDeduplicated {
+                let age = Date().timeIntervalSince(duplicate.deduplicatedDate ?? .distantFuture)
+                if age > deduplicationGracePeriod, (duplicate.entries ?? []).isEmpty {
+                    context.delete(duplicate)
+                    pruned += 1
+                    changed = true
+                }
+            }
+
+            if duplicateCount > 0 || movedEntries > 0 || pruned > 0 {
+                let w = String(winner.uuid.uuidString.prefix(8))
+                SyncLog.logger.log("🔧 dedup kind=\(kind.rawValue): \(duplicateCount) duplicate(s), winner=\(w, privacy: .public), movedEntries=\(movedEntries), markedNow=\(markedNow), pruned=\(pruned)")
+            }
+        }
+        if changed { try? context.save() }
+        return changed
+    }
+
+    /// Collapses entries on a list that share a `movieID`, keeping the lowest-UUID
+    /// entry (so every device keeps the same one) and folding the rest into it.
+    @discardableResult
+    private static func dedupeEntries(in list: MovieList, context: ModelContext) -> Bool {
+        var changed = false
+        let groups = Dictionary(grouping: list.entries ?? [], by: { $0.movieID })
+        for (_, entries) in groups where entries.count > 1 {
+            let ordered = entries.sorted { $0.uuid.uuidString < $1.uuid.uuidString }
+            let keep = ordered[0]
+            for dropped in ordered.dropFirst() {
+                merge(dropped, into: keep)
+                delete(dropped, in: context)
+            }
+            changed = true
+        }
+        return changed
+    }
+
+    /// Folds a duplicate entry's data into the one being kept: earliest add date
+    /// wins and any field the survivor is missing is filled from the duplicate.
+    private static func merge(_ dropped: WatchListEntry, into keep: WatchListEntry) {
+        keep.dateAdded = min(keep.dateAdded, dropped.dateAdded)
+        if keep.dateWatched == nil { keep.dateWatched = dropped.dateWatched }
+        if keep.userRating == nil { keep.userRating = dropped.userRating }
+        if keep.runtime == nil { keep.runtime = dropped.runtime }
+        if keep.posterPath == nil { keep.posterPath = dropped.posterPath }
     }
 
     // MARK: Membership

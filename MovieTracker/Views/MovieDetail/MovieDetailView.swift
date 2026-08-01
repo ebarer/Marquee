@@ -108,7 +108,9 @@ struct MovieDetailView: View {
             }
         }
         .task {
-            WatchListStore.ensureDefaultLists(in: context)
+            // Built-in lists are seeded once at app launch (RootView); no need to
+            // seed here, which would risk creating duplicates before the initial
+            // CloudKit import lands.
             refreshMembership()
             await model.load(id: movieID)
             // Once the full movie is loaded, log the visit to the Viewed history

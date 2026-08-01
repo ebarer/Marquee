@@ -33,9 +33,19 @@ final class MovieList {
     var sortOrder: Int = 0
     var createdAt: Date = Date()
 
+    /// Set when this list has been identified as a duplicate built-in list and its
+    /// entries have been moved to the surviving copy (see
+    /// `WatchListStore.deduplicateBuiltInLists`). Such a list is hidden from the UI
+    /// and deleted on a later pass, once the entry moves have had time to sync —
+    /// deferring the delete keeps CloudKit from racing it against the re-parent.
+    var deduplicatedDate: Date?
+
     /// Entries belonging to this list. Deleting the list removes its entries.
     @Relationship(deleteRule: .cascade, inverse: \WatchListEntry.list)
     var entries: [WatchListEntry]? = []
+
+    /// A duplicate built-in list awaiting cleanup — hidden from the UI.
+    var isDeduplicated: Bool { deduplicatedDate != nil }
 
     init(name: String, symbol: String, kind: ListKind = .custom, sortOrder: Int = 0, colorIndex: Int = 0) {
         self.uuid = UUID()

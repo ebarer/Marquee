@@ -10,6 +10,7 @@
 
 import SwiftUI
 import SwiftData
+import CoreData
 
 struct RootView: View {
     /// Shared SwiftData container for the Watch List, synced through the app's
@@ -22,6 +23,9 @@ struct RootView: View {
             fatalError("Failed to create ModelContainer: \(error)")
         }
     }()
+
+    /// Tracks CloudKit sync activity so the Lists screen can show a sync indicator.
+    @State private var syncMonitor = CloudSyncMonitor()
 
     // Search state is shared with the search tab. The query lives on the model
     // so tapping a recent search can repopulate the field.
@@ -82,9 +86,65 @@ struct RootView: View {
         .tint(.appAccent)
         .preferredColorScheme(.dark)
         .modelContainer(Self.sharedContainer)
+        .environment(syncMonitor)
         .task {
-            // Make sure the two built-in lists exist before any screen appears.
-            WatchListStore.ensureDefaultLists(in: Self.sharedContainer.mainContext)
+            let context = Self.sharedContainer.mainContext
+            SyncLog.snapshot("launch", in: context)
+
+            // On a brand-new local store (e.g. a fresh install for an existing
+            // iCloud account), wait briefly for the first CloudKit import before
+            // seeding the built-in lists, so we don't create duplicates of lists
+            // we're about to receive. Devices that already have their lists locally
+            // seed/reconcile immediately — no launch delay.
+            if WatchListStore.list(kind: .toWatch, in: context) == nil {
+                SyncLog.logger.log("🌱 empty local store — waiting up to 6s for initial import before seeding")
+                let imported = await Self.waitForInitialImport(timeout: .seconds(6))
+                SyncLog.logger.log("🌱 initial wait ended (\(imported ? "import arrived" : "timed out", privacy: .public))")
+            } else {
+                SyncLog.logger.log("🌱 existing local store — seeding/reconciling immediately")
+            }
+            WatchListStore.ensureDefaultLists(in: context)
+            SyncLog.snapshot("after seed", in: context)
+
+            // CloudKit imports from another device arrive after launch and can
+            // bring duplicate built-in lists. Reconcile whenever remote changes
+            // land, debounced so we act once a burst of imported records settles
+            // rather than on every partial notification.
+            var debounce: Task<Void, Never>?
+            for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
+                debounce?.cancel()
+                debounce = Task {
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled else { return }
+                    SyncLog.logger.log("🔁 remote change settled — reconciling")
+                    WatchListStore.deduplicateBuiltInLists(in: context)
+                    SyncLog.snapshot("after reconcile", in: context)
+                }
+            }
+        }
+    }
+}
+
+extension RootView {
+    /// Waits for the first remote store change (a CloudKit import landing) or the
+    /// timeout, whichever comes first. Used to give a fresh device a chance to
+    /// receive existing lists before it seeds its own. Returns `true` if a remote
+    /// change arrived, `false` if it timed out.
+    static func waitForInitialImport(timeout: Duration) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask {
+                for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
+                    return true
+                }
+                return false
+            }
+            group.addTask {
+                try? await Task.sleep(for: timeout)
+                return false
+            }
+            let result = await group.next() ?? false
+            group.cancelAll()
+            return result
         }
     }
 }

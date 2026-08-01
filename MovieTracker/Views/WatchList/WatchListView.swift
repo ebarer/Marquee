@@ -15,8 +15,29 @@ import UniformTypeIdentifiers
 
 struct WatchListView: View {
     @Environment(\.modelContext) private var context
+    /// Present only when running inside the app (absent in previews).
+    @Environment(CloudSyncMonitor.self) private var syncMonitor: CloudSyncMonitor?
     @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
-    private var lists: [MovieList]
+    private var allLists: [MovieList]
+
+    /// The queried lists with any duplicate built-in lists collapsed, so the
+    /// switcher never shows two "Watch List"/"Watched"/"Viewed" entries during
+    /// the window where CloudKit has synced a duplicate but
+    /// `deduplicateBuiltInLists` hasn't merged it away yet. For each built-in
+    /// kind only the canonical (lowest-UUID) list is kept — matching the survivor
+    /// the merge converges on — while custom lists pass through unchanged.
+    private var lists: [MovieList] {
+        // Duplicates awaiting cleanup are hidden outright.
+        let visible = allLists.filter { !$0.isDeduplicated }
+        var canonicalID: [ListKind: UUID] = [:]
+        for list in visible where list.kind != .custom {
+            if let winner = canonicalID[list.kind], winner.uuidString <= list.uuid.uuidString {
+                continue
+            }
+            canonicalID[list.kind] = list.uuid
+        }
+        return visible.filter { $0.kind == .custom || canonicalID[$0.kind] == $0.uuid }
+    }
 
     @State private var selectedListUUID: UUID?
     @State private var editor: ListEditor?
@@ -114,6 +135,14 @@ struct WatchListView: View {
                 listActionsMenu
                     .tint(activeListColor)
             }
+            if syncMonitor?.isSyncing == true {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ProgressView()
+                        .controlSize(.regular)
+                        .tint(activeListColor)
+                        .accessibilityLabel("Syncing with iCloud")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 sortMenu
                     .tint(activeListColor)
@@ -164,14 +193,10 @@ struct WatchListView: View {
             importProgress: importProgress,
             onImport: handleImport
         ))
-        .onAppear {
-            WatchListStore.ensureDefaultLists(in: context)
-            // The selection lives only in @State — it survives tab switches this
-            // session but resets to the Watch List on a fresh launch.
-            if selectedListUUID == nil {
-                selectedListUUID = WatchListStore.list(kind: .toWatch, in: context)?.uuid
-            }
-        }
+        .onAppear { selectDefaultIfNeeded() }
+        // Seeding is deferred to app launch (RootView), so the lists may arrive a
+        // moment later; pick the Watch List as soon as they do.
+        .onChange(of: lists.count) { _, _ in selectDefaultIfNeeded() }
         .onChange(of: selectedListUUID) { _, _ in
             loadSort()
         }
@@ -443,6 +468,14 @@ struct WatchListView: View {
         selectedListUUID = list?.uuid
     }
 
+    /// Defaults the selection to the Watch List once lists are available. The
+    /// selection lives only in @State (survives tab switches this session, resets
+    /// on a fresh launch).
+    private func selectDefaultIfNeeded() {
+        guard selectedListUUID == nil else { return }
+        selectedListUUID = lists.first { $0.kind == .toWatch }?.uuid
+    }
+
     // MARK: - Data
 
     /// A month/year group of entries, e.g. "May 2025".
@@ -660,11 +693,22 @@ private struct ImportProgressOverlay: View {
     }
 }
 
-#Preview {
+#Preview("Idle") {
     NavigationStack {
         WatchListView()
             .movieTrackerDestinations()
     }
     .modelContainer(previewModelContainer)
+    .environment(CloudSyncMonitor(isSyncing: false))
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Syncing") {
+    NavigationStack {
+        WatchListView()
+            .movieTrackerDestinations()
+    }
+    .modelContainer(previewModelContainer)
+    .environment(CloudSyncMonitor(isSyncing: true))
     .preferredColorScheme(.dark)
 }

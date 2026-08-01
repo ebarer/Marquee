@@ -100,14 +100,33 @@ extension Person {
 
 // MARK: - Sample SwiftData container
 
-/// An in-memory container seeded with the built-in lists plus one custom list.
+/// An in-memory container seeded with the built-in lists, one custom list, and a
+/// few movies on the Watch List.
+///
+/// Seeding is done by inserting directly rather than going through
+/// `ensureDefaultLists`. That helper *fetches* to check what already exists, and
+/// a freshly created in-memory store has no connection until SwiftUI attaches it
+/// to a view — fetching here crashes the preview with "No eligible connection
+/// available". Inserts don't hit the store, so they're safe, and `@Query` picks
+/// the objects up once the container is attached.
 @MainActor
 let previewModelContainer: ModelContainer = {
     let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: WatchListEntry.self, MovieList.self,
                                         configurations: configuration)
     let context = container.mainContext
-    WatchListStore.ensureDefaultLists(in: context)
+
+    let toWatch = MovieList(name: "Watch List", symbol: "bookmark", kind: .toWatch, sortOrder: 0)
+    context.insert(toWatch)
+    context.insert(MovieList(name: "Watched", symbol: "checkmark.rectangle.stack", kind: .watched, sortOrder: 1))
+    context.insert(MovieList(name: "Viewed", symbol: "clock.arrow.circlepath", kind: .viewed, sortOrder: 1000))
     context.insert(MovieList(name: "Favorites", symbol: "heart", kind: .custom, sortOrder: 2))
+
+    for movie in Movie.previewList {
+        let entry = WatchListEntry(movie: movie)
+        entry.list = toWatch
+        context.insert(entry)
+    }
+
     return container
 }()
