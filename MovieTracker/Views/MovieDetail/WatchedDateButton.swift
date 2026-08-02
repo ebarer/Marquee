@@ -1,5 +1,5 @@
 //
-//  WatchedDate.swift
+//  WatchedDateButton.swift
 //  MovieTracker
 //
 
@@ -8,7 +8,7 @@ import SwiftData
 
 /// The date the user watched a title, tappable to open a graphical date picker.
 /// Changes write straight through to the `MediaItem`.
-struct WatchedDate: View {
+struct WatchedDateButton: View {
     let movie: Movie
     let context: ModelContext
     let tint: Color
@@ -36,6 +36,7 @@ struct WatchedDate: View {
             // System timezone (not the UTC-pinned detail formatter) so the shown day
             // matches the picker selection.
             Text(date, format: .dateTime.month(.abbreviated).day().year())
+                .foregroundStyle(tint)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -67,4 +68,23 @@ struct WatchedDate: View {
             .presentationDragIndicator(.visible)
         }
     }
+}
+
+#Preview("Watched title") {
+    // previewList[1] is seeded watched (today) in the preview container.
+    WatchedDateButton(movie: Movie.previewList[1],
+                      context: previewModelContainer.mainContext, tint: .appAccent)
+        .padding()
+        .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Unset — defaults to today") {
+    WatchedDateButton(movie: .preview,
+                      context: previewModelContainer.mainContext, tint: .yellow)
+        .padding()
+        .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .preferredColorScheme(.dark)
 }

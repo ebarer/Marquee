@@ -2,9 +2,6 @@
 //  SceneDelegate.swift
 //  MovieTracker
 //
-//  Installs the SwiftUI interface into the window for the modern
-//  UIKit scene-based lifecycle.
-//
 
 import UIKit
 import SwiftUI

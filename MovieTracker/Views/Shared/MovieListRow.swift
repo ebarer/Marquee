@@ -51,3 +51,32 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
         .movieContextMenu(for: movie, lists: lists, context: context)
     }
 }
+
+#Preview {
+    NavigationStack {
+        List {
+            // Plain row: falls back to the release date as its subtitle.
+            MovieListRow(movie: .preview, lists: [],
+                         context: previewModelContainer.mainContext,
+                         leadingActions: {
+                             WatchedSwipeButton(movie: .preview,
+                                                context: previewModelContainer.mainContext)
+                         }, trailingActions: {
+                             WatchListSwipeButton(movie: .preview,
+                                                  context: previewModelContainer.mainContext)
+                         })
+
+            // Enriched row: custom subtitle, role, duration, and a rating.
+            MovieListRow(movie: Movie.previewList[1],
+                         subtitle: "Watched Aug 2, 2026", role: "Director",
+                         duration: "2 hr 53 min", rating: 4.0,
+                         lists: [], context: previewModelContainer.mainContext,
+                         leadingActions: { EmptyView() },
+                         trailingActions: { EmptyView() })
+        }
+        .listStyle(.plain)
+        .movieTrackerDestinations()
+    }
+    .modelContainer(previewModelContainer)
+    .preferredColorScheme(.dark)
+}

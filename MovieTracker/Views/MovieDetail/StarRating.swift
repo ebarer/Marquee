@@ -94,3 +94,21 @@ struct StarRating: View {
         return min(5, value)
     }
 }
+
+#Preview("Rated (4 stars)") {
+    // previewList[1] is seeded with a 4-star rating in the preview container.
+    StarRating(movie: Movie.previewList[1],
+               context: previewModelContainer.mainContext, tint: .appAccent)
+        .padding()
+        .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Unrated") {
+    StarRating(movie: .preview, context: previewModelContainer.mainContext, tint: .yellow)
+        .padding()
+        .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .preferredColorScheme(.dark)
+}

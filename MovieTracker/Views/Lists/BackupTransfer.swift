@@ -79,3 +79,11 @@ private struct ImportProgressOverlay: View {
         }
     }
 }
+
+#Preview("Import progress") {
+    ZStack {
+        Color.appBackground.ignoresSafeArea()
+        ImportProgressOverlay(done: 37, total: 120)
+    }
+    .preferredColorScheme(.dark)
+}

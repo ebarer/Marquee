@@ -80,3 +80,36 @@ extension View {
         modifier(MovieContextMenu(movie: movie, lists: lists, context: context))
     }
 }
+
+#Preview("Swipe actions + context menu") {
+    // Swipe a row to reveal the actions; long-press for the membership menu.
+    NavigationStack {
+        List {
+            MovieRow(movie: .preview)
+                .swipeActions(edge: .leading) {
+                    WatchedSwipeButton(movie: .preview,
+                                       context: previewModelContainer.mainContext)
+                }
+                .swipeActions(edge: .trailing) {
+                    WatchListSwipeButton(movie: .preview,
+                                         context: previewModelContainer.mainContext)
+                }
+                .movieContextMenu(for: .preview, lists: [],
+                                  context: previewModelContainer.mainContext)
+        }
+        .listStyle(.plain)
+    }
+    .modelContainer(previewModelContainer)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Buttons") {
+    HStack(spacing: 24) {
+        WatchedSwipeButton(movie: .preview, context: previewModelContainer.mainContext)
+        WatchListSwipeButton(movie: .preview, context: previewModelContainer.mainContext)
+    }
+    .padding()
+    .background(Color.appBackground)
+    .modelContainer(previewModelContainer)
+    .preferredColorScheme(.dark)
+}

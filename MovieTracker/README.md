@@ -1,14 +1,23 @@
 # To-Do
 
-Important
-- [x] Data Import/export
-- [ ] Fix list management, it's clunky (1 location for editing all, sorting, etc.)
-- [ ] Fix list add popover, not enough padding, no morph, etc.
+Important:
+- [ ] App crashes when trying to use an emoji for a list icon
 
-Other
-- [ ] Movie: add personal (local) rating
-- [ ] Movie: add trailers and playback (side scroller cell, below overview)
-- [ ] Person: add "Best Known For" category (side scroller)
-- [ ] Person: add TV rows for completion (non-selectable)
-- [ ] Person: zoom on profile picture + other pictures?
-- [ ] Person: add "Read More" label
+Smaller/Cosmetic:
+- [ ] Animate deletion/completion in lists
+- [ ] Tapping on Lists tab should change selected list back to Watch List
+- [ ] Remove the + button, just have the list button in the top left
+- [ ] Fix custom colors and offer color picker in first slot
+- [ ] Watch list, and custom, should support ordering by the date added
+- [ ] Bulk update date watched?
+- [ ] Support landscape?
+- [ ] Add badges to grid view to indicate list association
+
+Ideas:
+- [ ] Store more information offline (local cache) so the app can be used without internet
+- [ ] Add TV shows
+- [ ] Unify search
+- [ ] Add more symbols for lists (cloud?, lamp?)
+- [ ] Share lists
+- [ ] Add access to additional photos for people?
+- [ ] 

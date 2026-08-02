@@ -39,15 +39,7 @@ struct ListsView: View {
 
     @AppStorage("watchedListAscending") private var watchedAscending = false
     @AppStorage("viewedListAscending") private var viewedAscending = false
-    @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .releaseDate
-
-    // Backup import/export state.
-    @State private var exportDocument: WatchDataDocument?
-    @State private var showExporter = false
-    @State private var showImporter = false
-    @State private var importSummary: ImportSummary?
-    @State private var transferError: String?
-    @State private var importProgress: (done: Int, total: Int)?
+    @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .dateWatched
 
     @State private var showListManager = false
 
@@ -68,30 +60,45 @@ struct ListsView: View {
                 }
                 .tint(.primary)
             }
-            ToolbarItem(placement: .topBarLeading) {
-                ListActionsMenu(
-                    canEditLists: !customLists.isEmpty,
-                    canClearViewed: resolvedSelection == .viewed && movieCount > 0,
-                    onNewList: { editor = .create(addMovie: nil) },
-                    onEditLists: { showListManager = true },
-                    onClearViewed: { store?.clearViewed() },
-                    onImport: { showImporter = true },
-                    onExport: prepareExport
-                )
+            ToolbarItemGroup(placement: .topBarLeading) {
+                Button {
+                    editor = .create(addMovie: nil)
+                } label: {
+                    Label("New List", systemImage: "plus")
+                }
                 .tint(activeColor)
-            }
-            if syncMonitor?.isSyncing == true {
-                ToolbarItem(placement: .topBarTrailing) {
+                // While iCloud is syncing, the manage button is briefly replaced by a
+                // spinner in place rather than adding a separate trailing indicator.
+                if syncMonitor?.isSyncing == true {
                     ProgressView()
                         .controlSize(.regular)
                         .tint(activeColor)
                         .accessibilityLabel("Syncing with iCloud")
+                } else {
+                    Button {
+                        showListManager = true
+                    } label: {
+                        Label("Manage Lists", systemImage: "list.bullet")
+                    }
+                    .tint(activeColor)
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                ListSortMenu(ascending: ascendingBinding, watchedSortKey: $watchedSortKey,
-                                  showsWatchedSortKey: resolvedSelection == .watched)
+            if resolvedSelection == .viewed {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .destructive) {
+                        store?.clearViewed()
+                    } label: {
+                        Label("Clear Viewed", systemImage: "trash")
+                    }
                     .tint(activeColor)
+                    .disabled(movieCount == 0)
+                }
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ListSortMenu(ascending: ascendingBinding, watchedSortKey: $watchedSortKey,
+                                      showsWatchedSortKey: resolvedSelection == .watched)
+                        .tint(activeColor)
+                }
             }
         }
         .searchable(text: $filterText, prompt: "Search \(title)")
@@ -122,16 +129,6 @@ struct ListsView: View {
         .sheet(isPresented: $showListManager) {
             ListManagerView()
         }
-        .modifier(BackupTransferModifier(
-            showExporter: $showExporter,
-            showImporter: $showImporter,
-            exportDocument: exportDocument,
-            exportFilename: exportFilename,
-            importSummary: $importSummary,
-            transferError: $transferError,
-            importProgress: importProgress,
-            onImport: handleImport
-        ))
         .task(id: sectionsInput) { await rebuildSections() }
         // A local save (e.g. a watched-date edit) that doesn't change a count still
         // needs a rebuild. Scoped to the main context.
@@ -280,69 +277,6 @@ struct ListsView: View {
         guard !Task.isCancelled else { return }
         sections = result
         loadedInput = sectionsInput
-    }
-
-    // MARK: - Backup import/export
-
-    private var exportFilename: String {
-        let stamp = Date().formatted(.iso8601.year().month().day().dateSeparator(.dash))
-        return "MovieTracker Backup \(stamp)"
-    }
-
-    private func prepareExport() {
-        exportDocument = WatchDataDocument(archive: WatchDataArchive.export(from: context))
-        showExporter = true
-    }
-
-    private func handleImport(_ result: Result<URL, Error>) {
-        switch result {
-        case .success(let url):
-            if url.pathExtension.lowercased() == "csv" {
-                importCSV(from: url)
-            } else {
-                importArchive(from: url)
-            }
-        case .failure(let error):
-            transferError = error.localizedDescription
-        }
-    }
-
-    private func importArchive(from url: URL) {
-        do {
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            let archive = try WatchDataArchive(json: try Data(contentsOf: url))
-            if let store { importSummary = WatchDataArchive.merge(archive, using: store) }
-        } catch {
-            transferError = error.localizedDescription
-        }
-    }
-
-    private func importCSV(from url: URL) {
-        let records: [CSVMovieRecord]
-        do {
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            records = try CSVMovieRecord.parse(data: try Data(contentsOf: url))
-        } catch {
-            transferError = error.localizedDescription
-            return
-        }
-
-        guard !records.isEmpty else {
-            transferError = "No movies found in the CSV file."
-            return
-        }
-
-        guard let store else { return }
-        importProgress = (done: 0, total: records.count)
-        Task {
-            let summary = await CSVMovieRecord.merge(records, using: store) { done, total in
-                importProgress = (done: done, total: total)
-            }
-            importProgress = nil
-            importSummary = summary
-        }
     }
 
     /// Drives the create/edit sheet.

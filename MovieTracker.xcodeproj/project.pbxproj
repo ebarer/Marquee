@@ -48,7 +48,7 @@
 		CEB8A47B301F18F3002FBF31 /* MovieCastSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A47A301F18F3002FBF31 /* MovieCastSection.swift */; };
 		CEB8A47D301F19BD002FBF31 /* PersonFilmography.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A47C301F19BD002FBF31 /* PersonFilmography.swift */; };
 		CEB8A47F301F19F5002FBF31 /* StarRating.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A47E301F19F5002FBF31 /* StarRating.swift */; };
-		CEB8A481301F1A00002FBF31 /* WatchedDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A480301F1A00002FBF31 /* WatchedDate.swift */; };
+		CEB8A481301F1A00002FBF31 /* WatchedDateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A480301F1A00002FBF31 /* WatchedDateButton.swift */; };
 		CEB8A483301F1C1B002FBF31 /* BackupTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A482301F1C1B002FBF31 /* BackupTransfer.swift */; };
 		CEB8A485301F1C32002FBF31 /* ListsToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A484301F1C32002FBF31 /* ListsToolbar.swift */; };
 		CEB8A487301F1C6C002FBF31 /* ListRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A486301F1C6C002FBF31 /* ListRows.swift */; };
@@ -114,7 +114,7 @@
 		CEB8A47A301F18F3002FBF31 /* MovieCastSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieCastSection.swift; sourceTree = "<group>"; };
 		CEB8A47C301F19BD002FBF31 /* PersonFilmography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonFilmography.swift; sourceTree = "<group>"; };
 		CEB8A47E301F19F5002FBF31 /* StarRating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarRating.swift; sourceTree = "<group>"; };
-		CEB8A480301F1A00002FBF31 /* WatchedDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedDate.swift; sourceTree = "<group>"; };
+		CEB8A480301F1A00002FBF31 /* WatchedDateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedDateButton.swift; sourceTree = "<group>"; };
 		CEB8A482301F1C1B002FBF31 /* BackupTransfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupTransfer.swift; sourceTree = "<group>"; };
 		CEB8A484301F1C32002FBF31 /* ListsToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListsToolbar.swift; sourceTree = "<group>"; };
 		CEB8A486301F1C6C002FBF31 /* ListRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListRows.swift; sourceTree = "<group>"; };
@@ -219,7 +219,7 @@
 				CEB8A478301F18E3002FBF31 /* RelatedMoviesSection.swift */,
 				CEB8A47A301F18F3002FBF31 /* MovieCastSection.swift */,
 				CEB8A47E301F19F5002FBF31 /* StarRating.swift */,
-				CEB8A480301F1A00002FBF31 /* WatchedDate.swift */,
+				CEB8A480301F1A00002FBF31 /* WatchedDateButton.swift */,
 			);
 			path = MovieDetail;
 			sourceTree = "<group>";
@@ -343,13 +343,13 @@
 		CEEAFCEC3019D1F800D06E0E /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				CE569748301C198500DF9142 /* Preview */,
 				CE56977D301C873400DF9142 /* Featured */,
-				CE56977E301C873400DF9142 /* Search */,
 				CE56977F301C873500DF9142 /* Lists */,
+				CE56977E301C873400DF9142 /* Search */,
 				CE569780301C873600DF9142 /* MovieDetail */,
 				CE569781301C873600DF9142 /* PersonDetail */,
 				CE569782301C873700DF9142 /* Shared */,
+				CE569748301C198500DF9142 /* Preview */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -436,7 +436,7 @@
 				CE8041B4301D93A200F5D6F2 /* GlassScopeBar.swift in Sources */,
 				CE569768301C71FF00DF9142 /* MovieListActions.swift in Sources */,
 				CEEAFCFF3019DEE200D06E0E /* PersonDetailView.swift in Sources */,
-				CEB8A481301F1A00002FBF31 /* WatchedDate.swift in Sources */,
+				CEB8A481301F1A00002FBF31 /* WatchedDateButton.swift in Sources */,
 				CEEAFCE83019D1D100D06E0E /* Color+ProjectColors.swift in Sources */,
 				CE1F628020CFA65A0075B686 /* TMDBWrapper.swift in Sources */,
 				CEB8A475301F18B9002FBF31 /* MovieActionBar.swift in Sources */,
@@ -626,7 +626,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.2.3;
+				CURRENT_PROJECT_VERSION = 2026.8.2.5;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -649,7 +649,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.2.3;
+				CURRENT_PROJECT_VERSION = 2026.8.2.5;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (

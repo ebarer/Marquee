@@ -90,79 +90,8 @@ struct ListTitleMenu: View {
     }
 }
 
-/// The leading ellipsis menu: create/manage lists, then import/export the library.
-struct ListActionsMenu: View {
-    let canEditLists: Bool
-    let canClearViewed: Bool
-    let onNewList: () -> Void
-    let onEditLists: () -> Void
-    let onClearViewed: () -> Void
-    let onImport: () -> Void
-    let onExport: () -> Void
-
-    var body: some View {
-        Menu {
-            Button {
-                onNewList()
-            } label: {
-                Label("New List", systemImage: "plus")
-            }
-
-            if canEditLists {
-                Button {
-                    onEditLists()
-                } label: {
-                    Label("Edit Lists", systemImage: "pencil")
-                }
-            }
-
-            if canClearViewed {
-                Divider()
-                Button(role: .destructive) {
-                    onClearViewed()
-                } label: {
-                    Label("Clear Viewed", systemImage: "trash")
-                }
-                .tint(.red)
-            }
-
-            Divider()
-
-            Button {
-                onImport()
-            } label: {
-                Label("Import", systemImage: "square.and.arrow.down")
-            }
-
-            Button {
-                onExport()
-            } label: {
-                Label("Export", systemImage: "square.and.arrow.up")
-            }
-
-            Section {
-                Text(appInfo)
-            }
-        } label: {
-            Label("More", systemImage: "ellipsis")
-        }
-    }
-
-    private var appInfo: String {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String
-        let build = info?["CFBundleVersion"] as? String
-        switch (version, build) {
-        case let (version?, build?): return "\(version) (\(build))"
-        case let (version?, nil): return version
-        case let (nil, build?): return build
-        default: return ""
-        }
-    }
-}
-
-/// The trailing sort menu: order direction, plus (on Watched) release vs. watched
-/// date.
+/// The trailing sort menu: (on Watched) release vs. watched date, with the order
+/// direction at the bottom.
 struct ListSortMenu: View {
     @Binding var ascending: Bool
     @Binding var watchedSortKey: WatchedSortKey
@@ -170,19 +99,59 @@ struct ListSortMenu: View {
 
     var body: some View {
         Menu {
-            Picker("Order", selection: $ascending) {
-                Text("Ascending").tag(true)
-                Text("Descending").tag(false)
-            }
-
             if showsWatchedSortKey {
                 Picker("Sort By", selection: $watchedSortKey) {
                     Text(WatchedSortKey.releaseDate.title).tag(WatchedSortKey.releaseDate)
                     Text(WatchedSortKey.dateWatched.title).tag(WatchedSortKey.dateWatched)
                 }
             }
+
+            Picker("Order", selection: $ascending) {
+                Text("Ascending").tag(true)
+                Text("Descending").tag(false)
+            }
         } label: {
             Label("Sort", systemImage: "arrow.up.arrow.down")
         }
     }
+}
+
+#Preview("Title label") {
+    VStack(spacing: 20) {
+        ListTitleLabel(name: "Watch List", color: .appAccent, count: 12)
+        ListTitleLabel(name: "Watched",
+                       color: Color(red255: 90, green255: 200, blue255: 250), count: 1)
+    }
+    .padding()
+    .frame(maxWidth: .infinity)
+    .background(Color.appBackground)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Sort menu — Watched") {
+    @Previewable @State var ascending = false
+    @Previewable @State var key: WatchedSortKey = .dateWatched
+    ListSortMenu(ascending: $ascending, watchedSortKey: $key, showsWatchedSortKey: true)
+        .tint(.appAccent)
+        .padding()
+        .background(Color.appBackground)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("List switcher") {
+    @Previewable @State var selection: ListSelection = .watched
+    Menu {
+        ListTitleMenu(
+            selection: $selection,
+            watchList: MediaList(name: "Watch List", symbol: "bookmark",
+                                 sortOrder: 0, isWatchList: true),
+            customLists: [MediaList(name: "Favorites", symbol: "heart",
+                                    sortOrder: 1, colorIndex: 2)]
+        )
+    } label: {
+        Text("Open list switcher")
+    }
+    .tint(.appAccent)
+    .modelContainer(previewModelContainer)
+    .preferredColorScheme(.dark)
 }

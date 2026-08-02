@@ -28,6 +28,14 @@ struct ListManagerView: View {
     @State private var editing: MediaList?
     @State private var creatingNew = false
 
+    // Backup import/export state.
+    @State private var exportDocument: WatchDataDocument?
+    @State private var showExporter = false
+    @State private var showImporter = false
+    @State private var importSummary: ImportSummary?
+    @State private var transferError: String?
+    @State private var importProgress: (done: Int, total: Int)?
+
     private static let separator = Color.white.opacity(0.25)
 
     var body: some View {
@@ -65,6 +73,30 @@ struct ListManagerView: View {
                     virtualRow(title: "Viewed", symbol: "clock.arrow.circlepath",
                                color: .gray, count: viewedCount)
                 }
+
+                // Library-wide actions (not lists) — tinted accent to set them apart,
+                // with the app version pinned to the footer.
+                Section {
+                    Button {
+                        showImporter = true
+                    } label: {
+                        Label("Import", systemImage: "square.and.arrow.down")
+                            .foregroundStyle(Color.appAccent)
+                    }
+                    Button {
+                        prepareExport()
+                    } label: {
+                        Label("Export", systemImage: "square.and.arrow.up")
+                            .foregroundStyle(Color.appAccent)
+                    }
+                } footer: {
+                    Text(appInfo)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 8)
+                }
+                .listRowSeparatorTint(Self.separator)
+                .moveDisabled(true)
+                .deleteDisabled(true)
             }
             .listStyle(.insetGrouped)
             // The whole point of this screen is reordering/deleting, so it stays in
@@ -95,6 +127,16 @@ struct ListManagerView: View {
                     ListEditorView(existing: nil, nextSortOrder: 1 + customLists.count)
                 }
             }
+            .modifier(BackupTransferModifier(
+                showExporter: $showExporter,
+                showImporter: $showImporter,
+                exportDocument: exportDocument,
+                exportFilename: exportFilename,
+                importSummary: $importSummary,
+                transferError: $transferError,
+                importProgress: importProgress,
+                onImport: handleImport
+            ))
         }
     }
 
@@ -166,6 +208,19 @@ struct ListManagerView: View {
         "\(count) \(count == 1 ? "movie" : "movies")"
     }
 
+    /// App version/build, e.g. "1.2 (34)", shown in the actions footer.
+    private var appInfo: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String
+        let build = info?["CFBundleVersion"] as? String
+        switch (version, build) {
+        case let (version?, build?): return "\(version) (\(build))"
+        case let (version?, nil): return version
+        case let (nil, build?): return build
+        default: return ""
+        }
+    }
+
     // MARK: - Actions
 
     private func delete(at offsets: IndexSet) {
@@ -182,6 +237,69 @@ struct ListManagerView: View {
             for (index, list) in reordered.enumerated() {
                 list.sortOrder = 1 + index
             }
+        }
+    }
+
+    // MARK: - Backup import/export
+
+    private var exportFilename: String {
+        let stamp = Date().formatted(.iso8601.year().month().day().dateSeparator(.dash))
+        return "MovieTracker Backup \(stamp)"
+    }
+
+    private func prepareExport() {
+        exportDocument = WatchDataDocument(archive: WatchDataArchive.export(from: context))
+        showExporter = true
+    }
+
+    private func handleImport(_ result: Result<URL, Error>) {
+        switch result {
+        case .success(let url):
+            if url.pathExtension.lowercased() == "csv" {
+                importCSV(from: url)
+            } else {
+                importArchive(from: url)
+            }
+        case .failure(let error):
+            transferError = error.localizedDescription
+        }
+    }
+
+    private func importArchive(from url: URL) {
+        do {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            let archive = try WatchDataArchive(json: try Data(contentsOf: url))
+            if let store { importSummary = WatchDataArchive.merge(archive, using: store) }
+        } catch {
+            transferError = error.localizedDescription
+        }
+    }
+
+    private func importCSV(from url: URL) {
+        let records: [CSVMovieRecord]
+        do {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            records = try CSVMovieRecord.parse(data: try Data(contentsOf: url))
+        } catch {
+            transferError = error.localizedDescription
+            return
+        }
+
+        guard !records.isEmpty else {
+            transferError = "No movies found in the CSV file."
+            return
+        }
+
+        guard let store else { return }
+        importProgress = (done: 0, total: records.count)
+        Task {
+            let summary = await CSVMovieRecord.merge(records, using: store) { done, total in
+                importProgress = (done: done, total: total)
+            }
+            importProgress = nil
+            importSummary = summary
         }
     }
 }

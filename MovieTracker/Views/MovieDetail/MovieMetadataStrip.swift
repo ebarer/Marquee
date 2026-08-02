@@ -29,7 +29,7 @@ struct MovieMetadataStrip: View {
                             }
                             divider
                             cell(header: "WATCHED", minWidth: 80) {
-                                WatchedDate(movie: movie, context: context, tint: tint)
+                                WatchedDateButton(movie: movie, context: context, tint: tint)
                             }
                             divider
                         }
