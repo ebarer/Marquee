@@ -2,19 +2,12 @@
 //  PersonDetailView.swift
 //  MovieTracker
 //
-//  SwiftUI person detail screen: a biography header (profile, name + age,
-//  expandable bio) and a filmography grouped into per-year sections. The
-//  nav-bar title stays hidden until the on-page name scrolls up behind the
-//  bar. Replaces the storyboard PersonDetailViewController.
-//
-//  Built on a ScrollView + LazyVStack (matching the movie detail screen's
-//  Cast & Crew list) rather than a `List`, so the expandable bio grows and
-//  shrinks smoothly — a `List` disturbs its scroll offset whenever a row's
-//  height animates. Row swipe actions still work via `swipeActionsContainer()`.
-//
 
 import SwiftUI
 import SwiftData
+
+// A ScrollView + LazyVStack (not a List) so the expandable bio animates its height
+// without disturbing scroll offset; swipe actions come from swipeActionsContainer().
 
 struct PersonDetailView: View {
     let person: Person
@@ -42,8 +35,6 @@ struct PersonDetailView: View {
     private let bioHeaderID = "personBioHeader"
 
     private var current: Person { model.person ?? person }
-    private var watchList: MovieList? { lists.first { $0.kind == .toWatch } }
-    private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -69,22 +60,7 @@ struct PersonDetailView: View {
 
                     knownForSection
 
-                    if !creditsByYear.isEmpty {
-                        filmographyHeader
-                        ForEach(creditsByYear, id: \.year) { group in
-                            SectionHeader(title: yearTitle(group.year), color: .appAccent)
-                            ForEach(Array(group.movies.enumerated()), id: \.element.id) { index, movie in
-                                filmographyRow(movie)
-                                if index < group.movies.count - 1 {
-                                    // Separator between rows, inset to start under the title (past the poster).
-                                    Rectangle()
-                                        .fill(Color.appSeparator)
-                                        .frame(height: 0.5)
-                                        .padding(.leading, 79)
-                                }
-                            }
-                        }
-                    }
+                    PersonFilmography(credits: current.credits ?? [], lists: lists, context: context)
                 }
                 .padding(.bottom, 24)
             }
@@ -134,96 +110,6 @@ struct PersonDetailView: View {
         }
     }
 
-    // MARK: - Filmography rows
-
-    /// A single filmography row, styled like the movie detail Cast & Crew list:
-    /// a plain navigation row with a trailing chevron, carrying the shared swipe
-    /// actions and long-press menu.
-    private func filmographyRow(_ movie: Movie) -> some View {
-        NavigationLink(value: movie) {
-            HStack(spacing: 8) {
-                MovieRow(movie: movie, role: movie.creditRole)
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            WatchedSwipeButton(movie: movie, watchedList: watchedList, context: context)
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            WatchListSwipeButton(movie: movie, watchList: watchList, context: context)
-        }
-        .movieContextMenu(for: movie, lists: lists, context: context)
-    }
-
-    /// The "Filmography" section header, matching the "Known For" style, with the
-    /// Self/Thanks filter toggle inline on the trailing side (shown only when the
-    /// person actually has such credits to filter).
-    private var filmographyHeader: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text("Filmography")
-                .font(.headline)
-                .foregroundStyle(.white)
-            Spacer(minLength: 8)
-            if hasExtraneousCredits {
-                Button {
-                    withAnimation(.easeInOut) { hideExtraneous.toggle() }
-                } label: {
-                    Image(systemName: hideExtraneous
-                          ? "line.3.horizontal.decrease.circle.fill"
-                          : "line.3.horizontal.decrease.circle")
-                        .font(.title3)
-                }
-                .tint(.appAccent)
-                .accessibilityLabel(hideExtraneous ? "Show all credits" : "Hide Self and Thanks credits")
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 4)
-    }
-
-    // MARK: - Filmography grouping
-
-    /// True when the person has any "Self"/"Thanks" credits — i.e. when the
-    /// filter toggle is worth showing.
-    private var hasExtraneousCredits: Bool {
-        (current.credits ?? []).contains { $0.isExtraneousCredit }
-    }
-
-    /// The credits shown in the filmography, honoring the "hide Self/Thanks" filter.
-    private var visibleCredits: [Movie] {
-        let credits = current.credits ?? []
-        return hideExtraneous ? credits.filter { !$0.isExtraneousCredit } : credits
-    }
-
-    /// The visible credits grouped into consecutive per-year buckets. Credits
-    /// arrive already sorted newest-first, so grouping in order yields sections
-    /// in descending year order with undated (upcoming) credits last.
-    private var creditsByYear: [(year: Int?, movies: [Movie])] {
-        let credits = visibleCredits
-        var groups: [(year: Int?, movies: [Movie])] = []
-        for movie in credits {
-            let year = movie.releaseDate.map { Calendar.current.component(.year, from: $0) }
-            if let index = groups.indices.last, groups[index].year == year {
-                groups[index].movies.append(movie)
-            } else {
-                groups.append((year: year, movies: [movie]))
-            }
-        }
-        return groups
-    }
-
-    private func yearTitle(_ year: Int?) -> String {
-        guard let year else { return "Upcoming" }
-        return String(year)
-    }
 }
 
 #Preview {

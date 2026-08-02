@@ -1,0 +1,97 @@
+//
+//  StarRating.swift
+//  MovieTracker
+//
+
+import SwiftUI
+import SwiftData
+
+/// Five stars bound to the user's personal rating on a movie's list entry. Tap for
+/// whole stars, sweep for half-star precision; tapping the current rating clears it.
+struct StarRating: View {
+    let movieID: Int
+    let list: MovieList
+    let context: ModelContext
+    let tint: Color
+
+    /// In stars, 0.5-step (0 = unrated).
+    @State private var rating: Double
+    /// The rating when the gesture began, so a stationary tap toggles against the
+    /// pre-gesture value rather than the one `onChanged` previewed.
+    @State private var dragStartRating: Double?
+
+    private let starSize: CGFloat = 20
+    private let spacing: CGFloat = 3
+
+    init(movieID: Int, list: MovieList, context: ModelContext, tint: Color) {
+        self.movieID = movieID
+        self.list = list
+        self.context = context
+        self.tint = tint
+        _rating = State(initialValue: WatchListStore.rating(for: movieID, in: list) ?? 0)
+    }
+
+    var body: some View {
+        HStack(spacing: spacing) {
+            ForEach(1...5, id: \.self) { index in
+                star(filledBy: fillFraction(for: index))
+            }
+        }
+        .font(.system(size: 15))
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    if dragStartRating == nil { dragStartRating = rating }
+                    rating = halfStars(at: value.location.x)
+                }
+                .onEnded { value in
+                    if value.translation.width == 0 {
+                        // Stationary tap: a whole star, or clear if already selected.
+                        let whole = wholeStars(at: value.location.x)
+                        rating = (whole == dragStartRating) ? 0 : whole
+                    } else {
+                        rating = halfStars(at: value.location.x)
+                    }
+                    WatchListStore.setRating(rating == 0 ? nil : rating, for: movieID, in: list)
+                    dragStartRating = nil
+                }
+        )
+    }
+
+    private func star(filledBy fraction: Double) -> some View {
+        Image(systemName: "star")
+            .foregroundStyle(.secondary)
+            .overlay(alignment: .leading) {
+                Image(systemName: "star.fill")
+                    .foregroundStyle(tint)
+                    .mask(alignment: .leading) {
+                        Rectangle().scale(x: fraction, y: 1, anchor: .leading)
+                    }
+            }
+            .frame(width: starSize, height: starSize)
+    }
+
+    /// How much of star `index` (1–5) the current rating fills: 1, 0.5, or 0.
+    private func fillFraction(for index: Int) -> Double {
+        min(1, max(0, rating - Double(index - 1)))
+    }
+
+    /// The whole-star value under a horizontal offset (for taps).
+    private func wholeStars(at x: CGFloat) -> Double {
+        guard x >= 0 else { return 0 }
+        let slot = starSize + spacing
+        return min(5, Double(Int(x / slot) + 1))
+    }
+
+    /// The half-step value under a horizontal offset (for sweeps): the left half of
+    /// a star gives x.5, the right half a whole star.
+    private func halfStars(at x: CGFloat) -> Double {
+        guard x >= 0 else { return 0 }
+        let slot = starSize + spacing
+        let index = Int(x / slot)
+        let within = (x - Double(index) * slot) / starSize
+        let value = Double(index) + (within <= 0.5 ? 0.5 : 1.0)
+        return min(5, value)
+    }
+}
