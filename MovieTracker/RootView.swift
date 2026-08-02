@@ -104,6 +104,7 @@ struct RootView: View {
             }
             MediaList.ensureWatchList(in: context)
             try? context.save()
+            Self.migrateLegacyDataIfNeeded(in: context)
             SyncLog.snapshot("after seed", in: context)
 
             // CloudKit imports from another device arrive after launch and can
@@ -148,6 +149,83 @@ extension RootView {
             group.cancelAll()
             return result
         }
+    }
+}
+
+// MARK: - One-shot legacy migration
+
+extension RootView {
+    private static let migrationFlag = "didMigrateToMediaSchema.v1"
+
+    /// Converts pre-restructure `WatchListEntry` rows into the new schema once, on
+    /// device: Watched → `MediaItem.watchedAt` (+rating), Viewed → `lastViewedAt`,
+    /// Watch List/custom → `ListEntry`. Guarded by a `UserDefaults` flag; single
+    /// device, local, idempotent (the CloudKit dev schema is reset separately, so
+    /// there's no cross-device convergence to solve).
+    static func migrateLegacyDataIfNeeded(in context: ModelContext) {
+        guard !UserDefaults.standard.bool(forKey: migrationFlag) else { return }
+
+        let legacyEntries = (try? context.fetch(FetchDescriptor<WatchListEntry>())) ?? []
+        guard !legacyEntries.isEmpty else {
+            UserDefaults.standard.set(true, forKey: migrationFlag)
+            return
+        }
+        SyncLog.logger.log("🔀 migrating \(legacyEntries.count) legacy entries to the new schema")
+
+        let watchList = MediaList.ensureWatchList(in: context)
+        var customLists: [UUID: MediaList] = [:]
+
+        func movie(_ entry: WatchListEntry) -> Movie {
+            let movie = Movie(id: entry.movieID, title: entry.title)
+            movie.poster = entry.posterPath
+            movie.releaseDate = entry.releaseDate
+            movie.runtime = entry.runtime
+            return movie
+        }
+
+        func customList(mirroring legacy: MovieList) -> MediaList {
+            if let existing = customLists[legacy.uuid] { return existing }
+            let list = MediaList(name: legacy.name, symbol: legacy.symbol,
+                                 sortOrder: legacy.sortOrder, colorIndex: legacy.colorIndex)
+            list.uuid = legacy.uuid
+            list.createdAt = legacy.createdAt
+            context.insert(list)
+            customLists[legacy.uuid] = list
+            return list
+        }
+
+        func addEntry(_ entry: WatchListEntry, to list: MediaList) {
+            guard !list.contains(entry.movieID) else { return }
+            let member = ListEntry(movie: movie(entry))
+            member.list = list
+            context.insert(member)
+        }
+
+        for entry in legacyEntries {
+            switch entry.list?.kind {
+            case .watched:
+                let item = MediaItem.upsert(movie(entry), in: context)
+                if item.watchedAt == nil {
+                    item.watchedAt = entry.dateWatched ?? MediaItem.floatingDay(from: Date())
+                }
+                if item.userRating == nil { item.userRating = entry.userRating }
+            case .viewed:
+                let item = MediaItem.upsert(movie(entry), in: context)
+                if item.lastViewedAt == nil { item.lastViewedAt = entry.dateAdded }
+            case .toWatch:
+                addEntry(entry, to: watchList)
+            case .custom:
+                if let legacy = entry.list { addEntry(entry, to: customList(mirroring: legacy)) }
+            case .none:
+                break
+            }
+        }
+
+        MediaItem.deduplicate(in: context)
+        MediaList.deduplicateWatchList(in: context)
+        try? context.save()
+        UserDefaults.standard.set(true, forKey: migrationFlag)
+        SyncLog.snapshot("after migration", in: context)
     }
 }
 
