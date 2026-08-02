@@ -107,11 +107,13 @@ extension MediaList {
         all(in: context).filter { !$0.isWatchList }
     }
 
-    /// The canonical Watch List (lowest-UUID live copy), if it exists.
+    /// The canonical Watch List (the oldest live copy; UUID breaks ties), if it
+    /// exists. Must match the de-dup winner so adds never target a soon-to-be-merged
+    /// duplicate.
     static func watchList(in context: ModelContext) -> MediaList? {
         ((try? context.fetch(FetchDescriptor<MediaList>())) ?? [])
             .filter { $0.isWatchList && !$0.isDeduplicated }
-            .sorted { $0.uuid.uuidString < $1.uuid.uuidString }
+            .sorted { ($0.createdAt, $0.uuid.uuidString) < ($1.createdAt, $1.uuid.uuidString) }
             .first
     }
 
@@ -124,19 +126,46 @@ extension MediaList {
         return list
     }
 
-    /// Converges duplicate Watch Lists a CloudKit sync produced onto the lowest-UUID
-    /// copy, moving entries over. Deterministic so every device agrees.
+    /// How long a merged-away duplicate waits before it's actually deleted, so its
+    /// entry re-parent has time to sync and the delete can't race it.
+    private static let deduplicationGracePeriod: TimeInterval = 30
+
+    /// Converges duplicate Watch Lists a CloudKit sync produced onto the **oldest**
+    /// one (created first; UUID breaks ties), so every device agrees. Two-phase and
+    /// CloudKit-safe:
+    ///  - **Merge:** move each live duplicate's entries onto the winner and *mark*
+    ///    the duplicate (hidden from the UI via `isDeduplicated`). It is not deleted
+    ///    yet.
+    ///  - **Prune:** delete a marked duplicate only once it's empty *and* its mark is
+    ///    older than the grace period — by then the re-parent has converged, so the
+    ///    `.cascade` delete drops nothing. Deleting a non-empty duplicate immediately
+    ///    could otherwise wipe entries on a device that applies the delete before the
+    ///    re-parent arrives.
     @discardableResult
     static func deduplicateWatchList(in context: ModelContext) -> Bool {
         let watchLists = ((try? context.fetch(FetchDescriptor<MediaList>())) ?? [])
             .filter { $0.isWatchList }
-            .sorted { $0.uuid.uuidString < $1.uuid.uuidString }
-        guard let keep = watchLists.first, watchLists.count > 1 else { return false }
-        for dup in watchLists.dropFirst() {
-            for entry in dup.entries ?? [] { entry.list = keep }
-            context.delete(dup)
+            .sorted { ($0.createdAt, $0.uuid.uuidString) < ($1.createdAt, $1.uuid.uuidString) }
+        guard let keep = watchLists.first(where: { !$0.isDeduplicated }) else { return false }
+        var changed = false
+        var merged = false
+
+        // Merge live duplicates onto the winner, then mark them.
+        for other in watchLists where other.uuid != keep.uuid && !other.isDeduplicated {
+            for entry in other.entries ?? [] { entry.list = keep; merged = true }
+            other.deduplicatedDate = Date()
+            changed = true
         }
-        keep.dedupeEntries()
-        return true
+        if merged { keep.dedupeEntries() }
+
+        // Prune marked duplicates once empty and past the grace period.
+        for dup in watchLists where dup.isDeduplicated {
+            let age = Date().timeIntervalSince(dup.deduplicatedDate ?? .distantFuture)
+            if age > deduplicationGracePeriod, (dup.entries ?? []).isEmpty {
+                context.delete(dup)
+                changed = true
+            }
+        }
+        return changed
     }
 }

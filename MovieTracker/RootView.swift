@@ -92,18 +92,20 @@ struct RootView: View {
             let context = store.context
             SyncLog.snapshot("launch", in: context)
 
-            // On a brand-new local store (e.g. a fresh install for an existing
-            // iCloud account), wait briefly for the first CloudKit import before
-            // seeding the Watch List, so we don't duplicate one we're about to
-            // receive. Devices that already have it locally seed/reconcile at once.
+            // On a brand-new local store (e.g. a fresh install for an existing iCloud
+            // account), wait for the Watch List specifically to sync down before
+            // seeding, so we adopt the existing list instead of creating a duplicate.
+            // Devices that already have it locally seed/reconcile at once.
             if MediaList.watchList(in: context) == nil {
-                SyncLog.logger.log("🌱 empty local store — waiting up to 6s for initial import before seeding")
-                let imported = await Self.waitForInitialImport(timeout: .seconds(6))
-                SyncLog.logger.log("🌱 initial wait ended (\(imported ? "import arrived" : "timed out", privacy: .public))")
+                SyncLog.logger.log("🌱 empty local store — waiting up to 6s for the Watch List to sync before seeding")
+                let arrived = await Self.waitForWatchList(in: context, timeout: .seconds(6))
+                SyncLog.logger.log("🌱 wait ended (\(arrived ? "Watch List arrived" : "timed out — seeding", privacy: .public))")
             } else {
                 SyncLog.logger.log("🌱 existing local store — seeding/reconciling immediately")
             }
             store.seedWatchList()
+            // Prune any duplicates a prior session marked (past the grace period).
+            store.deduplicate()
             SyncLog.snapshot("after seed", in: context)
 
             // CloudKit imports from another device arrive after launch and can bring
@@ -125,26 +127,21 @@ struct RootView: View {
 }
 
 extension RootView {
-    /// Waits for the first remote store change (a CloudKit import landing) or the
-    /// timeout, whichever comes first. Used to give a fresh device a chance to
-    /// receive existing lists before it seeds its own. Returns `true` if a remote
-    /// change arrived, `false` if it timed out.
-    static func waitForInitialImport(timeout: Duration) async -> Bool {
-        await withTaskGroup(of: Bool.self) { group in
-            group.addTask {
-                for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
-                    return true
-                }
-                return false
-            }
-            group.addTask {
-                try? await Task.sleep(for: timeout)
-                return false
-            }
-            let result = await group.next() ?? false
-            group.cancelAll()
-            return result
+    /// Waits for the Watch List to sync down from CloudKit (polling as records import
+    /// in the background), up to `timeout`, so a fresh device adopts the existing list
+    /// instead of seeding a duplicate. Returns `true` if it arrived.
+    ///
+    /// We poll for the list rather than "prioritize lists over movies" because
+    /// `NSPersistentCloudKitContainer` imports the whole zone and offers no way to
+    /// pull one record type before another — so we simply wait for the one we need.
+    @MainActor
+    static func waitForWatchList(in context: ModelContext, timeout: Duration) async -> Bool {
+        let start = ContinuousClock.now
+        while ContinuousClock.now - start < timeout {
+            if MediaList.watchList(in: context) != nil { return true }
+            try? await Task.sleep(for: .milliseconds(250))
         }
+        return MediaList.watchList(in: context) != nil
     }
 }
 
