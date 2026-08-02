@@ -26,14 +26,14 @@ struct WatchDataArchive: Codable {
         var name: String
         var symbol: String
         var colorIndex: Int
-        /// Raw `ListKind` value (built-in lists restore by kind, custom by UUID).
+        /// Raw `Kind` value (the Watch List restores by kind, custom lists by UUID).
         var kind: Int
         var sortOrder: Int
         var createdAt: Date
         var entries: [Entry]
     }
 
-    /// A movie's membership in a list, mirroring `WatchListEntry`'s stored fields.
+    /// A movie's membership in a list — its display snapshot plus any personal facts.
     struct Entry: Codable {
         var movieID: Int
         var title: String
@@ -170,6 +170,15 @@ struct WatchDataDocument: FileDocument {
 // MARK: - Store: export / import
 
 extension WatchDataArchive {
+    /// Stable list-kind values for the on-disk format, independent of the app's
+    /// runtime model so backups keep importing after schema changes.
+    enum Kind: Int {
+        case custom = 0
+        case toWatch = 1
+        case watched = 2
+        case viewed = 3
+    }
+
     /// Builds a complete archive of every list plus the Watched facts. The file
     /// format is unchanged from v1 — Watched is emitted as a pseudo-list carrying
     /// each title's watched date and rating — so old backups still import.
@@ -178,7 +187,7 @@ extension WatchDataArchive {
             WatchDataArchive.List(
                 uuid: list.uuid, name: list.name, symbol: list.symbol,
                 colorIndex: list.colorIndex,
-                kind: list.isWatchList ? ListKind.toWatch.rawValue : ListKind.custom.rawValue,
+                kind: list.isWatchList ? Kind.toWatch.rawValue : Kind.custom.rawValue,
                 sortOrder: list.sortOrder, createdAt: list.createdAt,
                 entries: (list.entries ?? []).map { entry in
                     WatchDataArchive.Entry(
@@ -194,7 +203,7 @@ extension WatchDataArchive {
         if !watched.isEmpty {
             lists.append(WatchDataArchive.List(
                 uuid: UUID(), name: "Watched", symbol: "checkmark.rectangle.stack",
-                colorIndex: 0, kind: ListKind.watched.rawValue, sortOrder: 2, createdAt: Date(),
+                colorIndex: 0, kind: Kind.watched.rawValue, sortOrder: 2, createdAt: Date(),
                 entries: watched.map { item in
                     WatchDataArchive.Entry(
                         movieID: item.tmdbID, title: item.title, posterPath: item.posterPath,
@@ -214,7 +223,7 @@ extension WatchDataArchive {
         let context = store.context
 
         for archivedList in archive.lists {
-            switch ListKind(rawValue: archivedList.kind) ?? .custom {
+            switch Kind(rawValue: archivedList.kind) ?? .custom {
             case .viewed:
                 continue
             case .watched:
@@ -227,7 +236,7 @@ extension WatchDataArchive {
                     summary.entriesAdded += 1
                 }
             case .toWatch, .custom:
-                let isWatchList = ListKind(rawValue: archivedList.kind) == .toWatch
+                let isWatchList = Kind(rawValue: archivedList.kind) == .toWatch
                 guard let list = target(archivedList, isWatchList: isWatchList,
                                         using: store, summary: &summary) else { continue }
                 for entry in archivedList.entries {
