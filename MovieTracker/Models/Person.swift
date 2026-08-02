@@ -53,28 +53,10 @@ class Person: NSObject {
     }
 }
 
-// MARK: - API Methods
-
-extension Person {
-    static func get(id: Int, completionHandler: @escaping (Person?, Error?) -> Void) {
-        TMDBWrapper.getPerson(id: id, completionHandler: completionHandler)
-    }
-    
-    static func search(query: String, page: Int, completionHandler: @escaping ([Person]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        TMDBWrapper.searchForPeople(query: query, page: page, completionHandler: completionHandler)
-    }
-    
-    func getPicture(width: Person.ProfileSize = .w276, completionHandler: @escaping (UIImage?, Error?, Int?) -> Void) {
-        TMDBWrapper.fetchImage(url: self.profilePicture, width: width) { (image, error) in
-            completionHandler(image, error, self.id)
-        }
-    }
-}
-
 // MARK: - Image Size Enumerations
 
 extension Person {
-    enum ProfileSize: String, ImageSize {
+    enum ProfileSize: String {
         case w276 = "w276_and_h350_face"
         case orig = "original"
     }

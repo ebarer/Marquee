@@ -110,38 +110,6 @@ class Movie: NSObject {
 
 }
 
-// MARK: - API Methods
-
-extension Movie {
-    static func get(id: Int, completionHandler: @escaping (Movie?, Error?) -> Void) {
-        TMDBWrapper.getMovie(id: id, completionHandler: completionHandler)
-    }
-    
-    static func nowPlaying(page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        TMDBWrapper.getMoviesNowPlaying(page: page, completionHandler: completionHandler)
-    }
-    
-    static func comingSoon(page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        TMDBWrapper.getMoviesComingSoon(page: page, completionHandler: completionHandler)
-    }
-    
-    static func search(query: String, page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        TMDBWrapper.searchForMovies(query: query, page: page, completionHandler: completionHandler)
-    }
-    
-    func getPoster(width: Movie.PosterSize = .w185, completionHandler: @escaping (UIImage?, Error?, Int?) -> Void) {
-        TMDBWrapper.fetchImage(url: self.poster, width: width) { (image, error) in
-            completionHandler(image, error, self.id)
-        }
-    }
-    
-    func getBackground(width: Movie.BackgroundSize = .w1280, completionHandler: @escaping (UIImage?, Error?, Int?) -> Void) {
-        TMDBWrapper.fetchImage(url: self.background, width: width) { (image, error) in
-            completionHandler(image, error, self.id)
-        }
-    }
-}
-
 extension Movie {
     struct Credits {
         var during: Bool
@@ -165,9 +133,8 @@ extension Movie {
 
 // MARK: - Image Size Enumerations
 
-protocol ImageSize {}
 extension Movie {
-    enum PosterSize: String, ImageSize {
+    enum PosterSize: String {
         case w92  = "w92"
         case w154 = "w154"
         case w185 = "w185"
@@ -177,7 +144,7 @@ extension Movie {
         case orig = "original"
     }
 
-    enum BackgroundSize: String, ImageSize {
+    enum BackgroundSize: String {
         case w300  = "w300"
         case w780  = "w780"
         case w1280 = "w1280"

@@ -6,7 +6,7 @@
 //  Copyright © 2018 ebarer. All rights reserved.
 //
 
-import UIKit
+import Foundation
 
 class TMDBWrapper {
     private static let baseURL = "https://api.themoviedb.org"
@@ -15,458 +15,187 @@ class TMDBWrapper {
     private static let apiKey = "da99299f02cd39e2736c97d08b459731"
     private static let regionCode = NSLocale.current.region?.identifier ?? "US"
     private static let languageCode = NSLocale.current.language.languageCode?.identifier ?? "en"
-    
-    // Keywords to identify during/after credit extras
-    private static let bonusKeywords = ["during" : 179431, "after" : 179430]
+
+    // Keywords identifying during/after credit extras.
+    private static let bonusKeywords = ["during": 179431, "after": 179430]
 }
 
-// MARK: - API Accessors
+// MARK: - Requests
 
-extension TMDBWrapper {
-    static func getMovie(id: Int, completionHandler: @escaping (Movie?, Error?) -> Void) {
-        let appendString = "videos,release_dates,credits,keywords"
-        var searchURLComponents = URLComponents(string: self.baseURL)!
-        searchURLComponents.path = "\(self.apiVersion)/movie/\(id)"
-        searchURLComponents.queryItems = [
-            URLQueryItem(name: "with_release_type", value: "3|2"),
-            URLQueryItem(name: "append_to_response", value: appendString),
-        ]
-        
-        self.fetchMovieData(url: searchURLComponents) { (data, error) in
-            guard error == nil, let data = data else {
-                completionHandler(nil, error)
-                return
-            }
-            
-            do {
-                let movieRaw = try decoder.decode(MovieRaw.self, from: data)
-                let movie = self.translate(movie: movieRaw)
-                completionHandler(movie, nil)
-            } catch {
-                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"))
-            }
-        }
-    }
-    
-    static func getCollection(id: Int, completionHandler: @escaping ([Movie]?, Error?) -> Void) {
-        var searchURLComponents = URLComponents(string: self.baseURL)!
-        searchURLComponents.path = "\(self.apiVersion)/collection/\(id)"
-
-        self.fetchMovieData(url: searchURLComponents) { (data, error) in
-            guard error == nil, let data = data else {
-                completionHandler(nil, error)
-                return
-            }
-
-            do {
-                let collection = try decoder.decode(CollectionRaw.self, from: data)
-                // Sort returned collection chronologically so the franchise reads oldest-to-newest
-                let movies = collection.parts
-                    .map { self.translate(movie: $0) }
-                    .sorted {
-                        guard let a = $0.releaseDate else { return false }
-                        guard let b = $1.releaseDate else { return true }
-                        return a < b
-                    }
-                completionHandler(movies, nil)
-            } catch {
-                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"))
-            }
-        }
-    }
-
-    static func getMoviesNowPlaying(page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        guard page > 0 else {
-            completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)
-            return
-        }
-        
-        var searchURLComponents = URLComponents(string: self.baseURL)!
-        searchURLComponents.path = "\(self.apiVersion)/movie/now_playing"
-        searchURLComponents.queryItems = [
-            URLQueryItem(name: "page", value: String(page))
-        ]
-
-        self.fetchMovieData(url: searchURLComponents) { (data, error) in
-            guard error == nil, let data = data else {
-                completionHandler(nil, error, nil)
-                return
-            }
-            
-            do {
-                let root = try decoder.decode(RootRaw<MovieRaw>.self, from: data)
-                let movies = root.results.map({ self.translate(movie: $0) })
-                completionHandler(movies, nil, (root.totalResults, root.totalPages))
-            } catch {
-                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"), nil)
-            }
-        }
-    }
-    
-    static func getMoviesPopular(page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        guard page > 0 else {
-            completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)
-            return
-        }
-
-        var searchURLComponents = URLComponents(string: self.baseURL)!
-        searchURLComponents.path = "\(self.apiVersion)/movie/popular"
-        searchURLComponents.queryItems = [
-            URLQueryItem(name: "page", value: String(page))
-        ]
-
-        self.fetchMovieData(url: searchURLComponents) { (data, error) in
-            guard error == nil, let data = data else {
-                completionHandler(nil, error, nil)
-                return
-            }
-
-            do {
-                let root = try decoder.decode(RootRaw<MovieRaw>.self, from: data)
-                let movies = root.results.map({ self.translate(movie: $0) })
-                completionHandler(movies, nil, (root.totalResults, root.totalPages))
-            } catch {
-                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"), nil)
-            }
-        }
-    }
-    
-    static func getMovieRecommendations(id: Int, page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        guard page > 0 else {
-            completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)
-            return
-        }
-
-        var searchURLComponents = URLComponents(string: self.baseURL)!
-        searchURLComponents.path = "\(self.apiVersion)/movie/\(id)/recommendations"
-        searchURLComponents.queryItems = [
-            URLQueryItem(name: "page", value: String(page))
-        ]
-
-        self.fetchMovieData(url: searchURLComponents) { (data, error) in
-            guard error == nil, let data = data else {
-                completionHandler(nil, error, nil)
-                return
-            }
-
-            do {
-                let root = try decoder.decode(RootRaw<MovieRaw>.self, from: data)
-                let movies = root.results.map({ self.translate(movie: $0) })
-                completionHandler(movies, nil, (root.totalResults, root.totalPages))
-            } catch {
-                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"), nil)
-            }
-        }
-    }
-
-    static func getMoviesComingSoon(page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        guard page > 0 else {
-            completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)
-            return
-        }
-        
-        var searchURLComponents = URLComponents(string: self.baseURL)!
-        searchURLComponents.path = "\(self.apiVersion)/movie/upcoming"
-        searchURLComponents.queryItems = [
-            URLQueryItem(name: "page", value: String(page))
-        ]
-        
-        self.fetchMovieData(url: searchURLComponents) { (data, error) in
-            guard error == nil, let data = data else {
-                completionHandler(nil, error, nil)
-                return
-            }
-            
-            do {
-                let root = try decoder.decode(RootRaw<MovieRaw>.self, from: data)
-                let movies = root.results.map({ self.translate(movie: $0) })
-                completionHandler(movies, nil, (root.totalResults, root.totalPages))
-            } catch {
-                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"), nil)
-            }
-        }
-    }
-    
-    static func searchForMovies(query: String, page: Int, completionHandler: @escaping ([Movie]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        guard page > 0 else {
-            completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)
-            return
-        }
-        
-        if query.count == 0 {
-            completionHandler([], nil, nil)
-            return
-        }
-        
-        var searchURLComponents = URLComponents(string: self.baseURL)!
-        searchURLComponents.path = "\(self.apiVersion)/search/movie"
-        searchURLComponents.queryItems = [
-            URLQueryItem(name: "query", value: query),
-            URLQueryItem(name: "page", value: String(page))
-        ]
-        
-        self.fetchMovieData(url: searchURLComponents) { (data, error) in
-            guard error == nil, let data = data else {
-                completionHandler(nil, error, nil)
-                return
-            }
-            
-            do {
-                let root = try decoder.decode(RootRaw<MovieRaw>.self, from: data)
-                let movies = root.results.map({ self.translate(movie: $0) })
-                completionHandler(movies, nil, (root.totalResults, root.totalPages))
-            } catch {
-                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"), nil)
-            }
-        }
-    }
-    
-    static func getPerson(id: Int, completionHandler: @escaping (Person?, Error?) -> Void) {
-        let appendString = "movie_credits"
-        var searchURLComponents = URLComponents(string: self.baseURL)!
-        searchURLComponents.path = "\(self.apiVersion)/person/\(id)"
-        searchURLComponents.queryItems = [
-            URLQueryItem(name: "append_to_response", value: appendString),
-        ]
-        
-        self.fetchPersonData(url: searchURLComponents) { (data, error) in
-            guard error == nil, let data = data else {
-                completionHandler(nil, error)
-                return
-            }
-            
-            do {
-                let personRaw = try decoder.decode(PersonRaw.self, from: data)
-                let person = self.translate(person: personRaw)
-                completionHandler(person, nil)
-            } catch {
-                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"))
-            }
-        }
-    }
-    
-    static func searchForPeople(query: String, page: Int, completionHandler: @escaping ([Person]?, Error?, (results: Int, pages: Int)?) -> Void) {
-        guard page > 0 else {
-            completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)
-            return
-        }
-        
-        if query.count == 0 {
-            completionHandler([], nil, nil)
-            return
-        }
-        
-        var searchURLComponents = URLComponents(string: self.baseURL)!
-        searchURLComponents.path = "\(self.apiVersion)/search/person"
-        searchURLComponents.queryItems = [
-            URLQueryItem(name: "query", value: query),
-            URLQueryItem(name: "page", value: String(page))
-        ]
-        
-        self.fetchPersonData(url: searchURLComponents) { (data, error) in
-            guard error == nil, let data = data else {
-                completionHandler(nil, error, nil)
-                return
-            }
-            
-            do {
-                let root = try decoder.decode(RootRaw<PersonRaw>.self, from: data)
-                let people = root.results.map({ self.translate(person: $0) })
-                completionHandler(people, nil, (root.totalResults, root.totalPages))
-            } catch {
-                completionHandler(nil, FetchError.decode("Couldn't decode JSON data: \(error)"), nil)
-            }
-        }
-    }
-}
-
-// MARK: - API Fetchers
-
-extension TMDBWrapper {
-    static func fetchMovieData(url: URLComponents, completionHandler: @escaping (Data?, Error?) -> Void) {
-        
-        let queryItems = [
+private extension TMDBWrapper {
+    /// The locale/key query items sent with every request.
+    static var localeQueryItems: [URLQueryItem] {
+        [
             URLQueryItem(name: "api_key", value: apiKey),
             URLQueryItem(name: "include_adult", value: "false"),
             URLQueryItem(name: "with_original_language", value: languageCode),
             URLQueryItem(name: "language", value: "\(languageCode)-\(regionCode)"),
             URLQueryItem(name: "region", value: regionCode),
-            URLQueryItem(name: "certification_country", value: regionCode)
         ]
-        
-        var queryURL = url
-        if queryURL.queryItems == nil {
-            queryURL.queryItems = queryItems
-        } else {
-            queryURL.queryItems?.append(contentsOf: queryItems)
-        }
-        
-        fetchData(url: queryURL, completionHandler: completionHandler)
     }
-    
-    static func fetchPersonData(url: URLComponents, completionHandler: @escaping (Data?, Error?) -> Void) {
-        let queryItems = [
-            URLQueryItem(name: "api_key", value: apiKey),
-            URLQueryItem(name: "include_adult", value: "false"),
-            URLQueryItem(name: "with_original_language", value: languageCode),
-            URLQueryItem(name: "language", value: "\(languageCode)-\(regionCode)"),
-            URLQueryItem(name: "region", value: regionCode)
-        ]
-        
-        var queryURL = url
-        if queryURL.queryItems == nil {
-            queryURL.queryItems = queryItems
-        } else {
-            queryURL.queryItems?.append(contentsOf: queryItems)
-        }
-        
-        fetchData(url: queryURL, completionHandler: completionHandler)
-    }
-    
-    static func fetchData(url: URLComponents, completionHandler: @escaping (Data?, Error?) -> Void) {
-        guard let queryURL = url.url else { return }
-        
-        var request = URLRequest(url: queryURL)
-        request.httpMethod = "GET"
-        request.cachePolicy = .useProtocolCachePolicy
-        
-        URLSession.shared.dataTask(with: request) { (data, response, error) in
-            guard error == nil else {
-                completionHandler(nil, error)
-                return
-            }
-            
-            guard let responseData = data else {
-                completionHandler(nil, FetchError.noData("Response didn't contain any data."))
-                return
-            }
-            
-            completionHandler(responseData, nil)
-        }.resume()
-    }
-    
-    static func fetchImage(url: String?, width: ImageSize, completionHandler: @escaping (UIImage?, Error?) -> Void) {
-        guard let url = url else {
-            completionHandler(nil, FetchError.image("No image URL supplied"))
-            return
-        }
-        
-        var imageURL: URL?
-        
-        if let width = (width as? Movie.PosterSize)?.rawValue {
-            imageURL = URL(string: "\(self.imageBaseURL)/\(width)/\(url)")
-        } else if let width = (width as? Movie.BackgroundSize)?.rawValue {
-            imageURL = URL(string: "\(self.imageBaseURL)/\(width)/\(url)")
-        } else if let width = (width as? Person.ProfileSize)?.rawValue {
-            imageURL = URL(string: "\(self.imageBaseURL)/\(width)/\(url)")
-        }
-        
-        guard imageURL != nil else {
-            completionHandler(nil, FetchError.image("Couldn't generate image URL"))
-            return
-        }
-        
-        URLSession.shared.dataTask(with: imageURL!) { (data, response, error) in
-            DispatchQueue.main.async {
-                guard error == nil else {
-                    completionHandler(nil, error)
-                    return
-                }
-                
-                guard let imageData = data else {
-                    completionHandler(nil, FetchError.noData("Response didn't contain any data."))
-                    return
-                }
-                
-                let image = UIImage(data: imageData)
-                completionHandler(image, nil)
-            }
-        }.resume()
-    }
-}
 
-// MARK: - Local JSON Fetch
+    /// Performs a GET against the API, appending the shared query items (plus a
+    /// certification country for movie endpoints), and returns the raw response.
+    static func fetch(_ path: String, queryItems: [URLQueryItem] = [],
+                      certified: Bool = false) async throws -> Data {
+        var components = URLComponents(string: baseURL)!
+        components.path = apiVersion + path
+        components.queryItems = queryItems + localeQueryItems
+            + (certified ? [URLQueryItem(name: "certification_country", value: regionCode)] : [])
 
-extension TMDBWrapper {
-    private static func fetchLocalData(url: String, completionHandler: @escaping (Data?, Error?) -> Void) {
-        guard let path = Bundle.main.path(forResource: url, ofType: "json") else {
-            completionHandler(nil, FetchError.noData("Invalid JSON file"))
-            return
+        guard let url = components.url else {
+            throw FetchError.noData("Couldn't build request URL.")
         }
-        
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return data
+    }
+
+    static func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
         do {
-            let responseData = try Data(contentsOf: URL(fileURLWithPath: path), options: .mappedIfSafe)
-            completionHandler(responseData, nil)
+            return try decoder.decode(type, from: data)
         } catch {
-            completionHandler(nil, FetchError.noData("File didn't contain valid JSON data."))
-            return
-        }
-    }
-    
-    private static func fetchLocalImage(url: String?, width: ImageSize, completionHandler: @escaping (UIImage?, Error?) -> Void) {
-        guard let url = url else {
-            completionHandler(nil, FetchError.image("No image URL supplied"))
-            return
-        }
-
-        guard let path = Bundle.main.path(forResource: url, ofType: nil) else {
-            completionHandler(nil, FetchError.noData("Invalid JSON file"))
-            return
-        }
-
-        if let imageData = try? Data(contentsOf: URL(fileURLWithPath: path), options: .mappedIfSafe) {
-            let poster = UIImage(data: imageData)
-            
-            DispatchQueue.main.async {
-                completionHandler(poster, nil)
-            }
+            throw FetchError.decode("Couldn't decode JSON data: \(error)")
         }
     }
 }
 
-// MARK: - JSON Decoder and Transformer
+// MARK: - Movies
 
 extension TMDBWrapper {
-    private static var decoder: JSONDecoder {
+    static func getMovie(id: Int) async throws -> Movie {
+        let data = try await fetch(
+            "/movie/\(id)",
+            queryItems: [
+                URLQueryItem(name: "with_release_type", value: "3|2"),
+                URLQueryItem(name: "append_to_response", value: "videos,release_dates,credits,keywords"),
+            ],
+            certified: true
+        )
+        return translate(movie: try decode(MovieRaw.self, from: data))
+    }
+
+    static func getCollection(id: Int) async throws -> [Movie] {
+        let data = try await fetch("/collection/\(id)", certified: true)
+        let collection = try decode(CollectionRaw.self, from: data)
+        // Oldest-to-newest so the franchise reads chronologically.
+        return collection.parts.map(translate(movie:)).sorted {
+            guard let a = $0.releaseDate else { return false }
+            guard let b = $1.releaseDate else { return true }
+            return a < b
+        }
+    }
+
+    static func moviesNowPlaying(page: Int) async throws -> PagedResult<Movie> {
+        try await moviePage("/movie/now_playing", page: page)
+    }
+
+    static func moviesPopular(page: Int) async throws -> PagedResult<Movie> {
+        try await moviePage("/movie/popular", page: page)
+    }
+
+    static func moviesComingSoon(page: Int) async throws -> PagedResult<Movie> {
+        try await moviePage("/movie/upcoming", page: page)
+    }
+
+    static func movieRecommendations(id: Int, page: Int = 1) async throws -> PagedResult<Movie> {
+        try await moviePage("/movie/\(id)/recommendations", page: page)
+    }
+
+    static func searchForMovies(query: String, page: Int = 1) async throws -> PagedResult<Movie> {
+        guard !query.isEmpty else { return .empty }
+        return try await moviePage("/search/movie", page: page,
+                                   queryItems: [URLQueryItem(name: "query", value: query)])
+    }
+
+    /// Shared fetch/decode for the paged movie list and search endpoints.
+    private static func moviePage(_ path: String, page: Int,
+                                  queryItems: [URLQueryItem] = []) async throws -> PagedResult<Movie> {
+        guard page > 0 else {
+            throw FetchError.decode("Invalid page number (index starts at 1).")
+        }
+        let data = try await fetch(path, queryItems: queryItems + [
+            URLQueryItem(name: "page", value: String(page))
+        ], certified: true)
+        let root = try decode(RootRaw<MovieRaw>.self, from: data)
+        return PagedResult(items: root.results.map(translate(movie:)),
+                           totalResults: root.totalResults, totalPages: root.totalPages)
+    }
+}
+
+// MARK: - People
+
+extension TMDBWrapper {
+    static func getPerson(id: Int) async throws -> Person {
+        let data = try await fetch("/person/\(id)",
+                                   queryItems: [URLQueryItem(name: "append_to_response", value: "movie_credits")])
+        return translate(person: try decode(PersonRaw.self, from: data))
+    }
+
+    static func searchForPeople(query: String, page: Int = 1) async throws -> PagedResult<Person> {
+        guard !query.isEmpty else { return .empty }
+        let data = try await fetch("/search/person", queryItems: [
+            URLQueryItem(name: "query", value: query),
+            URLQueryItem(name: "page", value: String(page)),
+        ])
+        let root = try decode(RootRaw<PersonRaw>.self, from: data)
+        return PagedResult(items: root.results.map(translate(person:)),
+                           totalResults: root.totalResults, totalPages: root.totalPages)
+    }
+}
+
+// MARK: - Images
+
+/// A page of results returned by a TMDB list/search endpoint.
+struct PagedResult<Element> {
+    let items: [Element]
+    let totalResults: Int
+    let totalPages: Int
+
+    static var empty: PagedResult { PagedResult(items: [], totalResults: 0, totalPages: 1) }
+}
+
+extension TMDBWrapper {
+    /// A fully-qualified TMDB image URL for the given path and size.
+    static func imageURL(path: String?, size: String) -> URL? {
+        guard let path else { return nil }
+        return URL(string: "\(imageBaseURL)/\(size)/\(path)")
+    }
+
+    /// Raw image data (e.g. for average-color extraction).
+    static func imageData(from url: URL) async throws -> Data {
+        try await URLSession.shared.data(from: url).0
+    }
+}
+
+// MARK: - Decoding & translation
+
+private extension TMDBWrapper {
+    static var decoder: JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = JSONDecoder.DateDecodingStrategy.custom({ (decoder) -> Date in
-            do {
-                let container = try decoder.singleValueContainer()
-                let dateString = try container.decode(String.self)
-            
-                if let date = DateFormatter.iso8601DAw.date(from: dateString) {
-                    return date
-                }
-                
-                if let date = DateFormatter.iso8601DTw.date(from: dateString) {
-                    return date
-                }
-                
-                print("Error: Unable to create date object for string: \(dateString)")
-            } catch {
-                print("Error: \(error)")
-            }
-            
-            return Date()
-        })
-        
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            return DateFormatter.iso8601DAw.date(from: dateString)
+                ?? DateFormatter.iso8601DTw.date(from: dateString)
+                ?? Date()
+        }
         return decoder
     }
-    
-    private static func translate(movie mv: MovieRaw) -> Movie {
+
+    static func translate(movie mv: MovieRaw) -> Movie {
         let movie = Movie(id: mv.id, title: mv.title)
-        
-        if let overview = mv.overview, overview.count > 0 {
+
+        if let overview = mv.overview, !overview.isEmpty {
             movie.overview = overview
         }
-                
+
         movie.poster = mv.poster
         movie.background = mv.background
         movie.runtime = mv.runtime
         movie.rating = mv.rating
         movie.popularity = mv.popularity
         movie.imdbID = mv.imdbID
-        
+
         let releaseInfo = mv.certification()
         if let releaseDate = releaseInfo.releaseDate {
             movie.releaseDate = releaseDate
@@ -474,21 +203,17 @@ extension TMDBWrapper {
             movie.releaseDate = releaseDateString.toDate(format: .iso8601DAw)
         }
 
-        movie.certification = releaseInfo.0
+        movie.certification = releaseInfo.certification
         movie.genres = mv.genres()
         movie.bonusCredits = Movie.Credits(mv.bonusCredits())
         movie.team = mv.team()
         movie.trailers = mv.trailers()
         movie.collection = mv.collection()
 
-        for trailer in movie.trailers ?? [] {
-            print(trailer.url ?? "No URL")
-        }
-        
         return movie
     }
-    
-    private static func translate(person p: PersonRaw) -> Person {
+
+    static func translate(person p: PersonRaw) -> Person {
         let person = Person(id: p.id, name: p.name)
         person.popularity = p.popularity
         person.profilePicture = p.profilePicture
@@ -496,30 +221,28 @@ extension TMDBWrapper {
         person.placeOfBirth = p.placeOfBirth
         person.bio = p.biography
         person.imdbID = p.imdbID
-        
         person.credits = p.credits()
-        
         return person
     }
 }
 
-// MARK: - JSON Structures
+// MARK: - JSON structures
 
-extension TMDBWrapper {
-    // Pass codable generic to specify type of results
-    private struct RootRaw<T:Codable>: Codable {
+private extension TMDBWrapper {
+    // Pass a Codable generic to specify the type of `results`.
+    struct RootRaw<T: Codable>: Codable {
         var results: [T]
         var totalResults: Int
         var totalPages: Int
-        
-        private enum CodingKeys : String, CodingKey {
+
+        private enum CodingKeys: String, CodingKey {
             case results
             case totalResults = "total_results"
             case totalPages = "total_pages"
         }
     }
-    
-    private struct MovieRaw: Codable {
+
+    struct MovieRaw: Codable {
         var id: Int
         var title: String
         var releaseDateString: String?
@@ -536,115 +259,85 @@ extension TMDBWrapper {
         var keywords: Keywords?
         var teamRaw: TeamRaw?
         var collectionRaw: CollectionStubRaw?
-        
+
         func certification() -> (certification: String?, releaseDate: Date?) {
             let regionCode = NSLocale.current.region?.identifier ?? "US"
-            
+
             guard let releases = self.releaseDates?.releases else {
                 return (nil, nil)
             }
-            
-            let filteredReleases = releases.filter({ $0.country == regionCode })
+
+            let filteredReleases = releases.filter { $0.country == regionCode }
             guard filteredReleases.count > 0 else {
                 return (nil, nil)
             }
 
-            var release = filteredReleases[0].dates.filter({ $0.type == .Theatrical })
+            var release = filteredReleases[0].dates.filter { $0.type == .Theatrical }
             if release.count < 1 {
-                release = filteredReleases[0].dates.filter({ $0.type == .TheatricalLimited })
+                release = filteredReleases[0].dates.filter { $0.type == .TheatricalLimited }
             }
-            
+
             guard release.count > 0 else {
                 return (nil, nil)
             }
-            
+
             if !release[0].certification.isEmpty {
                 return (release[0].certification, release[0].releaseDate)
             } else {
                 return ("Unavailable", release[0].releaseDate)
             }
         }
-        
+
         func genres() -> [String]? {
-            guard let genres = genresRaw else {
-                return nil
-            }
-            
-            if genres.count > 2 {
-                return genres[0..<2].map({ $0.name })
-            } else{
-                return genres.map({ $0.name })
-            }
+            guard let genres = genresRaw else { return nil }
+            return genres.count > 2 ? genres[0..<2].map { $0.name } : genres.map { $0.name }
         }
-        
+
         func bonusCredits() -> (during: Bool, after: Bool) {
             var duringCredits = false
             var afterCredits = false
-            
-            guard keywords != nil, let keywords = keywords?.keywords else {
+
+            guard let keywords = keywords?.keywords else {
                 return (duringCredits, afterCredits)
             }
-            
+
             for keyword in keywords {
-                if keyword.id == TMDBWrapper.bonusKeywords["during"] {
-                    duringCredits = true
-                }
-                
-                if keyword.id == TMDBWrapper.bonusKeywords["after"] {
-                    afterCredits = true
-                }
+                if keyword.id == TMDBWrapper.bonusKeywords["during"] { duringCredits = true }
+                if keyword.id == TMDBWrapper.bonusKeywords["after"] { afterCredits = true }
             }
-            
+
             return (duringCredits, afterCredits)
         }
-        
+
         func team() -> [Person] {
+            guard let teamRaw = self.teamRaw else { return [] }
+
             var team = [Person]()
-            
-            guard let teamRaw = self.teamRaw else {
-                return team
-            }
-
             for person in teamRaw.crew.filter({ $0.role == "Director" }) {
-                let member = Person(id:     person.id,
-                                    name:   person.name,
-                                    role:   person.role,
-                                    pic:    person.profilePicture,
-                                    type:   .Crew)
-                team.append(member)
+                team.append(Person(id: person.id, name: person.name, role: person.role,
+                                   pic: person.profilePicture, type: .Crew))
             }
-
             for person in teamRaw.cast {
-                let member = Person(id:     person.id,
-                                    name:   person.name,
-                                    role:   person.role,
-                                    pic:    person.profilePicture,
-                                    type:   .Cast)
-                team.append(member)
+                team.append(Person(id: person.id, name: person.name, role: person.role,
+                                   pic: person.profilePicture, type: .Cast))
             }
-            
             return team
         }
-        
-        func trailers() -> [MovieTrailer]? {
-            guard let trailersRaw = trailersRaw else {
-                return nil
-            }
-            var trailers = [MovieTrailer]()
-            for t in trailersRaw.trailers {
-                let trailer = MovieTrailer(id: t.id,
-                                           title: t.name,
-                                           key: t.key,
-                                           type: t.type,
-                                           site: t.site,
-                                           official: t.official,
-                                           publishedAt: t.publishedAt)
-                trailers.append(trailer)
-            }
 
-            return trailers
+        func trailers() -> [MovieTrailer]? {
+            guard let trailersRaw = trailersRaw else { return nil }
+            return trailersRaw.trailers.map {
+                MovieTrailer(id: $0.id, title: $0.name, key: $0.key, type: $0.type,
+                             site: $0.site, official: $0.official, publishedAt: $0.publishedAt)
+            }
         }
-        
+
+        func collection() -> MovieCollection? {
+            guard let stub = collectionRaw else { return nil }
+            return MovieCollection(id: stub.id, name: stub.name,
+                                   poster: stub.poster, background: stub.background)
+        }
+
         enum CodingKeys: String, CodingKey {
             case id, title, overview, runtime, popularity, keywords
             case imdbID = "imdb_id"
@@ -657,12 +350,6 @@ extension TMDBWrapper {
             case trailersRaw = "videos"
             case teamRaw = "credits"
             case collectionRaw = "belongs_to_collection"
-        }
-
-        func collection() -> MovieCollection? {
-            guard let stub = collectionRaw else { return nil }
-            return MovieCollection(id: stub.id, name: stub.name,
-                                   poster: stub.poster, background: stub.background)
         }
 
         struct CollectionStubRaw: Codable {
@@ -681,11 +368,11 @@ extension TMDBWrapper {
         struct GenreRaw: Codable {
             var name: String
         }
-        
+
         struct Keywords: Codable {
             var keywords: [KeywordRaw]
         }
-        
+
         struct KeywordRaw: Codable {
             var id: Int
             var name: String
@@ -693,29 +380,29 @@ extension TMDBWrapper {
 
         struct ReleaseDatesRaw: Codable {
             var releases: [ReleaseDateWrapperRaw]
-            private enum CodingKeys : String, CodingKey {
+            private enum CodingKeys: String, CodingKey {
                 case releases = "results"
             }
-        
+
             struct ReleaseDateWrapperRaw: Codable {
                 var country: String
                 var dates: [ReleaseDateRaw]
-                
-                enum CodingKeys : String, CodingKey {
+
+                enum CodingKeys: String, CodingKey {
                     case country = "iso_3166_1"
                     case dates = "release_dates"
                 }
-                
+
                 struct ReleaseDateRaw: Codable {
                     var type: ReleaseType
                     var releaseDate: Date
                     var certification: String
-                    
-                    enum CodingKeys : String, CodingKey {
+
+                    enum CodingKeys: String, CodingKey {
                         case type, certification
                         case releaseDate = "release_date"
                     }
-                    
+
                     enum ReleaseType: Int, Codable {
                         case Premiere = 1
                         case TheatricalLimited = 2
@@ -727,32 +414,32 @@ extension TMDBWrapper {
                 }
             }
         }
-        
+
         struct TeamRaw: Codable {
             var cast: [CastMemberRaw]
             var crew: [CrewMemberRaw]
-            
+
             struct CastMemberRaw: Codable {
                 var id: Int
                 var order: Int
                 var name: String
                 var role: String
                 var profilePicture: String?
-                
-                enum CodingKeys : String, CodingKey {
+
+                enum CodingKeys: String, CodingKey {
                     case name, id, order
                     case role = "character"
                     case profilePicture = "profile_path"
                 }
             }
-            
+
             struct CrewMemberRaw: Codable {
                 var id: Int
                 var name: String
                 var role: String
                 var profilePicture: String?
-                
-                enum CodingKeys : String, CodingKey {
+
+                enum CodingKeys: String, CodingKey {
                     case name, id
                     case role = "job"
                     case profilePicture = "profile_path"
@@ -762,11 +449,11 @@ extension TMDBWrapper {
 
         struct TrailersRaw: Codable {
             var trailers: [Trailer]
-            
-            enum CodingKeys : String, CodingKey {
+
+            enum CodingKeys: String, CodingKey {
                 case trailers = "results"
             }
-            
+
             struct Trailer: Codable {
                 var id: String
                 var name: String
@@ -783,15 +470,15 @@ extension TMDBWrapper {
             }
         }
     }
-    
-    private struct CollectionRaw: Codable {
+
+    struct CollectionRaw: Codable {
         var id: Int
         var name: String
         var overview: String?
         var parts: [MovieRaw]
     }
 
-    private struct PersonRaw: Codable {
+    struct PersonRaw: Codable {
         var id: Int
         var name: String
         var popularity: Float
@@ -800,39 +487,33 @@ extension TMDBWrapper {
         var placeOfBirth: String?
         var biography: String?
         var imdbID: String?
-        var test: String?
         var creditsRaw: CreditsRaw?
-        
-        func credits() -> [Movie] {
-            var credits = [Movie]()
-            guard let creditsRaw = self.creditsRaw else {
-                return credits
-            }
 
+        func credits() -> [Movie] {
+            guard let creditsRaw = self.creditsRaw else { return [] }
+
+            var credits = [Movie]()
             for collection in [creditsRaw.cast, creditsRaw.crew] {
                 for movie in collection {
                     let credit = Movie(id: movie.id, title: movie.title)
                     credit.poster = movie.poster
                     credit.creditRole = movie.role
                     credit.popularity = movie.popularity
-                    if let releaseDateString = movie.releaseDateString {
-                        if releaseDateString.isEmpty == false {
-                            credit.releaseDate = releaseDateString.toDate(format: .iso8601DAw)
-                        }
+                    if let releaseDateString = movie.releaseDateString, !releaseDateString.isEmpty {
+                        credit.releaseDate = releaseDateString.toDate(format: .iso8601DAw)
                     }
-
                     credits.append(credit)
                 }
             }
-            
-            // Convert to set to remove duplicates, then sort by release date
+
+            // De-duplicate, then sort newest-first.
             return Set(credits).sorted {
                 guard let releaseA = $0.releaseDate else { return false }
                 guard let releaseB = $1.releaseDate else { return true }
                 return releaseA.compare(releaseB) == .orderedDescending
             }
         }
-        
+
         enum CodingKeys: String, CodingKey {
             case id, name, popularity
             case birthday, biography
@@ -841,11 +522,11 @@ extension TMDBWrapper {
             case profilePicture = "profile_path"
             case placeOfBirth = "place_of_birth"
         }
-        
+
         struct CreditsRaw: Codable {
             var cast: [MovieCreditRaw]
             var crew: [MovieCreditRaw]
-            
+
             struct MovieCreditRaw: Codable {
                 var id: Int
                 var title: String
@@ -867,11 +548,28 @@ extension TMDBWrapper {
             }
         }
     }
-    
 }
 
 enum FetchError: Error {
     case noData(String)
     case decode(String)
     case image(String)
+}
+
+// MARK: - Model image URLs (for SwiftUI AsyncImage)
+
+extension Movie {
+    func posterURL(_ size: Movie.PosterSize = .w342) -> URL? {
+        TMDBWrapper.imageURL(path: poster, size: size.rawValue)
+    }
+
+    func backgroundURL(_ size: Movie.BackgroundSize = .w1280) -> URL? {
+        TMDBWrapper.imageURL(path: background, size: size.rawValue)
+    }
+}
+
+extension Person {
+    func profileURL(_ size: Person.ProfileSize = .w276) -> URL? {
+        TMDBWrapper.imageURL(path: profilePicture, size: size.rawValue)
+    }
 }
