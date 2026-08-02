@@ -244,6 +244,37 @@ enum WatchListStore {
         entry(for: movieID, in: list)?.userRating = snapped
     }
 
+    /// The date the user watched a movie on a list, if recorded.
+    static func dateWatched(for movieID: Int, in list: MovieList) -> Date? {
+        entry(for: movieID, in: list)?.dateWatched
+    }
+
+    /// Sets (or clears, with `nil`) the date the user watched a movie on a list.
+    /// No-op if the movie isn't on the list.
+    static func setDateWatched(_ date: Date?, for movieID: Int, in list: MovieList) {
+        entry(for: movieID, in: list)?.dateWatched = date
+    }
+
+    /// A watched date stored canonically as midnight UTC for a calendar day, so it
+    /// reads as the same day on every device regardless of timezone. Pass a date
+    /// expressed in the user's local time (from a DatePicker or `Date()`); its
+    /// local year/month/day is preserved.
+    static func floatingDay(from localDate: Date) -> Date {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        let comps = Calendar.current.dateComponents([.year, .month, .day], from: localDate)
+        return utc.date(from: comps) ?? localDate
+    }
+
+    /// Converts a canonical UTC-midnight watched date back to midnight in the
+    /// user's timezone, for a DatePicker/label that operates in local time.
+    static func localDay(from storedDate: Date) -> Date {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        let comps = utc.dateComponents([.year, .month, .day], from: storedDate)
+        return Calendar.current.date(from: comps) ?? storedDate
+    }
+
     /// Adds a movie to a list. Adding to a built-in list removes the movie from
     /// the opposite built-in list (To Watch ↔ Watched); custom lists are additive.
     static func add(_ movie: Movie, to list: MovieList, in context: ModelContext) {
@@ -256,7 +287,7 @@ enum WatchListStore {
         guard entry(for: movie.id, in: list) == nil else { return }
 
         let entry = WatchListEntry(movie: movie)
-        if list.tracksWatchedDate { entry.dateWatched = Date() }
+        if list.tracksWatchedDate { entry.dateWatched = floatingDay(from: Date()) }
         entry.list = list
         context.insert(entry)
     }

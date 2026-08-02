@@ -35,6 +35,10 @@ struct MovieMetadataStrip: View {
                                 StarRating(movieID: movie.id, list: watchedList, context: context, tint: tint)
                             }
                             divider
+                            cell(header: "WATCHED", minWidth: 80) {
+                                WatchedDate(movieID: movie.id, list: watchedList, context: context, tint: tint)
+                            }
+                            divider
                         }
                         .transition(.opacity.combined(with: .move(edge: .leading)))
                     }
@@ -219,6 +223,72 @@ private struct StarRating: View {
         let within = (x - Double(index) * slot) / starSize
         let value = Double(index) + (within <= 0.5 ? 0.5 : 1.0)
         return min(5, value)
+    }
+}
+
+/// The date the user watched a movie, shown as a tappable value in the metadata
+/// strip. Tapping opens a graphical date picker in a sheet; changes are written
+/// straight through to the movie's Watched-list entry.
+private struct WatchedDate: View {
+    let movieID: Int
+    let list: MovieList
+    let context: ModelContext
+    let tint: Color
+    /// The currently displayed/selected date. Defaults to today for older entries
+    /// that predate watched-date tracking (only persisted once the user picks one).
+    @State private var date: Date
+    @State private var showPicker = false
+
+    init(movieID: Int, list: MovieList, context: ModelContext, tint: Color) {
+        self.movieID = movieID
+        self.list = list
+        self.context = context
+        self.tint = tint
+        // Work in local time: the stored value is canonical UTC-midnight, so map it
+        // back to the same calendar day at local midnight for the picker/label.
+        let stored = WatchListStore.dateWatched(for: movieID, in: list)
+        _date = State(initialValue: stored.map(WatchListStore.localDay)
+                      ?? Calendar.current.startOfDay(for: Date()))
+    }
+
+    var body: some View {
+        Button {
+            showPicker = true
+        } label: {
+            // Format in the system timezone (not the UTC-pinned detailPresentation
+            // formatter) so the shown day matches what the picker selected.
+            Text(date, format: .dateTime.month(.abbreviated).day().year())
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showPicker) {
+            NavigationStack {
+                DatePicker("Date Watched", selection: $date, in: ...Date(),
+                           displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .tint(tint)
+                    .padding()
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .navigationTitle("Date Watched")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Today") { date = Date() }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button { showPicker = false } label: {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                    .onChange(of: date) { _, newValue in
+                        WatchListStore.setDateWatched(WatchListStore.floatingDay(from: newValue),
+                                                      for: movieID, in: list)
+                    }
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
     }
 }
 
