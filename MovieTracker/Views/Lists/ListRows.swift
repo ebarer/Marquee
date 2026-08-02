@@ -1,5 +1,5 @@
 //
-//  WatchListRows.swift
+//  ListRows.swift
 //  MovieTracker
 //
 
@@ -8,7 +8,7 @@ import SwiftData
 
 /// The month/year grouped list for the current selection. Rows render from Sendable
 /// snapshots; the live model is only refetched (by persistent id) on delete.
-struct WatchListRows: View {
+struct ListRows: View {
     let sections: [SectionSnapshot]
     let selection: ListSelection
     let lists: [MediaList]
@@ -116,7 +116,7 @@ struct WatchListRows: View {
 }
 
 #Preview {
-    WatchListRows(sections: [], selection: .watched, lists: [],
+    ListRows(sections: [], selection: .watched, lists: [],
                   context: previewModelContainer.mainContext, listColor: .appAccent)
         .listStyle(.plain)
 }

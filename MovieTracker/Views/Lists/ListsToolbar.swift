@@ -1,5 +1,5 @@
 //
-//  WatchListToolbar.swift
+//  ListsToolbar.swift
 //  MovieTracker
 //
 
@@ -16,7 +16,7 @@ enum ListSelection: Hashable {
 
 /// The navigation title: the name (tinted with the list color) over a title count,
 /// flanked by a menu chevron.
-struct WatchListTitleLabel: View {
+struct ListTitleLabel: View {
     let name: String
     let color: Color
     let count: Int
@@ -48,7 +48,7 @@ struct WatchListTitleLabel: View {
 
 /// The title-menu switcher: Watch List + Watched on top, custom lists next, Viewed
 /// last.
-struct WatchListTitleMenu: View {
+struct ListTitleMenu: View {
     @Binding var selection: ListSelection
     let watchList: MediaList?
     let customLists: [MediaList]
@@ -91,7 +91,7 @@ struct WatchListTitleMenu: View {
 }
 
 /// The leading ellipsis menu: create/manage lists, then import/export the library.
-struct WatchListActionsMenu: View {
+struct ListActionsMenu: View {
     let canEditLists: Bool
     let canClearViewed: Bool
     let onNewList: () -> Void
@@ -163,7 +163,7 @@ struct WatchListActionsMenu: View {
 
 /// The trailing sort menu: order direction, plus (on Watched) release vs. watched
 /// date.
-struct WatchListSortMenu: View {
+struct ListSortMenu: View {
     @Binding var ascending: Bool
     @Binding var watchedSortKey: WatchedSortKey
     let showsWatchedSortKey: Bool

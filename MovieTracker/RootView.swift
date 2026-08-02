@@ -46,7 +46,7 @@ struct RootView: View {
 
             Tab("Lists", systemImage: "checklist") {
                 NavigationStack {
-                    WatchListView()
+                    ListsView()
                         .movieTrackerDestinations()
                 }
             }

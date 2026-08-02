@@ -1,5 +1,5 @@
 //
-//  WatchListView.swift
+//  ListsView.swift
 //  MovieTracker
 //
 
@@ -7,7 +7,7 @@ import SwiftUI
 import SwiftData
 import CoreData
 
-struct WatchListView: View {
+struct ListsView: View {
     @Environment(\.modelContext) private var context
     @Environment(MediaStore.self) private var store: MediaStore?
     /// Present only when running inside the app (absent in previews).
@@ -52,7 +52,7 @@ struct WatchListView: View {
     @State private var showListManager = false
 
     var body: some View {
-        WatchListRows(sections: sections, selection: resolvedSelection, lists: lists,
+        ListRows(sections: sections, selection: resolvedSelection, lists: lists,
                       context: context, listColor: activeColor)
         .listStyle(.plain)
         .tint(activeColor)
@@ -61,15 +61,15 @@ struct WatchListView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Menu {
-                    WatchListTitleMenu(selection: selectionBinding, watchList: watchList,
+                    ListTitleMenu(selection: selectionBinding, watchList: watchList,
                                        customLists: customLists)
                 } label: {
-                    WatchListTitleLabel(name: title, color: activeColor, count: movieCount)
+                    ListTitleLabel(name: title, color: activeColor, count: movieCount)
                 }
                 .tint(.primary)
             }
             ToolbarItem(placement: .topBarLeading) {
-                WatchListActionsMenu(
+                ListActionsMenu(
                     canEditLists: !customLists.isEmpty,
                     canClearViewed: resolvedSelection == .viewed && movieCount > 0,
                     onNewList: { editor = .create(addMovie: nil) },
@@ -89,7 +89,7 @@ struct WatchListView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                WatchListSortMenu(ascending: ascendingBinding, watchedSortKey: $watchedSortKey,
+                ListSortMenu(ascending: ascendingBinding, watchedSortKey: $watchedSortKey,
                                   showsWatchedSortKey: resolvedSelection == .watched)
                     .tint(activeColor)
             }
@@ -373,7 +373,7 @@ struct WatchListView: View {
 
 #Preview("Idle") {
     NavigationStack {
-        WatchListView()
+        ListsView()
             .movieTrackerDestinations()
     }
     .modelContainer(previewModelContainer)
@@ -383,7 +383,7 @@ struct WatchListView: View {
 
 #Preview("Syncing") {
     NavigationStack {
-        WatchListView()
+        ListsView()
             .movieTrackerDestinations()
     }
     .modelContainer(previewModelContainer)

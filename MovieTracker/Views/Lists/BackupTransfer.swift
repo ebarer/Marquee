@@ -7,7 +7,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// The file exporter, importer, and their result alerts, kept out of
-/// `WatchListView.body` so its main modifier chain stays type-checkable.
+/// `ListsView.body` so its main modifier chain stays type-checkable.
 struct BackupTransferModifier: ViewModifier {
     @Binding var showExporter: Bool
     @Binding var showImporter: Bool

@@ -1,5 +1,5 @@
 //
-//  WatchListSections.swift
+//  ListSections.swift
 //  MovieTracker
 //
 //  Off-main-thread section building for the Lists screen. Fetching and grouping a
