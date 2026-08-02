@@ -2,17 +2,10 @@
 //  WatchListView.swift
 //  MovieTracker
 //
-//  The user's movie lists, backed by SwiftData (+ CloudKit). The navigation
-//  title is a menu that switches between lists and offers New/Edit List actions.
-//  Two built-in lists always exist (To Watch, Watched); the user can add custom
-//  ones. A sort menu flips ascending/descending and — on Watched — chooses
-//  release date vs. date watched. Swipe actions move or remove entries.
-//
 
 import SwiftUI
 import SwiftData
 import CoreData
-import UniformTypeIdentifiers
 
 struct WatchListView: View {
     @Environment(\.modelContext) private var context
@@ -21,14 +14,12 @@ struct WatchListView: View {
     @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
     private var allLists: [MovieList]
 
-    /// The queried lists with any duplicate built-in lists collapsed, so the
-    /// switcher never shows two "Watch List"/"Watched"/"Viewed" entries during
-    /// the window where CloudKit has synced a duplicate but
-    /// `deduplicateBuiltInLists` hasn't merged it away yet. For each built-in
-    /// kind only the canonical (lowest-UUID) list is kept — matching the survivor
-    /// the merge converges on — while custom lists pass through unchanged.
+    /// The queried lists with duplicate built-in lists collapsed, so the switcher
+    /// never shows two "Watch List"/"Watched"/"Viewed" entries in the window where
+    /// CloudKit has synced a duplicate but `deduplicateBuiltInLists` hasn't merged
+    /// it away yet. For each built-in kind only the canonical (lowest-UUID) list —
+    /// the merge survivor — is kept; custom lists pass through unchanged.
     private var lists: [MovieList] {
-        // Duplicates awaiting cleanup are hidden outright.
         let visible = allLists.filter { !$0.isDeduplicated }
         var canonicalID: [ListKind: UUID] = [:]
         for list in visible where list.kind != .custom {
@@ -43,21 +34,15 @@ struct WatchListView: View {
     @State private var selectedListUUID: UUID?
     @State private var editor: ListEditor?
 
-    /// The month/year sections for the selected list, built off the main thread by
-    /// `SectionBuilder` (via `.task(id: sectionsInput)`) so grouping a large list
-    /// never blocks the UI. Rows render from these Sendable snapshots.
+    /// Month/year sections for the selected list, built off the main thread by
+    /// `SectionBuilder` so grouping a large list never blocks the UI.
     @State private var sections: [SectionSnapshot] = []
-
-    /// The background actor that fetches and groups a list's entries off the main
-    /// thread. Created lazily from the container and reused across rebuilds.
     @State private var builder: SectionBuilder?
 
-    /// Bumped whenever the store changes (a local save or a CloudKit import) so the
-    /// sections rebuild and never show stale data — e.g. after a watched date edit
-    /// that moves a movie between month sections without changing the entry count.
+    /// Bumped on any store change (local save or CloudKit import) so the sections
+    /// rebuild even when the entry count is unchanged (e.g. a watched-date edit).
     @State private var dataVersion = 0
 
-    /// Inline text used to narrow the current list down to matching titles.
     @State private var filterText = ""
 
     // Sort direction is remembered per list (keyed by UUID in UserDefaults):
@@ -65,8 +50,7 @@ struct WatchListView: View {
     @State private var sortAscending = true
     @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .releaseDate
 
-    // Backup import/export. The export document is built on demand from the
-    // current library; import/error results drive their own result alerts.
+    // Backup import/export state.
     @State private var exportDocument: WatchDataDocument?
     @State private var showExporter = false
     @State private var showImporter = false
@@ -75,81 +59,38 @@ struct WatchListView: View {
     /// Progress of an in-flight CSV import (fetched, total); nil when idle.
     @State private var importProgress: (done: Int, total: Int)?
 
-    /// Presents the Edit Lists modal (reorder/delete/edit custom lists).
     @State private var showListManager = false
 
-    /// The list of month/year sections for the selected list. Extracted from
-    /// `body` to keep the modifier chain type-checkable.
-    private var listContent: some View {
-        List {
-            ForEach(sections) { section in
-                Section {
-                    ForEach(Array(section.entries.enumerated()), id: \.element.id) { index, entry in
-                        MovieListRow(
-                            movie: movie(from: entry),
-                            subtitle: subtitle(for: entry),
-                            showsSubtitle: showsRowSubtitle,
-                            duration: duration(for: entry),
-                            rating: rating(for: entry),
-                            ratingTint: activeListColor,
-                            lists: lists,
-                            context: context,
-                            leadingActions: { leadingAction(for: entry) },
-                            trailingActions: {
-                                Button(role: .destructive) {
-                                    delete(entry)
-                                } label: {
-                                    Image(systemName: "trash")
-                                        .tint(.red)
-                                }
-                            }
-                        )
-                        .listRowSeparator(index == section.entries.count - 1 ? .hidden : .automatic, edges: .bottom)
-                    }
-                } header: {
-                    Text(section.title)
-                        .foregroundStyle(activeListColor)
-                }
-            }
-        }
-    }
-
     var body: some View {
-        listContent
+        WatchListRows(sections: sections, list: selectedList, lists: lists, context: context,
+                      listColor: activeListColor, watchList: watchList, watchedList: watchedList)
         .listStyle(.plain)
-        // Accent the nav-bar controls (title menu, sort) with the active list color.
         .tint(activeListColor)
         .navigationTitle(selectedList?.name ?? "Lists")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
-            // Title switcher rendered ourselves so the list name can carry the
-            // list's color (the system navigation title can't be tinted).
+            // Rendered ourselves so the list name can carry the list's color.
             ToolbarItem(placement: .principal) {
                 Menu {
-                    titleMenu
+                    WatchListTitleMenu(selection: $selectedListUUID, topLists: topLists,
+                                       customLists: customLists, viewedList: viewedList)
                 } label: {
-                    VStack(spacing: 1) {
-                        HStack(spacing: 5) {
-                            // A hidden chevron on the leading side balances the real
-                            // one on the trailing side, so the title and subtitle stay
-                            // centered on the text (the visible chevron then sits a
-                            // touch right of center, which is fine).
-                            titleChevron.hidden()
-                            Text(selectedList?.name ?? "Lists")
-                                .font(.headline)
-                                .foregroundStyle(activeListColor)
-                            titleChevron
-                        }
-                        Text("^[\(movieCount) Movie](inflect: true)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                    WatchListTitleLabel(name: selectedList?.name ?? "Lists",
+                                        color: activeListColor, movieCount: movieCount)
                 }
                 .tint(.primary)
             }
             ToolbarItem(placement: .topBarLeading) {
-                listActionsMenu
-                    .tint(activeListColor)
+                WatchListActionsMenu(
+                    canEditLists: !customLists.isEmpty,
+                    clearableList: clearableViewedList,
+                    onNewList: { editor = .create(addMovie: nil) },
+                    onEditLists: { showListManager = true },
+                    onClear: { WatchListStore.clear($0, in: context) },
+                    onImport: { showImporter = true },
+                    onExport: { prepareExport() }
+                )
+                .tint(activeListColor)
             }
             if syncMonitor?.isSyncing == true {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -160,7 +101,8 @@ struct WatchListView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                sortMenu
+                WatchListSortMenu(ascending: $sortAscending, watchedSortKey: $watchedSortKey,
+                                  tracksWatchedDate: selectedList?.tracksWatchedDate == true)
                     .tint(activeListColor)
             }
         }
@@ -209,28 +151,24 @@ struct WatchListView: View {
             importProgress: importProgress,
             onImport: handleImport
         ))
-        // Rebuild the grouped sections off the main thread whenever their inputs
-        // change (list, entry count, data version, sort direction, filter, watched
-        // sort key). Runs on appear and on each input change.
         .task(id: sectionsInput) { await rebuildSections() }
-        // Treat a local save as a data change so edits (e.g. a watched date) that
-        // don't alter the entry count still trigger a rebuild. Scoped to the main
-        // context so background/save churn elsewhere doesn't spuriously fire.
+        // A local save (e.g. a watched-date edit) that doesn't change the entry count
+        // still needs a rebuild. Scoped to the main context so background churn elsewhere
+        // doesn't spuriously fire.
         .task {
             for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave, object: context) {
                 dataVersion &+= 1
             }
         }
-        // A CloudKit import lands as a remote store change (no local save), so
-        // observe it too, keeping large synced lists current.
+        // A CloudKit import lands as a remote store change with no local save.
         .task {
             for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
                 dataVersion &+= 1
             }
         }
         .onAppear { selectDefaultIfNeeded() }
-        // Seeding is deferred to app launch (RootView), so the lists may arrive a
-        // moment later; pick the Watch List as soon as they do.
+        // Seeding is deferred to app launch (RootView); pick the Watch List as soon
+        // as the lists arrive.
         .onChange(of: lists.count) { _, _ in selectDefaultIfNeeded() }
         .onChange(of: selectedListUUID) { _, _ in
             // Clear immediately so the previous list's rows never show under the new
@@ -250,146 +188,15 @@ struct WatchListView: View {
         "watchListSortAscending_\(list.uuid.uuidString)"
     }
 
-    /// Loads the stored sort direction for the current list, falling back to the
-    /// per-kind default (Watched descending, all others ascending) when unset.
+    /// Loads the stored sort direction, falling back to the per-kind default
+    /// (Watched/Viewed newest-first, everything else oldest-first).
     private func loadSort() {
         guard let list = selectedList else { return }
         if let stored = UserDefaults.standard.object(forKey: Self.sortKey(for: list)) as? Bool {
             sortAscending = stored
         } else {
-            // Watched and Viewed read best newest-first; everything else oldest-first.
             sortAscending = list.kind != .watched && list.kind != .viewed
         }
-    }
-
-    /// Mimics the system title-menu chevron: a small glyph in a subtle filled circle.
-    private var titleChevron: some View {
-        Image(systemName: "chevron.down")
-            .font(.system(size: 9, weight: .bold))
-            .foregroundStyle(.secondary)
-            .padding(5)
-            .background(Color(.tertiarySystemFill), in: Circle())
-            // The system title-menu chevron sits a hair below the title's
-            // optical center.
-            .offset(y: 1)
-    }
-
-    // MARK: - Title menu
-
-    /// The navigation-title menu is now just the list switcher — the two built-in
-    /// lists up top and any custom lists below. Creating/editing/importing lives
-    /// in the leading toolbar buttons instead.
-    @ViewBuilder
-    private var titleMenu: some View {
-        Picker("List", selection: $selectedListUUID) {
-            ForEach(topLists) { list in
-                Label(list.name, systemImage: ListSymbol.outline(list.symbol)).tag(Optional(list.uuid))
-            }
-        }
-
-        if !customLists.isEmpty {
-            Divider()
-            Picker("Custom List", selection: $selectedListUUID) {
-                ForEach(customLists) { list in
-                    Label {
-                        Text(list.name)
-                    } icon: {
-                        // Emoji and the flip-prone smiley need a prebuilt image;
-                        // ordinary symbols render fine via `systemName`.
-                        if let image = ListSymbol.menuImage(list.symbol) {
-                            Image(uiImage: image)
-                        } else {
-                            Image(systemName: ListSymbol.outline(list.symbol))
-                                .foregroundStyle(list.color)
-                        }
-                    }
-                    .tag(Optional(list.uuid))
-                }
-            }
-        }
-
-        // The Viewed history always sits below the custom lists.
-        if let viewed = viewedList {
-            Divider()
-            Picker("Viewed", selection: $selectedListUUID) {
-                Label(viewed.name, systemImage: ListSymbol.outline(viewed.symbol))
-                    .tag(Optional(viewed.uuid))
-            }
-        }
-    }
-
-    // MARK: - List actions menu
-
-    /// The leading ellipsis menu: create or manage lists, then import/export the
-    /// whole library.
-    private var listActionsMenu: some View {
-        Menu {
-            Button {
-                editor = .create(addMovie: nil)
-            } label: {
-                Label("New List", systemImage: "plus")
-            }
-
-            if !customLists.isEmpty {
-                Button {
-                    showListManager = true
-                } label: {
-                    Label("Edit Lists", systemImage: "pencil")
-                }
-            }
-
-            // Clearing only applies to the rotating Viewed history.
-            if let list = selectedList, list.kind == .viewed, !(list.entries ?? []).isEmpty {
-                Divider()
-
-                Button(role: .destructive) {
-                    WatchListStore.clear(list, in: context)
-                } label: {
-                    Label("Clear Viewed", systemImage: "trash")
-                }
-                // Override the menu's accent tint so the trash icon reads red too.
-                .tint(.red)
-            }
-
-            Divider()
-
-            Button {
-                showImporter = true
-            } label: {
-                Label("Import", systemImage: "square.and.arrow.down")
-            }
-
-            Button {
-                prepareExport()
-            } label: {
-                Label("Export", systemImage: "square.and.arrow.up")
-            }
-
-            // Non-selectable version footer.
-            Section {
-                Text(appInfo)
-            }
-        } label: {
-            Label("More", systemImage: "ellipsis")
-        }
-    }
-
-    private var appInfo: String {
-        var appInfo: String = ""
-
-        if let releaseVersionNumber = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
-            appInfo.append(releaseVersionNumber)
-        }
-
-        if let buildVersionNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
-            if appInfo.isEmpty {
-                appInfo.append(buildVersionNumber)
-            } else {
-                appInfo.append(" (\(buildVersionNumber))")
-            }
-        }
-
-        return appInfo
     }
 
     // MARK: - Backup import/export
@@ -400,14 +207,13 @@ struct WatchListView: View {
         return "MovieTracker Backup \(stamp)"
     }
 
-    /// Snapshots the whole library and presents the system export sheet.
     private func prepareExport() {
         exportDocument = WatchDataDocument(archive: WatchListStore.exportArchive(from: context))
         showExporter = true
     }
 
-    /// Reads the chosen file and merges it, routing to the JSON backup or CSV
-    /// (TodoMovies) importer by file type, then surfaces the result (or an error).
+    /// Routes the chosen file to the JSON backup or CSV (TodoMovies) importer, then
+    /// surfaces the result or an error.
     private func handleImport(_ result: Result<URL, Error>) {
         switch result {
         case .success(let url):
@@ -421,7 +227,6 @@ struct WatchListView: View {
         }
     }
 
-    /// Merges the app's own JSON backup synchronously.
     private func importArchive(from url: URL) {
         do {
             let scoped = url.startAccessingSecurityScopedResource()
@@ -433,9 +238,8 @@ struct WatchListView: View {
         }
     }
 
-    /// Parses a TodoMovies CSV export, then merges it while fetching each movie's
-    /// details from TMDB. The file's read upfront; the network work runs in a
-    /// task behind the progress overlay.
+    /// Parses a TodoMovies CSV, then merges it while fetching each movie's details
+    /// from TMDB behind the progress overlay.
     private func importCSV(from url: URL) {
         let records: [CSVMovieRecord]
         do {
@@ -462,26 +266,6 @@ struct WatchListView: View {
         }
     }
 
-    // MARK: - Sorting menu
-
-    private var sortMenu: some View {
-        Menu {
-            Picker("Order", selection: $sortAscending) {
-                Text("Ascending").tag(true)
-                Text("Descending").tag(false)
-            }
-
-            if selectedList?.tracksWatchedDate == true {
-                Picker("Sort By", selection: $watchedSortKey) {
-                    Text(WatchedSortKey.releaseDate.title).tag(WatchedSortKey.releaseDate)
-                    Text(WatchedSortKey.dateWatched.title).tag(WatchedSortKey.dateWatched)
-                }
-            }
-        } label: {
-            Label("Sort", systemImage: "arrow.up.arrow.down")
-        }
-    }
-
     // MARK: - Selection
 
     private var selectedList: MovieList? {
@@ -491,39 +275,27 @@ struct WatchListView: View {
         return lists.first { $0.kind == .toWatch } ?? lists.first
     }
 
-    /// Number of movies in the selected list, shown as the nav-bar subtitle.
     private var movieCount: Int { (selectedList?.entries ?? []).count }
-
-    /// The two built-in lists shown above custom lists (To Watch, Watched).
     private var topLists: [MovieList] { lists.filter { $0.kind == .toWatch || $0.kind == .watched } }
-
-    /// User-created lists.
     private var customLists: [MovieList] { lists.filter { $0.kind == .custom } }
-
-    /// The built-in Viewed history, shown below the custom lists.
     private var viewedList: MovieList? { lists.first { $0.kind == .viewed } }
-
-    /// The accent color for a list — each list's own tint (built-ins carry fixed
-    /// brand colors, custom lists their chosen palette color).
-    private func listColor(for list: MovieList) -> Color {
-        list.color
-    }
-
-    /// Accent color for the currently selected list, used to theme the screen.
-    private var activeListColor: Color {
-        selectedList.map(listColor) ?? .appAccent
-    }
-
     private var watchList: MovieList? { lists.first { $0.kind == .toWatch } }
     private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
+
+    /// The Viewed list when it can be cleared (selected and non-empty); else nil.
+    private var clearableViewedList: MovieList? {
+        guard let list = selectedList, list.kind == .viewed, !(list.entries ?? []).isEmpty else { return nil }
+        return list
+    }
+
+    private func listColor(for list: MovieList) -> Color { list.color }
+    private var activeListColor: Color { selectedList.map(listColor) ?? .appAccent }
 
     private func select(_ list: MovieList?) {
         selectedListUUID = list?.uuid
     }
 
-    /// Defaults the selection to the Watch List once lists are available. The
-    /// selection lives only in @State (survives tab switches this session, resets
-    /// on a fresh launch).
+    /// Defaults the selection to the Watch List once lists are available.
     private func selectDefaultIfNeeded() {
         guard selectedListUUID == nil else { return }
         selectedListUUID = lists.first { $0.kind == .toWatch }?.uuid
@@ -531,14 +303,10 @@ struct WatchListView: View {
 
     // MARK: - Data
 
-    /// The inputs that determine `sections`. The month grouping only needs to be
-    /// rebuilt when one of these changes, so this drives the `.task(id:)` that runs
-    /// `SectionBuilder` — avoiding both the eager per-body-pass recompute and any
-    /// main-thread faulting just to decide whether a rebuild is needed.
+    /// The inputs that determine `sections`; drives the `.task(id:)` rebuild so the
+    /// grouping only reruns (off the main thread) when one of these changes.
     private struct SectionsInput: Equatable {
         var listID: UUID?
-        /// The current entry count of the selected list. Catches additions and
-        /// removals; `dataVersion` catches in-place edits (e.g. a watched date).
         var count: Int
         var dataVersion: Int
         var ascending: Bool
@@ -557,16 +325,13 @@ struct WatchListView: View {
         )
     }
 
-    /// Which stored date the selected list orders and groups by.
     private func sortField(for list: MovieList) -> EntrySortField {
         if list.kind == .viewed { return .dateAdded }
         if list.tracksWatchedDate, watchedSortKey == .dateWatched { return .dateWatched }
         return .releaseDate
     }
 
-    /// Rebuilds `sections` for the selected list on a background context, so the
-    /// fetch and grouping (and the SwiftData faulting they trigger) never block the
-    /// main thread. The builder is created lazily and reused across rebuilds.
+    /// Rebuilds `sections` on a background context via a lazily-created builder.
     private func rebuildSections() async {
         guard let list = selectedList else {
             sections = []
@@ -582,17 +347,10 @@ struct WatchListView: View {
             ascending: sortAscending,
             filter: filterText
         )
-        // The task is re-run (and the old one cancelled) whenever the inputs change,
-        // so a late result can't clobber a newer selection — but bail on cancel to
-        // avoid a redundant assignment.
+        // The task is cancelled and rerun when inputs change, so a late result can't
+        // clobber a newer selection — bail on cancel to skip a redundant assignment.
         guard !Task.isCancelled else { return }
         sections = result
-    }
-
-    /// Refetches the live entry for a snapshot (by its persistent id) and removes it.
-    private func delete(_ entry: EntrySnapshot) {
-        guard let live = context.model(for: entry.persistentID) as? WatchListEntry else { return }
-        WatchListStore.delete(live, in: context)
     }
 
     private func emptyMessage(for list: MovieList) -> String {
@@ -602,65 +360,6 @@ struct WatchListView: View {
         case .viewed: return "Movies you browse will appear here."
         case .custom: return "Movies you add to “\(list.name)” will appear here."
         }
-    }
-
-    // MARK: - Swipe actions
-
-    /// Leading swipe: on Watched, send the movie back to the Watch List; on any
-    /// other list, mark it Watched. Uses the same buttons as Search results.
-    @ViewBuilder
-    private func leadingAction(for entry: EntrySnapshot) -> some View {
-        let movie = movie(from: entry)
-        if selectedList?.kind == .watched {
-            WatchListSwipeButton(movie: movie, watchList: watchList, context: context)
-        } else {
-            WatchedSwipeButton(movie: movie, watchedList: watchedList, context: context)
-        }
-    }
-
-    /// The Watched list always labels each row with the date the movie was watched;
-    /// every other list lets the row fall back to the movie's release date.
-    private func subtitle(for entry: EntrySnapshot) -> String? {
-        guard selectedList?.tracksWatchedDate == true else { return nil }
-        return entry.dateWatched.map { "Watched \($0.toString())" }
-    }
-
-    /// The personal rating to show on a row, if the movie has been watched. Watched
-    /// rows read their own entry; custom-list rows look the movie up on the Watched
-    /// list so a rating still shows once it's been seen. Other lists show none.
-    private func rating(for entry: EntrySnapshot) -> Double? {
-        switch selectedList?.kind {
-        case .watched:
-            return entry.userRating
-        case .custom:
-            guard let watchedList else { return nil }
-            return WatchListStore.rating(for: entry.movieID, in: watchedList)
-        default:
-            return nil
-        }
-    }
-
-    /// The runtime line ("2 hr 8 min") shown on To Watch rows, formatted like the
-    /// movie detail page. Only the To Watch list surfaces it; nil elsewhere or when
-    /// the entry has no stored runtime.
-    private func duration(for entry: EntrySnapshot) -> String? {
-        guard selectedList?.kind == .toWatch else { return nil }
-        return movie(from: entry).duration
-    }
-
-    /// Viewed is a browse history where the release date only adds noise, so its
-    /// rows hide the subtitle. Other lists show it (or their own override).
-    private var showsRowSubtitle: Bool {
-        selectedList?.kind != .viewed
-    }
-
-    /// Rebuilds a Movie from an entry snapshot so moves preserve poster/date.
-    private func movie(from entry: EntrySnapshot) -> Movie {
-        let movie = Movie(id: entry.movieID, title: entry.title)
-        movie.poster = entry.posterPath
-        movie.releaseDate = entry.releaseDate
-        movie.runtime = entry.runtime
-        return movie
     }
 
     /// Drives the create/edit sheet.
@@ -685,81 +384,6 @@ struct WatchListView: View {
         var movieToAdd: Movie? {
             if case .create(let movie) = self { return movie }
             return nil
-        }
-    }
-}
-
-/// The file exporter, importer, and their result alerts, split out of
-/// `WatchListView.body` so the main modifier chain stays type-checkable.
-private struct BackupTransferModifier: ViewModifier {
-    @Binding var showExporter: Bool
-    @Binding var showImporter: Bool
-    let exportDocument: WatchDataDocument?
-    let exportFilename: String
-    @Binding var importSummary: ImportSummary?
-    @Binding var transferError: String?
-    /// Non-nil while a CSV import is fetching movie details, as `(fetched, total)`.
-    let importProgress: (done: Int, total: Int)?
-    let onImport: (Result<URL, Error>) -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .fileExporter(isPresented: $showExporter, document: exportDocument,
-                          contentType: .json, defaultFilename: exportFilename) { result in
-                if case .failure(let error) = result {
-                    transferError = error.localizedDescription
-                }
-            }
-            // JSON is the app's own backup format; CSV is a TodoMovies export.
-            .fileImporter(isPresented: $showImporter,
-                          allowedContentTypes: [.json, .commaSeparatedText],
-                          onCompletion: onImport)
-            .overlay {
-                if let importProgress {
-                    ImportProgressOverlay(done: importProgress.done, total: importProgress.total)
-                }
-            }
-            .alert("Import Complete", isPresented: importCompleteBinding, presenting: importSummary) { _ in
-                Button("OK", role: .cancel) {}
-            } message: { summary in
-                Text(summary.message)
-            }
-            .alert("Something Went Wrong", isPresented: transferErrorBinding, presenting: transferError) { _ in
-                Button("OK", role: .cancel) {}
-            } message: { message in
-                Text(message)
-            }
-    }
-
-    private var importCompleteBinding: Binding<Bool> {
-        Binding(get: { importSummary != nil }, set: { if !$0 { importSummary = nil } })
-    }
-
-    private var transferErrorBinding: Binding<Bool> {
-        Binding(get: { transferError != nil }, set: { if !$0 { transferError = nil } })
-    }
-}
-
-/// A blocking progress card shown while a CSV import fetches movie details from
-/// TMDB. Determinate so the user can gauge how far a large library has to go.
-private struct ImportProgressOverlay: View {
-    let done: Int
-    let total: Int
-
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.35)
-                .ignoresSafeArea()
-            VStack(spacing: 14) {
-                ProgressView(value: Double(done), total: Double(max(total, 1)))
-                    .progressViewStyle(.linear)
-                    .frame(width: 200)
-                Text("Importing \(done) of \(total)…")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(24)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
         }
     }
 }
