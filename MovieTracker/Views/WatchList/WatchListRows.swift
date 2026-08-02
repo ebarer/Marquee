@@ -25,35 +25,45 @@ struct WatchListRows: View {
 
     var body: some View {
         List {
-            ForEach(sections) { section in
-                Section {
-                    ForEach(Array(section.entries.enumerated()), id: \.element.id) { index, entry in
-                        MovieListRow(
-                            movie: movie(entry),
-                            subtitle: subtitle(entry),
-                            showsSubtitle: !isViewed,
-                            duration: duration(entry),
-                            rating: rating(entry),
-                            ratingTint: listColor,
-                            lists: lists,
-                            context: context,
-                            leadingActions: { leadingAction(entry) },
-                            trailingActions: {
-                                Button(role: .destructive) {
-                                    delete(entry)
-                                } label: {
-                                    Image(systemName: "trash")
-                                        .tint(.red)
-                                }
-                            }
-                        )
-                        .listRowSeparator(index == section.entries.count - 1 ? .hidden : .automatic, edges: .bottom)
+            // Viewed is a flat recency history — no month sections.
+            if isViewed {
+                rows(for: sections.first?.entries ?? [])
+            } else {
+                ForEach(sections) { section in
+                    Section {
+                        rows(for: section.entries)
+                    } header: {
+                        Text(section.title)
+                            .foregroundStyle(listColor)
                     }
-                } header: {
-                    Text(section.title)
-                        .foregroundStyle(listColor)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func rows(for entries: [MediaSnapshot]) -> some View {
+        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+            MovieListRow(
+                movie: movie(entry),
+                subtitle: subtitle(entry),
+                showsSubtitle: !isViewed,
+                duration: duration(entry),
+                rating: rating(entry),
+                ratingTint: listColor,
+                lists: lists,
+                context: context,
+                leadingActions: { leadingAction(entry) },
+                trailingActions: {
+                    Button(role: .destructive) {
+                        delete(entry)
+                    } label: {
+                        Image(systemName: "trash")
+                            .tint(.red)
+                    }
+                }
+            )
+            .listRowSeparator(index == entries.count - 1 ? .hidden : .automatic, edges: .bottom)
         }
     }
 

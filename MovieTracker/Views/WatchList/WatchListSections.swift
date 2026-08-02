@@ -50,11 +50,9 @@ actor SectionBuilder {
         case .list(let listID):
             return buildList(listID, ascending: ascending, filter: filter)
         case .watched(let byWatchedDate):
-            return buildItems(watched: true, byWatchedDate: byWatchedDate,
-                              ascending: ascending, filter: filter)
+            return buildWatched(byWatchedDate: byWatchedDate, ascending: ascending, filter: filter)
         case .viewed:
-            return buildItems(watched: false, byWatchedDate: false,
-                              ascending: ascending, filter: filter)
+            return buildViewed(ascending: ascending, filter: filter)
         }
     }
 
@@ -87,15 +85,10 @@ actor SectionBuilder {
         return group(dated, ascending: ascending)
     }
 
-    // MARK: Derived Watched / Viewed (MediaItem)
+    // MARK: Derived Watched (MediaItem, grouped by month)
 
-    private func buildItems(watched: Bool, byWatchedDate: Bool,
-                            ascending: Bool, filter: String) -> [SectionSnapshot] {
-        let descriptor = FetchDescriptor<MediaItem>(
-            predicate: watched
-                ? #Predicate { $0.watchedAt != nil }
-                : #Predicate { $0.lastViewedAt != nil }
-        )
+    private func buildWatched(byWatchedDate: Bool, ascending: Bool, filter: String) -> [SectionSnapshot] {
+        let descriptor = FetchDescriptor<MediaItem>(predicate: #Predicate { $0.watchedAt != nil })
         guard let items = try? modelContext.fetch(descriptor) else { return [] }
 
         let filtered = filter.isEmpty
@@ -103,17 +96,32 @@ actor SectionBuilder {
             : items.filter { $0.title.localizedCaseInsensitiveContains(filter) }
 
         let dated = filtered.map { item -> (date: Date, snapshot: MediaSnapshot) in
-            let sortDate: Date = watched
-                ? (byWatchedDate ? (item.watchedAt ?? .distantFuture) : (item.releaseDate ?? .distantFuture))
-                : (item.lastViewedAt ?? .distantFuture)
-            return (sortDate,
-                    MediaSnapshot(persistentID: item.persistentModelID,
-                                  tmdbID: item.tmdbID, title: item.title,
-                                  posterPath: item.posterPath, releaseDate: item.releaseDate,
-                                  runtime: item.runtime, dateWatched: item.watchedAt,
-                                  userRating: item.userRating))
+            let date = byWatchedDate ? (item.watchedAt ?? .distantFuture) : (item.releaseDate ?? .distantFuture)
+            return (date, snapshot(from: item))
         }
         return group(dated, ascending: ascending)
+    }
+
+    // MARK: Derived Viewed (MediaItem, flat recency — no grouping)
+
+    private func buildViewed(ascending: Bool, filter: String) -> [SectionSnapshot] {
+        let descriptor = FetchDescriptor<MediaItem>(predicate: #Predicate { $0.lastViewedAt != nil })
+        guard let items = try? modelContext.fetch(descriptor) else { return [] }
+
+        let filtered = filter.isEmpty
+            ? items
+            : items.filter { $0.title.localizedCaseInsensitiveContains(filter) }
+
+        let sorted = filtered.sorted { ($0.lastViewedAt ?? .distantPast) < ($1.lastViewedAt ?? .distantPast) }
+        let ordered = ascending ? sorted : Array(sorted.reversed())
+        let snapshots = ordered.map(snapshot(from:))
+        return snapshots.isEmpty ? [] : [SectionSnapshot(id: DateComponents(), title: "", entries: snapshots)]
+    }
+
+    private func snapshot(from item: MediaItem) -> MediaSnapshot {
+        MediaSnapshot(persistentID: item.persistentModelID, tmdbID: item.tmdbID, title: item.title,
+                      posterPath: item.posterPath, releaseDate: item.releaseDate, runtime: item.runtime,
+                      dateWatched: item.watchedAt, userRating: item.userRating)
     }
 
     // MARK: Grouping

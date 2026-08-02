@@ -28,6 +28,9 @@ struct WatchListView: View {
     @State private var editor: ListEditor?
 
     @State private var sections: [SectionSnapshot] = []
+    /// The input the current `sections` were built for. Used to suppress the empty
+    /// state during the async rebuild after a selection change (so it doesn't flash).
+    @State private var loadedInput: SectionsInput?
     @State private var builder: SectionBuilder?
     /// Bumped on any store change so the sections rebuild even when a count is
     /// unchanged (e.g. a watched-date edit).
@@ -93,7 +96,9 @@ struct WatchListView: View {
         }
         .searchable(text: $filterText, prompt: "Search \(title)")
         .overlay {
-            if sections.isEmpty {
+            // Only once the rebuild for the current input has landed, so the empty
+            // state doesn't flash while switching lists.
+            if sections.isEmpty, loadedInput == sectionsInput {
                 if !filterText.isEmpty {
                     ContentUnavailableView.search(text: filterText)
                 } else {
@@ -265,6 +270,7 @@ struct WatchListView: View {
     private func rebuildSections() async {
         guard let source = sectionSource else {
             sections = []
+            loadedInput = sectionsInput
             return
         }
         let builder = builder ?? SectionBuilder(modelContainer: context.container)
@@ -273,6 +279,7 @@ struct WatchListView: View {
         let result = await builder.build(source: source, ascending: currentAscending, filter: filterText)
         guard !Task.isCancelled else { return }
         sections = result
+        loadedInput = sectionsInput
     }
 
     // MARK: - Backup import/export
