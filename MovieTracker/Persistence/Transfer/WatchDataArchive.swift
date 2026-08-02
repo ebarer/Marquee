@@ -272,7 +272,7 @@ extension WatchDataArchive {
     }
 
     private static func movie(from entry: WatchDataArchive.Entry) -> Movie {
-        let movie = Movie(id: entry.movieID, title: entry.title)
+        var movie = Movie(id: entry.movieID, title: entry.title)
         movie.poster = entry.posterPath
         movie.releaseDate = entry.releaseDate
         return movie

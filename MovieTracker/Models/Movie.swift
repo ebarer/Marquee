@@ -6,9 +6,11 @@
 //  Copyright © 2018 ebarer. All rights reserved.
 //
 
-import UIKit
+import Foundation
 
-class Movie: NSObject {
+/// A transient movie hydrated from TMDB (not persisted). Identity is the TMDB id,
+/// so it works as a navigation value and de-duplicates in a Set.
+struct Movie: Hashable, Identifiable {
     var id: Int
     var title: String
     var releaseDate: Date?
@@ -22,14 +24,22 @@ class Movie: NSObject {
     var imdbID: String?
     var genres: [String]?
     var trailers: [MovieTrailer]?
-    var bonusCredits: Credits = Credits(during: false, after: false)
-    var team: [Person]
+    var bonusCredits = Credits(during: false, after: false)
+    var team: [Person] = []
     var creditRole: String?
     var collection: MovieCollection?
 
+    init(id: Int, title: String) {
+        self.id = id
+        self.title = title
+    }
+
+    static func == (lhs: Movie, rhs: Movie) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+
     var duration: String? {
-        guard runtime != nil else { return nil }
-        return "\(self.runtime! / 60) hr \(self.runtime! % 60) min"
+        guard let runtime else { return nil }
+        return "\(runtime / 60) hr \(runtime % 60) min"
     }
 
     var primaryTrailer: MovieTrailer? {
@@ -43,7 +53,7 @@ class Movie: NSObject {
             }
     }
 
-    /// Credits for "self", "guest", "thanks", etc. that aren't primary roles
+    /// Credits for "self", "guest", "thanks", etc. that aren't primary roles.
     var isExtraneousCredit: Bool {
         guard let role = creditRole?.lowercased() else { return false }
         if role == "self" || role.hasPrefix("self ") || role.hasPrefix("self-") { return true }
@@ -52,82 +62,39 @@ class Movie: NSObject {
     }
 
     var genresString: String {
-        switch self.genres?.count {
-        case 1:
-            return "\(self.genres![0].shorten())"
-        case 2:
-            return "\(self.genres![0].shorten()) &\n\(self.genres![1].shorten())"
-        default:
-            return "N/A"
+        switch genres?.count {
+        case 1: return genres![0].shorten()
+        case 2: return "\(genres![0].shorten()) &\n\(genres![1].shorten())"
+        default: return "N/A"
         }
     }
-    
+
     var bonusString: String {
-        switch self.bonusCredits.raw {
-        case (false, false):
-            return "None"
-        case (false, true):
-            return "After"
-        case (true, false):
-            return "During"
-        case (true, true):
-            return "During + After"
+        switch bonusCredits.raw {
+        case (false, false): return "None"
+        case (false, true): return "After"
+        case (true, false): return "During"
+        case (true, true): return "During + After"
         }
     }
-    
-    // MARK: - Initializers
-
-    override init() {
-        self.id = 0
-        self.title = ""
-        self.team = [Person]()
-        super.init()
-    }
-
-    convenience init(id: Int, title: String) {
-        self.init()
-        self.id = id
-        self.title = title
-    }
-
-    override var description: String {
-        return "[\(id)] \(title), \(releaseDate?.toString() ?? "Unknown"), \(popularity != nil ? String(popularity!) : "N/A")"
-    }
-
-    // MARK - Equatable + Hashable
-
-    static func == (lhs: Movie, rhs: Movie) -> Bool {
-        return lhs.id == rhs.id
-    }
-
-    override func isEqual(_ object: Any?) -> Bool {
-        return self.id == (object as? Movie)?.id
-    }
-
-    override var hash: Int {
-        return self.id
-    }
-
 }
 
 extension Movie {
     struct Credits {
         var during: Bool
         var after: Bool
-        
+
         init(during: Bool, after: Bool) {
             self.during = during
             self.after = after
         }
-        
+
         init(_ val: (during: Bool, after: Bool)) {
             self.during = val.during
             self.after = val.after
         }
-        
-        var raw: (Bool, Bool) {
-            return (self.during, self.after)
-        }
+
+        var raw: (Bool, Bool) { (during, after) }
     }
 }
 
@@ -183,7 +150,7 @@ struct MovieTrailer: Identifiable {
         type == .Trailer || type == .Teaser
     }
 
-    /// Used to help identify the primary trailer
+    /// Used to help identify the primary trailer.
     var primaryScore: Int {
         var score: Int
         switch type {
@@ -194,10 +161,9 @@ struct MovieTrailer: Identifiable {
         if official { score += 5 }
         return score
     }
-    
+
     var url: URL? {
-        let trailerURL = URL(string: "https://www.youtube.com/embed")
-        return trailerURL?.appendingPathComponent(key)
+        URL(string: "https://www.youtube.com/embed")?.appendingPathComponent(key)
     }
 
     /// Standard YouTube watch URL, suitable for opening in Safari.
@@ -208,7 +174,7 @@ struct MovieTrailer: Identifiable {
 
 // MARK: - Collection (franchise)
 
-/// A collection of movies comprising a franchise (ie. Star Wars)
+/// A collection of movies comprising a franchise (e.g. Star Wars).
 struct MovieCollection {
     var id: Int
     var name: String

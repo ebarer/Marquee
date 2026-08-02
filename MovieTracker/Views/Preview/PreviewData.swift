@@ -14,7 +14,7 @@ import SwiftData
 extension Movie {
     /// A fully-populated sample movie for previews.
     static var preview: Movie {
-        let movie = Movie(id: 1, title: "The Odyssey")
+        var movie = Movie(id: 1, title: "The Odyssey")
         movie.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 17).date
         movie.overview = "Odysseus, the legendary King of Ithaca, embarks on a long and perilous "
             + "journey home following the Trojan War. Throughout his voyage, he is forced to confront "
@@ -33,13 +33,13 @@ extension Movie {
         [
             Movie.preview,
             {
-                let m = Movie(id: 2, title: "Supergirl")
+                var m = Movie(id: 2, title: "Supergirl")
                 m.releaseDate = DateComponents(calendar: .current, year: 2026, month: 6, day: 26).date
                 m.certification = "PG-13"
                 return m
             }(),
             {
-                let m = Movie(id: 3, title: "Spider-Man: Brand New Day")
+                var m = Movie(id: 3, title: "Spider-Man: Brand New Day")
                 m.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 31).date
                 m.certification = "PG-13"
                 return m
@@ -53,7 +53,7 @@ extension Movie {
 extension Person {
     /// A sample crew member (director).
     static var preview: Person {
-        let person = Person(id: 10, name: "Christopher Nolan")
+        var person = Person(id: 10, name: "Christopher Nolan")
         person.role = "Director"
         person.type = .Crew
         person.birthday = DateComponents(calendar: .current, year: 1970, month: 7, day: 30).date
@@ -62,7 +62,7 @@ extension Person {
             + "distinctive nonlinear storytelling and large-format cinematography."
         person.credits = [
             {
-                let m = Movie(id: 1, title: "The Odyssey")
+                var m = Movie(id: 1, title: "The Odyssey")
                 m.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 17).date
                 m.creditRole = "Director"
                 m.poster = "/placeholder.jpg"
@@ -70,7 +70,7 @@ extension Person {
                 return m
             }(),
             {
-                let m = Movie(id: 20, title: "Oppenheimer")
+                var m = Movie(id: 20, title: "Oppenheimer")
                 m.releaseDate = DateComponents(calendar: .current, year: 2023, month: 7, day: 21).date
                 m.creditRole = "Director"
                 m.poster = "/placeholder.jpg"
@@ -78,7 +78,7 @@ extension Person {
                 return m
             }(),
             {
-                let m = Movie(id: 21, title: "Tenet")
+                var m = Movie(id: 21, title: "Tenet")
                 m.releaseDate = DateComponents(calendar: .current, year: 2020, month: 9, day: 3).date
                 m.creditRole = "Writer"
                 m.poster = "/placeholder.jpg"
@@ -91,7 +91,7 @@ extension Person {
 
     /// A sample cast member (actor).
     static var previewActor: Person {
-        let person = Person(id: 11, name: "Matt Damon")
+        var person = Person(id: 11, name: "Matt Damon")
         person.role = "Odysseus"
         person.type = .Cast
         return person

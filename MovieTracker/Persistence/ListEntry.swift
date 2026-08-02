@@ -38,7 +38,7 @@ final class ListEntry {
 
     /// Rebuilds a display `Movie` from the snapshot (for rows/moves).
     var movie: Movie {
-        let movie = Movie(id: tmdbID, title: title)
+        var movie = Movie(id: tmdbID, title: title)
         movie.poster = posterPath
         movie.releaseDate = releaseDate
         movie.runtime = runtime

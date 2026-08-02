@@ -94,7 +94,7 @@ struct ListRows: View {
     }
 
     private func movie(_ entry: MediaSnapshot) -> Movie {
-        let movie = Movie(id: entry.tmdbID, title: entry.title)
+        var movie = Movie(id: entry.tmdbID, title: entry.title)
         movie.poster = entry.posterPath
         movie.releaseDate = entry.releaseDate
         movie.runtime = entry.runtime

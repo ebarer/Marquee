@@ -183,7 +183,7 @@ private extension TMDBWrapper {
     }
 
     static func translate(movie mv: MovieRaw) -> Movie {
-        let movie = Movie(id: mv.id, title: mv.title)
+        var movie = Movie(id: mv.id, title: mv.title)
 
         if let overview = mv.overview, !overview.isEmpty {
             movie.overview = overview
@@ -214,7 +214,7 @@ private extension TMDBWrapper {
     }
 
     static func translate(person p: PersonRaw) -> Person {
-        let person = Person(id: p.id, name: p.name)
+        var person = Person(id: p.id, name: p.name)
         person.popularity = p.popularity
         person.profilePicture = p.profilePicture
         person.birthday = p.birthday
@@ -495,7 +495,7 @@ private extension TMDBWrapper {
             var credits = [Movie]()
             for collection in [creditsRaw.cast, creditsRaw.crew] {
                 for movie in collection {
-                    let credit = Movie(id: movie.id, title: movie.title)
+                    var credit = Movie(id: movie.id, title: movie.title)
                     credit.poster = movie.poster
                     credit.creditRole = movie.role
                     credit.popularity = movie.popularity

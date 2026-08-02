@@ -213,7 +213,7 @@ extension CSVMovieRecord {
         for record in pending {
             let meta = metaByID[record.movieID]
             let releaseDate = meta?.releaseDate ?? record.releaseDate
-            let movie = Movie(id: record.movieID, title: record.title)
+            var movie = Movie(id: record.movieID, title: record.title)
             movie.poster = meta?.posterPath
             movie.releaseDate = releaseDate
 
