@@ -14,6 +14,7 @@ struct WatchListRows: View {
     let lists: [MediaList]
     let context: ModelContext
     let listColor: Color
+    @Environment(MediaStore.self) private var store: MediaStore?
 
     private var isWatchList: Bool {
         if case .list(let uuid) = selection { return lists.first { $0.uuid == uuid }?.isWatchList == true }
@@ -95,16 +96,11 @@ struct WatchListRows: View {
     private func delete(_ entry: MediaSnapshot) {
         switch selection {
         case .list:
-            guard let live = context.model(for: entry.persistentID) as? ListEntry else { return }
-            context.delete(live)
+            if let live = context.model(for: entry.persistentID) as? ListEntry { store?.delete(live) }
         case .watched:
-            guard let item = context.model(for: entry.persistentID) as? MediaItem else { return }
-            item.watchedAt = nil
-            item.pruneIfEmpty()
+            if let item = context.model(for: entry.persistentID) as? MediaItem { store?.unwatch(item) }
         case .viewed:
-            guard let item = context.model(for: entry.persistentID) as? MediaItem else { return }
-            item.lastViewedAt = nil
-            item.pruneIfEmpty()
+            if let item = context.model(for: entry.persistentID) as? MediaItem { store?.removeFromViewed(item) }
         }
     }
 }

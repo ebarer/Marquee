@@ -13,6 +13,7 @@ struct WatchedDate: View {
     let context: ModelContext
     let tint: Color
 
+    @Environment(MediaStore.self) private var store: MediaStore?
     /// Defaults to today for items that predate watched-date tracking (only
     /// persisted once the user picks a date).
     @State private var date: Date
@@ -59,8 +60,7 @@ struct WatchedDate: View {
                         }
                     }
                     .onChange(of: date) { _, newValue in
-                        MediaItem.setDateWatched(MediaItem.floatingDay(from: newValue),
-                                                 for: movie, in: context)
+                        store?.setDateWatched(MediaItem.floatingDay(from: newValue), for: movie)
                     }
             }
             .presentationDetents([.medium])

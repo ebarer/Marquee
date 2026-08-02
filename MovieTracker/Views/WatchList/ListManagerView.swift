@@ -2,8 +2,8 @@
 //  ListManagerView.swift
 //  MovieTracker
 //
-//  A modal for reordering, deleting, and editing custom lists. The Watch List is
-//  shown for context (with its count) but pinned and inert.
+//  A modal for reordering, deleting, and editing custom lists. The Watch List,
+//  Watched, and Viewed are shown for context (with counts) but pinned and inert.
 //
 
 import SwiftUI
@@ -15,10 +15,15 @@ struct ListManagerView: View {
 
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
+    @Query private var trackedItems: [MediaItem]
+    @Environment(MediaStore.self) private var store: MediaStore?
 
     private var visibleLists: [MediaList] { lists.filter { !$0.isDeduplicated } }
     private var watchList: MediaList? { visibleLists.first { $0.isWatchList } }
     private var customLists: [MediaList] { visibleLists.filter { !$0.isWatchList } }
+
+    private var watchedCount: Int { trackedItems.lazy.filter { $0.watchedAt != nil }.count }
+    private var viewedCount: Int { trackedItems.lazy.filter { $0.lastViewedAt != nil }.count }
 
     @State private var editing: MediaList?
     @State private var creatingNew = false
@@ -28,14 +33,18 @@ struct ListManagerView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let watchList {
-                    Section {
+                // Built-in views pinned at the top — shown for context, not editable.
+                Section {
+                    if let watchList {
                         row(for: watchList, editable: false)
                             .moveDisabled(true)
                             .deleteDisabled(true)
                     }
+                    virtualRow(title: "Watched", symbol: "checkmark.rectangle.stack",
+                               color: Color(red255: 90, green255: 200, blue255: 250), count: watchedCount)
                 }
 
+                // Custom lists: reorderable and deletable.
                 Section {
                     if customLists.isEmpty {
                         Text("No custom lists yet")
@@ -49,6 +58,12 @@ struct ListManagerView: View {
                         .onDelete(perform: delete)
                         .onMove(perform: move)
                     }
+                }
+
+                // The Viewed history pinned at the bottom.
+                Section {
+                    virtualRow(title: "Viewed", symbol: "clock.arrow.circlepath",
+                               color: .gray, count: viewedCount)
                 }
             }
             .listStyle(.insetGrouped)
@@ -83,7 +98,7 @@ struct ListManagerView: View {
         }
     }
 
-    // MARK: - Row
+    // MARK: - Rows
 
     private func row(for list: MediaList, editable: Bool) -> some View {
         HStack(spacing: 0) {
@@ -93,7 +108,7 @@ struct ListManagerView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(list.name)
                     .foregroundStyle(.primary)
-                Text(countText(for: list))
+                Text(countText((list.entries ?? []).count))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -123,26 +138,50 @@ struct ListManagerView: View {
         .listRowSeparatorTint(Self.separator)
     }
 
-    private func countText(for list: MediaList) -> String {
-        let count = (list.entries ?? []).count
-        return "\(count) \(count == 1 ? "movie" : "movies")"
+    /// An inert row for a derived view (Watched / Viewed), shown for context.
+    private func virtualRow(title: String, symbol: String, color: Color, count: Int) -> some View {
+        HStack(spacing: 0) {
+            ListIcon(symbol: symbol, color: color, size: 38, symbolSize: 18)
+                .padding(.trailing, 14)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .foregroundStyle(.primary)
+                Text(countText(count))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
+
+            Spacer(minLength: 12)
+        }
+        .frame(minHeight: 60)
+        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+        .listRowSeparatorTint(Self.separator)
+        .moveDisabled(true)
+        .deleteDisabled(true)
+    }
+
+    private func countText(_ count: Int) -> String {
+        "\(count) \(count == 1 ? "movie" : "movies")"
     }
 
     // MARK: - Actions
 
     private func delete(at offsets: IndexSet) {
-        for index in offsets {
-            context.delete(customLists[index])
-        }
+        let toDelete = offsets.map { customLists[$0] }
+        store?.perform { toDelete.forEach { context.delete($0) } }
     }
 
     /// Reorders custom lists and rewrites their sort orders (starting at 1, after
     /// the Watch List at 0).
     private func move(from source: IndexSet, to destination: Int) {
-        var reordered = customLists
-        reordered.move(fromOffsets: source, toOffset: destination)
-        for (index, list) in reordered.enumerated() {
-            list.sortOrder = 1 + index
+        store?.perform {
+            var reordered = customLists
+            reordered.move(fromOffsets: source, toOffset: destination)
+            for (index, list) in reordered.enumerated() {
+                list.sortOrder = 1 + index
+            }
         }
     }
 }

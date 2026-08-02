@@ -27,6 +27,9 @@ struct RootView: View {
     /// Tracks CloudKit sync activity so the Lists screen can show a sync indicator.
     @State private var syncMonitor = CloudSyncMonitor()
 
+    /// The single writer for the store, shared with the whole scene.
+    @State private var store = MediaStore(RootView.sharedContainer.mainContext)
+
     // Search state is shared with the search tab. The query lives on the model
     // so tapping a recent search can repopulate the field.
     @State private var searchModel = SearchModel()
@@ -87,6 +90,7 @@ struct RootView: View {
         .preferredColorScheme(.dark)
         .modelContainer(Self.sharedContainer)
         .environment(syncMonitor)
+        .environment(store)
         .task {
             let context = Self.sharedContainer.mainContext
             SyncLog.snapshot("launch", in: context)

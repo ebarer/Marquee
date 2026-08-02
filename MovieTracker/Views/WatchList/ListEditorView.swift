@@ -13,6 +13,7 @@ import SwiftData
 
 struct ListEditorView: View {
     @Environment(\.modelContext) private var context
+    @Environment(MediaStore.self) private var store: MediaStore?
     @Environment(\.dismiss) private var dismiss
 
     /// The list being edited, or `nil` when creating a new one.
@@ -216,11 +217,13 @@ struct ListEditorView: View {
             existing.name = trimmedName
             existing.symbol = symbol
             existing.colorIndex = colorIndex
+            store?.save()
             onSaved(existing)
         } else {
             let list = MediaList(name: trimmedName, symbol: symbol,
                                  sortOrder: nextSortOrder, colorIndex: colorIndex)
             context.insert(list)
+            store?.save()
             onSaved(list)
         }
         dismiss()
@@ -228,7 +231,7 @@ struct ListEditorView: View {
 
     private func delete() {
         guard let existing else { return }
-        context.delete(existing)
+        store?.deleteList(existing)
         onDeleted()
         dismiss()
     }

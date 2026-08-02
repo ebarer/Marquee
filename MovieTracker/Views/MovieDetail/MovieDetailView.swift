@@ -18,6 +18,7 @@ struct MovieDetailView: View {
     }
 
     @Environment(\.modelContext) private var context
+    @Environment(MediaStore.self) private var store: MediaStore?
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
     @State private var model = MovieDetailModel()
@@ -51,7 +52,7 @@ struct MovieDetailView: View {
             isSeen = MediaItem.find(tmdbID: movieID, in: context)?.isWatched ?? false
             await model.load(id: movieID)
             if let movie = model.movie {
-                MediaItem.recordView(movie, in: context)
+                store?.recordView(movie)
             }
         }
     }

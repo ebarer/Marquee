@@ -13,6 +13,7 @@ struct StarRating: View {
     let context: ModelContext
     let tint: Color
 
+    @Environment(MediaStore.self) private var store: MediaStore?
     /// In stars, 0.5-step (0 = unrated).
     @State private var rating: Double
     /// The rating when the gesture began, so a stationary tap toggles against the
@@ -51,7 +52,7 @@ struct StarRating: View {
                     } else {
                         rating = halfStars(at: value.location.x)
                     }
-                    MediaItem.setRating(rating == 0 ? nil : rating, for: movie, in: context)
+                    store?.setRating(rating == 0 ? nil : rating, for: movie)
                     dragStartRating = nil
                 }
         )

@@ -14,6 +14,7 @@ struct ListMembershipMenu: View {
     let watchList: MediaList?
     let customLists: [MediaList]
     let context: ModelContext
+    @Environment(MediaStore.self) private var store: MediaStore?
     /// Called after any change (e.g. to refresh derived UI state).
     var onChange: () -> Void = {}
 
@@ -22,7 +23,7 @@ struct ListMembershipMenu: View {
             Section {
                 Toggle(isOn: Binding(
                     get: { MediaItem.isWatched(movie, in: context) },
-                    set: { MediaItem.setWatched($0, for: movie, in: context); onChange() }
+                    set: { store?.setWatched($0, for: movie); onChange() }
                 )) {
                     Label("Watched", systemImage: "checkmark.rectangle.stack")
                 }
@@ -42,7 +43,7 @@ struct ListMembershipMenu: View {
     private func toggle(for list: MediaList) -> some View {
         Toggle(isOn: Binding(
             get: { list.contains(movie.id) },
-            set: { _ in list.toggle(movie); onChange() }
+            set: { _ in store?.toggle(movie, in: list); onChange() }
         )) {
             Label {
                 Text(list.name)

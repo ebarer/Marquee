@@ -16,6 +16,7 @@ struct MovieActionBar: View {
     let tint: Color
     @Binding var isSeen: Bool
 
+    @Environment(MediaStore.self) private var store: MediaStore?
     @Namespace private var glassNamespace
     @State private var tracked = false
     @State private var wasOnWatchList = false
@@ -58,7 +59,7 @@ struct MovieActionBar: View {
 
     private var bookmarkButton: some View {
         glassButton(system: tracked ? "bookmark.fill" : "bookmark", isOn: tracked, shape: Circle()) {
-            watchList?.toggle(movie)
+            store?.toggleWatchList(movie)
             refresh()
         }
         .glassEffectID("bookmark", in: glassNamespace)
@@ -72,11 +73,11 @@ struct MovieActionBar: View {
                     width: isSeen ? Self.size * 2 + Self.spacing : Self.size,
                     shape: Capsule()) {
             if isSeen {
-                MediaItem.setWatched(false, for: movie, in: context)
-                if wasOnWatchList { watchList?.add(movie) }
+                store?.setWatched(false, for: movie)
+                if wasOnWatchList { store?.addToWatchList(movie) }
             } else {
                 wasOnWatchList = tracked
-                MediaItem.setWatched(true, for: movie, in: context)
+                store?.setWatched(true, for: movie)
             }
             refresh()
         }
@@ -91,7 +92,8 @@ struct MovieActionBar: View {
             let member = list.contains(movie.id)
             glassButton(system: member ? filledSymbol(list.symbol) : list.symbol,
                         isOn: member, shape: Circle()) {
-                list.toggle(movie)
+                store?.toggle(movie, in: list)
+                refresh()
             }
             .glassEffectID("plus", in: glassNamespace)
         } else if !customLists.isEmpty {
@@ -150,6 +152,7 @@ private struct ListPickerPopover: View {
     let context: ModelContext
     let tint: Color
 
+    @Environment(MediaStore.self) private var store: MediaStore?
     @State private var contentHeight: CGFloat = 0
     private static let maxHeight: CGFloat = 320
 
@@ -159,7 +162,7 @@ private struct ListPickerPopover: View {
                 ForEach(lists) { list in
                     let member = list.contains(movie.id)
                     Button {
-                        list.toggle(movie)
+                        store?.toggle(movie, in: list)
                     } label: {
                         HStack(spacing: 12) {
                             ListIcon(list, size: 28)

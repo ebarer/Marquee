@@ -16,12 +16,13 @@ import SwiftData
 struct WatchedSwipeButton: View {
     let movie: Movie
     let context: ModelContext
+    @Environment(MediaStore.self) private var store: MediaStore?
 
     private var isWatched: Bool { MediaItem.isWatched(movie, in: context) }
 
     var body: some View {
         Button {
-            MediaItem.setWatched(!isWatched, for: movie, in: context)
+            store?.setWatched(!isWatched, for: movie)
         } label: {
             if isWatched {
                 Image("checkmark.slashed")
@@ -37,10 +38,11 @@ struct WatchedSwipeButton: View {
 struct WatchListSwipeButton: View {
     let movie: Movie
     let context: ModelContext
+    @Environment(MediaStore.self) private var store: MediaStore?
 
     var body: some View {
         Button {
-            MediaList.ensureWatchList(in: context).add(movie)
+            store?.addToWatchList(movie)
         } label: {
             Image(systemName: "bookmark")
         }

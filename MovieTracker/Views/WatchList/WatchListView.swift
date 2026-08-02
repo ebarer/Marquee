@@ -9,6 +9,7 @@ import CoreData
 
 struct WatchListView: View {
     @Environment(\.modelContext) private var context
+    @Environment(MediaStore.self) private var store: MediaStore?
     /// Present only when running inside the app (absent in previews).
     @Environment(CloudSyncMonitor.self) private var syncMonitor: CloudSyncMonitor?
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
@@ -70,7 +71,7 @@ struct WatchListView: View {
                     canClearViewed: resolvedSelection == .viewed && movieCount > 0,
                     onNewList: { editor = .create(addMovie: nil) },
                     onEditLists: { showListManager = true },
-                    onClearViewed: clearViewed,
+                    onClearViewed: { store?.clearViewed() },
                     onImport: { showImporter = true },
                     onExport: prepareExport
                 )
@@ -106,7 +107,7 @@ struct WatchListView: View {
                     existing: mode.list,
                     nextSortOrder: (customLists.map(\.sortOrder).max() ?? 0) + 1,
                     onSaved: { newList in
-                        if let movie = mode.movieToAdd { newList.add(movie) }
+                        if let movie = mode.movieToAdd { store?.add(movie, to: newList) }
                         selection = .list(newList.uuid)
                     },
                     onDeleted: { selection = watchList.map { .list($0.uuid) } }
@@ -274,15 +275,6 @@ struct WatchListView: View {
         sections = result
     }
 
-    private func clearViewed() {
-        let items = (try? context.fetch(FetchDescriptor<MediaItem>(
-            predicate: #Predicate { $0.lastViewedAt != nil }))) ?? []
-        for item in items {
-            item.lastViewedAt = nil
-            item.pruneIfEmpty()
-        }
-    }
-
     // MARK: - Backup import/export
 
     private var exportFilename: String {
@@ -314,6 +306,7 @@ struct WatchListView: View {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             let archive = try WatchDataArchive(json: try Data(contentsOf: url))
             importSummary = WatchDataArchive.merge(archive, into: context)
+            store?.save()
         } catch {
             transferError = error.localizedDescription
         }
@@ -340,6 +333,7 @@ struct WatchListView: View {
             let summary = await CSVMovieRecord.merge(records, into: context) { done, total in
                 importProgress = (done: done, total: total)
             }
+            store?.save()
             importProgress = nil
             importSummary = summary
         }
