@@ -2,12 +2,8 @@
 //  MovieList.swift
 //  MovieTracker
 //
-//  A user-facing list of movies, synced via CloudKit. Two lists always exist
-//  and can't be deleted or renamed — "To Watch" and "Watched" — and the user
-//  can create any number of custom lists alongside them.
-//
-//  CloudKit rules: every stored property has a default or is optional, no
-//  unique constraints, and relationships are optional with an inverse.
+//  A user-facing list of movies, synced via CloudKit (properties default or
+//  optional, no unique constraints, relationships optional with an inverse).
 //
 
 import SwiftUI

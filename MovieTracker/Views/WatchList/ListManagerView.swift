@@ -2,11 +2,8 @@
 //  ListManagerView.swift
 //  MovieTracker
 //
-//  A modal for managing the user's lists in one place. The built-in lists (Watch
-//  List and Watched at the top, Viewed at the bottom) are shown for context with
-//  their movie counts but can't be reordered or deleted. Custom lists sit in
-//  between and can be reordered, deleted (which cascades to their entries), or
-//  tapped to edit their name, color, and icon.
+//  A modal for reordering, deleting, and editing custom lists. Built-in lists are
+//  shown for context (with counts) but pinned and inert.
 //
 
 import SwiftUI

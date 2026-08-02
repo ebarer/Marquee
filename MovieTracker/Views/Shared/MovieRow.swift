@@ -2,7 +2,7 @@
 //  MovieRow.swift
 //  MovieTracker
 //
-//  List row: poster beside title + release date. Replaces `MovieTableViewCell`.
+//  Presentational list row: poster beside title, subtitle, and optional rating.
 //
 
 import SwiftUI

@@ -2,20 +2,11 @@
 //  PosterDetailView.swift
 //  MovieTracker
 //
-//  Full-screen movie poster over a blurred dark background, presented from
-//  MovieDetailView with a zoom transition. Supports pinch-to-zoom, pan when
-//  zoomed (the scaled image's edges lock to the screen so you can pan until an
-//  edge is hit but never pull it away from the edge, with velocity-based
-//  momentum on release), and double-tap to zoom about the tapped point; when
-//  not zoomed, the zoom transition's interactive drag dismisses it (from
-//  anywhere, incl. the poster). Replaces the storyboard PosterDetailViewController.
-//
-//  The zoom transition is applied to the poster *itself* (not the full-screen
-//  container), so the source poster morphs into the enlarged poster's frame
-//  rather than into the whole view. The blurred backdrop lives in the
-//  presentation background so it cross-fades instead of participating.
-//  NOTE: this must NOT be wrapped in a NavigationStack — doing so makes the
-//  presentation fall back to a slide-up (the present no longer zooms).
+//  Full-screen poster with pinch/double-tap zoom and edge-locked pan, over a
+//  blurred backdrop. The zoom transition is applied to the poster itself so it
+//  morphs into the enlarged frame.
+//  NOTE: must NOT be wrapped in a NavigationStack — that falls back to a
+//  slide-up and the zoom transition is lost.
 //
 
 import SwiftUI

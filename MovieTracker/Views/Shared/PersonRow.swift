@@ -2,9 +2,7 @@
 //  PersonRow.swift
 //  MovieTracker
 //
-//  Shared list row for a person: circular profile beside the name, with an
-//  optional role line. The movie detail's Cast & Crew shows name + role;
-//  Search shows just the name. Replaces `PersonTableViewCell`.
+//  Shared list row for a person: circular profile beside the name and optional role.
 //
 
 import SwiftUI

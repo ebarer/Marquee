@@ -2,13 +2,8 @@
 //  CSVImport.swift
 //  MovieTracker
 //
-//  Imports a TodoMovies CSV export into the user's lists. Each row carries a
-//  TMDB id, so the importer fetches full movie details (poster, release date)
-//  from TMDB while merging — the CSV itself has no artwork. Rows flagged watched
-//  land on the Watched list, the rest on the Watch List; a personal rating is
-//  carried over when present.
-//
-//  TodoMovies column layout:
+//  Imports a TodoMovies CSV export, fetching each row's full movie details from
+//  TMDB by its id while merging. Column layout:
 //    Title, Genre, Release Date, Watched, Your Rating, TMDB URL, TMDB ID,
 //    Watched Date, Comments
 //

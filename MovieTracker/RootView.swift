@@ -2,11 +2,6 @@
 //  RootView.swift
 //  MovieTracker
 //
-//  Root SwiftUI interface: a tabbed shell replacing the storyboard
-//  TabBarController. Each tab is its own NavigationStack; movie and
-//  person values pushed onto a stack resolve to the (currently bridged)
-//  detail screens.
-//
 
 import SwiftUI
 import SwiftData

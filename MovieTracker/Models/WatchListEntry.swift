@@ -2,13 +2,8 @@
 //  WatchListEntry.swift
 //  MovieTracker
 //
-//  A movie's membership in one MovieList, synced via CloudKit. Each entry is a
-//  lightweight snapshot of the movie (id/title/poster/release date) plus the
-//  list it belongs to. A movie on N lists has N entries.
-//
-//  CloudKit requires every stored property to have a default or be optional and
-//  forbids @Attribute(.unique) — de-duplication is done by looking through a
-//  list's entries rather than a unique constraint.
+//  A movie's membership in one MovieList, synced via CloudKit. CloudKit forbids
+//  @Attribute(.unique), so de-duplication walks a list's entries instead.
 //
 
 import Foundation

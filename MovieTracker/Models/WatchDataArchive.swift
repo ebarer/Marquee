@@ -2,10 +2,8 @@
 //  WatchDataArchive.swift
 //  MovieTracker
 //
-//  A versioned, portable snapshot of every list and its entries — the shape the
-//  app writes to (and reads back from) a backup file the user can export and
-//  import. Deliberately independent of the SwiftData `@Model` types so the
-//  on-disk format stays stable even if those models change.
+//  A versioned, portable backup snapshot of every list and its entries. Kept
+//  independent of the SwiftData `@Model` types so the on-disk format stays stable.
 //
 
 import SwiftUI

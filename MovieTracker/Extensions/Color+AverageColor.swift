@@ -2,10 +2,8 @@
 //  Color+AverageColor.swift
 //  MovieTracker
 //
-//  Computes a themable accent from a poster's pixels — a SwiftUI port
-//  of the original UIImage.averageColor (Extensions/UIView+Extension.swift):
-//  CIAreaAverage → 1x1 RGBA → HSB, boosted saturation/brightness, with a
-//  fallback to the app accent for grayscale images.
+//  A themable accent from a poster's average color (CIAreaAverage → HSB with
+//  boosted saturation), falling back to the app accent for grayscale images.
 //
 
 import SwiftUI

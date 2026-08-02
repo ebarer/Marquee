@@ -2,19 +2,10 @@
 //  TrailerPlayerView.swift
 //  MovieTracker
 //
-//  Plays a movie trailer in-app.
-//
-//  Most studio trailers have embedding disabled by the video owner, so YouTube
-//  refuses to play them in any third-party embed ("This video is unavailable").
-//  Rather than fight that, this loads YouTube's watch page directly in a web view
-//  with inline playback disabled: starting the video hands it to iOS's native
-//  fullscreen player — a clean, chrome-free experience — without leaving the app.
-//
-//  The app is otherwise portrait-only, so while the trailer is on screen it
-//  permits landscape (see `AppDelegate.isPlayingTrailer`), letting the user rotate
-//  the device to watch fullscreen in landscape. Nothing is forced — the rest of
-//  the app stays portrait, and the scene returns to portrait automatically once
-//  the player is dismissed.
+//  Plays a trailer in-app. Studio trailers usually block third-party embedding,
+//  so this loads YouTube's watch page with inline playback disabled — starting
+//  the video hands it to iOS's native fullscreen player. Permits landscape while
+//  on screen (via `AppDelegate.isPlayingTrailer`); the rest of the app is portrait.
 //
 
 import SwiftUI

@@ -2,8 +2,7 @@
 //  FeaturedView.swift
 //  MovieTracker
 //
-//  Featured movies grid. A toolbar button toggles between the
-//  Now Playing and Coming Soon collections. Replaces FeaturedViewController.
+//  Featured movies grid; the title menu toggles between collections.
 //
 
 import SwiftUI

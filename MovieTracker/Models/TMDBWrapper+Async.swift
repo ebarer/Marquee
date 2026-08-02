@@ -2,10 +2,7 @@
 //  TMDBWrapper+Async.swift
 //  MovieTracker
 //
-//  Modern async/await entry points layered on top of the existing
-//  completion-handler API, plus image URL/data helpers for SwiftUI.
-//  The original completion-handler methods remain for callers that
-//  have not yet been migrated.
+//  async/await entry points over the completion-handler API, plus image helpers.
 //
 
 import Foundation

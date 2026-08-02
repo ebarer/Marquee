@@ -2,12 +2,9 @@
 //  MovieListRow.swift
 //  MovieTracker
 //
-//  An interactive movie row in a List context: navigates to the movie detail,
-//  shows the shared long-press menu, and hosts caller-supplied leading/trailing
-//  swipe actions. Wraps the presentational `MovieRow`. Used for both Watch List
-//  entries and movie search results so the two surfaces stay visually and
-//  behaviorally identical. Row backgrounds and separators are left to the
-//  system/caller so native selection and swipe highlighting behave normally.
+//  An interactive movie row for a List: navigation, the shared long-press menu,
+//  and caller-supplied swipe actions. Wraps the presentational `MovieRow`; used
+//  for both Watch List entries and search results.
 //
 
 import SwiftUI
