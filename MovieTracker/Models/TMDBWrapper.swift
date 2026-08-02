@@ -60,8 +60,7 @@ extension TMDBWrapper {
 
             do {
                 let collection = try decoder.decode(CollectionRaw.self, from: data)
-                // TMDB returns collection parts in an arbitrary order; sort
-                // chronologically so the franchise reads oldest-to-newest.
+                // Sort returned collection chronologically so the franchise reads oldest-to-newest
                 let movies = collection.parts
                     .map { self.translate(movie: $0) }
                     .sorted {
@@ -81,21 +80,6 @@ extension TMDBWrapper {
             completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)
             return
         }
-
-//        let dateFormatter = DateFormatter.iso8601DAw
-//        let today = Calendar.current.startOfDay(for: Date())
-//        let startDate = Calendar.current.date(byAdding: .month, value: -2, to: today) ?? today
-//        let endDate = Calendar.current.date(byAdding: .weekday, value: 1, to: today) ?? today
-//
-//        var searchURLComponents = URLComponents(string: self.baseURL)!
-//        searchURLComponents.path = "\(self.apiVersion)/discover/movie"
-//        searchURLComponents.queryItems = [
-//            URLQueryItem(name: "with_release_type", value: "3|2"),
-//            URLQueryItem(name: "release_date.gte", value: dateFormatter.string(from: startDate)),
-//            URLQueryItem(name: "release_date.lte", value: dateFormatter.string(from: endDate)),
-//            URLQueryItem(name: "sort_by", value: "popularity.desc"),
-//            URLQueryItem(name: "page", value: String(page))
-//        ]
         
         var searchURLComponents = URLComponents(string: self.baseURL)!
         searchURLComponents.path = "\(self.apiVersion)/movie/now_playing"
@@ -180,21 +164,6 @@ extension TMDBWrapper {
             completionHandler(nil, FetchError.decode("Invalid page number (index starts at 1)."), nil)
             return
         }
-        
-//        let dateFormatter = DateFormatter.iso8601DAw
-//        let today = Calendar.current.startOfDay(for: Date())
-//        let startDate = Calendar.current.date(byAdding: .weekday, value: 1, to: today) ?? today
-//        let endDate = Calendar.current.date(byAdding: Calendar.Component.month, value: 3, to: startDate) ?? startDate
-//
-//        var searchURLComponents = URLComponents(string: self.baseURL)!
-//        searchURLComponents.path = "\(self.apiVersion)/discover/movie"
-//        searchURLComponents.queryItems = [
-//            URLQueryItem(name: "with_release_type", value: "3|2"),
-//            URLQueryItem(name: "release_date.gte", value: dateFormatter.string(from: startDate)),
-//            URLQueryItem(name: "release_date.lte", value: dateFormatter.string(from: endDate)),
-//            URLQueryItem(name: "sort_by", value: "popularity.desc"),
-//            URLQueryItem(name: "page", value: String(page))
-//        ]
         
         var searchURLComponents = URLComponents(string: self.baseURL)!
         searchURLComponents.path = "\(self.apiVersion)/movie/upcoming"

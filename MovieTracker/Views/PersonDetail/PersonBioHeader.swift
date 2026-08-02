@@ -10,6 +10,11 @@ import SwiftUI
 
 struct PersonBioHeader: View {
     let person: Person
+    /// Namespace for the zoom transition that morphs the profile photo into its
+    /// full-screen viewer (the same viewer used for movie posters).
+    var photoNamespace: Namespace.ID
+    /// Called when the profile photo is tapped, to present the full-screen viewer.
+    var onPhotoTap: () -> Void = {}
     /// Global Y coordinate of the nav bar's bottom edge, used to decide when the
     /// on-page name has scrolled up behind the bar.
     var navBarBottom: CGFloat = 0
@@ -36,6 +41,8 @@ struct PersonBioHeader: View {
             HStack(alignment: .center, spacing: 16) {
                 ProfileImage(url: person.profileURL())
                     .frame(width: 100, height: 100)
+                    .matchedTransitionSource(id: person.id, in: photoNamespace)
+                    .onTapGesture { onPhotoTap() }
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(person.name)
@@ -53,8 +60,8 @@ struct PersonBioHeader: View {
                             .foregroundStyle(Color.appAccent)
                     }
 
-                    if let place = person.placeOfBirth, !place.isEmpty {
-                        Text(place)
+                    if let birthplace {
+                        Text(birthplace)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -140,6 +147,20 @@ struct PersonBioHeader: View {
         }
     }
 
+    /// The place of birth reduced to "City, Country". TMDB returns the full
+    /// "City, State, Country" string; we keep only the first (city) and last
+    /// (country) components so the header stays compact.
+    private var birthplace: String? {
+        guard let place = person.placeOfBirth else { return nil }
+        let parts = place
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        guard let city = parts.first else { return nil }
+        guard let country = parts.last, country != city else { return city }
+        return "\(city), \(country)"
+    }
+
     private var birthdayString: String? {
         guard let birthday = person.birthday else { return nil }
         var result = birthday.toString()
@@ -151,7 +172,8 @@ struct PersonBioHeader: View {
 }
 
 #Preview {
-    PersonBioHeader(person: .preview)
+    @Previewable @Namespace var namespace
+    PersonBioHeader(person: .preview, photoNamespace: namespace)
         .padding()
         .background(Color.appBackground)
 }

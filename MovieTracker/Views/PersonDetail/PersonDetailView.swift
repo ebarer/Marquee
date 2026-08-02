@@ -24,6 +24,11 @@ struct PersonDetailView: View {
     @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
     private var lists: [MovieList]
 
+    /// Zoom transition namespace + presentation flag for the full-screen profile
+    /// photo viewer (the same viewer used for movie posters).
+    @Namespace private var photoNamespace
+    @State private var showPhoto = false
+
     /// Reveal the nav-bar title only once the on-page name is hidden behind it.
     @State private var showNavTitle = false
     /// Global Y of the nav bar's bottom edge (the scroll view's top), fed to the header.
@@ -46,6 +51,8 @@ struct PersonDetailView: View {
                 LazyVStack(spacing: 0) {
                     PersonBioHeader(
                         person: current,
+                        photoNamespace: photoNamespace,
+                        onPhotoTap: { if current.profilePicture != nil { showPhoto = true } },
                         navBarBottom: navBarBottom,
                         onNameHiddenChange: { hidden in
                             withAnimation(.easeInOut(duration: 0.2)) { showNavTitle = hidden }
@@ -104,6 +111,12 @@ struct PersonDetailView: View {
                         navBarBottom = newValue
                     }
             }
+        }
+        .fullScreenCover(isPresented: $showPhoto) {
+            // The zoom transition is applied to the image inside PosterDetailView (not
+            // here), so the source profile photo morphs into the enlarged image.
+            PosterDetailView(imageURL: current.profileURL(.orig),
+                             zoomSourceID: current.id, zoomNamespace: photoNamespace)
         }
         .task {
             await model.load(id: person.id)

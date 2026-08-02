@@ -76,5 +76,6 @@ extension Person {
 extension Person {
     enum ProfileSize: String, ImageSize {
         case w276 = "w276_and_h350_face"
+        case orig = "original"
     }
 }

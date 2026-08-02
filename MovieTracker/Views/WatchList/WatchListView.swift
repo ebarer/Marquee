@@ -11,6 +11,7 @@
 
 import SwiftUI
 import SwiftData
+import CoreData
 import UniformTypeIdentifiers
 
 struct WatchListView: View {
@@ -41,6 +42,20 @@ struct WatchListView: View {
 
     @State private var selectedListUUID: UUID?
     @State private var editor: ListEditor?
+
+    /// The month/year sections for the selected list, built off the main thread by
+    /// `SectionBuilder` (via `.task(id: sectionsInput)`) so grouping a large list
+    /// never blocks the UI. Rows render from these Sendable snapshots.
+    @State private var sections: [SectionSnapshot] = []
+
+    /// The background actor that fetches and groups a list's entries off the main
+    /// thread. Created lazily from the container and reused across rebuilds.
+    @State private var builder: SectionBuilder?
+
+    /// Bumped whenever the store changes (a local save or a CloudKit import) so the
+    /// sections rebuild and never show stale data — e.g. after a watched date edit
+    /// that moves a movie between month sections without changing the entry count.
+    @State private var dataVersion = 0
 
     /// Inline text used to narrow the current list down to matching titles.
     @State private var filterText = ""
@@ -82,7 +97,7 @@ struct WatchListView: View {
                             leadingActions: { leadingAction(for: entry) },
                             trailingActions: {
                                 Button(role: .destructive) {
-                                    WatchListStore.delete(entry, in: context)
+                                    delete(entry)
                                 } label: {
                                     Image(systemName: "trash")
                                         .tint(.red)
@@ -113,20 +128,21 @@ struct WatchListView: View {
                 Menu {
                     titleMenu
                 } label: {
-                    HStack(spacing: 5) {
-                        Text(selectedList?.name ?? "Lists")
-                            .font(.headline)
-                            .foregroundStyle(activeListColor)
-                        // Mimic the system title-menu chevron: a small glyph in a
-                        // subtle filled circle.
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 9, weight: .bold))
+                    VStack(spacing: 1) {
+                        HStack(spacing: 5) {
+                            // A hidden chevron on the leading side balances the real
+                            // one on the trailing side, so the title and subtitle stay
+                            // centered on the text (the visible chevron then sits a
+                            // touch right of center, which is fine).
+                            titleChevron.hidden()
+                            Text(selectedList?.name ?? "Lists")
+                                .font(.headline)
+                                .foregroundStyle(activeListColor)
+                            titleChevron
+                        }
+                        Text("^[\(movieCount) Movie](inflect: true)")
+                            .font(.caption2)
                             .foregroundStyle(.secondary)
-                            .padding(5)
-                            .background(Color(.tertiarySystemFill), in: Circle())
-                            // The system title-menu chevron sits a hair below the
-                            // title's optical center.
-                            .offset(y: 1)
                     }
                 }
                 .tint(.primary)
@@ -193,11 +209,33 @@ struct WatchListView: View {
             importProgress: importProgress,
             onImport: handleImport
         ))
+        // Rebuild the grouped sections off the main thread whenever their inputs
+        // change (list, entry count, data version, sort direction, filter, watched
+        // sort key). Runs on appear and on each input change.
+        .task(id: sectionsInput) { await rebuildSections() }
+        // Treat a local save as a data change so edits (e.g. a watched date) that
+        // don't alter the entry count still trigger a rebuild. Scoped to the main
+        // context so background/save churn elsewhere doesn't spuriously fire.
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave, object: context) {
+                dataVersion &+= 1
+            }
+        }
+        // A CloudKit import lands as a remote store change (no local save), so
+        // observe it too, keeping large synced lists current.
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
+                dataVersion &+= 1
+            }
+        }
         .onAppear { selectDefaultIfNeeded() }
         // Seeding is deferred to app launch (RootView), so the lists may arrive a
         // moment later; pick the Watch List as soon as they do.
         .onChange(of: lists.count) { _, _ in selectDefaultIfNeeded() }
         .onChange(of: selectedListUUID) { _, _ in
+            // Clear immediately so the previous list's rows never show under the new
+            // title while the async rebuild runs.
+            sections = []
             loadSort()
         }
         .onChange(of: sortAscending) { _, newValue in
@@ -222,6 +260,18 @@ struct WatchListView: View {
             // Watched and Viewed read best newest-first; everything else oldest-first.
             sortAscending = list.kind != .watched && list.kind != .viewed
         }
+    }
+
+    /// Mimics the system title-menu chevron: a small glyph in a subtle filled circle.
+    private var titleChevron: some View {
+        Image(systemName: "chevron.down")
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(.secondary)
+            .padding(5)
+            .background(Color(.tertiarySystemFill), in: Circle())
+            // The system title-menu chevron sits a hair below the title's
+            // optical center.
+            .offset(y: 1)
     }
 
     // MARK: - Title menu
@@ -441,6 +491,9 @@ struct WatchListView: View {
         return lists.first { $0.kind == .toWatch } ?? lists.first
     }
 
+    /// Number of movies in the selected list, shown as the nav-bar subtitle.
+    private var movieCount: Int { (selectedList?.entries ?? []).count }
+
     /// The two built-in lists shown above custom lists (To Watch, Watched).
     private var topLists: [MovieList] { lists.filter { $0.kind == .toWatch || $0.kind == .watched } }
 
@@ -478,50 +531,68 @@ struct WatchListView: View {
 
     // MARK: - Data
 
-    /// A month/year group of entries, e.g. "May 2025".
-    private struct MonthSection: Identifiable {
-        let id: DateComponents
-        let title: String
-        let entries: [WatchListEntry]
+    /// The inputs that determine `sections`. The month grouping only needs to be
+    /// rebuilt when one of these changes, so this drives the `.task(id:)` that runs
+    /// `SectionBuilder` — avoiding both the eager per-body-pass recompute and any
+    /// main-thread faulting just to decide whether a rebuild is needed.
+    private struct SectionsInput: Equatable {
+        var listID: UUID?
+        /// The current entry count of the selected list. Catches additions and
+        /// removals; `dataVersion` catches in-place edits (e.g. a watched date).
+        var count: Int
+        var dataVersion: Int
+        var ascending: Bool
+        var filter: String
+        var watchedSortKey: WatchedSortKey
     }
 
-    /// Entries for the selected list, grouped into month/year sections and
-    /// ordered (both sections and rows within them) per the ascending toggle.
-    private var sections: [MonthSection] {
-        let allEntries = selectedList?.entries ?? []
-        let entries = filterText.isEmpty
-            ? allEntries
-            : allEntries.filter { $0.title.localizedCaseInsensitiveContains(filterText) }
-
-        let grouped = Dictionary(grouping: entries) { entry -> DateComponents in
-            Calendar.current.dateComponents([.year, .month], from: sortValue(for: entry))
-        }
-
-        let sortedKeys = grouped.keys.sorted { a, b in
-            (a.year ?? 0, a.month ?? 0) < (b.year ?? 0, b.month ?? 0)
-        }
-        let orderedKeys = sortAscending ? sortedKeys : sortedKeys.reversed()
-
-        return orderedKeys.map { key in
-            let rows = (grouped[key] ?? []).sorted { sortValue(for: $0) < sortValue(for: $1) }
-            let ordered = sortAscending ? rows : rows.reversed()
-            let title = Calendar.current.date(from: key)
-                .map { DateFormatter.sectionHeader.string(from: $0) } ?? "Unknown"
-            return MonthSection(id: key, title: title, entries: Array(ordered))
-        }
+    private var sectionsInput: SectionsInput {
+        SectionsInput(
+            listID: selectedList?.uuid,
+            count: (selectedList?.entries ?? []).count,
+            dataVersion: dataVersion,
+            ascending: sortAscending,
+            filter: filterText,
+            watchedSortKey: watchedSortKey
+        )
     }
 
-    /// The date the selected list orders and groups by. Missing dates sort last
-    /// in ascending order (they become `.distantFuture`).
-    private func sortValue(for entry: WatchListEntry) -> Date {
-        // Viewed orders and groups by when the movie was browsed.
-        if selectedList?.kind == .viewed {
-            return entry.dateAdded
+    /// Which stored date the selected list orders and groups by.
+    private func sortField(for list: MovieList) -> EntrySortField {
+        if list.kind == .viewed { return .dateAdded }
+        if list.tracksWatchedDate, watchedSortKey == .dateWatched { return .dateWatched }
+        return .releaseDate
+    }
+
+    /// Rebuilds `sections` for the selected list on a background context, so the
+    /// fetch and grouping (and the SwiftData faulting they trigger) never block the
+    /// main thread. The builder is created lazily and reused across rebuilds.
+    private func rebuildSections() async {
+        guard let list = selectedList else {
+            sections = []
+            return
         }
-        if selectedList?.tracksWatchedDate == true, watchedSortKey == .dateWatched {
-            return entry.dateWatched ?? .distantFuture
-        }
-        return entry.releaseDate ?? .distantFuture
+
+        let builder = builder ?? SectionBuilder(modelContainer: context.container)
+        if self.builder == nil { self.builder = builder }
+
+        let result = await builder.build(
+            listID: list.uuid,
+            sortField: sortField(for: list),
+            ascending: sortAscending,
+            filter: filterText
+        )
+        // The task is re-run (and the old one cancelled) whenever the inputs change,
+        // so a late result can't clobber a newer selection — but bail on cancel to
+        // avoid a redundant assignment.
+        guard !Task.isCancelled else { return }
+        sections = result
+    }
+
+    /// Refetches the live entry for a snapshot (by its persistent id) and removes it.
+    private func delete(_ entry: EntrySnapshot) {
+        guard let live = context.model(for: entry.persistentID) as? WatchListEntry else { return }
+        WatchListStore.delete(live, in: context)
     }
 
     private func emptyMessage(for list: MovieList) -> String {
@@ -538,7 +609,7 @@ struct WatchListView: View {
     /// Leading swipe: on Watched, send the movie back to the Watch List; on any
     /// other list, mark it Watched. Uses the same buttons as Search results.
     @ViewBuilder
-    private func leadingAction(for entry: WatchListEntry) -> some View {
+    private func leadingAction(for entry: EntrySnapshot) -> some View {
         let movie = movie(from: entry)
         if selectedList?.kind == .watched {
             WatchListSwipeButton(movie: movie, watchList: watchList, context: context)
@@ -549,7 +620,7 @@ struct WatchListView: View {
 
     /// The Watched list always labels each row with the date the movie was watched;
     /// every other list lets the row fall back to the movie's release date.
-    private func subtitle(for entry: WatchListEntry) -> String? {
+    private func subtitle(for entry: EntrySnapshot) -> String? {
         guard selectedList?.tracksWatchedDate == true else { return nil }
         return entry.dateWatched.map { "Watched \($0.toString())" }
     }
@@ -557,7 +628,7 @@ struct WatchListView: View {
     /// The personal rating to show on a row, if the movie has been watched. Watched
     /// rows read their own entry; custom-list rows look the movie up on the Watched
     /// list so a rating still shows once it's been seen. Other lists show none.
-    private func rating(for entry: WatchListEntry) -> Double? {
+    private func rating(for entry: EntrySnapshot) -> Double? {
         switch selectedList?.kind {
         case .watched:
             return entry.userRating
@@ -572,7 +643,7 @@ struct WatchListView: View {
     /// The runtime line ("2 hr 8 min") shown on To Watch rows, formatted like the
     /// movie detail page. Only the To Watch list surfaces it; nil elsewhere or when
     /// the entry has no stored runtime.
-    private func duration(for entry: WatchListEntry) -> String? {
+    private func duration(for entry: EntrySnapshot) -> String? {
         guard selectedList?.kind == .toWatch else { return nil }
         return movie(from: entry).duration
     }
@@ -583,8 +654,8 @@ struct WatchListView: View {
         selectedList?.kind != .viewed
     }
 
-    /// Rebuilds a Movie snapshot from an entry so moves preserve poster/date.
-    private func movie(from entry: WatchListEntry) -> Movie {
+    /// Rebuilds a Movie from an entry snapshot so moves preserve poster/date.
+    private func movie(from entry: EntrySnapshot) -> Movie {
         let movie = Movie(id: entry.movieID, title: entry.title)
         movie.poster = entry.posterPath
         movie.releaseDate = entry.releaseDate

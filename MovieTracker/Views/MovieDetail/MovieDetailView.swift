@@ -98,13 +98,26 @@ struct MovieDetailView: View {
             // The zoom transition is applied to the poster inside PosterDetailView (not here),
             // so the source morphs into the poster's frame rather than the whole screen.
             if let movie = model.movie {
-                PosterDetailView(movie: movie, tint: model.tint,
+                PosterDetailView(imageURL: movie.posterURL(.orig), tint: model.tint,
                                  zoomSourceID: movie.id, zoomNamespace: zoomNamespace)
             }
         }
-        .sheet(item: $selectedTrailer) { trailer in
-            if let url = trailer.watchURL {
-                SafariView(url: url).ignoresSafeArea()
+        .fullScreenCover(item: $selectedTrailer) { trailer in
+            NavigationStack {
+                TrailerPlayerView(trailer: trailer) {
+                    selectedTrailer = nil
+                }
+                // Keep the web content within the safe area (below the nav bar,
+                // above the home indicator) while black fills the edges, so the
+                // YouTube page looks intentional if the user exits fullscreen.
+                .background(Color.black.ignoresSafeArea())
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(role: .close) {
+                            selectedTrailer = nil
+                        }
+                    }
+                }
             }
         }
         .task {

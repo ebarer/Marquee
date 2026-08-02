@@ -24,12 +24,7 @@ class Movie: NSObject {
     var trailers: [MovieTrailer]?
     var bonusCredits: Credits = Credits(during: false, after: false)
     var team: [Person]
-    /// The role (character or job) this movie represents in a person's
-    /// filmography. Only set when the movie is built as a person credit.
     var creditRole: String?
-    /// The franchise this movie belongs to (e.g. "The Dark Knight Collection"),
-    /// when TMDB groups it into one. Populated from `belongs_to_collection` in
-    /// the movie detail response; nil for standalone films.
     var collection: MovieCollection?
 
     var duration: String? {
@@ -37,16 +32,10 @@ class Movie: NSObject {
         return "\(self.runtime! / 60) hr \(self.runtime! % 60) min"
     }
 
-    /// The single most representative trailer for the movie, if any. Considers
-    /// only YouTube trailers/teasers (ignoring clips, featurettes, and other
-    /// extras) and prefers official, full trailers, then the most recent.
     var primaryTrailer: MovieTrailer? {
         trailers?
             .filter { $0.site == "YouTube" && $0.isTrailer }
             .max { lhs, rhs in
-                // Rank by type/official first; break ties by recency, matching
-                // how TMDB features the newest official trailer. ISO-8601 UTC
-                // timestamps sort chronologically as plain strings.
                 if lhs.primaryScore != rhs.primaryScore {
                     return lhs.primaryScore < rhs.primaryScore
                 }
@@ -54,10 +43,7 @@ class Movie: NSObject {
             }
     }
 
-    /// True for non-acting "noise" credits in a filmography — talk-show "Self"
-    /// appearances (and variants like "Self - Guest") and "Thanks" credits — so a
-    /// filter can hide them. Keyed off `creditRole`, so only meaningful on movies
-    /// built as a person credit.
+    /// Credits for "self", "guest", "thanks", etc. that aren't primary roles
     var isExtraneousCredit: Bool {
         guard let role = creditRole?.lowercased() else { return false }
         if role == "self" || role.hasPrefix("self ") || role.hasPrefix("self-") { return true }
@@ -156,19 +142,6 @@ extension Movie {
     }
 }
 
-// MARK: - Collection (franchise)
-
-/// A TMDB movie franchise. The stub form (id, name, artwork) ships inside a
-/// movie's detail payload; the full member list is fetched separately.
-struct MovieCollection {
-    var id: Int
-    var name: String
-    var poster: String?
-    var background: String?
-}
-
-// MARK: - Subclasses
-
 extension Movie {
     struct Credits {
         var during: Bool
@@ -219,9 +192,6 @@ struct MovieTrailer: Identifiable {
     var type: TrailerType
     var site: String
     var official: Bool
-    /// ISO-8601 UTC publish timestamp (e.g. "2026-07-21T16:00:31.000Z"), used
-    /// to prefer the most recent trailer. Compared as a string, which sorts
-    /// chronologically for this fixed format.
     var publishedAt: String
 
     enum TrailerType: String {
@@ -229,9 +199,6 @@ struct MovieTrailer: Identifiable {
         case Trailer = "Trailer"
         case Clip = "Clip"
         case Featurette = "Featurette"
-        /// Any TMDB video type we don't rank as a trailer — e.g. "Behind the
-        /// Scenes", "Bloopers". Unknown types map here so they're never mistaken
-        /// for a real trailer.
         case other = "Other"
     }
 
@@ -245,16 +212,11 @@ struct MovieTrailer: Identifiable {
         self.publishedAt = publishedAt
     }
 
-    /// True for genuine trailers and teasers, as opposed to clips, featurettes,
-    /// behind-the-scenes, and other extras. Only these are eligible to be a
-    /// movie's primary trailer.
     var isTrailer: Bool {
         type == .Trailer || type == .Teaser
     }
 
-    /// Ranks how representative this video is as the movie's primary trailer.
-    /// Higher is better: full trailers beat teasers, and official uploads are
-    /// preferred within each tier.
+    /// Used to help identify the primary trailer
     var primaryScore: Int {
         var score: Int
         switch type {
@@ -275,4 +237,14 @@ struct MovieTrailer: Identifiable {
     var watchURL: URL? {
         URL(string: "https://www.youtube.com/watch?v=\(key)")
     }
+}
+
+// MARK: - Collection (franchise)
+
+/// A collection of movies comprising a franchise (ie. Star Wars)
+struct MovieCollection {
+    var id: Int
+    var name: String
+    var poster: String?
+    var background: String?
 }

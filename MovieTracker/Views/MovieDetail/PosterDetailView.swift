@@ -21,7 +21,10 @@
 import SwiftUI
 
 struct PosterDetailView: View {
-    let movie: Movie
+    let imageURL: URL?
+    /// The enlarged image's aspect ratio (width / height). Defaults to a 2:3
+    /// movie poster; person profile photos pass their own portrait ratio.
+    var aspectRatio: CGFloat = 2.0 / 3.0
     var tint: Color = .appAccent
     let zoomSourceID: Int
     let zoomNamespace: Namespace.ID
@@ -109,8 +112,8 @@ struct PosterDetailView: View {
 
     private var poster: some View {
         let cornerRadius = 12 * (1 - zoomProgress)
-        return PosterImage(url: movie.posterURL(.orig))
-            .aspectRatio(2.0 / 3.0, contentMode: .fit)
+        return PosterImage(url: imageURL)
+            .aspectRatio(aspectRatio, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius)
@@ -227,6 +230,6 @@ struct PosterDetailView: View {
 
 #Preview {
     @Previewable @Namespace var namespace
-    PosterDetailView(movie: .preview, zoomSourceID: 1, zoomNamespace: namespace)
+    PosterDetailView(imageURL: Movie.preview.posterURL(.orig), zoomSourceID: 1, zoomNamespace: namespace)
         .preferredColorScheme(.dark)
 }
