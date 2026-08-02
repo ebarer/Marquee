@@ -6,17 +6,21 @@
 import SwiftUI
 import SwiftData
 
-/// The month/year grouped list for the selected list. Rows render from Sendable
-/// snapshots; the live entry is only refetched (by persistent id) on delete.
+/// The month/year grouped list for the current selection. Rows render from Sendable
+/// snapshots; the live model is only refetched (by persistent id) on delete.
 struct WatchListRows: View {
     let sections: [SectionSnapshot]
-    /// The selected list; its kind decides the subtitle, rating, and swipe actions.
-    let list: MovieList?
-    let lists: [MovieList]
+    let selection: ListSelection
+    let lists: [MediaList]
     let context: ModelContext
     let listColor: Color
-    let watchList: MovieList?
-    let watchedList: MovieList?
+
+    private var isWatchList: Bool {
+        if case .list(let uuid) = selection { return lists.first { $0.uuid == uuid }?.isWatchList == true }
+        return false
+    }
+    private var isViewed: Bool { selection == .viewed }
+    private var isWatched: Bool { selection == .watched }
 
     var body: some View {
         List {
@@ -24,15 +28,15 @@ struct WatchListRows: View {
                 Section {
                     ForEach(Array(section.entries.enumerated()), id: \.element.id) { index, entry in
                         MovieListRow(
-                            movie: movie(from: entry),
-                            subtitle: subtitle(for: entry),
-                            showsSubtitle: showsRowSubtitle,
-                            duration: duration(for: entry),
-                            rating: rating(for: entry),
+                            movie: movie(entry),
+                            subtitle: subtitle(entry),
+                            showsSubtitle: !isViewed,
+                            duration: duration(entry),
+                            rating: rating(entry),
                             ratingTint: listColor,
                             lists: lists,
                             context: context,
-                            leadingActions: { leadingAction(for: entry) },
+                            leadingActions: { leadingAction(entry) },
                             trailingActions: {
                                 Button(role: .destructive) {
                                     delete(entry)
@@ -52,68 +56,61 @@ struct WatchListRows: View {
         }
     }
 
-    /// Leading swipe: on Watched, send the movie back to the Watch List; on any
-    /// other list, mark it Watched.
+    /// Leading swipe: on Watched, send back to the Watch List; elsewhere mark Watched.
     @ViewBuilder
-    private func leadingAction(for entry: EntrySnapshot) -> some View {
-        let movie = movie(from: entry)
-        if list?.kind == .watched {
-            WatchListSwipeButton(movie: movie, watchList: watchList, context: context)
+    private func leadingAction(_ entry: MediaSnapshot) -> some View {
+        if isWatched {
+            WatchListSwipeButton(movie: movie(entry), context: context)
         } else {
-            WatchedSwipeButton(movie: movie, watchedList: watchedList, context: context)
+            WatchedSwipeButton(movie: movie(entry), context: context)
         }
     }
 
-    private func subtitle(for entry: EntrySnapshot) -> String? {
-        guard list?.tracksWatchedDate == true else { return nil }
-        return entry.dateWatched.map { "Watched \($0.toString())" }
+    private func subtitle(_ entry: MediaSnapshot) -> String? {
+        guard isWatched, let date = entry.dateWatched else { return nil }
+        return "Watched \(date.toString())"
     }
 
-    /// Watched rows show their own rating; custom-list rows look the movie up on the
-    /// Watched list so a rating still shows once seen; other lists show none.
-    private func rating(for entry: EntrySnapshot) -> Double? {
-        switch list?.kind {
-        case .watched:
-            return entry.userRating
-        case .custom:
-            guard let watchedList else { return nil }
-            return WatchListStore.rating(for: entry.movieID, in: watchedList)
-        default:
-            return nil
-        }
+    /// Rating shown on Watched and custom-list rows (looked up from `MediaItem`),
+    /// not on the Watch List or Viewed.
+    private func rating(_ entry: MediaSnapshot) -> Double? {
+        (isWatched || (!isWatchList && !isViewed)) ? entry.userRating : nil
     }
 
-    private func duration(for entry: EntrySnapshot) -> String? {
-        guard list?.kind == .toWatch else { return nil }
-        return movie(from: entry).duration
+    private func duration(_ entry: MediaSnapshot) -> String? {
+        guard isWatchList, let runtime = entry.runtime else { return nil }
+        return "\(runtime / 60) hr \(runtime % 60) min"
     }
 
-    /// Viewed is a browse history where the release date only adds noise.
-    private var showsRowSubtitle: Bool {
-        list?.kind != .viewed
-    }
-
-    /// Rebuilds a Movie from a snapshot so moves preserve poster/date.
-    private func movie(from entry: EntrySnapshot) -> Movie {
-        let movie = Movie(id: entry.movieID, title: entry.title)
+    private func movie(_ entry: MediaSnapshot) -> Movie {
+        let movie = Movie(id: entry.tmdbID, title: entry.title)
         movie.poster = entry.posterPath
         movie.releaseDate = entry.releaseDate
         movie.runtime = entry.runtime
         return movie
     }
 
-    private func delete(_ entry: EntrySnapshot) {
-        guard let live = context.model(for: entry.persistentID) as? WatchListEntry else { return }
-        WatchListStore.delete(live, in: context)
+    /// Delete depends on the selection: remove the list entry, unmark Watched, or
+    /// drop from the Viewed history.
+    private func delete(_ entry: MediaSnapshot) {
+        switch selection {
+        case .list:
+            guard let live = context.model(for: entry.persistentID) as? ListEntry else { return }
+            context.delete(live)
+        case .watched:
+            guard let item = context.model(for: entry.persistentID) as? MediaItem else { return }
+            item.watchedAt = nil
+            item.pruneIfEmpty()
+        case .viewed:
+            guard let item = context.model(for: entry.persistentID) as? MediaItem else { return }
+            item.lastViewedAt = nil
+            item.pruneIfEmpty()
+        }
     }
 }
 
-// Populated states are exercised by WatchListView's Idle/Syncing previews;
-// EntrySnapshot needs a live persistent id that can't be fabricated offline.
 #Preview {
-    WatchListRows(sections: [],
-                  list: MovieList(name: "Watch List", symbol: "bookmark", kind: .toWatch, sortOrder: 0),
-                  lists: [], context: previewModelContainer.mainContext, listColor: .appAccent,
-                  watchList: nil, watchedList: nil)
+    WatchListRows(sections: [], selection: .watched, lists: [],
+                  context: previewModelContainer.mainContext, listColor: .appAccent)
         .listStyle(.plain)
 }

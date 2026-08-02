@@ -16,10 +16,10 @@ struct ListEditorView: View {
     @Environment(\.dismiss) private var dismiss
 
     /// The list being edited, or `nil` when creating a new one.
-    let existing: MovieList?
+    let existing: MediaList?
     /// Sort order to assign to a newly created list.
     var nextSortOrder: Int = 0
-    var onSaved: (MovieList) -> Void = { _ in }
+    var onSaved: (MediaList) -> Void = { _ in }
     var onDeleted: () -> Void = {}
 
     @State private var name: String
@@ -40,9 +40,9 @@ struct ListEditorView: View {
     private let symbolColumns = [GridItem(.adaptive(minimum: 52), spacing: 12)]
     private let colorColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 6)
 
-    init(existing: MovieList?,
+    init(existing: MediaList?,
          nextSortOrder: Int = 0,
-         onSaved: @escaping (MovieList) -> Void = { _ in },
+         onSaved: @escaping (MediaList) -> Void = { _ in },
          onDeleted: @escaping () -> Void = {}) {
         self.existing = existing
         self.nextSortOrder = nextSortOrder
@@ -218,7 +218,7 @@ struct ListEditorView: View {
             existing.colorIndex = colorIndex
             onSaved(existing)
         } else {
-            let list = MovieList(name: trimmedName, symbol: symbol, kind: .custom,
+            let list = MediaList(name: trimmedName, symbol: symbol,
                                  sortOrder: nextSortOrder, colorIndex: colorIndex)
             context.insert(list)
             onSaved(list)

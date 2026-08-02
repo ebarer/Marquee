@@ -108,7 +108,7 @@ struct ListIcon: View {
 
 extension ListIcon {
     /// Convenience for a stored list, using its palette color.
-    init(_ list: MovieList, size: CGFloat = 30, symbolSize: CGFloat? = nil) {
+    init(_ list: MediaList, size: CGFloat = 30, symbolSize: CGFloat? = nil) {
         self.init(symbol: list.symbol, color: list.color, size: size, symbolSize: symbolSize)
     }
 }

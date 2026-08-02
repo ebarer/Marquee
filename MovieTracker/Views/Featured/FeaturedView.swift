@@ -10,8 +10,8 @@ import SwiftData
 
 struct FeaturedView: View {
     @Environment(\.modelContext) private var context
-    @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
-    private var lists: [MovieList]
+    @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
+    private var lists: [MediaList]
     @State private var model = FeaturedModel()
     @State private var collection: FeaturedCollection = .popular
 

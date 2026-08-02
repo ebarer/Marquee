@@ -13,7 +13,12 @@ struct RootView: View {
     static let sharedContainer: ModelContainer = {
         let configuration = ModelConfiguration(cloudKitDatabase: .automatic)
         do {
-            return try ModelContainer(for: WatchListEntry.self, MovieList.self, configurations: configuration)
+            // MediaItem/MediaList/ListEntry are the live schema; WatchListEntry +
+            // MovieList remain only so the one-shot launch migration can read them.
+            return try ModelContainer(
+                for: MediaItem.self, MediaList.self, ListEntry.self,
+                WatchListEntry.self, MovieList.self,
+                configurations: configuration)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
@@ -88,17 +93,17 @@ struct RootView: View {
 
             // On a brand-new local store (e.g. a fresh install for an existing
             // iCloud account), wait briefly for the first CloudKit import before
-            // seeding the built-in lists, so we don't create duplicates of lists
-            // we're about to receive. Devices that already have their lists locally
-            // seed/reconcile immediately — no launch delay.
-            if WatchListStore.list(kind: .toWatch, in: context) == nil {
+            // seeding the Watch List, so we don't duplicate one we're about to
+            // receive. Devices that already have it locally seed/reconcile at once.
+            if MediaList.watchList(in: context) == nil {
                 SyncLog.logger.log("🌱 empty local store — waiting up to 6s for initial import before seeding")
                 let imported = await Self.waitForInitialImport(timeout: .seconds(6))
                 SyncLog.logger.log("🌱 initial wait ended (\(imported ? "import arrived" : "timed out", privacy: .public))")
             } else {
                 SyncLog.logger.log("🌱 existing local store — seeding/reconciling immediately")
             }
-            WatchListStore.ensureDefaultLists(in: context)
+            MediaList.ensureWatchList(in: context)
+            try? context.save()
             SyncLog.snapshot("after seed", in: context)
 
             // CloudKit imports from another device arrive after launch and can
@@ -112,7 +117,9 @@ struct RootView: View {
                     try? await Task.sleep(for: .seconds(2))
                     guard !Task.isCancelled else { return }
                     SyncLog.logger.log("🔁 remote change settled — reconciling")
-                    WatchListStore.deduplicateBuiltInLists(in: context)
+                    MediaList.deduplicateWatchList(in: context)
+                    MediaItem.deduplicate(in: context)
+                    try? context.save()
                     SyncLog.snapshot("after reconcile", in: context)
                 }
             }

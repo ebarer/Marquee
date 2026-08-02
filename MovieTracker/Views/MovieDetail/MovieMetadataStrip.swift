@@ -11,11 +11,10 @@ import SwiftData
 /// watched date.
 struct MovieMetadataStrip: View {
     let movie: Movie
-    var watchedList: MovieList? = nil
     var context: ModelContext? = nil
     var tint: Color = .appAccent
-    /// Whether the movie is on the Watched list; passed in (not derived) so the
-    /// MY RATING cell animates when the status changes.
+    /// Whether the movie is Watched; passed in (not derived) so the MY RATING cell
+    /// animates when the status changes.
     var isWatched: Bool = false
 
     var body: some View {
@@ -23,14 +22,14 @@ struct MovieMetadataStrip: View {
             hairline
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 0) {
-                    if let watchedList, let context, isWatched {
+                    if let context, isWatched {
                         HStack(alignment: .top, spacing: 0) {
                             cell(header: "MY RATING") {
-                                StarRating(movieID: movie.id, list: watchedList, context: context, tint: tint)
+                                StarRating(movie: movie, context: context, tint: tint)
                             }
                             divider
                             cell(header: "WATCHED", minWidth: 80) {
-                                WatchedDate(movieID: movie.id, list: watchedList, context: context, tint: tint)
+                                WatchedDate(movie: movie, context: context, tint: tint)
                             }
                             divider
                         }

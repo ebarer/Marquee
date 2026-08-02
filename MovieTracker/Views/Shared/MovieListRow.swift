@@ -25,7 +25,7 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     var rating: Double? = nil
     /// Fill color for the rating stars.
     var ratingTint: Color = .appAccent
-    let lists: [MovieList]
+    let lists: [MediaList]
     let context: ModelContext
     @ViewBuilder var leadingActions: () -> Leading
     @ViewBuilder var trailingActions: () -> Trailing

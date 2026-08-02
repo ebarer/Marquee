@@ -6,27 +6,25 @@
 import SwiftUI
 import SwiftData
 
-/// The date the user watched a movie, tappable to open a graphical date picker.
-/// Changes write straight through to the movie's Watched-list entry.
+/// The date the user watched a title, tappable to open a graphical date picker.
+/// Changes write straight through to the `MediaItem`.
 struct WatchedDate: View {
-    let movieID: Int
-    let list: MovieList
+    let movie: Movie
     let context: ModelContext
     let tint: Color
 
-    /// Defaults to today for entries that predate watched-date tracking (only
+    /// Defaults to today for items that predate watched-date tracking (only
     /// persisted once the user picks a date).
     @State private var date: Date
     @State private var showPicker = false
 
-    init(movieID: Int, list: MovieList, context: ModelContext, tint: Color) {
-        self.movieID = movieID
-        self.list = list
+    init(movie: Movie, context: ModelContext, tint: Color) {
+        self.movie = movie
         self.context = context
         self.tint = tint
         // Stored value is canonical UTC-midnight; map back to the same local day.
-        let stored = WatchListStore.dateWatched(for: movieID, in: list)
-        _date = State(initialValue: stored.map(WatchListStore.localDay)
+        let stored = MediaItem.dateWatched(for: movie, in: context)
+        _date = State(initialValue: stored.map(MediaItem.localDay)
                       ?? Calendar.current.startOfDay(for: Date()))
     }
 
@@ -61,8 +59,8 @@ struct WatchedDate: View {
                         }
                     }
                     .onChange(of: date) { _, newValue in
-                        WatchListStore.setDateWatched(WatchListStore.floatingDay(from: newValue),
-                                                      for: movieID, in: list)
+                        MediaItem.setDateWatched(MediaItem.floatingDay(from: newValue),
+                                                 for: movie, in: context)
                     }
             }
             .presentationDetents([.medium])

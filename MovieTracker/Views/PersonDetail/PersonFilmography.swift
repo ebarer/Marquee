@@ -10,13 +10,10 @@ import SwiftData
 /// "Self" and "Thanks" credits (on by default so real roles lead).
 struct PersonFilmography: View {
     let credits: [Movie]
-    let lists: [MovieList]
+    let lists: [MediaList]
     let context: ModelContext
 
     @State private var hideExtraneous = true
-
-    private var watchList: MovieList? { lists.first { $0.kind == .toWatch } }
-    private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
 
     var body: some View {
         if !creditsByYear.isEmpty {
@@ -51,10 +48,10 @@ struct PersonFilmography: View {
         }
         .buttonStyle(.plain)
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            WatchedSwipeButton(movie: movie, watchedList: watchedList, context: context)
+            WatchedSwipeButton(movie: movie, context: context)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            WatchListSwipeButton(movie: movie, watchList: watchList, context: context)
+            WatchListSwipeButton(movie: movie, context: context)
         }
         .movieContextMenu(for: movie, lists: lists, context: context)
     }

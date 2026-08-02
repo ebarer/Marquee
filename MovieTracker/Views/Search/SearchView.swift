@@ -15,8 +15,8 @@ struct SearchView: View {
     @Bindable var model: SearchModel
 
     @Environment(\.modelContext) private var context
-    @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
-    private var lists: [MovieList]
+    @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
+    private var lists: [MediaList]
 
     /// Measured height of the floating scope bar, used to inset the results so
     /// the first row starts just below it.
@@ -79,10 +79,10 @@ struct SearchView: View {
                     lists: lists,
                     context: context,
                     leadingActions: {
-                        WatchedSwipeButton(movie: movie, watchedList: watchedList, context: context)
+                        WatchedSwipeButton(movie: movie, context: context)
                     },
                     trailingActions: {
-                        WatchListSwipeButton(movie: movie, watchList: watchList, context: context)
+                        WatchListSwipeButton(movie: movie, context: context)
                     }
                 )
                 .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
@@ -136,11 +136,6 @@ struct SearchView: View {
             }
         }
     }
-
-    // MARK: - List membership
-
-    private var watchList: MovieList? { lists.first { $0.kind == .toWatch } }
-    private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
 
     // MARK: - Helpers
 

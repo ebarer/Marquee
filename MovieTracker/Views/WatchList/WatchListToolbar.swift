@@ -6,25 +6,31 @@
 import SwiftUI
 import SwiftData
 
-/// The navigation title: the list name (tinted with the list color) over a movie
-/// count, flanked by a menu chevron.
+/// Which list-like view is showing: a real `MediaList` (Watch List or custom) or
+/// the derived Watched / Viewed queries.
+enum ListSelection: Hashable {
+    case list(UUID)
+    case watched
+    case viewed
+}
+
+/// The navigation title: the name (tinted with the list color) over a title count,
+/// flanked by a menu chevron.
 struct WatchListTitleLabel: View {
     let name: String
     let color: Color
-    let movieCount: Int
+    let count: Int
 
     var body: some View {
         VStack(spacing: 1) {
             HStack(spacing: 5) {
-                // A hidden leading chevron balances the trailing one so the text
-                // stays centered.
                 chevron.hidden()
                 Text(name)
                     .font(.headline)
                     .foregroundStyle(color)
                 chevron
             }
-            Text("^[\(movieCount) Movie](inflect: true)")
+            Text("^[\(count) Movie](inflect: true)")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -40,19 +46,21 @@ struct WatchListTitleLabel: View {
     }
 }
 
-/// The title-menu list switcher: built-in lists on top, custom lists in the
-/// middle, the Viewed history last.
+/// The title-menu switcher: Watch List + Watched on top, custom lists next, Viewed
+/// last.
 struct WatchListTitleMenu: View {
-    @Binding var selection: UUID?
-    let topLists: [MovieList]
-    let customLists: [MovieList]
-    let viewedList: MovieList?
+    @Binding var selection: ListSelection
+    let watchList: MediaList?
+    let customLists: [MediaList]
 
     var body: some View {
         Picker("List", selection: $selection) {
-            ForEach(topLists) { list in
-                Label(list.name, systemImage: ListSymbol.outline(list.symbol)).tag(Optional(list.uuid))
+            if let watchList {
+                Label(watchList.name, systemImage: ListSymbol.outline(watchList.symbol))
+                    .tag(ListSelection.list(watchList.uuid))
             }
+            Label("Watched", systemImage: "checkmark.rectangle.stack")
+                .tag(ListSelection.watched)
         }
 
         if !customLists.isEmpty {
@@ -62,8 +70,6 @@ struct WatchListTitleMenu: View {
                     Label {
                         Text(list.name)
                     } icon: {
-                        // Emoji and the flip-prone smiley need a prebuilt image;
-                        // ordinary symbols render fine via systemName.
                         if let image = ListSymbol.menuImage(list.symbol) {
                             Image(uiImage: image)
                         } else {
@@ -71,17 +77,15 @@ struct WatchListTitleMenu: View {
                                 .foregroundStyle(list.color)
                         }
                     }
-                    .tag(Optional(list.uuid))
+                    .tag(ListSelection.list(list.uuid))
                 }
             }
         }
 
-        if let viewedList {
-            Divider()
-            Picker("Viewed", selection: $selection) {
-                Label(viewedList.name, systemImage: ListSymbol.outline(viewedList.symbol))
-                    .tag(Optional(viewedList.uuid))
-            }
+        Divider()
+        Picker("Viewed", selection: $selection) {
+            Label("Viewed", systemImage: "clock.arrow.circlepath")
+                .tag(ListSelection.viewed)
         }
     }
 }
@@ -89,11 +93,10 @@ struct WatchListTitleMenu: View {
 /// The leading ellipsis menu: create/manage lists, then import/export the library.
 struct WatchListActionsMenu: View {
     let canEditLists: Bool
-    /// The Viewed list when it can be cleared (selected and non-empty); else nil.
-    let clearableList: MovieList?
+    let canClearViewed: Bool
     let onNewList: () -> Void
     let onEditLists: () -> Void
-    let onClear: (MovieList) -> Void
+    let onClearViewed: () -> Void
     let onImport: () -> Void
     let onExport: () -> Void
 
@@ -113,10 +116,10 @@ struct WatchListActionsMenu: View {
                 }
             }
 
-            if let clearableList {
+            if canClearViewed {
                 Divider()
                 Button(role: .destructive) {
-                    onClear(clearableList)
+                    onClearViewed()
                 } label: {
                     Label("Clear Viewed", systemImage: "trash")
                 }
@@ -158,12 +161,12 @@ struct WatchListActionsMenu: View {
     }
 }
 
-/// The trailing sort menu: order direction, plus (on lists that track a watched
-/// date) the choice of release vs. watched date.
+/// The trailing sort menu: order direction, plus (on Watched) release vs. watched
+/// date.
 struct WatchListSortMenu: View {
     @Binding var ascending: Bool
     @Binding var watchedSortKey: WatchedSortKey
-    let tracksWatchedDate: Bool
+    let showsWatchedSortKey: Bool
 
     var body: some View {
         Menu {
@@ -172,7 +175,7 @@ struct WatchListSortMenu: View {
                 Text("Descending").tag(false)
             }
 
-            if tracksWatchedDate {
+            if showsWatchedSortKey {
                 Picker("Sort By", selection: $watchedSortKey) {
                     Text(WatchedSortKey.releaseDate.title).tag(WatchedSortKey.releaseDate)
                     Text(WatchedSortKey.dateWatched.title).tag(WatchedSortKey.dateWatched)

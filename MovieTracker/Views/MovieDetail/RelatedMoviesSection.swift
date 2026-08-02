@@ -12,7 +12,7 @@ import SwiftData
 struct RelatedMoviesSection: View {
     let collection: [Movie]
     let recommendations: [Movie]
-    let lists: [MovieList]
+    let lists: [MediaList]
     let context: ModelContext
     let tint: Color
 

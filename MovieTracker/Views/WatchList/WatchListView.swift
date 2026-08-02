@@ -11,43 +11,30 @@ struct WatchListView: View {
     @Environment(\.modelContext) private var context
     /// Present only when running inside the app (absent in previews).
     @Environment(CloudSyncMonitor.self) private var syncMonitor: CloudSyncMonitor?
-    @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
-    private var allLists: [MovieList]
+    @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
+    private var allLists: [MediaList]
 
-    /// The queried lists with duplicate built-in lists collapsed, so the switcher
-    /// never shows two "Watch List"/"Watched"/"Viewed" entries in the window where
-    /// CloudKit has synced a duplicate but `deduplicateBuiltInLists` hasn't merged
-    /// it away yet. For each built-in kind only the canonical (lowest-UUID) list —
-    /// the merge survivor — is kept; custom lists pass through unchanged.
-    private var lists: [MovieList] {
+    /// Live lists with any duplicate Watch List collapsed to the canonical copy.
+    private var lists: [MediaList] {
         let visible = allLists.filter { !$0.isDeduplicated }
-        var canonicalID: [ListKind: UUID] = [:]
-        for list in visible where list.kind != .custom {
-            if let winner = canonicalID[list.kind], winner.uuidString <= list.uuid.uuidString {
-                continue
-            }
-            canonicalID[list.kind] = list.uuid
-        }
-        return visible.filter { $0.kind == .custom || canonicalID[$0.kind] == $0.uuid }
+        let canonicalWatch = visible.filter { $0.isWatchList }
+            .sorted { $0.uuid.uuidString < $1.uuid.uuidString }.first
+        return visible.filter { !$0.isWatchList || $0.uuid == canonicalWatch?.uuid }
     }
 
-    @State private var selectedListUUID: UUID?
+    /// The current view; nil until the Watch List is chosen on appear.
+    @State private var selection: ListSelection?
     @State private var editor: ListEditor?
 
-    /// Month/year sections for the selected list, built off the main thread by
-    /// `SectionBuilder` so grouping a large list never blocks the UI.
     @State private var sections: [SectionSnapshot] = []
     @State private var builder: SectionBuilder?
-
-    /// Bumped on any store change (local save or CloudKit import) so the sections
-    /// rebuild even when the entry count is unchanged (e.g. a watched-date edit).
+    /// Bumped on any store change so the sections rebuild even when a count is
+    /// unchanged (e.g. a watched-date edit).
     @State private var dataVersion = 0
-
     @State private var filterText = ""
 
-    // Sort direction is remembered per list (keyed by UUID in UserDefaults):
-    // Watched defaults to descending, every other list to ascending.
-    @State private var sortAscending = true
+    @AppStorage("watchedListAscending") private var watchedAscending = false
+    @AppStorage("viewedListAscending") private var viewedAscending = false
     @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .releaseDate
 
     // Backup import/export state.
@@ -56,85 +43,73 @@ struct WatchListView: View {
     @State private var showImporter = false
     @State private var importSummary: ImportSummary?
     @State private var transferError: String?
-    /// Progress of an in-flight CSV import (fetched, total); nil when idle.
     @State private var importProgress: (done: Int, total: Int)?
 
     @State private var showListManager = false
 
     var body: some View {
-        WatchListRows(sections: sections, list: selectedList, lists: lists, context: context,
-                      listColor: activeListColor, watchList: watchList, watchedList: watchedList)
+        WatchListRows(sections: sections, selection: resolvedSelection, lists: lists,
+                      context: context, listColor: activeColor)
         .listStyle(.plain)
-        .tint(activeListColor)
-        .navigationTitle(selectedList?.name ?? "Lists")
+        .tint(activeColor)
+        .navigationTitle(title)
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
-            // Rendered ourselves so the list name can carry the list's color.
             ToolbarItem(placement: .principal) {
                 Menu {
-                    WatchListTitleMenu(selection: $selectedListUUID, topLists: topLists,
-                                       customLists: customLists, viewedList: viewedList)
+                    WatchListTitleMenu(selection: selectionBinding, watchList: watchList,
+                                       customLists: customLists)
                 } label: {
-                    WatchListTitleLabel(name: selectedList?.name ?? "Lists",
-                                        color: activeListColor, movieCount: movieCount)
+                    WatchListTitleLabel(name: title, color: activeColor, count: movieCount)
                 }
                 .tint(.primary)
             }
             ToolbarItem(placement: .topBarLeading) {
                 WatchListActionsMenu(
                     canEditLists: !customLists.isEmpty,
-                    clearableList: clearableViewedList,
+                    canClearViewed: resolvedSelection == .viewed && movieCount > 0,
                     onNewList: { editor = .create(addMovie: nil) },
                     onEditLists: { showListManager = true },
-                    onClear: { WatchListStore.clear($0, in: context) },
+                    onClearViewed: clearViewed,
                     onImport: { showImporter = true },
-                    onExport: { prepareExport() }
+                    onExport: prepareExport
                 )
-                .tint(activeListColor)
+                .tint(activeColor)
             }
             if syncMonitor?.isSyncing == true {
                 ToolbarItem(placement: .topBarTrailing) {
                     ProgressView()
                         .controlSize(.regular)
-                        .tint(activeListColor)
+                        .tint(activeColor)
                         .accessibilityLabel("Syncing with iCloud")
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                WatchListSortMenu(ascending: $sortAscending, watchedSortKey: $watchedSortKey,
-                                  tracksWatchedDate: selectedList?.tracksWatchedDate == true)
-                    .tint(activeListColor)
+                WatchListSortMenu(ascending: ascendingBinding, watchedSortKey: $watchedSortKey,
+                                  showsWatchedSortKey: resolvedSelection == .watched)
+                    .tint(activeColor)
             }
         }
-        .searchable(text: $filterText, prompt: "Search \(selectedList?.name ?? "list")")
+        .searchable(text: $filterText, prompt: "Search \(title)")
         .overlay {
-            if let list = selectedList, (list.entries ?? []).isEmpty {
-                ContentUnavailableView {
-                    Label {
-                        Text(list.name)
-                    } icon: {
-                        ListIcon(symbol: list.symbol, color: listColor(for: list), size: 64)
-                    }
-                } description: {
-                    Text(emptyMessage(for: list))
+            if sections.isEmpty {
+                if !filterText.isEmpty {
+                    ContentUnavailableView.search(text: filterText)
+                } else {
+                    emptyState
                 }
-            } else if !filterText.isEmpty, sections.isEmpty {
-                ContentUnavailableView.search(text: filterText)
             }
         }
         .sheet(item: $editor) { mode in
             NavigationStack {
                 ListEditorView(
                     existing: mode.list,
-                    nextSortOrder: (lists.map(\.sortOrder).max() ?? 1) + 1,
+                    nextSortOrder: (customLists.map(\.sortOrder).max() ?? 0) + 1,
                     onSaved: { newList in
-                        // If invoked from a movie's context menu, add it to the new list.
-                        if let movie = mode.movieToAdd {
-                            WatchListStore.add(movie, to: newList, in: context)
-                        }
-                        select(newList)
+                        if let movie = mode.movieToAdd { newList.add(movie) }
+                        selection = .list(newList.uuid)
                     },
-                    onDeleted: { select(WatchListStore.list(kind: .toWatch, in: context)) }
+                    onDeleted: { selection = watchList.map { .list($0.uuid) } }
                 )
             }
         }
@@ -152,9 +127,8 @@ struct WatchListView: View {
             onImport: handleImport
         ))
         .task(id: sectionsInput) { await rebuildSections() }
-        // A local save (e.g. a watched-date edit) that doesn't change the entry count
-        // still needs a rebuild. Scoped to the main context so background churn elsewhere
-        // doesn't spuriously fire.
+        // A local save (e.g. a watched-date edit) that doesn't change a count still
+        // needs a rebuild. Scoped to the main context.
         .task {
             for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave, object: context) {
                 dataVersion &+= 1
@@ -167,53 +141,160 @@ struct WatchListView: View {
             }
         }
         .onAppear { selectDefaultIfNeeded() }
-        // Seeding is deferred to app launch (RootView); pick the Watch List as soon
-        // as the lists arrive.
         .onChange(of: lists.count) { _, _ in selectDefaultIfNeeded() }
-        .onChange(of: selectedListUUID) { _, _ in
-            // Clear immediately so the previous list's rows never show under the new
-            // title while the async rebuild runs.
+        .onChange(of: selection) { _, _ in sections = [] }
+    }
+
+    // MARK: - Selection
+
+    private var resolvedSelection: ListSelection { selection ?? defaultSelection }
+    private var defaultSelection: ListSelection { watchList.map { .list($0.uuid) } ?? .watched }
+
+    private var selectionBinding: Binding<ListSelection> {
+        Binding(get: { resolvedSelection }, set: { selection = $0 })
+    }
+
+    private var watchList: MediaList? { lists.first { $0.isWatchList } }
+    private var customLists: [MediaList] { lists.filter { !$0.isWatchList } }
+    private func list(_ uuid: UUID) -> MediaList? { lists.first { $0.uuid == uuid } }
+
+    private func selectDefaultIfNeeded() {
+        guard selection == nil, let watch = watchList else { return }
+        selection = .list(watch.uuid)
+    }
+
+    // MARK: - Derived per-selection
+
+    private var title: String {
+        switch resolvedSelection {
+        case .list(let uuid): return list(uuid)?.name ?? "Lists"
+        case .watched: return "Watched"
+        case .viewed: return "Viewed"
+        }
+    }
+
+    private var activeColor: Color {
+        switch resolvedSelection {
+        case .list(let uuid): return list(uuid)?.color ?? .appAccent
+        case .watched: return Color(red255: 90, green255: 200, blue255: 250)
+        case .viewed: return .gray
+        }
+    }
+
+    private var movieCount: Int {
+        switch resolvedSelection {
+        case .list(let uuid): return (list(uuid)?.entries ?? []).count
+        case .watched: return (try? context.fetchCount(FetchDescriptor<MediaItem>(
+            predicate: #Predicate { $0.watchedAt != nil }))) ?? 0
+        case .viewed: return (try? context.fetchCount(FetchDescriptor<MediaItem>(
+            predicate: #Predicate { $0.lastViewedAt != nil }))) ?? 0
+        }
+    }
+
+    private var currentAscending: Bool {
+        switch resolvedSelection {
+        case .list(let uuid): return list(uuid)?.sortAscending ?? true
+        case .watched: return watchedAscending
+        case .viewed: return viewedAscending
+        }
+    }
+
+    private var ascendingBinding: Binding<Bool> {
+        Binding(get: { currentAscending }, set: { setAscending($0) })
+    }
+
+    private func setAscending(_ value: Bool) {
+        switch resolvedSelection {
+        case .list(let uuid): list(uuid)?.sortAscending = value
+        case .watched: watchedAscending = value
+        case .viewed: viewedAscending = value
+        }
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        switch resolvedSelection {
+        case .list(let uuid):
+            if let list = list(uuid) {
+                ContentUnavailableView {
+                    Label {
+                        Text(list.name)
+                    } icon: {
+                        ListIcon(list, size: 64)
+                    }
+                } description: {
+                    Text(list.isWatchList
+                         ? "Movies you want to watch will appear here."
+                         : "Movies you add to “\(list.name)” will appear here.")
+                }
+            }
+        case .watched:
+            ContentUnavailableView("Watched", systemImage: "checkmark.rectangle.stack",
+                                   description: Text("Movies you mark watched will appear here."))
+        case .viewed:
+            ContentUnavailableView("Viewed", systemImage: "clock.arrow.circlepath",
+                                   description: Text("Movies you browse will appear here."))
+        }
+    }
+
+    // MARK: - Data
+
+    private var sectionSource: SectionSource? {
+        switch resolvedSelection {
+        case .list(let uuid): return list(uuid) != nil ? .list(uuid) : nil
+        case .watched: return .watched(byWatchedDate: watchedSortKey == .dateWatched)
+        case .viewed: return .viewed
+        }
+    }
+
+    private struct SectionsInput: Equatable {
+        var selection: ListSelection
+        var count: Int
+        var dataVersion: Int
+        var ascending: Bool
+        var filter: String
+        var watchedSortKey: WatchedSortKey
+    }
+
+    private var sectionsInput: SectionsInput {
+        SectionsInput(selection: resolvedSelection, count: movieCount, dataVersion: dataVersion,
+                      ascending: currentAscending, filter: filterText, watchedSortKey: watchedSortKey)
+    }
+
+    private func rebuildSections() async {
+        guard let source = sectionSource else {
             sections = []
-            loadSort()
+            return
         }
-        .onChange(of: sortAscending) { _, newValue in
-            guard let list = selectedList else { return }
-            UserDefaults.standard.set(newValue, forKey: Self.sortKey(for: list))
-        }
+        let builder = builder ?? SectionBuilder(modelContainer: context.container)
+        if self.builder == nil { self.builder = builder }
+
+        let result = await builder.build(source: source, ascending: currentAscending, filter: filterText)
+        guard !Task.isCancelled else { return }
+        sections = result
     }
 
-    // MARK: - Per-list sort direction
-
-    private static func sortKey(for list: MovieList) -> String {
-        "watchListSortAscending_\(list.uuid.uuidString)"
-    }
-
-    /// Loads the stored sort direction, falling back to the per-kind default
-    /// (Watched/Viewed newest-first, everything else oldest-first).
-    private func loadSort() {
-        guard let list = selectedList else { return }
-        if let stored = UserDefaults.standard.object(forKey: Self.sortKey(for: list)) as? Bool {
-            sortAscending = stored
-        } else {
-            sortAscending = list.kind != .watched && list.kind != .viewed
+    private func clearViewed() {
+        let items = (try? context.fetch(FetchDescriptor<MediaItem>(
+            predicate: #Predicate { $0.lastViewedAt != nil }))) ?? []
+        for item in items {
+            item.lastViewedAt = nil
+            item.pruneIfEmpty()
         }
     }
 
     // MARK: - Backup import/export
 
-    /// A dated, filesystem-safe default name for the exported backup file.
     private var exportFilename: String {
         let stamp = Date().formatted(.iso8601.year().month().day().dateSeparator(.dash))
         return "MovieTracker Backup \(stamp)"
     }
 
     private func prepareExport() {
-        exportDocument = WatchDataDocument(archive: WatchListStore.exportArchive(from: context))
+        exportDocument = WatchDataDocument(archive: WatchDataArchive.export(from: context))
         showExporter = true
     }
 
-    /// Routes the chosen file to the JSON backup or CSV (TodoMovies) importer, then
-    /// surfaces the result or an error.
     private func handleImport(_ result: Result<URL, Error>) {
         switch result {
         case .success(let url):
@@ -232,14 +313,12 @@ struct WatchListView: View {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             let archive = try WatchDataArchive(json: try Data(contentsOf: url))
-            importSummary = WatchListStore.importArchive(archive, into: context)
+            importSummary = WatchDataArchive.merge(archive, into: context)
         } catch {
             transferError = error.localizedDescription
         }
     }
 
-    /// Parses a TodoMovies CSV, then merges it while fetching each movie's details
-    /// from TMDB behind the progress overlay.
     private func importCSV(from url: URL) {
         let records: [CSVMovieRecord]
         do {
@@ -258,7 +337,7 @@ struct WatchListView: View {
 
         importProgress = (done: 0, total: records.count)
         Task {
-            let summary = await WatchListStore.importCSV(records, into: context) { done, total in
+            let summary = await CSVMovieRecord.merge(records, into: context) { done, total in
                 importProgress = (done: done, total: total)
             }
             importProgress = nil
@@ -266,106 +345,10 @@ struct WatchListView: View {
         }
     }
 
-    // MARK: - Selection
-
-    private var selectedList: MovieList? {
-        if let id = selectedListUUID, let match = lists.first(where: { $0.uuid == id }) {
-            return match
-        }
-        return lists.first { $0.kind == .toWatch } ?? lists.first
-    }
-
-    private var movieCount: Int { (selectedList?.entries ?? []).count }
-    private var topLists: [MovieList] { lists.filter { $0.kind == .toWatch || $0.kind == .watched } }
-    private var customLists: [MovieList] { lists.filter { $0.kind == .custom } }
-    private var viewedList: MovieList? { lists.first { $0.kind == .viewed } }
-    private var watchList: MovieList? { lists.first { $0.kind == .toWatch } }
-    private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
-
-    /// The Viewed list when it can be cleared (selected and non-empty); else nil.
-    private var clearableViewedList: MovieList? {
-        guard let list = selectedList, list.kind == .viewed, !(list.entries ?? []).isEmpty else { return nil }
-        return list
-    }
-
-    private func listColor(for list: MovieList) -> Color { list.color }
-    private var activeListColor: Color { selectedList.map(listColor) ?? .appAccent }
-
-    private func select(_ list: MovieList?) {
-        selectedListUUID = list?.uuid
-    }
-
-    /// Defaults the selection to the Watch List once lists are available.
-    private func selectDefaultIfNeeded() {
-        guard selectedListUUID == nil else { return }
-        selectedListUUID = lists.first { $0.kind == .toWatch }?.uuid
-    }
-
-    // MARK: - Data
-
-    /// The inputs that determine `sections`; drives the `.task(id:)` rebuild so the
-    /// grouping only reruns (off the main thread) when one of these changes.
-    private struct SectionsInput: Equatable {
-        var listID: UUID?
-        var count: Int
-        var dataVersion: Int
-        var ascending: Bool
-        var filter: String
-        var watchedSortKey: WatchedSortKey
-    }
-
-    private var sectionsInput: SectionsInput {
-        SectionsInput(
-            listID: selectedList?.uuid,
-            count: (selectedList?.entries ?? []).count,
-            dataVersion: dataVersion,
-            ascending: sortAscending,
-            filter: filterText,
-            watchedSortKey: watchedSortKey
-        )
-    }
-
-    private func sortField(for list: MovieList) -> EntrySortField {
-        if list.kind == .viewed { return .dateAdded }
-        if list.tracksWatchedDate, watchedSortKey == .dateWatched { return .dateWatched }
-        return .releaseDate
-    }
-
-    /// Rebuilds `sections` on a background context via a lazily-created builder.
-    private func rebuildSections() async {
-        guard let list = selectedList else {
-            sections = []
-            return
-        }
-
-        let builder = builder ?? SectionBuilder(modelContainer: context.container)
-        if self.builder == nil { self.builder = builder }
-
-        let result = await builder.build(
-            listID: list.uuid,
-            sortField: sortField(for: list),
-            ascending: sortAscending,
-            filter: filterText
-        )
-        // The task is cancelled and rerun when inputs change, so a late result can't
-        // clobber a newer selection — bail on cancel to skip a redundant assignment.
-        guard !Task.isCancelled else { return }
-        sections = result
-    }
-
-    private func emptyMessage(for list: MovieList) -> String {
-        switch list.kind {
-        case .toWatch: return "Movies you want to watch will appear here."
-        case .watched: return "Movies you have watched will appear here."
-        case .viewed: return "Movies you browse will appear here."
-        case .custom: return "Movies you add to “\(list.name)” will appear here."
-        }
-    }
-
     /// Drives the create/edit sheet.
     private enum ListEditor: Identifiable {
         case create(addMovie: Movie?)
-        case edit(MovieList)
+        case edit(MediaList)
 
         var id: String {
             switch self {
@@ -374,7 +357,7 @@ struct WatchListView: View {
             }
         }
 
-        var list: MovieList? {
+        var list: MediaList? {
             switch self {
             case .create: return nil
             case .edit(let list): return list

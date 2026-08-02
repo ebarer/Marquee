@@ -12,7 +12,7 @@ import SwiftData
 struct MovieDetailHeader: View {
     let movie: Movie
     let tint: Color
-    let lists: [MovieList]
+    let lists: [MediaList]
     let context: ModelContext
     let imageHeight: CGFloat
     let headerHeight: CGFloat

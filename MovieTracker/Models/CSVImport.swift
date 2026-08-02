@@ -163,38 +163,32 @@ private struct FetchedMeta: Sendable {
     let releaseDate: Date?
 }
 
-extension WatchListStore {
-    /// Merges parsed CSV records into the library, fetching each movie's poster
-    /// and release date from TMDB as it goes. Like the archive importer this is
-    /// purely additive: a movie already on its target list is left untouched.
-    /// `progress` is reported as `(fetched, total)` on the main actor.
+extension CSVMovieRecord {
+    /// Merges parsed CSV records, fetching each movie's poster and release date from
+    /// TMDB as it goes. Additive: watched rows set `MediaItem` facts, the rest go on
+    /// the Watch List. `progress` is reported as `(fetched, total)` on the main actor.
     @MainActor
-    static func importCSV(_ records: [CSVMovieRecord],
-                          into context: ModelContext,
-                          progress: (Int, Int) -> Void) async -> ImportSummary {
+    static func merge(_ records: [CSVMovieRecord],
+                      into context: ModelContext,
+                      progress: (Int, Int) -> Void) async -> ImportSummary {
         var summary = ImportSummary()
-        let (toWatch, watched) = ensureDefaultLists(in: context)
-
-        func target(for record: CSVMovieRecord) -> MovieList {
-            record.watched ? watched : toWatch
-        }
+        let watchList = MediaList.ensureWatchList(in: context)
 
         // Split into rows we'll insert vs. ones already present (skipped).
         var pending: [CSVMovieRecord] = []
         for record in records {
-            if entry(for: record.movieID, in: target(for: record)) != nil {
-                summary.entriesSkipped += 1
-            } else {
-                pending.append(record)
-            }
+            let present = record.watched
+                ? (MediaItem.find(tmdbID: record.movieID, in: context)?.isWatched ?? false)
+                : watchList.contains(record.movieID)
+            if present { summary.entriesSkipped += 1 } else { pending.append(record) }
         }
 
         let total = pending.count
         progress(0, total)
         guard total > 0 else { return summary }
 
-        // Fetch details with bounded concurrency, keeping the network busy
-        // without flooding TMDB. Results are collected by id.
+        // Fetch details with bounded concurrency, keeping the network busy without
+        // flooding TMDB. Results are collected by id.
         var metaByID: [Int: FetchedMeta] = [:]
         var completed = 0
         let maxConcurrent = 8
@@ -215,20 +209,22 @@ extension WatchListStore {
             }
         }
 
-        // Insert in the CSV's original order, preferring fetched metadata and
-        // falling back to what the CSV provided.
         for record in pending {
             let meta = metaByID[record.movieID]
             let releaseDate = meta?.releaseDate ?? record.releaseDate
-            let entry = WatchListEntry(movie: Movie(id: record.movieID, title: record.title))
-            entry.posterPath = meta?.posterPath
-            entry.releaseDate = releaseDate
-            entry.userRating = record.userRating
-            // The CSV has no watched date; stand in with the release date for
-            // watched entries so they group sensibly (editable later in the app).
-            if record.watched { entry.dateWatched = releaseDate }
-            entry.list = target(for: record)
-            context.insert(entry)
+            let movie = Movie(id: record.movieID, title: record.title)
+            movie.poster = meta?.posterPath
+            movie.releaseDate = releaseDate
+
+            if record.watched {
+                let item = MediaItem.upsert(movie, in: context)
+                // The CSV has no watched date; stand in with the release date so
+                // watched titles group sensibly (editable later in the app).
+                item.watchedAt = releaseDate.map(MediaItem.floatingDay) ?? MediaItem.floatingDay(from: Date())
+                item.userRating = record.userRating
+            } else {
+                watchList.add(movie)
+            }
             summary.entriesAdded += 1
         }
         return summary

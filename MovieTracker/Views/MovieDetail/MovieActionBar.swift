@@ -11,7 +11,7 @@ import SwiftData
 /// absorbs the bookmark into a pill spanning both slots.
 struct MovieActionBar: View {
     let movie: Movie
-    let lists: [MovieList]
+    let lists: [MediaList]
     let context: ModelContext
     let tint: Color
     @Binding var isSeen: Bool
@@ -25,9 +25,8 @@ struct MovieActionBar: View {
     private static let size: CGFloat = 52
     private static let spacing: CGFloat = 12
 
-    private var toWatchList: MovieList? { lists.first { $0.kind == .toWatch } }
-    private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
-    private var customLists: [MovieList] { lists.filter { $0.kind == .custom } }
+    private var watchList: MediaList? { lists.first { $0.isWatchList } }
+    private var customLists: [MediaList] { lists.filter { !$0.isWatchList } }
 
     var body: some View {
         GlassEffectContainer(spacing: Self.spacing) {
@@ -59,8 +58,7 @@ struct MovieActionBar: View {
 
     private var bookmarkButton: some View {
         glassButton(system: tracked ? "bookmark.fill" : "bookmark", isOn: tracked, shape: Circle()) {
-            guard let toWatch = toWatchList else { return }
-            WatchListStore.toggle(movie, in: toWatch, in: context)
+            watchList?.toggle(movie)
             refresh()
         }
         .glassEffectID("bookmark", in: glassNamespace)
@@ -73,15 +71,12 @@ struct MovieActionBar: View {
         glassButton(system: "checkmark", isOn: isSeen,
                     width: isSeen ? Self.size * 2 + Self.spacing : Self.size,
                     shape: Capsule()) {
-            guard let watched = watchedList else { return }
             if isSeen {
-                WatchListStore.remove(movie, from: watched, in: context)
-                if wasOnWatchList, let toWatch = toWatchList {
-                    WatchListStore.add(movie, to: toWatch, in: context)
-                }
+                MediaItem.setWatched(false, for: movie, in: context)
+                if wasOnWatchList { watchList?.add(movie) }
             } else {
                 wasOnWatchList = tracked
-                WatchListStore.add(movie, to: watched, in: context)
+                MediaItem.setWatched(true, for: movie, in: context)
             }
             refresh()
         }
@@ -93,10 +88,10 @@ struct MovieActionBar: View {
     @ViewBuilder
     private var customListsControl: some View {
         if customLists.count == 1, let list = customLists.first {
-            let member = WatchListStore.isMember(movie.id, of: list)
+            let member = list.contains(movie.id)
             glassButton(system: member ? filledSymbol(list.symbol) : list.symbol,
                         isOn: member, shape: Circle()) {
-                WatchListStore.toggle(movie, in: list, in: context)
+                list.toggle(movie)
             }
             .glassEffectID("plus", in: glassNamespace)
         } else if !customLists.isEmpty {
@@ -123,8 +118,8 @@ struct MovieActionBar: View {
     }
 
     private func refresh() {
-        tracked = toWatchList.map { WatchListStore.isMember(movie.id, of: $0) } ?? false
-        isSeen = watchedList.map { WatchListStore.isMember(movie.id, of: $0) } ?? false
+        tracked = watchList?.contains(movie.id) ?? false
+        isSeen = MediaItem.isWatched(movie, in: context)
     }
 
     /// The `.fill` variant of a symbol when one exists, else the base name.
@@ -151,7 +146,7 @@ struct MovieActionBar: View {
 /// `Menu` it stays open so several lists can be toggled in a row.
 private struct ListPickerPopover: View {
     let movie: Movie
-    let lists: [MovieList]
+    let lists: [MediaList]
     let context: ModelContext
     let tint: Color
 
@@ -162,9 +157,9 @@ private struct ListPickerPopover: View {
         ScrollView {
             VStack(spacing: 0) {
                 ForEach(lists) { list in
-                    let member = WatchListStore.isMember(movie.id, of: list)
+                    let member = list.contains(movie.id)
                     Button {
-                        WatchListStore.toggle(movie, in: list, in: context)
+                        list.toggle(movie)
                     } label: {
                         HStack(spacing: 12) {
                             ListIcon(list, size: 28)

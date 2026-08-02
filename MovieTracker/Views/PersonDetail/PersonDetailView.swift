@@ -14,8 +14,8 @@ struct PersonDetailView: View {
 
     @State private var model = PersonDetailModel()
     @Environment(\.modelContext) private var context
-    @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
-    private var lists: [MovieList]
+    @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
+    private var lists: [MediaList]
 
     /// Zoom transition namespace + presentation flag for the full-screen profile
     /// photo viewer (the same viewer used for movie posters).

@@ -169,95 +169,100 @@ struct WatchDataDocument: FileDocument {
 
 // MARK: - Store: export / import
 
-extension WatchListStore {
-    /// Builds a complete archive of every list and entry, in display order.
-    static func exportArchive(from context: ModelContext) -> WatchDataArchive {
-        // The Viewed list is transient browse history, not something to back up.
-        let lists = allLists(in: context).filter { $0.kind != .viewed }.map { list in
+extension WatchDataArchive {
+    /// Builds a complete archive of every list plus the Watched facts. The file
+    /// format is unchanged from v1 — Watched is emitted as a pseudo-list carrying
+    /// each title's watched date and rating — so old backups still import.
+    static func export(from context: ModelContext) -> WatchDataArchive {
+        var lists = MediaList.all(in: context).map { list in
             WatchDataArchive.List(
-                uuid: list.uuid,
-                name: list.name,
-                symbol: list.symbol,
+                uuid: list.uuid, name: list.name, symbol: list.symbol,
                 colorIndex: list.colorIndex,
-                kind: list.kindRaw,
-                sortOrder: list.sortOrder,
-                createdAt: list.createdAt,
+                kind: list.isWatchList ? ListKind.toWatch.rawValue : ListKind.custom.rawValue,
+                sortOrder: list.sortOrder, createdAt: list.createdAt,
                 entries: (list.entries ?? []).map { entry in
                     WatchDataArchive.Entry(
-                        movieID: entry.movieID,
-                        title: entry.title,
-                        posterPath: entry.posterPath,
-                        releaseDate: entry.releaseDate,
-                        dateAdded: entry.dateAdded,
-                        dateWatched: entry.dateWatched,
-                        userRating: entry.userRating
-                    )
+                        movieID: entry.tmdbID, title: entry.title, posterPath: entry.posterPath,
+                        releaseDate: entry.releaseDate, dateAdded: entry.addedAt,
+                        dateWatched: nil, userRating: nil)
                 }
             )
+        }
+
+        let watched = (try? context.fetch(FetchDescriptor<MediaItem>(
+            predicate: #Predicate { $0.watchedAt != nil }))) ?? []
+        if !watched.isEmpty {
+            lists.append(WatchDataArchive.List(
+                uuid: UUID(), name: "Watched", symbol: "checkmark.rectangle.stack",
+                colorIndex: 0, kind: ListKind.watched.rawValue, sortOrder: 2, createdAt: Date(),
+                entries: watched.map { item in
+                    WatchDataArchive.Entry(
+                        movieID: item.tmdbID, title: item.title, posterPath: item.posterPath,
+                        releaseDate: item.releaseDate, dateAdded: item.addedAt,
+                        dateWatched: item.watchedAt, userRating: item.userRating)
+                }))
         }
         return WatchDataArchive(lists: lists)
     }
 
-    /// Merges an archive into the current library. Built-in lists match by kind
-    /// and custom lists by UUID (creating any that are missing); an entry is
-    /// added only when its movie isn't already on the target list. Nothing that
-    /// already exists is modified or removed — importing is purely additive.
+    /// Merges an archive additively: list memberships become `ListEntry`s, Watched
+    /// entries set each title's `MediaItem` facts. Nothing existing is modified.
     @discardableResult
-    static func importArchive(_ archive: WatchDataArchive, into context: ModelContext) -> ImportSummary {
+    static func merge(_ archive: WatchDataArchive, into context: ModelContext) -> ImportSummary {
         var summary = ImportSummary()
-        ensureDefaultLists(in: context)
+        MediaList.ensureWatchList(in: context)
 
         for archivedList in archive.lists {
-            guard let target = resolveTarget(for: archivedList, in: context, summary: &summary) else {
+            switch ListKind(rawValue: archivedList.kind) ?? .custom {
+            case .viewed:
                 continue
-            }
-            for archivedEntry in archivedList.entries {
-                guard entry(for: archivedEntry.movieID, in: target) == nil else {
-                    summary.entriesSkipped += 1
-                    continue
+            case .watched:
+                for entry in archivedList.entries {
+                    let item = MediaItem.upsert(movie(from: entry), in: context)
+                    if item.watchedAt == nil {
+                        item.watchedAt = entry.dateWatched ?? MediaItem.floatingDay(from: Date())
+                    }
+                    if item.userRating == nil { item.userRating = entry.userRating }
+                    summary.entriesAdded += 1
                 }
-                insertEntry(archivedEntry, into: target, in: context)
-                summary.entriesAdded += 1
+            case .toWatch, .custom:
+                let isWatchList = ListKind(rawValue: archivedList.kind) == .toWatch
+                guard let list = target(archivedList, isWatchList: isWatchList,
+                                        in: context, summary: &summary) else { continue }
+                for entry in archivedList.entries {
+                    guard !list.contains(entry.movieID) else {
+                        summary.entriesSkipped += 1
+                        continue
+                    }
+                    let member = ListEntry(movie: movie(from: entry))
+                    member.list = list
+                    context.insert(member)
+                    summary.entriesAdded += 1
+                }
             }
         }
         return summary
     }
 
-    /// Finds (or, for a missing custom list, creates) the local list an archived
-    /// list should merge into.
-    private static func resolveTarget(for archived: WatchDataArchive.List,
-                                      in context: ModelContext,
-                                      summary: inout ImportSummary) -> MovieList? {
-        let kind = ListKind(rawValue: archived.kind) ?? .custom
-        switch kind {
-        case .toWatch, .watched, .viewed:
-            return list(kind: kind, in: context)
-        case .custom:
-            if let existing = allLists(in: context).first(where: { $0.uuid == archived.uuid }) {
-                return existing
-            }
-            let created = MovieList(name: archived.name, symbol: archived.symbol,
-                                    kind: .custom, sortOrder: archived.sortOrder,
-                                    colorIndex: archived.colorIndex)
-            // Preserve the original identity/date so re-importing stays idempotent.
-            created.uuid = archived.uuid
-            created.createdAt = archived.createdAt
-            context.insert(created)
-            summary.listsCreated += 1
-            return created
+    private static func target(_ archived: WatchDataArchive.List, isWatchList: Bool,
+                               in context: ModelContext, summary: inout ImportSummary) -> MediaList? {
+        if isWatchList { return MediaList.ensureWatchList(in: context) }
+        if let existing = MediaList.all(in: context).first(where: { $0.uuid == archived.uuid }) {
+            return existing
         }
+        let created = MediaList(name: archived.name, symbol: archived.symbol,
+                                sortOrder: archived.sortOrder, colorIndex: archived.colorIndex)
+        created.uuid = archived.uuid
+        created.createdAt = archived.createdAt
+        context.insert(created)
+        summary.listsCreated += 1
+        return created
     }
 
-    /// Inserts an archived entry into a list, preserving its original dates.
-    private static func insertEntry(_ archived: WatchDataArchive.Entry,
-                                    into list: MovieList, in context: ModelContext) {
-        let entry = WatchListEntry(movie: Movie(id: archived.movieID, title: archived.title))
-        entry.posterPath = archived.posterPath
-        entry.releaseDate = archived.releaseDate
-        entry.dateAdded = archived.dateAdded
-        entry.dateWatched = archived.dateWatched
-        entry.userRating = archived.userRating
-        entry.list = list
-        context.insert(entry)
+    private static func movie(from entry: WatchDataArchive.Entry) -> Movie {
+        let movie = Movie(id: entry.movieID, title: entry.title)
+        movie.poster = entry.posterPath
+        movie.releaseDate = entry.releaseDate
+        return movie
     }
 }

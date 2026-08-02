@@ -6,11 +6,10 @@
 import SwiftUI
 import SwiftData
 
-/// Five stars bound to the user's personal rating on a movie's list entry. Tap for
-/// whole stars, sweep for half-star precision; tapping the current rating clears it.
+/// Five stars bound to a title's personal rating. Tap for whole stars, sweep for
+/// half-star precision; tapping the current rating clears it.
 struct StarRating: View {
-    let movieID: Int
-    let list: MovieList
+    let movie: Movie
     let context: ModelContext
     let tint: Color
 
@@ -23,12 +22,11 @@ struct StarRating: View {
     private let starSize: CGFloat = 20
     private let spacing: CGFloat = 3
 
-    init(movieID: Int, list: MovieList, context: ModelContext, tint: Color) {
-        self.movieID = movieID
-        self.list = list
+    init(movie: Movie, context: ModelContext, tint: Color) {
+        self.movie = movie
         self.context = context
         self.tint = tint
-        _rating = State(initialValue: WatchListStore.rating(for: movieID, in: list) ?? 0)
+        _rating = State(initialValue: MediaItem.rating(for: movie, in: context) ?? 0)
     }
 
     var body: some View {
@@ -53,7 +51,7 @@ struct StarRating: View {
                     } else {
                         rating = halfStars(at: value.location.x)
                     }
-                    WatchListStore.setRating(rating == 0 ? nil : rating, for: movieID, in: list)
+                    MediaItem.setRating(rating == 0 ? nil : rating, for: movie, in: context)
                     dragStartRating = nil
                 }
         )

@@ -18,15 +18,13 @@ struct MovieDetailView: View {
     }
 
     @Environment(\.modelContext) private var context
-    @Query(sort: [SortDescriptor(\MovieList.sortOrder), SortDescriptor(\MovieList.createdAt)])
-    private var lists: [MovieList]
+    @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
+    private var lists: [MediaList]
     @State private var model = MovieDetailModel()
     @State private var showNavTitle = false
-    /// Whether the movie is on the Watched list; owned here so the action bar and
-    /// the metadata strip's rating cell stay in sync.
+    /// Whether the movie is Watched; owned here so the action bar and the metadata
+    /// strip's rating cell stay in sync.
     @State private var isSeen = false
-
-    private var watchedList: MovieList? { lists.first { $0.kind == .watched } }
 
     var body: some View {
         Group {
@@ -50,12 +48,10 @@ struct MovieDetailView: View {
             }
         }
         .task {
-            // Built-in lists are seeded at app launch (RootView); seeding here could
-            // duplicate them before the first CloudKit import lands.
-            isSeen = watchedList.map { WatchListStore.isMember(movieID, of: $0) } ?? false
+            isSeen = MediaItem.find(tmdbID: movieID, in: context)?.isWatched ?? false
             await model.load(id: movieID)
             if let movie = model.movie {
-                WatchListStore.recordView(movie, in: context)
+                MediaItem.recordView(movie, in: context)
             }
         }
     }
@@ -87,7 +83,7 @@ struct MovieDetailView: View {
                                       imageHeight: imageHeight, headerHeight: headerHeight,
                                       width: width, navBarBottom: navBarBottom,
                                       showNavTitle: $showNavTitle, isSeen: $isSeen)
-                    MovieMetadataStrip(movie: movie, watchedList: watchedList, context: context,
+                    MovieMetadataStrip(movie: movie, context: context,
                                        tint: model.tint, isWatched: isSeen)
                         .padding(.vertical, 8)
                     MovieOverviewSection(overview: movie.overview ?? "No movie description available.")

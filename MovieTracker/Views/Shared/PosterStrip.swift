@@ -10,7 +10,7 @@ import SwiftData
 /// optional release-year caption. Used by the Related and Known For sections.
 struct PosterStrip: View {
     let movies: [Movie]
-    let lists: [MovieList]
+    let lists: [MediaList]
     let context: ModelContext
     var showsYear: Bool = false
 
