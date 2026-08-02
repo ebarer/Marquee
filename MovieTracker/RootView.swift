@@ -92,7 +92,7 @@ struct RootView: View {
         .environment(syncMonitor)
         .environment(store)
         .task {
-            let context = Self.sharedContainer.mainContext
+            let context = store.context
             SyncLog.snapshot("launch", in: context)
 
             // On a brand-new local store (e.g. a fresh install for an existing
@@ -106,15 +106,13 @@ struct RootView: View {
             } else {
                 SyncLog.logger.log("🌱 existing local store — seeding/reconciling immediately")
             }
-            MediaList.ensureWatchList(in: context)
-            try? context.save()
-            Self.migrateLegacyDataIfNeeded(in: context)
+            store.seedWatchList()
+            Self.migrateLegacyDataIfNeeded(using: store)
             SyncLog.snapshot("after seed", in: context)
 
-            // CloudKit imports from another device arrive after launch and can
-            // bring duplicate built-in lists. Reconcile whenever remote changes
-            // land, debounced so we act once a burst of imported records settles
-            // rather than on every partial notification.
+            // CloudKit imports from another device arrive after launch and can bring
+            // duplicate built-in lists. Reconcile whenever remote changes land,
+            // debounced so we act once a burst of imported records settles.
             var debounce: Task<Void, Never>?
             for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
                 debounce?.cancel()
@@ -122,9 +120,7 @@ struct RootView: View {
                     try? await Task.sleep(for: .seconds(2))
                     guard !Task.isCancelled else { return }
                     SyncLog.logger.log("🔁 remote change settled — reconciling")
-                    MediaList.deduplicateWatchList(in: context)
-                    MediaItem.deduplicate(in: context)
-                    try? context.save()
+                    store.deduplicate()
                     SyncLog.snapshot("after reconcile", in: context)
                 }
             }
@@ -166,9 +162,10 @@ extension RootView {
     /// Watch List/custom → `ListEntry`. Guarded by a `UserDefaults` flag; single
     /// device, local, idempotent (the CloudKit dev schema is reset separately, so
     /// there's no cross-device convergence to solve).
-    static func migrateLegacyDataIfNeeded(in context: ModelContext) {
+    static func migrateLegacyDataIfNeeded(using store: MediaStore) {
         guard !UserDefaults.standard.bool(forKey: migrationFlag) else { return }
 
+        let context = store.context
         let legacyEntries = (try? context.fetch(FetchDescriptor<WatchListEntry>())) ?? []
         guard !legacyEntries.isEmpty else {
             UserDefaults.standard.set(true, forKey: migrationFlag)
@@ -176,7 +173,7 @@ extension RootView {
         }
         SyncLog.logger.log("🔀 migrating \(legacyEntries.count) legacy entries to the new schema")
 
-        let watchList = MediaList.ensureWatchList(in: context)
+        let watchList = store.watchList
         var customLists: [UUID: MediaList] = [:]
 
         func movie(_ entry: WatchListEntry) -> Movie {
@@ -227,7 +224,7 @@ extension RootView {
 
         MediaItem.deduplicate(in: context)
         MediaList.deduplicateWatchList(in: context)
-        try? context.save()
+        store.save()
         UserDefaults.standard.set(true, forKey: migrationFlag)
         SyncLog.snapshot("after migration", in: context)
     }

@@ -207,10 +207,11 @@ extension WatchDataArchive {
 
     /// Merges an archive additively: list memberships become `ListEntry`s, Watched
     /// entries set each title's `MediaItem` facts. Nothing existing is modified.
+    @MainActor
     @discardableResult
-    static func merge(_ archive: WatchDataArchive, into context: ModelContext) -> ImportSummary {
+    static func merge(_ archive: WatchDataArchive, using store: MediaStore) -> ImportSummary {
         var summary = ImportSummary()
-        MediaList.ensureWatchList(in: context)
+        let context = store.context
 
         for archivedList in archive.lists {
             switch ListKind(rawValue: archivedList.kind) ?? .custom {
@@ -228,7 +229,7 @@ extension WatchDataArchive {
             case .toWatch, .custom:
                 let isWatchList = ListKind(rawValue: archivedList.kind) == .toWatch
                 guard let list = target(archivedList, isWatchList: isWatchList,
-                                        in: context, summary: &summary) else { continue }
+                                        using: store, summary: &summary) else { continue }
                 for entry in archivedList.entries {
                     guard !list.contains(entry.movieID) else {
                         summary.entriesSkipped += 1
@@ -241,20 +242,22 @@ extension WatchDataArchive {
                 }
             }
         }
+        store.save()
         return summary
     }
 
+    @MainActor
     private static func target(_ archived: WatchDataArchive.List, isWatchList: Bool,
-                               in context: ModelContext, summary: inout ImportSummary) -> MediaList? {
-        if isWatchList { return MediaList.ensureWatchList(in: context) }
-        if let existing = MediaList.all(in: context).first(where: { $0.uuid == archived.uuid }) {
+                               using store: MediaStore, summary: inout ImportSummary) -> MediaList? {
+        if isWatchList { return store.watchList }
+        if let existing = MediaList.all(in: store.context).first(where: { $0.uuid == archived.uuid }) {
             return existing
         }
         let created = MediaList(name: archived.name, symbol: archived.symbol,
                                 sortOrder: archived.sortOrder, colorIndex: archived.colorIndex)
         created.uuid = archived.uuid
         created.createdAt = archived.createdAt
-        context.insert(created)
+        store.context.insert(created)
         summary.listsCreated += 1
         return created
     }

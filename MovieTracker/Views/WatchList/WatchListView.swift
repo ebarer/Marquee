@@ -305,8 +305,7 @@ struct WatchListView: View {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             let archive = try WatchDataArchive(json: try Data(contentsOf: url))
-            importSummary = WatchDataArchive.merge(archive, into: context)
-            store?.save()
+            if let store { importSummary = WatchDataArchive.merge(archive, using: store) }
         } catch {
             transferError = error.localizedDescription
         }
@@ -328,12 +327,12 @@ struct WatchListView: View {
             return
         }
 
+        guard let store else { return }
         importProgress = (done: 0, total: records.count)
         Task {
-            let summary = await CSVMovieRecord.merge(records, into: context) { done, total in
+            let summary = await CSVMovieRecord.merge(records, using: store) { done, total in
                 importProgress = (done: done, total: total)
             }
-            store?.save()
             importProgress = nil
             importSummary = summary
         }

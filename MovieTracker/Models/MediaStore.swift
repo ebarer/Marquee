@@ -20,6 +20,10 @@ final class MediaStore {
         self.context = context
     }
 
+    /// The Watch List, lazily created if it doesn't exist yet. The single place
+    /// that lazy-creation happens — callers just express intent (add/remove/toggle).
+    var watchList: MediaList { MediaList.ensureWatchList(in: context) }
+
     func save() {
         guard context.hasChanges else { return }
         do {
@@ -40,8 +44,8 @@ final class MediaStore {
 
     func toggle(_ movie: Movie, in list: MediaList) { list.toggle(movie); save() }
     func add(_ movie: Movie, to list: MediaList) { list.add(movie); save() }
-    func toggleWatchList(_ movie: Movie) { MediaList.ensureWatchList(in: context).toggle(movie); save() }
-    func addToWatchList(_ movie: Movie) { MediaList.ensureWatchList(in: context).add(movie); save() }
+    func toggleWatchList(_ movie: Movie) { watchList.toggle(movie); save() }
+    func addToWatchList(_ movie: Movie) { watchList.add(movie); save() }
 
     // MARK: - Title facts
 
@@ -74,6 +78,18 @@ final class MediaStore {
             item.lastViewedAt = nil
             item.pruneIfEmpty()
         }
+        save()
+    }
+
+    // MARK: - Maintenance (launch)
+
+    /// Seeds the Watch List at launch.
+    func seedWatchList() { _ = watchList; save() }
+
+    /// Converges duplicate Watch Lists and MediaItems a CloudKit import produced.
+    func deduplicate() {
+        MediaList.deduplicateWatchList(in: context)
+        MediaItem.deduplicate(in: context)
         save()
     }
 }
