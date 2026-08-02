@@ -72,7 +72,7 @@ struct PersonDetailView: View {
                     if !creditsByYear.isEmpty {
                         filmographyHeader
                         ForEach(creditsByYear, id: \.year) { group in
-                            sectionHeader(yearTitle(group.year), color: .appAccent)
+                            SectionHeader(title: yearTitle(group.year), color: .appAccent)
                             ForEach(Array(group.movies.enumerated()), id: \.element.id) { index, movie in
                                 filmographyRow(movie)
                                 if index < group.movies.count - 1 {
@@ -125,29 +125,12 @@ struct PersonDetailView: View {
 
     // MARK: - Known For
 
-    /// A horizontally scrollable strip of the person's most popular movies, using
-    /// the same poster card as the Featured grid. Placed above the filmography.
     @ViewBuilder
     private var knownForSection: some View {
         let knownFor = Array(current.knownFor.prefix(10))
         if !knownFor.isEmpty {
-            sectionHeader("Known For")
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: 12) {
-                    ForEach(knownFor, id: \.id) { movie in
-                        NavigationLink(value: movie) {
-                            MoviePosterCard(movie: movie, titleLineLimit: 3,
-                                            reservesTitleSpace: false)
-                                .frame(width: 90)
-                        }
-                        .buttonStyle(.plain)
-                        .movieContextMenu(for: movie, lists: lists, context: context)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                .padding(.bottom, 8)
-            }
+            SectionHeader(title: "Known For")
+            PosterStrip(movies: knownFor, lists: lists, context: context)
         }
     }
 
@@ -204,16 +187,6 @@ struct PersonDetailView: View {
         .padding(.horizontal, 16)
         .padding(.top, 16)
         .padding(.bottom, 4)
-    }
-
-    private func sectionHeader(_ title: String, color: Color = .white) -> some View {
-        Text(title)
-            .font(.headline)
-            .foregroundStyle(color)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 4)
     }
 
     // MARK: - Filmography grouping

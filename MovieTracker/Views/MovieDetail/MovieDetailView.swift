@@ -497,7 +497,7 @@ struct MovieDetailView: View {
     @ViewBuilder
     private func castSection(movie: Movie) -> some View {
         if !movie.team.isEmpty {
-            sectionHeader("Cast & Crew")
+            SectionHeader(title: "Cast & Crew")
             let members = Array(movie.team.prefix(10))
             LazyVStack(spacing: 0) {
                 ForEach(Array(members.enumerated()), id: \.element.id) { index, person in
@@ -524,16 +524,6 @@ struct MovieDetailView: View {
                 }
             }
         }
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.headline)
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 4)
     }
 
     // MARK: - Related (franchise / recommendations)
@@ -580,9 +570,9 @@ struct MovieDetailView: View {
         if let mode = currentRelatedMode {
             VStack(alignment: .leading, spacing: 0) {
                 relatedHeader(mode: mode)
-                posterRow(movies(for: mode))
-                    // New identity per mode so switching crossfades the whole
-                    // strip rather than sliding individual posters between spots.
+                PosterStrip(movies: movies(for: mode), lists: lists, context: context,
+                            showsYear: true)
+                    // New identity per mode so switching crossfades the whole strip.
                     .id(mode)
                     .transition(.opacity)
             }
@@ -624,45 +614,8 @@ struct MovieDetailView: View {
             }
             .buttonStyle(.plain)
         } else {
-            sectionHeader(mode.title)
+            SectionHeader(title: mode.title)
         }
-    }
-
-    /// A horizontally scrollable strip of poster cards, matching the person
-    /// detail "Known For" strip.
-    private func posterRow(_ movies: [Movie]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: 12) {
-                    ForEach(movies, id: \.id) { movie in
-                        NavigationLink(value: movie) {
-                            VStack(spacing: 4) {
-                                MoviePosterCard(movie: movie, titleLineLimit: 3,
-                                                reservesTitleSpace: false, posterWidth: 90)
-                                if let year = releaseYear(movie) {
-                                    Text(year)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            .frame(width: 90)
-                        }
-                        .buttonStyle(.plain)
-                        .movieContextMenu(for: movie, lists: lists, context: context)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                .padding(.bottom, 8)
-            }
-        }
-    }
-
-    /// The four-digit release year for a strip poster's caption, or nil when the
-    /// movie has no release date (e.g. an unreleased franchise entry).
-    private func releaseYear(_ movie: Movie) -> String? {
-        guard let date = movie.releaseDate else { return nil }
-        return String(Calendar.current.component(.year, from: date))
     }
 }
 
