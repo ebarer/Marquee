@@ -22,4 +22,17 @@ extension TMDBWrapper {
         return PagedResult(items: root.results.map(translate(person:)),
                            totalResults: root.totalResults, totalPages: root.totalPages)
     }
+
+    /// Maps a raw person response onto the domain `Person`.
+    static func translate(person p: PersonRaw) -> Person {
+        var person = Person(id: p.id, name: p.name)
+        person.popularity = p.popularity
+        person.profilePicture = p.profilePicture
+        person.birthday = p.birthday
+        person.placeOfBirth = p.placeOfBirth
+        person.bio = p.biography
+        person.imdbID = p.imdbID
+        person.credits = p.credits()
+        return person
+    }
 }

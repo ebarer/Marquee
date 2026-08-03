@@ -24,11 +24,8 @@ struct ListsView: View {
     @State private var selection: ListSelection?
     @State private var editor: ListEditor?
 
-    @State private var sections: [SectionSnapshot] = []
-    /// The input the current `sections` were built for. Used to suppress the empty
-    /// state during the async rebuild after a selection change (so it doesn't flash).
-    @State private var loadedInput: SectionsInput?
-    @State private var builder: SectionBuilder?
+    /// Builds and holds the month/year section snapshots off the main actor.
+    @State private var sectionsModel = ListSectionsModel()
     /// Bumped on any store change so the sections rebuild even when a count is
     /// unchanged (e.g. a watched-date edit).
     @State private var dataVersion = 0
@@ -41,7 +38,7 @@ struct ListsView: View {
     @State private var showListManager = false
 
     var body: some View {
-        ListRows(sections: sections, selection: resolvedSelection, lists: lists,
+        ListRows(sections: sectionsModel.sections, selection: resolvedSelection, lists: lists,
                       listColor: activeColor)
         .listStyle(.plain)
         .tint(activeColor)
@@ -102,7 +99,7 @@ struct ListsView: View {
         .overlay {
             // Only once the rebuild for the current input has landed, so the empty
             // state doesn't flash while switching lists.
-            if sections.isEmpty, loadedInput == sectionsInput {
+            if sectionsModel.sections.isEmpty, sectionsModel.loadedInput == sectionsInput {
                 if !filterText.isEmpty {
                     ContentUnavailableView.search(text: filterText)
                 } else {
@@ -126,7 +123,7 @@ struct ListsView: View {
         .sheet(isPresented: $showListManager) {
             ListManagerView()
         }
-        .task(id: sectionsInput) { await rebuildSections() }
+        .task(id: sectionsInput) { await sectionsModel.rebuild(for: sectionsInput, store: store) }
         // A local save (e.g. a watched-date edit) that doesn't change a count still
         // needs a rebuild. Scoped to the main context.
         .task {
@@ -143,7 +140,7 @@ struct ListsView: View {
         }
         .onAppear { selectDefaultIfNeeded() }
         .onChange(of: lists.count) { _, _ in selectDefaultIfNeeded() }
-        .onChange(of: selection) { _, _ in sections = [] }
+        .onChange(of: selection) { _, _ in sectionsModel.clear() }
     }
 
     // MARK: - Selection
@@ -210,58 +207,11 @@ struct ListsView: View {
 
     // MARK: - Data
 
-    private struct SectionsInput: Equatable {
-        var selection: ListSelection
-        var count: Int
-        var dataVersion: Int
-        var ascending: Bool
-        var filter: String
-        var watchedSortKey: WatchedSortKey
-    }
-
-    private var sectionsInput: SectionsInput {
-        SectionsInput(selection: resolvedSelection, count: movieCount, dataVersion: dataVersion,
-                      ascending: currentAscending, filter: filterText, watchedSortKey: watchedSortKey)
-    }
-
-    private func rebuildSections() async {
-        guard let source = sectionSource, let store else {
-            sections = []
-            loadedInput = sectionsInput
-            return
-        }
-        let builder = builder ?? SectionBuilder(modelContainer: store.container)
-        if self.builder == nil { self.builder = builder }
-
-        let result = await builder.build(source: source, ascending: currentAscending, filter: filterText)
-        guard !Task.isCancelled else { return }
-        sections = result
-        loadedInput = sectionsInput
-    }
-
-    /// Drives the create/edit sheet.
-    private enum ListEditor: Identifiable {
-        case create(addMovie: Movie?)
-        case edit(MediaList)
-
-        var id: String {
-            switch self {
-            case .create: return "create"
-            case .edit(let list): return list.uuid.uuidString
-            }
-        }
-
-        var list: MediaList? {
-            switch self {
-            case .create: return nil
-            case .edit(let list): return list
-            }
-        }
-
-        var movieToAdd: Movie? {
-            if case .create(let movie) = self { return movie }
-            return nil
-        }
+    /// The current build input; `sectionSource` already encodes the selection and
+    /// watched-sort key, `dataVersion` forces a rebuild after a silent edit.
+    private var sectionsInput: ListSectionsModel.Input {
+        ListSectionsModel.Input(source: sectionSource, count: movieCount,
+                                ascending: currentAscending, filter: filterText, version: dataVersion)
     }
 }
 

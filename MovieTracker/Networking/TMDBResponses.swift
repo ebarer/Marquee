@@ -1,9 +1,10 @@
 //
-//  TMDBDTO.swift
+//  TMDBResponses.swift
 //  MovieTracker
 //
 //  The raw `Codable` shapes returned by the TMDB API, kept separate from the
-//  client and the domain models. Mapped to domain types in `TMDBWrapper+Translate`.
+//  client and the domain models. Mapped to domain types by the `translate(...)`
+//  helpers in `TMDBWrapper+Movies` / `TMDBWrapper+People`.
 //
 
 import Foundation

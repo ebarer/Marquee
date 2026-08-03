@@ -8,9 +8,9 @@
 
 import Foundation
 
-/// A thin client for the TMDB API. Endpoints live in `TMDBWrapper+Movies` and
-/// `TMDBWrapper+People`, the raw response types in `TMDBDTO`, and DTO→domain
-/// mapping in `TMDBWrapper+Translate`. This file holds the shared request/decode
+/// A thin client for the TMDB API. Endpoints (and their raw→domain `translate`
+/// helpers) live in `TMDBWrapper+Movies` and `TMDBWrapper+People`, and the raw
+/// response types in `TMDBResponses`. This file holds the shared request/decode
 /// plumbing, image helpers, and the result/error types.
 class TMDBWrapper {
     private static let baseURL = "https://api.themoviedb.org"
