@@ -3,8 +3,7 @@
 //  MovieTracker
 //
 //  A movie poster / backdrop image that fills its frame, with a placeholder.
-//  On iOS 27 AsyncImage applies HTTP caching automatically, so posters are not
-//  re-downloaded when scrolling back.
+//  Loading, caching, and revalidation live in the shared `RemoteImage`.
 //
 
 import SwiftUI
@@ -13,11 +12,7 @@ struct PosterImage: View {
     let url: URL?
 
     var body: some View {
-        AsyncImage(url: url) { image in
-            image
-                .resizable()
-                .scaledToFill()
-        } placeholder: {
+        RemoteImage(url: url) {
             ZStack {
                 Color.appSeparator
                 Image(systemName: "film")

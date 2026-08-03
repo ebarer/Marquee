@@ -8,8 +8,8 @@ Smaller/Cosmetic:
 - [ ] Add access to additional photos for people?
 
 Ideas:
+- [ ] Indicate if/where a film can be streamed (from JustWatch)
 - [ ] Unify search
 - [ ] Support landscape?
-- [ ] Store more information offline (local cache) so the app can be used without internet
 - [ ] Share lists
 - [ ] Add TV shows

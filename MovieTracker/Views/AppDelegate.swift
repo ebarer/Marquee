@@ -17,6 +17,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     static var isPlayingTrailer = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Roomy image cache so posters/backdrops survive offline (URLCache self-evicts).
+        URLCache.shared = URLCache(memoryCapacity: 50 * 1024 * 1024,
+                                   diskCapacity: 500 * 1024 * 1024)
         return true
     }
 

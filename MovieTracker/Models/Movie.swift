@@ -10,7 +10,7 @@ import Foundation
 
 /// A transient movie hydrated from TMDB (not persisted). Identity is the TMDB id,
 /// so it works as a navigation value and de-duplicates in a Set.
-struct Movie: Hashable, Identifiable {
+struct Movie: Hashable, Identifiable, Codable {
     var id: Int
     var title: String
     var releaseDate: Date?
@@ -80,7 +80,7 @@ struct Movie: Hashable, Identifiable {
 }
 
 extension Movie {
-    struct Credits {
+    struct Credits: Codable {
         var during: Bool
         var after: Bool
 
@@ -127,7 +127,7 @@ extension Movie {
     }
 }
 
-struct MovieTrailer: Identifiable {
+struct MovieTrailer: Identifiable, Codable {
     var id: String
     var title: String
     var key: String
@@ -136,7 +136,7 @@ struct MovieTrailer: Identifiable {
     var official: Bool
     var publishedAt: String
 
-    enum TrailerType: String {
+    enum TrailerType: String, Codable {
         case Teaser = "Teaser"
         case Trailer = "Trailer"
         case Clip = "Clip"
@@ -183,7 +183,7 @@ struct MovieTrailer: Identifiable {
 // MARK: - Collection (franchise)
 
 /// A collection of movies comprising a franchise (e.g. Star Wars).
-struct MovieCollection {
+struct MovieCollection: Codable {
     var id: Int
     var name: String
     var poster: String?

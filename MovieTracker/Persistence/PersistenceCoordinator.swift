@@ -99,6 +99,12 @@ final class PersistenceCoordinator {
         deduplicate()
         SyncLog.snapshot("after seed", in: context)
 
+        // Pre-cache saved titles for offline use, off the main path.
+        let ids = savedMovieIDs()
+        Task.detached(priority: .utility) {
+            await MediaCachePrefetcher.prefetch(ids: ids)
+        }
+
         await reconcileOnRemoteChanges()
     }
 

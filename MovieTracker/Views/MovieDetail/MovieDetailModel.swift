@@ -25,13 +25,23 @@ final class MovieDetailModel {
     func load(id: Int) async {
         guard !loaded else { return }
         loaded = true
+
+        // Cache-first paint, then refresh; on failure the cached values stand.
+        if let cached = await MediaCacheStore.shared.load(id: id) {
+            movie = cached.movie
+            if let color = cached.color { tint = color }
+        }
+
         do {
             let full = try await TMDBWrapper.getMovie(id: id)
             movie = full
+            var freshTint = tint
             if let url = full.posterURL(.w342),
                let data = try? await TMDBWrapper.imageData(from: url) {
-                tint = Color.averageColor(from: data)
+                freshTint = Color.averageColor(from: data)
             }
+            withAnimation(.easeInOut) { tint = freshTint }
+            await MediaCacheStore.shared.save(full, tint: freshTint)
         } catch {
             print("Movie detail load error: \(error)")
         }

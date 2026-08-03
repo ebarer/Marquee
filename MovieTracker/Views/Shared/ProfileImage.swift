@@ -2,7 +2,8 @@
 //  ProfileImage.swift
 //  MovieTracker
 //
-//  A circular person profile image with a placeholder.
+//  A circular person profile image with a placeholder. Loading, caching, and
+//  revalidation live in the shared `RemoteImage`.
 //
 
 import SwiftUI
@@ -11,11 +12,7 @@ struct ProfileImage: View {
     let url: URL?
 
     var body: some View {
-        AsyncImage(url: url) { image in
-            image
-                .resizable()
-                .scaledToFill()
-        } placeholder: {
+        RemoteImage(url: url) {
             ZStack {
                 Color.appSeparator
                 Image(systemName: "person.fill")

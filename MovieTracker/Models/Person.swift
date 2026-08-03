@@ -10,7 +10,7 @@ import Foundation
 
 /// A transient person hydrated from TMDB (not persisted). Identity is the TMDB id,
 /// so it works as a navigation value.
-struct Person: Hashable, Identifiable {
+struct Person: Hashable, Identifiable, Codable {
     var id: Int
     var name: String
     var popularity: Float = 0.0
@@ -23,7 +23,7 @@ struct Person: Hashable, Identifiable {
     var bio: String?
     var credits: [Movie]?
 
-    enum PersonType {
+    enum PersonType: Codable {
         case Cast
         case Crew
     }
