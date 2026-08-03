@@ -14,6 +14,7 @@ final class RemoteImageCache: @unchecked Sendable {
 
     func image(for url: URL) -> UIImage? { cache.object(forKey: url as NSURL) }
     func insert(_ image: UIImage, for url: URL) { cache.setObject(image, forKey: url as NSURL) }
+    func removeAll() { cache.removeAllObjects() }
 }
 
 @MainActor

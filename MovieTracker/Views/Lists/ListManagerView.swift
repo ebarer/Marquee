@@ -26,6 +26,7 @@ struct ListManagerView: View {
 
     @State private var editing: MediaList?
     @State private var creatingNew = false
+    @State private var showingCache = false
 
     private static let separator = Color.white.opacity(0.25)
 
@@ -65,8 +66,7 @@ struct ListManagerView: View {
                                color: ListDestination.viewedColor, count: viewedCount)
                 }
 
-                // Library-wide actions (not lists) — tinted accent to set them apart,
-                // with the app version pinned to the footer.
+                // Library-wide actions (not lists) — tinted accent to set them apart.
                 Section {
                     Button {
                         ImportExportCoordinator.shared.showImporter = true
@@ -80,6 +80,27 @@ struct ListManagerView: View {
                         Label("Export", systemImage: "square.and.arrow.up")
                             .foregroundStyle(Color.appAccent)
                     }
+                }
+                .listRowSeparatorTint(Self.separator)
+                .moveDisabled(true)
+                .deleteDisabled(true)
+
+                // Offline cache management, with the app version pinned to the footer.
+                // A Button (not NavigationLink) because this List is permanently in
+                // edit mode, where links don't fire; it drives a programmatic push.
+                Section {
+                    Button {
+                        showingCache = true
+                    } label: {
+                        HStack {
+                            Label("Manage Cache", systemImage: "internaldrive")
+                                .foregroundStyle(Color.appAccent)
+                            Spacer()
+                            Image(systemName: "chevron.forward")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 } footer: {
                     Text(appInfo)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -90,10 +111,13 @@ struct ListManagerView: View {
                 .deleteDisabled(true)
             }
             .listStyle(.insetGrouped)
+            .navigationDestination(isPresented: $showingCache) {
+                CacheManagerView()
+            }
             // The whole point of this screen is reordering/deleting, so it stays in
             // edit mode permanently rather than gating that behind an Edit button.
             .environment(\.editMode, .constant(.active))
-            .navigationTitle("Edit Lists")
+            .navigationTitle("Lists")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

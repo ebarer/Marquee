@@ -69,6 +69,26 @@ actor MediaCacheStore {
         evictIfNeeded()
     }
 
+    struct Usage: Sendable {
+        var count: Int
+        var bytes: Int64
+    }
+
+    func usage() -> Usage {
+        let files = (try? fileManager.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: [.fileSizeKey])) ?? []
+        let bytes = files.reduce(Int64(0)) {
+            $0 + Int64((try? $1.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+        }
+        return Usage(count: files.count, bytes: bytes)
+    }
+
+    func clear() {
+        let files = (try? fileManager.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: nil)) ?? []
+        for file in files { try? fileManager.removeItem(at: file) }
+    }
+
     private func evictIfNeeded() {
         let key: URLResourceKey = .contentModificationDateKey
         guard let files = try? fileManager.contentsOfDirectory(
