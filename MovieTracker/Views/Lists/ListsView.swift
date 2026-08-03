@@ -125,10 +125,11 @@ struct ListsView: View {
         }
         .task(id: sectionsInput) { await sectionsModel.rebuild(for: sectionsInput, store: store) }
         // A local save (e.g. a watched-date edit) that doesn't change a count still
-        // needs a rebuild. Scoped to the main context.
+        // needs a rebuild. The main context is the only writer (the SectionBuilder
+        // only reads), so no object filter is needed — and ModelContext isn't
+        // Sendable to pass as one.
         .task {
-            let mainContext = store?.container.mainContext
-            for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave, object: mainContext) {
+            for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave) {
                 dataVersion &+= 1
             }
         }
