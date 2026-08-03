@@ -95,9 +95,9 @@ struct ListDestination {
     }
 
     /// What the background `SectionBuilder` should read for this view.
-    func sectionSource(watchedByDate: Bool) -> SectionSource? {
+    func sectionSource(watchedByDate: Bool, listByDateAdded: Bool) -> SectionSource? {
         switch selection {
-        case .list(let uuid): return list != nil ? .list(uuid) : nil
+        case .list(let uuid): return list != nil ? .list(uuid, byDateAdded: listByDateAdded) : nil
         case .watched: return .watched(byWatchedDate: watchedByDate)
         case .viewed: return .viewed
         }
@@ -180,19 +180,28 @@ struct ListTitleMenu: View {
     }
 }
 
-/// The trailing sort menu: (on Watched) release vs. watched date, with the order
-/// direction at the bottom.
+/// The trailing sort menu: an optional sort-key picker (watched date on Watched,
+/// date added on real lists) above the order direction.
 struct ListSortMenu: View {
     @Binding var ascending: Bool
-    @Binding var watchedSortKey: WatchedSortKey
-    let showsWatchedSortKey: Bool
+    /// Present only on Watched: release vs. watched date.
+    var watchedSortKey: Binding<WatchedSortKey>?
+    /// Present only on the Watch List / custom lists: release vs. date added.
+    var listSortKey: Binding<ListSortKey>?
 
     var body: some View {
         Menu {
-            if showsWatchedSortKey {
-                Picker("Sort By", selection: $watchedSortKey) {
+            if let watchedSortKey {
+                Picker("Sort By", selection: watchedSortKey) {
                     Text(WatchedSortKey.releaseDate.title).tag(WatchedSortKey.releaseDate)
                     Text(WatchedSortKey.dateWatched.title).tag(WatchedSortKey.dateWatched)
+                }
+            }
+
+            if let listSortKey {
+                Picker("Sort By", selection: listSortKey) {
+                    Text(ListSortKey.releaseDate.title).tag(ListSortKey.releaseDate)
+                    Text(ListSortKey.dateAdded.title).tag(ListSortKey.dateAdded)
                 }
             }
 
@@ -220,7 +229,17 @@ struct ListSortMenu: View {
 #Preview("Sort menu — Watched") {
     @Previewable @State var ascending = false
     @Previewable @State var key: WatchedSortKey = .dateWatched
-    ListSortMenu(ascending: $ascending, watchedSortKey: $key, showsWatchedSortKey: true)
+    ListSortMenu(ascending: $ascending, watchedSortKey: $key)
+        .tint(.appAccent)
+        .padding()
+        .background(Color.appBackground)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Sort menu — List") {
+    @Previewable @State var ascending = true
+    @Previewable @State var key: ListSortKey = .dateAdded
+    ListSortMenu(ascending: $ascending, listSortKey: $key)
         .tint(.appAccent)
         .padding()
         .background(Color.appBackground)

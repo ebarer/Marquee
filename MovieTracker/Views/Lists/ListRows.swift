@@ -26,14 +26,20 @@ struct ListRows: View {
         List {
             // Viewed is a flat recency history — no month sections.
             if isViewed {
-                rows(for: sections.first?.entries ?? [])
+                rows(for: sections.first?.entries ?? [], hasHeader: false)
             } else {
                 ForEach(sections) { section in
-                    Section {
-                        rows(for: section.entries)
-                    } header: {
-                        Text(section.title)
-                            .foregroundStyle(listColor)
+                    // A headerless section (e.g. a list ordered by date added)
+                    // renders its rows flat, with no month header above them.
+                    if section.title.isEmpty {
+                        rows(for: section.entries, hasHeader: false)
+                    } else {
+                        Section {
+                            rows(for: section.entries, hasHeader: true)
+                        } header: {
+                            Text(section.title)
+                                .foregroundStyle(listColor)
+                        }
                     }
                 }
             }
@@ -41,7 +47,7 @@ struct ListRows: View {
     }
 
     @ViewBuilder
-    private func rows(for entries: [MediaSnapshot]) -> some View {
+    private func rows(for entries: [MediaSnapshot], hasHeader: Bool) -> some View {
         ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
             MovieListRow(
                 movie: movie(entry),
@@ -62,6 +68,9 @@ struct ListRows: View {
                 }
             )
             .listRowSeparator(index == entries.count - 1 ? .hidden : .automatic, edges: .bottom)
+            // Without a header above them, the first row's top separator floats on
+            // its own — hide it so the list starts cleanly.
+            .listRowSeparator(!hasHeader && index == 0 ? .hidden : .automatic, edges: .top)
         }
     }
 

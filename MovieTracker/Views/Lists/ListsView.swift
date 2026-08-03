@@ -89,8 +89,9 @@ struct ListsView: View {
                 }
             } else {
                 ToolbarItem(placement: .topBarTrailing) {
-                    ListSortMenu(ascending: ascendingBinding, watchedSortKey: $watchedSortKey,
-                                      showsWatchedSortKey: resolvedSelection == .watched)
+                    ListSortMenu(ascending: ascendingBinding,
+                                 watchedSortKey: resolvedSelection == .watched ? $watchedSortKey : nil,
+                                 listSortKey: isRealList ? listSortKeyBinding : nil)
                         .tint(activeColor)
                 }
             }
@@ -159,7 +160,22 @@ struct ListsView: View {
     private var activeColor: Color { destination.color }
     private var movieCount: Int { destination.movieCount(using: store) }
     private var sectionSource: SectionSource? {
-        destination.sectionSource(watchedByDate: watchedSortKey == .dateWatched)
+        destination.sectionSource(watchedByDate: watchedSortKey == .dateWatched,
+                                  listByDateAdded: currentListSortKey == .dateAdded)
+    }
+
+    /// True for the Watch List and custom lists (real `MediaList`s), false for
+    /// the derived Watched / Viewed views.
+    private var isRealList: Bool {
+        if case .list = resolvedSelection { return true }
+        return false
+    }
+
+    private var currentListSortKey: ListSortKey { destination.list?.sortKey ?? .releaseDate }
+
+    private var listSortKeyBinding: Binding<ListSortKey> {
+        Binding(get: { currentListSortKey },
+                set: { value in store?.perform { destination.list?.sortKey = value } })
     }
 
     private var currentAscending: Bool {

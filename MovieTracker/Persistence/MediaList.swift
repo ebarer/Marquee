@@ -22,6 +22,9 @@ final class MediaList {
     var createdAt: Date = Date()
     /// Remembered per-list sort direction (moved off UserDefaults so it syncs).
     var sortAscending: Bool = true
+    /// Remembered per-list sort key (release date vs. date added), stored raw so
+    /// it's CloudKit-friendly and syncs alongside the direction.
+    var sortKeyRaw: String = ListSortKey.releaseDate.rawValue
     /// The one built-in list; can't be renamed or deleted.
     var isWatchList: Bool = false
     /// Set when a duplicate built-in has been merged away and is awaiting deletion.
@@ -43,6 +46,12 @@ final class MediaList {
 
     var isDeduplicated: Bool { deduplicatedDate != nil }
     var isEditable: Bool { !isWatchList }
+
+    /// The list's sort key, backed by `sortKeyRaw`.
+    var sortKey: ListSortKey {
+        get { ListSortKey(rawValue: sortKeyRaw) ?? .releaseDate }
+        set { sortKeyRaw = newValue.rawValue }
+    }
 
     /// The Watch List carries the brand accent; custom lists their palette color.
     var color: Color { isWatchList ? .appAccent : Color.listColor(colorIndex) }

@@ -13,7 +13,8 @@ import SwiftData
 /// What a section build reads: a list's `ListEntry` members, or the derived
 /// Watched / Viewed queries over `MediaItem`.
 enum SectionSource: Sendable, Equatable {
-    case list(UUID)
+    /// A list's members, grouped by date added when `byDateAdded`, else release date.
+    case list(UUID, byDateAdded: Bool)
     /// Watched titles, grouped by watched date when `byWatchedDate`, else release.
     case watched(byWatchedDate: Bool)
     case viewed
@@ -47,8 +48,8 @@ struct SectionSnapshot: Identifiable, Sendable, Equatable {
 actor SectionBuilder {
     func build(source: SectionSource, ascending: Bool, filter: String) -> [SectionSnapshot] {
         switch source {
-        case .list(let listID):
-            return buildList(listID, ascending: ascending, filter: filter)
+        case .list(let listID, let byDateAdded):
+            return buildList(listID, byDateAdded: byDateAdded, ascending: ascending, filter: filter)
         case .watched(let byWatchedDate):
             return buildWatched(byWatchedDate: byWatchedDate, ascending: ascending, filter: filter)
         case .viewed:
@@ -58,7 +59,7 @@ actor SectionBuilder {
 
     // MARK: List membership (ListEntry)
 
-    private func buildList(_ listID: UUID, ascending: Bool, filter: String) -> [SectionSnapshot] {
+    private func buildList(_ listID: UUID, byDateAdded: Bool, ascending: Bool, filter: String) -> [SectionSnapshot] {
         let descriptor = FetchDescriptor<ListEntry>(
             predicate: #Predicate { $0.list?.uuid == listID }
         )
@@ -75,13 +76,17 @@ actor SectionBuilder {
 
         let dated = filtered.map { entry -> (date: Date, snapshot: MediaSnapshot) in
             let facts = factsByID[entry.tmdbID]
-            return (entry.releaseDate ?? .distantFuture,
+            let date = byDateAdded ? entry.addedAt : (entry.releaseDate ?? .distantFuture)
+            return (date,
                     MediaSnapshot(persistentID: entry.persistentModelID,
                                   tmdbID: entry.tmdbID, title: entry.title,
                                   posterPath: entry.posterPath, releaseDate: entry.releaseDate,
                                   runtime: entry.runtime, dateWatched: facts?.watched,
                                   userRating: facts?.rating))
         }
+        // Date-added order reads as a flat recency list — month headers add no
+        // value there, so return a single headerless section like Viewed does.
+        if byDateAdded { return flat(dated, ascending: ascending) }
         return group(dated, ascending: ascending)
     }
 
@@ -125,6 +130,16 @@ actor SectionBuilder {
     }
 
     // MARK: Grouping
+
+    /// Orders `dated` by date and returns it as a single headerless section (empty
+    /// title), or nothing when empty.
+    private func flat(_ dated: [(date: Date, snapshot: MediaSnapshot)],
+                      ascending: Bool) -> [SectionSnapshot] {
+        let sorted = dated.sorted { $0.date < $1.date }
+        let ordered = ascending ? sorted : Array(sorted.reversed())
+        let snapshots = ordered.map(\.snapshot)
+        return snapshots.isEmpty ? [] : [SectionSnapshot(id: DateComponents(), title: "", entries: snapshots)]
+    }
 
     private func group(_ dated: [(date: Date, snapshot: MediaSnapshot)],
                        ascending: Bool) -> [SectionSnapshot] {
