@@ -13,7 +13,6 @@ struct RelatedMoviesSection: View {
     let collection: [Movie]
     let recommendations: [Movie]
     let lists: [MediaList]
-    let context: ModelContext
     let tint: Color
 
     /// The user's pick from the title menu; nil follows the default (franchise first).
@@ -44,8 +43,7 @@ struct RelatedMoviesSection: View {
         if let mode = currentMode {
             VStack(alignment: .leading, spacing: 0) {
                 header(mode: mode)
-                PosterStrip(movies: movies(for: mode), lists: lists, context: context,
-                            showsYear: true)
+                PosterStrip(movies: movies(for: mode), lists: lists, showsYear: true)
                     // New identity per mode so switching crossfades the whole strip.
                     .id(mode)
                     .transition(.opacity)
@@ -95,10 +93,12 @@ struct RelatedMoviesSection: View {
     NavigationStack {
         ScrollView {
             RelatedMoviesSection(collection: Movie.previewList, recommendations: Movie.previewList,
-                                 lists: [], context: previewModelContainer.mainContext, tint: .appAccent)
+                                 lists: [], tint: .appAccent)
         }
-        .movieTrackerDestinations()
+        .detailDestinations()
     }
     .background(Color.appBackground)
+    .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

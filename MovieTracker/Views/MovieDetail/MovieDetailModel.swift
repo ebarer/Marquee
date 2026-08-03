@@ -19,9 +19,6 @@ final class MovieDetailModel {
     /// The other films in this movie's franchise (chronological), shown as a
     /// horizontal strip. Empty when the movie isn't part of a collection.
     private(set) var collection: [Movie] = []
-    /// The franchise's display name (e.g. "The Dark Knight Collection"), used
-    /// as the collection strip's section title.
-    private(set) var collectionName: String?
 
     private var loaded = false
 
@@ -41,7 +38,6 @@ final class MovieDetailModel {
 
         // Load the franchise members if this movie belongs to a collection.
         if let franchise = movie?.collection {
-            collectionName = franchise.name
             do {
                 collection = try await TMDBWrapper.getCollection(id: franchise.id)
                     .filter { $0.id != id }

@@ -12,7 +12,6 @@ struct ListRows: View {
     let sections: [SectionSnapshot]
     let selection: ListSelection
     let lists: [MediaList]
-    let context: ModelContext
     let listColor: Color
     @Environment(MediaStore.self) private var store: MediaStore?
 
@@ -52,7 +51,6 @@ struct ListRows: View {
                 rating: rating(entry),
                 ratingTint: listColor,
                 lists: lists,
-                context: context,
                 leadingActions: { leadingAction(entry) },
                 trailingActions: {
                     Button(role: .destructive) {
@@ -71,9 +69,9 @@ struct ListRows: View {
     @ViewBuilder
     private func leadingAction(_ entry: MediaSnapshot) -> some View {
         if isWatched {
-            WatchListSwipeButton(movie: movie(entry), context: context)
+            WatchListSwipeButton(movie: movie(entry))
         } else {
-            WatchedSwipeButton(movie: movie(entry), context: context)
+            WatchedSwipeButton(movie: movie(entry))
         }
     }
 
@@ -105,18 +103,16 @@ struct ListRows: View {
     /// drop from the Viewed history.
     private func delete(_ entry: MediaSnapshot) {
         switch selection {
-        case .list:
-            if let live = context.model(for: entry.persistentID) as? ListEntry { store?.delete(live) }
-        case .watched:
-            if let item = context.model(for: entry.persistentID) as? MediaItem { store?.unwatch(item) }
-        case .viewed:
-            if let item = context.model(for: entry.persistentID) as? MediaItem { store?.removeFromViewed(item) }
+        case .list: store?.deleteEntry(entry.persistentID)
+        case .watched: store?.unwatch(entry.persistentID)
+        case .viewed: store?.removeFromViewed(entry.persistentID)
         }
     }
 }
 
 #Preview {
-    ListRows(sections: [], selection: .watched, lists: [],
-                  context: previewModelContainer.mainContext, listColor: .appAccent)
+    ListRows(sections: [], selection: .watched, lists: [], listColor: .appAccent)
         .listStyle(.plain)
+        .modelContainer(previewModelContainer)
+        .environment(MediaStore(previewModelContainer.mainContext))
 }

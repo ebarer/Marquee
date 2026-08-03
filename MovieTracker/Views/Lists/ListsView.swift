@@ -8,19 +8,16 @@ import SwiftData
 import CoreData
 
 struct ListsView: View {
-    @Environment(\.modelContext) private var context
     @Environment(MediaStore.self) private var store: MediaStore?
     /// Present only when running inside the app (absent in previews).
     @Environment(CloudSyncMonitor.self) private var syncMonitor: CloudSyncMonitor?
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var allLists: [MediaList]
 
-    /// Live lists with any duplicate Watch List collapsed to the canonical copy.
+    /// Canonical, display-ready lists. `@Query` drives reactivity; the store owns the
+    /// decision of which duplicate copies to collapse.
     private var lists: [MediaList] {
-        let visible = allLists.filter { !$0.isDeduplicated }
-        let canonicalWatch = visible.filter { $0.isWatchList }
-            .sorted { $0.uuid.uuidString < $1.uuid.uuidString }.first
-        return visible.filter { !$0.isWatchList || $0.uuid == canonicalWatch?.uuid }
+        store?.canonicalLists(allLists) ?? allLists.filter { !$0.isDeduplicated }
     }
 
     /// The current view; nil until the Watch List is chosen on appear.
@@ -45,7 +42,7 @@ struct ListsView: View {
 
     var body: some View {
         ListRows(sections: sections, selection: resolvedSelection, lists: lists,
-                      context: context, listColor: activeColor)
+                      listColor: activeColor)
         .listStyle(.plain)
         .tint(activeColor)
         .navigationTitle(title)
@@ -133,7 +130,8 @@ struct ListsView: View {
         // A local save (e.g. a watched-date edit) that doesn't change a count still
         // needs a rebuild. Scoped to the main context.
         .task {
-            for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave, object: context) {
+            let mainContext = store?.container.mainContext
+            for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave, object: mainContext) {
                 dataVersion &+= 1
             }
         }
@@ -187,10 +185,8 @@ struct ListsView: View {
     private var movieCount: Int {
         switch resolvedSelection {
         case .list(let uuid): return (list(uuid)?.entries ?? []).count
-        case .watched: return (try? context.fetchCount(FetchDescriptor<MediaItem>(
-            predicate: #Predicate { $0.watchedAt != nil }))) ?? 0
-        case .viewed: return (try? context.fetchCount(FetchDescriptor<MediaItem>(
-            predicate: #Predicate { $0.lastViewedAt != nil }))) ?? 0
+        case .watched: return store?.watchedCount ?? 0
+        case .viewed: return store?.viewedCount ?? 0
         }
     }
 
@@ -265,12 +261,12 @@ struct ListsView: View {
     }
 
     private func rebuildSections() async {
-        guard let source = sectionSource else {
+        guard let source = sectionSource, let store else {
             sections = []
             loadedInput = sectionsInput
             return
         }
-        let builder = builder ?? SectionBuilder(modelContainer: context.container)
+        let builder = builder ?? SectionBuilder(modelContainer: store.container)
         if self.builder == nil { self.builder = builder }
 
         let result = await builder.build(source: source, ascending: currentAscending, filter: filterText)
@@ -308,9 +304,10 @@ struct ListsView: View {
 #Preview("Idle") {
     NavigationStack {
         ListsView()
-            .movieTrackerDestinations()
+            .detailDestinations()
     }
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .environment(CloudSyncMonitor(isSyncing: false))
     .preferredColorScheme(.dark)
 }
@@ -318,9 +315,10 @@ struct ListsView: View {
 #Preview("Syncing") {
     NavigationStack {
         ListsView()
-            .movieTrackerDestinations()
+            .detailDestinations()
     }
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .environment(CloudSyncMonitor(isSyncing: true))
     .preferredColorScheme(.dark)
 }

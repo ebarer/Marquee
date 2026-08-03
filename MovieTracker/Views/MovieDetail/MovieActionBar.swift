@@ -12,7 +12,6 @@ import SwiftData
 struct MovieActionBar: View {
     let movie: Movie
     let lists: [MediaList]
-    let context: ModelContext
     let tint: Color
     @Binding var isSeen: Bool
 
@@ -26,8 +25,9 @@ struct MovieActionBar: View {
     private static let size: CGFloat = 52
     private static let spacing: CGFloat = 12
 
-    private var watchList: MediaList? { lists.first { $0.isWatchList } }
-    private var customLists: [MediaList] { lists.filter { !$0.isWatchList } }
+    private var canonical: [MediaList] { store?.canonicalLists(lists) ?? lists }
+    private var watchList: MediaList? { canonical.first { $0.isWatchList } }
+    private var customLists: [MediaList] { canonical.filter { !$0.isWatchList } }
 
     var body: some View {
         GlassEffectContainer(spacing: Self.spacing) {
@@ -105,7 +105,7 @@ struct MovieActionBar: View {
             .popover(isPresented: $showListPicker,
                      attachmentAnchor: .rect(.rect(CGRect(
                         x: 0, y: -8, width: Self.size, height: Self.size)))) {
-                ListPickerPopover(movie: movie, lists: customLists, context: context, tint: tint)
+                ListPickerPopover(movie: movie, lists: customLists, tint: tint)
             }
         }
     }
@@ -121,7 +121,7 @@ struct MovieActionBar: View {
 
     private func refresh() {
         tracked = watchList?.contains(movie.id) ?? false
-        isSeen = MediaItem.isWatched(movie, in: context)
+        isSeen = store?.isWatched(movie) ?? false
     }
 
     /// The `.fill` variant of a symbol when one exists, else the base name.
@@ -149,7 +149,6 @@ struct MovieActionBar: View {
 private struct ListPickerPopover: View {
     let movie: Movie
     let lists: [MediaList]
-    let context: ModelContext
     let tint: Color
 
     @Environment(MediaStore.self) private var store: MediaStore?
@@ -196,15 +195,17 @@ private struct ListPickerPopover: View {
 }
 
 #Preview("Unseen") {
-    MovieActionBar(movie: .preview, lists: [], context: previewModelContainer.mainContext,
-                   tint: .appAccent, isSeen: .constant(false))
+    MovieActionBar(movie: .preview, lists: [], tint: .appAccent, isSeen: .constant(false))
         .padding()
         .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .environment(MediaStore(previewModelContainer.mainContext))
 }
 
 #Preview("Seen") {
-    MovieActionBar(movie: .preview, lists: [], context: previewModelContainer.mainContext,
-                   tint: .appAccent, isSeen: .constant(true))
+    MovieActionBar(movie: .preview, lists: [], tint: .appAccent, isSeen: .constant(true))
         .padding()
         .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .environment(MediaStore(previewModelContainer.mainContext))
 }

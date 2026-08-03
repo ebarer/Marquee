@@ -13,7 +13,6 @@ struct ListMembershipMenu: View {
     let movie: Movie
     let watchList: MediaList?
     let customLists: [MediaList]
-    let context: ModelContext
     @Environment(MediaStore.self) private var store: MediaStore?
     /// Called after any change (e.g. to refresh derived UI state).
     var onChange: () -> Void = {}
@@ -22,7 +21,7 @@ struct ListMembershipMenu: View {
         Group {
             Section {
                 Toggle(isOn: Binding(
-                    get: { MediaItem.isWatched(movie, in: context) },
+                    get: { store?.isWatched(movie) ?? false },
                     set: { store?.setWatched($0, for: movie); onChange() }
                 )) {
                     Label("Watched", systemImage: "checkmark.rectangle.stack")
@@ -64,10 +63,10 @@ struct ListMembershipMenu: View {
         ListMembershipMenu(
             movie: .preview,
             watchList: MediaList.watchList(in: context),
-            customLists: MediaList.customLists(in: context),
-            context: context
+            customLists: MediaList.customLists(in: context)
         )
     }
     .padding()
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(context))
 }

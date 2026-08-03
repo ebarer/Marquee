@@ -14,7 +14,6 @@ import SwiftData
 struct SearchView: View {
     @Bindable var model: SearchModel
 
-    @Environment(\.modelContext) private var context
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
 
@@ -77,12 +76,11 @@ struct SearchView: View {
                 MovieListRow(
                     movie: movie,
                     lists: lists,
-                    context: context,
                     leadingActions: {
-                        WatchedSwipeButton(movie: movie, context: context)
+                        WatchedSwipeButton(movie: movie)
                     },
                     trailingActions: {
-                        WatchListSwipeButton(movie: movie, context: context)
+                        WatchListSwipeButton(movie: movie)
                     }
                 )
                 .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
@@ -151,8 +149,9 @@ struct SearchView: View {
 #Preview {
     NavigationStack {
         SearchView(model: SearchModel())
-            .movieTrackerDestinations()
+            .detailDestinations()
     }
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

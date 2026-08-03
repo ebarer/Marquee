@@ -13,7 +13,6 @@ struct PersonDetailView: View {
     let person: Person
 
     @State private var model = PersonDetailModel()
-    @Environment(\.modelContext) private var context
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
 
@@ -60,7 +59,7 @@ struct PersonDetailView: View {
 
                     knownForSection
 
-                    PersonFilmography(credits: current.credits ?? [], lists: lists, context: context)
+                    PersonFilmography(credits: current.credits ?? [], lists: lists)
                 }
                 .padding(.bottom, 24)
             }
@@ -106,7 +105,7 @@ struct PersonDetailView: View {
         let knownFor = Array(current.knownFor.prefix(10))
         if !knownFor.isEmpty {
             SectionHeader(title: "Known For")
-            PosterStrip(movies: knownFor, lists: lists, context: context)
+            PosterStrip(movies: knownFor, lists: lists)
         }
     }
 
@@ -115,8 +114,9 @@ struct PersonDetailView: View {
 #Preview {
     NavigationStack {
         PersonDetailView(person: .preview)
-            .movieTrackerDestinations()
+            .detailDestinations()
     }
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

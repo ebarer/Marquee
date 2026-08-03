@@ -9,6 +9,7 @@ Smaller/Cosmetic:
 - [ ] In Lists, remove the + button, just have the list button in the top left
 - [ ] Watch list, and custom, should support ordering by the date added
 - [ ] Bulk update date watched?
+- [ ] Recommendation section should be collapsed by default (if there are no related)
 
 Ideas:
 - [ ] Fix custom colors and offer color picker in first slot
@@ -20,6 +21,3 @@ Ideas:
 - [ ] Add more symbols for lists (cloud?, lamp?)
 - [ ] Share lists
 - [ ] Add access to additional photos for people?
-
-Questions:
-- [ ] Why is "movieTrackerDestinations" necessary?

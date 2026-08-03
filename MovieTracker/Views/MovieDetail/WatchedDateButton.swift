@@ -10,7 +10,6 @@ import SwiftData
 /// Changes write straight through to the `MediaItem`.
 struct WatchedDateButton: View {
     let movie: Movie
-    let context: ModelContext
     let tint: Color
 
     @Environment(MediaStore.self) private var store: MediaStore?
@@ -19,13 +18,12 @@ struct WatchedDateButton: View {
     @State private var date: Date
     @State private var showPicker = false
 
-    init(movie: Movie, context: ModelContext, tint: Color) {
+    /// `watchedDate` is the stored canonical UTC-midnight value (nil if unset).
+    init(movie: Movie, watchedDate: Date?, tint: Color) {
         self.movie = movie
-        self.context = context
         self.tint = tint
-        // Stored value is canonical UTC-midnight; map back to the same local day.
-        let stored = MediaItem.dateWatched(for: movie, in: context)
-        _date = State(initialValue: stored.map(MediaItem.localDay)
+        // Map the stored UTC-midnight day back to the same local day.
+        _date = State(initialValue: watchedDate.map(MediaItem.localDay)
                       ?? Calendar.current.startOfDay(for: Date()))
     }
 
@@ -71,20 +69,20 @@ struct WatchedDateButton: View {
 }
 
 #Preview("Watched title") {
-    // previewList[1] is seeded watched (today) in the preview container.
     WatchedDateButton(movie: Movie.previewList[1],
-                      context: previewModelContainer.mainContext, tint: .appAccent)
+                      watchedDate: MediaItem.floatingDay(from: Date()), tint: .appAccent)
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
+        .environment(MediaStore(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }
 
 #Preview("Unset — defaults to today") {
-    WatchedDateButton(movie: .preview,
-                      context: previewModelContainer.mainContext, tint: .yellow)
+    WatchedDateButton(movie: .preview, watchedDate: nil, tint: .yellow)
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
+        .environment(MediaStore(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }

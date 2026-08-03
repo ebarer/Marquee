@@ -9,7 +9,6 @@ import SwiftUI
 import SwiftData
 
 struct FeaturedView: View {
-    @Environment(\.modelContext) private var context
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
     @State private var model = FeaturedModel()
@@ -25,7 +24,7 @@ struct FeaturedView: View {
                         MoviePosterCard(movie: movie)
                     }
                     .buttonStyle(.plain)
-                    .movieContextMenu(for: movie, lists: lists, context: context)
+                    .movieContextMenu(for: movie, lists: lists)
                     .task {
                         await model.loadMoreIfNeeded(currentItem: movie)
                     }
@@ -60,8 +59,9 @@ struct FeaturedView: View {
 #Preview {
     NavigationStack {
         FeaturedView()
-            .movieTrackerDestinations()
+            .detailDestinations()
     }
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

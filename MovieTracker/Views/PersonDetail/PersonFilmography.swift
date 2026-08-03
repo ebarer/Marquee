@@ -13,7 +13,6 @@ import SwiftData
 struct PersonFilmography: View {
     let credits: [Movie]
     let lists: [MediaList]
-    let context: ModelContext
 
     @State private var hideExtraneous = true
     @State private var upcomingExpanded = false
@@ -59,12 +58,12 @@ struct PersonFilmography: View {
         }
         .buttonStyle(.plain)
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            WatchedSwipeButton(movie: movie, context: context)
+            WatchedSwipeButton(movie: movie)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            WatchListSwipeButton(movie: movie, context: context)
+            WatchListSwipeButton(movie: movie)
         }
-        .movieContextMenu(for: movie, lists: lists, context: context)
+        .movieContextMenu(for: movie, lists: lists)
     }
 
     private var header: some View {
@@ -165,12 +164,13 @@ struct PersonFilmography: View {
     NavigationStack {
         ScrollView {
             LazyVStack(spacing: 0) {
-                PersonFilmography(credits: Person.preview.credits ?? [], lists: [],
-                                  context: previewModelContainer.mainContext)
+                PersonFilmography(credits: Person.preview.credits ?? [], lists: [])
             }
         }
-        .movieTrackerDestinations()
+        .detailDestinations()
     }
     .background(Color.appBackground)
+    .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

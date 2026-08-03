@@ -17,7 +17,6 @@ struct MovieDetailView: View {
         self.movieTitle = movie.title
     }
 
-    @Environment(\.modelContext) private var context
     @Environment(MediaStore.self) private var store: MediaStore?
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
@@ -49,7 +48,7 @@ struct MovieDetailView: View {
             }
         }
         .task {
-            isSeen = MediaItem.find(tmdbID: movieID, in: context)?.isWatched ?? false
+            isSeen = store?.isWatched(Movie(id: movieID, title: movieTitle)) ?? false
             await model.load(id: movieID)
             if let movie = model.movie {
                 store?.recordView(movie)
@@ -80,17 +79,16 @@ struct MovieDetailView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    MovieDetailHeader(movie: movie, tint: model.tint, lists: lists, context: context,
+                    MovieDetailHeader(movie: movie, tint: model.tint, lists: lists,
                                       imageHeight: imageHeight, headerHeight: headerHeight,
                                       width: width, navBarBottom: navBarBottom,
                                       showNavTitle: $showNavTitle, isSeen: $isSeen)
-                    MovieMetadataStrip(movie: movie, context: context,
-                                       tint: model.tint, isWatched: isSeen)
+                    MovieMetadataStrip(movie: movie, tint: model.tint, isWatched: isSeen)
                         .padding(.vertical, 8)
                     MovieOverviewSection(overview: movie.overview ?? "No movie description available.")
                     RelatedMoviesSection(collection: model.collection,
                                          recommendations: model.recommendations,
-                                         lists: lists, context: context, tint: model.tint)
+                                         lists: lists, tint: model.tint)
                     MovieCastSection(cast: movie.team)
                 }
                 .padding(.bottom, 24)
@@ -109,5 +107,6 @@ struct MovieDetailView: View {
         MovieDetailView(movie: .preview)
     }
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

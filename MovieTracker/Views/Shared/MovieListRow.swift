@@ -26,7 +26,6 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     /// Fill color for the rating stars.
     var ratingTint: Color = .appAccent
     let lists: [MediaList]
-    let context: ModelContext
     @ViewBuilder var leadingActions: () -> Leading
     @ViewBuilder var trailingActions: () -> Trailing
 
@@ -39,16 +38,13 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
         // Halve the default plain-list vertical padding (~11pt) while keeping the
         // standard horizontal inset so alignment and separators are unchanged.
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-        // A value-based link renders as "selected" whenever its value is already
-        // on the stack's path — e.g. an actor's filmography that lists the movie
-        // you navigated in from. Since `Movie` is Hashable by id, that match
-        // leaves the row perpetually highlighted. We never drive selection off
-        // these rows, so opt them out of selection entirely to drop the highlight
-        // while keeping normal push navigation.
+        // A value-based link highlights whenever its value is already on the path
+        // (e.g. a filmography listing the movie you came from). We never drive
+        // selection off these rows, so opt out to drop that stray highlight.
         .selectionDisabled()
         .swipeActions(edge: .leading, allowsFullSwipe: true, content: leadingActions)
         .swipeActions(edge: .trailing, allowsFullSwipe: true, content: trailingActions)
-        .movieContextMenu(for: movie, lists: lists, context: context)
+        .movieContextMenu(for: movie, lists: lists)
     }
 }
 
@@ -57,26 +53,24 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
         List {
             // Plain row: falls back to the release date as its subtitle.
             MovieListRow(movie: .preview, lists: [],
-                         context: previewModelContainer.mainContext,
                          leadingActions: {
-                             WatchedSwipeButton(movie: .preview,
-                                                context: previewModelContainer.mainContext)
+                             WatchedSwipeButton(movie: .preview)
                          }, trailingActions: {
-                             WatchListSwipeButton(movie: .preview,
-                                                  context: previewModelContainer.mainContext)
+                             WatchListSwipeButton(movie: .preview)
                          })
 
             // Enriched row: custom subtitle, role, duration, and a rating.
             MovieListRow(movie: Movie.previewList[1],
                          subtitle: "Watched Aug 2, 2026", role: "Director",
                          duration: "2 hr 53 min", rating: 4.0,
-                         lists: [], context: previewModelContainer.mainContext,
+                         lists: [],
                          leadingActions: { EmptyView() },
                          trailingActions: { EmptyView() })
         }
         .listStyle(.plain)
-        .movieTrackerDestinations()
+        .detailDestinations()
     }
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

@@ -10,7 +10,6 @@ import SwiftUI
 import SwiftData
 
 struct ListManagerView: View {
-    @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
@@ -224,8 +223,7 @@ struct ListManagerView: View {
     // MARK: - Actions
 
     private func delete(at offsets: IndexSet) {
-        let toDelete = offsets.map { customLists[$0] }
-        store?.perform { toDelete.forEach { context.delete($0) } }
+        offsets.map { customLists[$0] }.forEach { store?.delete($0) }
     }
 
     /// Reorders custom lists and rewrites their sort orders (starting at 1, after
@@ -248,7 +246,8 @@ struct ListManagerView: View {
     }
 
     private func prepareExport() {
-        exportDocument = WatchDataDocument(archive: WatchDataArchive.export(from: context))
+        guard let store else { return }
+        exportDocument = WatchDataDocument(archive: store.exportArchive())
         showExporter = true
     }
 
@@ -307,5 +306,6 @@ struct ListManagerView: View {
 #Preview {
     ListManagerView()
         .modelContainer(previewModelContainer)
+        .environment(MediaStore(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }

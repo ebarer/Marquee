@@ -11,25 +11,28 @@ import SwiftData
 /// watched date.
 struct MovieMetadataStrip: View {
     let movie: Movie
-    var context: ModelContext? = nil
     var tint: Color = .appAccent
     /// Whether the movie is Watched; passed in (not derived) so the MY RATING cell
     /// animates when the status changes.
     var isWatched: Bool = false
+
+    @Environment(MediaStore.self) private var store: MediaStore?
 
     var body: some View {
         VStack(spacing: 0) {
             hairline
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 0) {
-                    if let context, isWatched {
+                    // The personal cells only appear in the app (store present) for a
+                    // watched title.
+                    if let store, isWatched {
                         HStack(alignment: .top, spacing: 0) {
                             cell(header: "MY RATING") {
-                                StarRating(movie: movie, context: context, tint: tint)
+                                StarRating(movie: movie, rating: store.rating(for: movie) ?? 0, tint: tint)
                             }
                             divider
                             cell(header: "WATCHED", minWidth: 80) {
-                                WatchedDateButton(movie: movie, context: context, tint: tint)
+                                WatchedDateButton(movie: movie, watchedDate: store.dateWatched(for: movie), tint: tint)
                             }
                             divider
                         }

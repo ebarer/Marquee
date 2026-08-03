@@ -47,7 +47,7 @@ struct MovieCastSection: View {
         ScrollView {
             MovieCastSection(cast: Movie.preview.team)
         }
-        .movieTrackerDestinations()
+        .detailDestinations()
     }
     .background(Color.appBackground)
     .preferredColorScheme(.dark)

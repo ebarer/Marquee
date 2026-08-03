@@ -12,7 +12,6 @@ import SwiftUI
 import SwiftData
 
 struct ListEditorView: View {
-    @Environment(\.modelContext) private var context
     @Environment(MediaStore.self) private var store: MediaStore?
     @Environment(\.dismiss) private var dismiss
 
@@ -222,8 +221,7 @@ struct ListEditorView: View {
         } else {
             let list = MediaList(name: trimmedName, symbol: symbol,
                                  sortOrder: nextSortOrder, colorIndex: colorIndex)
-            context.insert(list)
-            store?.save()
+            store?.insert(list)
             onSaved(list)
         }
         dismiss()

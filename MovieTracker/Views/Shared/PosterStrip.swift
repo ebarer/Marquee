@@ -11,7 +11,6 @@ import SwiftData
 struct PosterStrip: View {
     let movies: [Movie]
     let lists: [MediaList]
-    let context: ModelContext
     var showsYear: Bool = false
 
     var body: some View {
@@ -31,7 +30,7 @@ struct PosterStrip: View {
                         .frame(width: 90)
                     }
                     .buttonStyle(.plain)
-                    .movieContextMenu(for: movie, lists: lists, context: context)
+                    .movieContextMenu(for: movie, lists: lists)
                 }
             }
             .padding(.horizontal, 16)
@@ -47,7 +46,8 @@ struct PosterStrip: View {
 }
 
 #Preview {
-    PosterStrip(movies: Movie.previewList, lists: [], context: previewModelContainer.mainContext,
-                showsYear: true)
+    PosterStrip(movies: Movie.previewList, lists: [], showsYear: true)
         .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .environment(MediaStore(previewModelContainer.mainContext))
 }

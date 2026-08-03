@@ -10,7 +10,6 @@ import SwiftData
 /// half-star precision; tapping the current rating clears it.
 struct StarRating: View {
     let movie: Movie
-    let context: ModelContext
     let tint: Color
 
     @Environment(MediaStore.self) private var store: MediaStore?
@@ -23,11 +22,10 @@ struct StarRating: View {
     private let starSize: CGFloat = 20
     private let spacing: CGFloat = 3
 
-    init(movie: Movie, context: ModelContext, tint: Color) {
+    init(movie: Movie, rating: Double, tint: Color) {
         self.movie = movie
-        self.context = context
         self.tint = tint
-        _rating = State(initialValue: MediaItem.rating(for: movie, in: context) ?? 0)
+        _rating = State(initialValue: rating)
     }
 
     var body: some View {
@@ -96,19 +94,19 @@ struct StarRating: View {
 }
 
 #Preview("Rated (4 stars)") {
-    // previewList[1] is seeded with a 4-star rating in the preview container.
-    StarRating(movie: Movie.previewList[1],
-               context: previewModelContainer.mainContext, tint: .appAccent)
+    StarRating(movie: Movie.previewList[1], rating: 4, tint: .appAccent)
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
+        .environment(MediaStore(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }
 
 #Preview("Unrated") {
-    StarRating(movie: .preview, context: previewModelContainer.mainContext, tint: .yellow)
+    StarRating(movie: .preview, rating: 0, tint: .yellow)
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
+        .environment(MediaStore(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }

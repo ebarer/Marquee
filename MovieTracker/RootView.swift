@@ -5,7 +5,6 @@
 
 import SwiftUI
 import SwiftData
-import CoreData
 
 struct RootView: View {
     /// Shared SwiftData container for the Watch List, synced through the app's
@@ -40,21 +39,21 @@ struct RootView: View {
             Tab("Discover", systemImage: "film") {
                 NavigationStack {
                     FeaturedView()
-                        .movieTrackerDestinations()
+                        .detailDestinations()
                 }
             }
 
             Tab("Lists", systemImage: "checklist") {
                 NavigationStack {
                     ListsView()
-                        .movieTrackerDestinations()
+                        .detailDestinations()
                 }
             }
 
             Tab("Search", systemImage: "magnifyingglass", role: .search) {
                 NavigationStack(path: $searchPath) {
                     SearchView(model: searchModel)
-                        .movieTrackerDestinations()
+                        .detailDestinations()
                 }
                 // Declare the search field only on the search tab, so it never
                 // appears above the Discover or Lists content.
@@ -88,66 +87,16 @@ struct RootView: View {
         .modelContainer(Self.sharedContainer)
         .environment(syncMonitor)
         .environment(store)
+        // Seed, deduplicate, and reconcile the store for the lifetime of the scene.
         .task {
-            let context = store.context
-            SyncLog.snapshot("launch", in: context)
-
-            // On a brand-new local store (e.g. a fresh install for an existing iCloud
-            // account), wait for the Watch List specifically to sync down before
-            // seeding, so we adopt the existing list instead of creating a duplicate.
-            // Devices that already have it locally seed/reconcile at once.
-            if MediaList.watchList(in: context) == nil {
-                SyncLog.logger.log("🌱 empty local store — waiting up to 6s for the Watch List to sync before seeding")
-                let arrived = await Self.waitForWatchList(in: context, timeout: .seconds(6))
-                SyncLog.logger.log("🌱 wait ended (\(arrived ? "Watch List arrived" : "timed out — seeding", privacy: .public))")
-            } else {
-                SyncLog.logger.log("🌱 existing local store — seeding/reconciling immediately")
-            }
-            store.seedWatchList()
-            // Prune any duplicates a prior session marked (past the grace period).
-            store.deduplicate()
-            SyncLog.snapshot("after seed", in: context)
-
-            // CloudKit imports from another device arrive after launch and can bring
-            // duplicate built-in lists. Reconcile whenever remote changes land,
-            // debounced so we act once a burst of imported records settles.
-            var debounce: Task<Void, Never>?
-            for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
-                debounce?.cancel()
-                debounce = Task {
-                    try? await Task.sleep(for: .seconds(2))
-                    guard !Task.isCancelled else { return }
-                    SyncLog.logger.log("🔁 remote change settled — reconciling")
-                    store.deduplicate()
-                    SyncLog.snapshot("after reconcile", in: context)
-                }
-            }
+            await store.bootstrap()
         }
-    }
-}
-
-extension RootView {
-    /// Waits for the Watch List to sync down from CloudKit (polling as records import
-    /// in the background), up to `timeout`, so a fresh device adopts the existing list
-    /// instead of seeding a duplicate. Returns `true` if it arrived.
-    ///
-    /// We poll for the list rather than "prioritize lists over movies" because
-    /// `NSPersistentCloudKitContainer` imports the whole zone and offers no way to
-    /// pull one record type before another — so we simply wait for the one we need.
-    @MainActor
-    static func waitForWatchList(in context: ModelContext, timeout: Duration) async -> Bool {
-        let start = ContinuousClock.now
-        while ContinuousClock.now - start < timeout {
-            if MediaList.watchList(in: context) != nil { return true }
-            try? await Task.sleep(for: .milliseconds(250))
-        }
-        return MediaList.watchList(in: context) != nil
     }
 }
 
 extension View {
-    /// Registers the shared movie/person navigation destinations on a stack.
-    func movieTrackerDestinations() -> some View {
+    /// Registers the shared movie/person detail destinations on a stack.
+    func detailDestinations() -> some View {
         self
             .navigationDestination(for: Movie.self) { movie in
                 MovieDetailView(movie: movie)

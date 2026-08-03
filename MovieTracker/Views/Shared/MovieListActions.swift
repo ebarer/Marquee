@@ -15,10 +15,9 @@ import SwiftData
 /// Leading-swipe action: toggle a movie's Watched state.
 struct WatchedSwipeButton: View {
     let movie: Movie
-    let context: ModelContext
     @Environment(MediaStore.self) private var store: MediaStore?
 
-    private var isWatched: Bool { MediaItem.isWatched(movie, in: context) }
+    private var isWatched: Bool { store?.isWatched(movie) ?? false }
 
     var body: some View {
         Button {
@@ -37,7 +36,6 @@ struct WatchedSwipeButton: View {
 /// Trailing-swipe action: add a movie to the Watch List.
 struct WatchListSwipeButton: View {
     let movie: Movie
-    let context: ModelContext
     @Environment(MediaStore.self) private var store: MediaStore?
 
     var body: some View {
@@ -57,18 +55,18 @@ struct WatchListSwipeButton: View {
 struct MovieContextMenu: ViewModifier {
     let movie: Movie
     let lists: [MediaList]
-    let context: ModelContext
+    @Environment(MediaStore.self) private var store: MediaStore?
 
-    private var watchList: MediaList? { lists.first { $0.isWatchList } }
-    private var customLists: [MediaList] { lists.filter { !$0.isWatchList } }
+    private var canonical: [MediaList] { store?.canonicalLists(lists) ?? lists }
+    private var watchList: MediaList? { canonical.first { $0.isWatchList } }
+    private var customLists: [MediaList] { canonical.filter { !$0.isWatchList } }
 
     func body(content: Content) -> some View {
         content.contextMenu {
             ListMembershipMenu(
                 movie: movie,
                 watchList: watchList,
-                customLists: customLists,
-                context: context
+                customLists: customLists
             )
         }
     }
@@ -76,8 +74,8 @@ struct MovieContextMenu: ViewModifier {
 
 extension View {
     /// Attaches the shared movie long-press menu (Watched + list membership).
-    func movieContextMenu(for movie: Movie, lists: [MediaList], context: ModelContext) -> some View {
-        modifier(MovieContextMenu(movie: movie, lists: lists, context: context))
+    func movieContextMenu(for movie: Movie, lists: [MediaList]) -> some View {
+        modifier(MovieContextMenu(movie: movie, lists: lists))
     }
 }
 
@@ -87,29 +85,28 @@ extension View {
         List {
             MovieRow(movie: .preview)
                 .swipeActions(edge: .leading) {
-                    WatchedSwipeButton(movie: .preview,
-                                       context: previewModelContainer.mainContext)
+                    WatchedSwipeButton(movie: .preview)
                 }
                 .swipeActions(edge: .trailing) {
-                    WatchListSwipeButton(movie: .preview,
-                                         context: previewModelContainer.mainContext)
+                    WatchListSwipeButton(movie: .preview)
                 }
-                .movieContextMenu(for: .preview, lists: [],
-                                  context: previewModelContainer.mainContext)
+                .movieContextMenu(for: .preview, lists: [])
         }
         .listStyle(.plain)
     }
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }
 
 #Preview("Buttons") {
     HStack(spacing: 24) {
-        WatchedSwipeButton(movie: .preview, context: previewModelContainer.mainContext)
-        WatchListSwipeButton(movie: .preview, context: previewModelContainer.mainContext)
+        WatchedSwipeButton(movie: .preview)
+        WatchListSwipeButton(movie: .preview)
     }
     .padding()
     .background(Color.appBackground)
     .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

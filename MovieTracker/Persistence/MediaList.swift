@@ -95,12 +95,15 @@ final class MediaList {
 // MARK: - Fetch / seed / dedup
 
 extension MediaList {
-    /// All live lists (duplicates awaiting cleanup excluded), in display order.
+    /// All canonical lists in display order: duplicates awaiting cleanup excluded and
+    /// any duplicate live Watch List collapsed to the canonical copy.
     static func all(in context: ModelContext) -> [MediaList] {
         let descriptor = FetchDescriptor<MediaList>(
             sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]
         )
-        return ((try? context.fetch(descriptor)) ?? []).filter { !$0.isDeduplicated }
+        let live = ((try? context.fetch(descriptor)) ?? []).filter { !$0.isDeduplicated }
+        guard let canonicalWatch = watchList(in: context) else { return live }
+        return live.filter { !$0.isWatchList || $0.uuid == canonicalWatch.uuid }
     }
 
     static func customLists(in context: ModelContext) -> [MediaList] {
@@ -130,17 +133,14 @@ extension MediaList {
     /// entry re-parent has time to sync and the delete can't race it.
     private static let deduplicationGracePeriod: TimeInterval = 30
 
-    /// Converges duplicate Watch Lists a CloudKit sync produced onto the **oldest**
-    /// one (created first; UUID breaks ties), so every device agrees. Two-phase and
-    /// CloudKit-safe:
-    ///  - **Merge:** move each live duplicate's entries onto the winner and *mark*
-    ///    the duplicate (hidden from the UI via `isDeduplicated`). It is not deleted
-    ///    yet.
-    ///  - **Prune:** delete a marked duplicate only once it's empty *and* its mark is
-    ///    older than the grace period — by then the re-parent has converged, so the
-    ///    `.cascade` delete drops nothing. Deleting a non-empty duplicate immediately
-    ///    could otherwise wipe entries on a device that applies the delete before the
-    ///    re-parent arrives.
+    /// Converges duplicate Watch Lists onto the oldest (UUID breaks ties) so every
+    /// device agrees. Two-phase, CloudKit-safe:
+    ///  - **Merge:** re-parent each duplicate's entries onto the winner, then mark
+    ///    the duplicate (hidden via `isDeduplicated`) — not deleted yet.
+    ///  - **Prune:** delete a marked duplicate only once empty and past the grace
+    ///    period, by when the re-parent has converged so the cascade drops nothing.
+    ///    Deleting sooner could wipe entries on a device that applies the delete
+    ///    before the re-parent arrives.
     @discardableResult
     static func deduplicateWatchList(in context: ModelContext) -> Bool {
         let watchLists = ((try? context.fetch(FetchDescriptor<MediaList>())) ?? [])

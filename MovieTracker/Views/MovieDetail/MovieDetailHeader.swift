@@ -13,7 +13,6 @@ struct MovieDetailHeader: View {
     let movie: Movie
     let tint: Color
     let lists: [MediaList]
-    let context: ModelContext
     let imageHeight: CGFloat
     let headerHeight: CGFloat
     let width: CGFloat
@@ -109,8 +108,7 @@ struct MovieDetailHeader: View {
                         .foregroundStyle(tint)
                 }
 
-                MovieActionBar(movie: movie, lists: lists, context: context,
-                               tint: tint, isSeen: $isSeen)
+                MovieActionBar(movie: movie, lists: lists, tint: tint, isSeen: $isSeen)
                     .padding(.top, 2)
             }
 
@@ -146,11 +144,12 @@ struct MovieDetailHeader: View {
 #Preview {
     ScrollView {
         MovieDetailHeader(movie: .preview, tint: .appAccent, lists: [],
-                          context: previewModelContainer.mainContext,
                           imageHeight: 340, headerHeight: 400, width: 393, navBarBottom: 100,
                           showNavTitle: .constant(false), isSeen: .constant(false))
     }
     .coordinateSpace(name: "scroll")
     .background(Color.appBackground)
+    .modelContainer(previewModelContainer)
+    .environment(MediaStore(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }
