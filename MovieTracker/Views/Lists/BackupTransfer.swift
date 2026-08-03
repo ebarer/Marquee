@@ -6,42 +6,38 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The file exporter, importer, and their result alerts, kept out of
-/// `ListsView.body` so its main modifier chain stays type-checkable.
+/// Surfaces the `ImportExportCoordinator`'s state as file pickers, a progress
+/// overlay, and result alerts — the SwiftUI presentation that can't live on the
+/// coordinator itself. Kept out of `ListManagerView.body` so its modifier chain
+/// stays type-checkable. `onImport` is a closure because handling a picked file
+/// needs the store, which the view holds.
 struct BackupTransferModifier: ViewModifier {
-    @Binding var showExporter: Bool
-    @Binding var showImporter: Bool
-    let exportDocument: LibraryBackupDocument?
-    let exportFilename: String
-    @Binding var importSummary: ImportSummary?
-    @Binding var transferError: String?
-    /// Non-nil while a CSV import is fetching movie details, as `(fetched, total)`.
-    let importProgress: (done: Int, total: Int)?
+    @Bindable var coordinator = ImportExportCoordinator.shared
     let onImport: (Result<URL, Error>) -> Void
 
     func body(content: Content) -> some View {
         content
-            .fileExporter(isPresented: $showExporter, document: exportDocument,
-                          contentType: .json, defaultFilename: exportFilename) { result in
+            .fileExporter(isPresented: $coordinator.showExporter, document: coordinator.exportDocument,
+                          contentType: .json, defaultFilename: coordinator.exportFilename) { result in
                 if case .failure(let error) = result {
-                    transferError = error.localizedDescription
+                    coordinator.transferError = error.localizedDescription
                 }
             }
             // JSON is the app's own backup format; CSV is a TodoMovies export.
-            .fileImporter(isPresented: $showImporter,
+            .fileImporter(isPresented: $coordinator.showImporter,
                           allowedContentTypes: [.json, .commaSeparatedText],
                           onCompletion: onImport)
             .overlay {
-                if let importProgress {
-                    ImportProgressOverlay(done: importProgress.done, total: importProgress.total)
+                if let progress = coordinator.importProgress {
+                    ImportProgressOverlay(done: progress.done, total: progress.total)
                 }
             }
-            .alert("Import Complete", isPresented: importCompleteBinding, presenting: importSummary) { _ in
+            .alert("Import Complete", isPresented: importCompleteBinding, presenting: coordinator.importSummary) { _ in
                 Button("OK", role: .cancel) {}
             } message: { summary in
                 Text(summary.message)
             }
-            .alert("Something Went Wrong", isPresented: transferErrorBinding, presenting: transferError) { _ in
+            .alert("Something Went Wrong", isPresented: transferErrorBinding, presenting: coordinator.transferError) { _ in
                 Button("OK", role: .cancel) {}
             } message: { message in
                 Text(message)
@@ -49,11 +45,11 @@ struct BackupTransferModifier: ViewModifier {
     }
 
     private var importCompleteBinding: Binding<Bool> {
-        Binding(get: { importSummary != nil }, set: { if !$0 { importSummary = nil } })
+        Binding(get: { coordinator.importSummary != nil }, set: { if !$0 { coordinator.importSummary = nil } })
     }
 
     private var transferErrorBinding: Binding<Bool> {
-        Binding(get: { transferError != nil }, set: { if !$0 { transferError = nil } })
+        Binding(get: { coordinator.transferError != nil }, set: { if !$0 { coordinator.transferError = nil } })
     }
 }
 

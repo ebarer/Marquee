@@ -27,14 +27,10 @@ struct ListManagerView: View {
     @State private var editing: MediaList?
     @State private var creatingNew = false
 
-    /// Owns the backup import/export workflow and its presentation state.
-    @State private var transfer = ImportExportCoordinator()
-
     private static let separator = Color.white.opacity(0.25)
 
     var body: some View {
-        @Bindable var transfer = transfer
-        return NavigationStack {
+        NavigationStack {
             List {
                 // Built-in views pinned at the top — shown for context, not editable.
                 Section {
@@ -73,13 +69,13 @@ struct ListManagerView: View {
                 // with the app version pinned to the footer.
                 Section {
                     Button {
-                        transfer.showImporter = true
+                        ImportExportCoordinator.shared.showImporter = true
                     } label: {
                         Label("Import", systemImage: "square.and.arrow.down")
                             .foregroundStyle(Color.appAccent)
                     }
                     Button {
-                        if let store { transfer.prepareExport(using: store) }
+                        if let store { ImportExportCoordinator.shared.prepareExport(using: store) }
                     } label: {
                         Label("Export", systemImage: "square.and.arrow.up")
                             .foregroundStyle(Color.appAccent)
@@ -123,14 +119,9 @@ struct ListManagerView: View {
                 }
             }
             .modifier(BackupTransferModifier(
-                showExporter: $transfer.showExporter,
-                showImporter: $transfer.showImporter,
-                exportDocument: transfer.exportDocument,
-                exportFilename: transfer.exportFilename,
-                importSummary: $transfer.importSummary,
-                transferError: $transfer.transferError,
-                importProgress: transfer.importProgress,
-                onImport: { result in if let store { transfer.handleImport(result, using: store) } }
+                onImport: { result in
+                    if let store { ImportExportCoordinator.shared.handleImport(result, using: store) }
+                }
             ))
         }
     }

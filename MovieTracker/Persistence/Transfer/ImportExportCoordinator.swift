@@ -8,9 +8,15 @@ import SwiftUI
 /// Owns the backup import/export workflow — choosing files, merging archives/CSV,
 /// and the presentation state the sheets and alerts bind to. Keeps that business
 /// logic out of `ListManagerView`, which just presents what this exposes.
+///
+/// A shared singleton so any surface can trigger a backup without threading an
+/// instance through; the store is still passed per call (the view holds it).
 @MainActor
 @Observable
 final class ImportExportCoordinator {
+    static let shared = ImportExportCoordinator()
+    private init() {}
+
     var showExporter = false
     var showImporter = false
     private(set) var exportDocument: LibraryBackupDocument?
