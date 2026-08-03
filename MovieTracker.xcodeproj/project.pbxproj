@@ -212,7 +212,6 @@
 				CE569761301C1A9F00DF9142 /* WatchedSortKey.swift */,
 				CE8C0C94301AFEDA00F08C6A /* ListEditorView.swift */,
 				CE822F4B301D13DF0070F69B /* ListManagerView.swift */,
-				CEB8A46C301F0CFE002FBF31 /* ListSections.swift */,
 				CEB8A482301F1C1B002FBF31 /* BackupTransfer.swift */,
 				CEB8A484301F1C32002FBF31 /* ListsToolbar.swift */,
 				CEB8A486301F1C6C002FBF31 /* ListRows.swift */,
@@ -303,6 +302,7 @@
 				CEB8A48C301F2EDF002FBF31 /* ListEntry.swift */,
 				CEB8A462301E8BA2002FBF31 /* CloudSyncMonitor.swift */,
 				CEB8A468301EE5E1002FBF31 /* SyncLog.swift */,
+				CEB8A46C301F0CFE002FBF31 /* ListSections.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -654,7 +654,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.2.9;
+				CURRENT_PROJECT_VERSION = 2026.8.2.11;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -677,7 +677,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.2.9;
+				CURRENT_PROJECT_VERSION = 2026.8.2.11;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (

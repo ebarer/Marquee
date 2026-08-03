@@ -48,12 +48,23 @@ final class PersistenceCoordinator {
         save()
     }
 
-    /// The backing container, for the background `SectionBuilder`. Views reach the
-    /// coordinator, never the raw `ModelContext`.
-    var container: ModelContainer { context.container }
-
     func insert(_ model: any PersistentModel) { context.insert(model); save() }
     func delete(_ model: any PersistentModel) { context.delete(model); save() }
+
+    // MARK: - Grouped sections (Lists screen)
+
+    /// Background reader for the Lists screen's grouped rows. Created lazily and
+    /// reused; its fetches run off the main actor on the `@ModelActor`'s own context.
+    @ObservationIgnored private var sectionBuilder: SectionBuilder?
+
+    /// Builds the month/year section snapshots for a list view off the main actor.
+    /// Callers ask the coordinator instead of holding a `ModelContainer` or building
+    /// a `SectionBuilder` themselves.
+    func sections(for source: SectionSource, ascending: Bool, filter: String) async -> [SectionSnapshot] {
+        let builder = sectionBuilder ?? SectionBuilder(modelContainer: context.container)
+        sectionBuilder = builder
+        return await builder.build(source: source, ascending: ascending, filter: filter)
+    }
 
     // MARK: - Maintenance (launch)
 

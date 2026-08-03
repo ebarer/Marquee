@@ -4,10 +4,9 @@
 //
 
 import SwiftUI
-import SwiftData
 
-/// Owns the Lists screen's month/year section building: it drives the background
-/// `SectionBuilder` and holds the resulting snapshots, so `ListsView` stays layout.
+/// Holds the Lists screen's month/year section snapshots and asks the coordinator
+/// to (re)build them, so `ListsView` stays layout.
 @MainActor
 @Observable
 final class ListSectionsModel {
@@ -15,8 +14,6 @@ final class ListSectionsModel {
     /// The input the current `sections` were built for. Lets the view suppress the
     /// empty state during the async rebuild after a selection change (so it doesn't flash).
     private(set) var loadedInput: Input?
-
-    private var builder: SectionBuilder?
 
     /// Everything a build depends on. Bumping `version` forces a rebuild after a
     /// silent edit (e.g. a watched-date change) that doesn't alter `count`.
@@ -34,10 +31,7 @@ final class ListSectionsModel {
             loadedInput = input
             return
         }
-        let builder = builder ?? SectionBuilder(modelContainer: store.container)
-        self.builder = builder
-
-        let result = await builder.build(source: source, ascending: input.ascending, filter: input.filter)
+        let result = await store.sections(for: source, ascending: input.ascending, filter: input.filter)
         guard !Task.isCancelled else { return }
         sections = result
         loadedInput = input
