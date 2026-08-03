@@ -5,7 +5,6 @@
 
 import SwiftUI
 import SwiftData
-import CoreData
 
 struct ListsView: View {
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -26,9 +25,6 @@ struct ListsView: View {
 
     /// Builds and holds the month/year section snapshots off the main actor.
     @State private var sectionsModel = ListSectionsModel()
-    /// Bumped on any store change so the sections rebuild even when a count is
-    /// unchanged (e.g. a watched-date edit).
-    @State private var dataVersion = 0
     @State private var filterText = ""
 
     @AppStorage("watchedListAscending") private var watchedAscending = false
@@ -124,21 +120,6 @@ struct ListsView: View {
             ListManagerView()
         }
         .task(id: sectionsInput) { await sectionsModel.rebuild(for: sectionsInput, store: store) }
-        // A local save (e.g. a watched-date edit) that doesn't change a count still
-        // needs a rebuild. The main context is the only writer (the SectionBuilder
-        // only reads), so no object filter is needed — and ModelContext isn't
-        // Sendable to pass as one.
-        .task {
-            for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave) {
-                dataVersion &+= 1
-            }
-        }
-        // A CloudKit import lands as a remote store change with no local save.
-        .task {
-            for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
-                dataVersion &+= 1
-            }
-        }
         .onAppear { selectDefaultIfNeeded() }
         .onChange(of: lists.count) { _, _ in selectDefaultIfNeeded() }
         .onChange(of: selection) { _, _ in sectionsModel.clear() }
@@ -209,10 +190,12 @@ struct ListsView: View {
     // MARK: - Data
 
     /// The current build input; `sectionSource` already encodes the selection and
-    /// watched-sort key, `dataVersion` forces a rebuild after a silent edit.
+    /// watched-sort key, and the store's `revision` forces a rebuild after a silent
+    /// edit (or CloudKit import) that leaves the count unchanged.
     private var sectionsInput: ListSectionsModel.Input {
         ListSectionsModel.Input(source: sectionSource, count: movieCount,
-                                ascending: currentAscending, filter: filterText, version: dataVersion)
+                                ascending: currentAscending, filter: filterText,
+                                version: store?.revision ?? 0)
     }
 }
 

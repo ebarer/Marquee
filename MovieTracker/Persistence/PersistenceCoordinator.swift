@@ -21,6 +21,12 @@ import CoreData
 final class PersistenceCoordinator {
     let context: ModelContext
 
+    /// Increments on every persisted change — a local save or a CloudKit import.
+    /// Views observe this instead of subscribing to store notifications themselves,
+    /// so a mutation that doesn't alter a `@Query` (e.g. a watched-date edit) still
+    /// drives a refresh.
+    private(set) var revision = 0
+
     init(_ context: ModelContext) {
         self.context = context
     }
@@ -29,6 +35,7 @@ final class PersistenceCoordinator {
         guard context.hasChanges else { return }
         do {
             try context.save()
+            revision &+= 1
         } catch {
             SyncLog.logger.error("💾 save failed: \(error, privacy: .public)")
         }
@@ -89,6 +96,7 @@ final class PersistenceCoordinator {
     private func reconcileOnRemoteChanges() async {
         var debounce: Task<Void, Never>?
         for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
+            revision &+= 1   // a CloudKit import landed — nudge observers to refresh
             debounce?.cancel()
             debounce = Task {
                 try? await Task.sleep(for: .seconds(2))
