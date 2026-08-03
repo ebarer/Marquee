@@ -24,7 +24,7 @@ struct RootView: View {
     @State private var syncMonitor = CloudSyncMonitor()
 
     /// The single writer for the store, shared with the whole scene.
-    @State private var store = MediaStore(RootView.sharedContainer.mainContext)
+    @State private var store = PersistenceCoordinator(RootView.sharedContainer.mainContext)
 
     // Search state is shared with the search tab. The query lives on the model
     // so tapping a recent search can repopulate the field.

@@ -71,6 +71,6 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
         .detailDestinations()
     }
     .modelContainer(previewModelContainer)
-    .environment(MediaStore(previewModelContainer.mainContext))
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

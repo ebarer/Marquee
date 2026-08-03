@@ -49,5 +49,5 @@ struct PosterStrip: View {
     PosterStrip(movies: Movie.previewList, lists: [], showsYear: true)
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
-        .environment(MediaStore(previewModelContainer.mainContext))
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
 }

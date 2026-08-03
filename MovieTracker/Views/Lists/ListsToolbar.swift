@@ -61,7 +61,7 @@ struct ListDestination {
 
     /// Movie count for this view — list entries, or the derived Watched / Viewed counts.
     @MainActor
-    func movieCount(using store: MediaStore?) -> Int {
+    func movieCount(using store: PersistenceCoordinator?) -> Int {
         switch selection {
         case .list: return (list?.entries ?? []).count
         case .watched: return store?.watchedCount ?? 0

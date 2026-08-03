@@ -12,7 +12,7 @@ struct WatchedDateButton: View {
     let movie: Movie
     let tint: Color
 
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     /// Defaults to today for items that predate watched-date tracking (only
     /// persisted once the user picks a date).
     @State private var date: Date
@@ -74,7 +74,7 @@ struct WatchedDateButton: View {
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
-        .environment(MediaStore(previewModelContainer.mainContext))
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }
 
@@ -83,6 +83,6 @@ struct WatchedDateButton: View {
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
-        .environment(MediaStore(previewModelContainer.mainContext))
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }

@@ -13,7 +13,7 @@ struct ListRows: View {
     let selection: ListSelection
     let lists: [MediaList]
     let listColor: Color
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     private var isWatchList: Bool {
         if case .list(let uuid) = selection { return lists.first { $0.uuid == uuid }?.isWatchList == true }
@@ -114,5 +114,5 @@ struct ListRows: View {
     ListRows(sections: [], selection: .watched, lists: [], listColor: .appAccent)
         .listStyle(.plain)
         .modelContainer(previewModelContainer)
-        .environment(MediaStore(previewModelContainer.mainContext))
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
 }

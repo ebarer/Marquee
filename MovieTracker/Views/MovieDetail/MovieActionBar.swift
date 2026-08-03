@@ -15,7 +15,7 @@ struct MovieActionBar: View {
     let tint: Color
     @Binding var isSeen: Bool
 
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Namespace private var glassNamespace
     @State private var tracked = false
     @State private var wasOnWatchList = false
@@ -151,7 +151,7 @@ private struct ListPickerPopover: View {
     let lists: [MediaList]
     let tint: Color
 
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @State private var contentHeight: CGFloat = 0
     private static let maxHeight: CGFloat = 320
 
@@ -199,7 +199,7 @@ private struct ListPickerPopover: View {
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
-        .environment(MediaStore(previewModelContainer.mainContext))
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
 }
 
 #Preview("Seen") {
@@ -207,5 +207,5 @@ private struct ListPickerPopover: View {
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
-        .environment(MediaStore(previewModelContainer.mainContext))
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
 }

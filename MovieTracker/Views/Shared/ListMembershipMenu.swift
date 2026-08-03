@@ -13,7 +13,7 @@ struct ListMembershipMenu: View {
     let movie: Movie
     let watchList: MediaList?
     let customLists: [MediaList]
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     /// Called after any change (e.g. to refresh derived UI state).
     var onChange: () -> Void = {}
 
@@ -68,5 +68,5 @@ struct ListMembershipMenu: View {
     }
     .padding()
     .modelContainer(previewModelContainer)
-    .environment(MediaStore(context))
+    .environment(PersistenceCoordinator(context))
 }

@@ -15,7 +15,7 @@ import SwiftData
 /// Leading-swipe action: toggle a movie's Watched state.
 struct WatchedSwipeButton: View {
     let movie: Movie
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     private var isWatched: Bool { store?.isWatched(movie) ?? false }
 
@@ -36,7 +36,7 @@ struct WatchedSwipeButton: View {
 /// Trailing-swipe action: add a movie to the Watch List.
 struct WatchListSwipeButton: View {
     let movie: Movie
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     var body: some View {
         Button {
@@ -55,7 +55,7 @@ struct WatchListSwipeButton: View {
 struct MovieContextMenu: ViewModifier {
     let movie: Movie
     let lists: [MediaList]
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     private var canonical: [MediaList] { store?.canonicalLists(lists) ?? lists }
     private var watchList: MediaList? { canonical.first { $0.isWatchList } }
@@ -95,7 +95,7 @@ extension View {
         .listStyle(.plain)
     }
     .modelContainer(previewModelContainer)
-    .environment(MediaStore(previewModelContainer.mainContext))
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }
 
@@ -107,6 +107,6 @@ extension View {
     .padding()
     .background(Color.appBackground)
     .modelContainer(previewModelContainer)
-    .environment(MediaStore(previewModelContainer.mainContext))
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

@@ -171,6 +171,6 @@ struct PersonFilmography: View {
     }
     .background(Color.appBackground)
     .modelContainer(previewModelContainer)
-    .environment(MediaStore(previewModelContainer.mainContext))
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

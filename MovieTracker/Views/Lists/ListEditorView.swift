@@ -12,7 +12,7 @@ import SwiftUI
 import SwiftData
 
 struct ListEditorView: View {
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Environment(\.dismiss) private var dismiss
 
     /// The list being edited, or `nil` when creating a new one.

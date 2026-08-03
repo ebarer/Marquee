@@ -169,7 +169,7 @@ extension CSVMovieRecord {
     /// the Watch List. `progress` is reported as `(fetched, total)` on the main actor.
     @MainActor
     static func merge(_ records: [CSVMovieRecord],
-                      using store: MediaStore,
+                      using store: PersistenceCoordinator,
                       progress: (Int, Int) -> Void) async -> ImportSummary {
         var summary = ImportSummary()
         let context = store.context

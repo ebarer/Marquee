@@ -15,7 +15,7 @@ struct ListManagerView: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
     @Query private var trackedItems: [MediaItem]
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     private var visibleLists: [MediaList] { lists.filter { !$0.isDeduplicated } }
     private var watchList: MediaList? { visibleLists.first { $0.isWatchList } }
@@ -239,6 +239,6 @@ struct ListManagerView: View {
 #Preview {
     ListManagerView()
         .modelContainer(previewModelContainer)
-        .environment(MediaStore(previewModelContainer.mainContext))
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }

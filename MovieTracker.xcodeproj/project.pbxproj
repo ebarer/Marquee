@@ -25,6 +25,8 @@
 		CE569768301C71FF00DF9142 /* MovieListActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE569767301C71FF00DF9142 /* MovieListActions.swift */; };
 		CE56977C301C824D00DF9142 /* MovieListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE56977B301C824D00DF9142 /* MovieListRow.swift */; };
 		CE73B02A3020290200FA5FD6 /* ImportExportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE73B0293020290200FA5FD6 /* ImportExportCoordinator.swift */; };
+		CE73B02C30202AD700FA5FD6 /* PersistenceCoordinator+Lists.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE73B02B30202AD700FA5FD6 /* PersistenceCoordinator+Lists.swift */; };
+		CE73B02E30202AE600FA5FD6 /* PersistenceCoordinator+Media.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE73B02D30202AE600FA5FD6 /* PersistenceCoordinator+Media.swift */; };
 		CE78BD5320C087F2001E6DB6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE78BD5220C087F2001E6DB6 /* AppDelegate.swift */; };
 		CE78BD8420C112D8001E6DB6 /* Movie.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE78BD8320C112D8001E6DB6 /* Movie.swift */; };
 		CE8041A7301D441300F5D6F2 /* EmojiField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8041A6301D441300F5D6F2 /* EmojiField.swift */; };
@@ -57,7 +59,7 @@
 		CEB8A48B301F2ED5002FBF31 /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A48A301F2ED5002FBF31 /* MediaItem.swift */; };
 		CEB8A48D301F2EDF002FBF31 /* ListEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A48C301F2EDF002FBF31 /* ListEntry.swift */; };
 		CEB8A48F301F2F12002FBF31 /* MediaList.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A48E301F2F12002FBF31 /* MediaList.swift */; };
-		CEB8A491301F3739002FBF31 /* MediaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A490301F3739002FBF31 /* MediaStore.swift */; };
+		CEB8A491301F3739002FBF31 /* PersistenceCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8A490301F3739002FBF31 /* PersistenceCoordinator.swift */; };
 		CEDA8BC121997F2A006BB3CD /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEDA8BC021997F2A006BB3CD /* Person.swift */; };
 		CEDA8BC321997F71006BB3CD /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEDA8BC221997F71006BB3CD /* String+Extension.swift */; };
 		CEEAFCDF3019D0A900D06E0E /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCDE3019D0A900D06E0E /* SceneDelegate.swift */; };
@@ -92,6 +94,8 @@
 		CE569767301C71FF00DF9142 /* MovieListActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieListActions.swift; sourceTree = "<group>"; };
 		CE56977B301C824D00DF9142 /* MovieListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieListRow.swift; sourceTree = "<group>"; };
 		CE73B0293020290200FA5FD6 /* ImportExportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportCoordinator.swift; sourceTree = "<group>"; };
+		CE73B02B30202AD700FA5FD6 /* PersistenceCoordinator+Lists.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceCoordinator+Lists.swift"; sourceTree = "<group>"; };
+		CE73B02D30202AE600FA5FD6 /* PersistenceCoordinator+Media.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceCoordinator+Media.swift"; sourceTree = "<group>"; };
 		CE78BD4F20C087F2001E6DB6 /* Marquee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marquee.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE78BD5220C087F2001E6DB6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		CE78BD8320C112D8001E6DB6 /* Movie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Movie.swift; sourceTree = "<group>"; };
@@ -124,7 +128,7 @@
 		CEB8A48A301F2ED5002FBF31 /* MediaItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaItem.swift; sourceTree = "<group>"; };
 		CEB8A48C301F2EDF002FBF31 /* ListEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListEntry.swift; sourceTree = "<group>"; };
 		CEB8A48E301F2F12002FBF31 /* MediaList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaList.swift; sourceTree = "<group>"; };
-		CEB8A490301F3739002FBF31 /* MediaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaStore.swift; sourceTree = "<group>"; };
+		CEB8A490301F3739002FBF31 /* PersistenceCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceCoordinator.swift; sourceTree = "<group>"; };
 		CEDA8BC021997F2A006BB3CD /* Person.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Person.swift; sourceTree = "<group>"; };
 		CEDA8BC221997F71006BB3CD /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
 		CEEAFCDE3019D0A900D06E0E /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -279,10 +283,12 @@
 			isa = PBXGroup;
 			children = (
 				CE73B028301F420200FA5FD6 /* Transfer */,
+				CEB8A490301F3739002FBF31 /* PersistenceCoordinator.swift */,
+				CE73B02D30202AE600FA5FD6 /* PersistenceCoordinator+Media.swift */,
+				CE73B02B30202AD700FA5FD6 /* PersistenceCoordinator+Lists.swift */,
 				CEB8A48A301F2ED5002FBF31 /* MediaItem.swift */,
-				CEB8A48C301F2EDF002FBF31 /* ListEntry.swift */,
 				CEB8A48E301F2F12002FBF31 /* MediaList.swift */,
-				CEB8A490301F3739002FBF31 /* MediaStore.swift */,
+				CEB8A48C301F2EDF002FBF31 /* ListEntry.swift */,
 				CEB8A462301E8BA2002FBF31 /* CloudSyncMonitor.swift */,
 				CEB8A468301EE5E1002FBF31 /* SyncLog.swift */,
 			);
@@ -292,9 +298,9 @@
 		CE73B028301F420200FA5FD6 /* Transfer */ = {
 			isa = PBXGroup;
 			children = (
+				CE73B0293020290200FA5FD6 /* ImportExportCoordinator.swift */,
 				CE822F47301CB8C40070F69B /* LibraryBackup.swift */,
 				CE8041C3301DA82D00F5D6F2 /* CSVImport.swift */,
-				CE73B0293020290200FA5FD6 /* ImportExportCoordinator.swift */,
 			);
 			path = Transfer;
 			sourceTree = "<group>";
@@ -430,6 +436,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE73B02E30202AE600FA5FD6 /* PersistenceCoordinator+Media.swift in Sources */,
+				CE73B02C30202AD700FA5FD6 /* PersistenceCoordinator+Lists.swift in Sources */,
 				CEB8A489301F2E97002FBF31 /* MediaType.swift in Sources */,
 				CE56974A301C198500DF9142 /* PreviewData.swift in Sources */,
 				CE569760301C1A6800DF9142 /* FeaturedModel.swift in Sources */,
@@ -453,7 +461,7 @@
 				CE56977C301C824D00DF9142 /* MovieListRow.swift in Sources */,
 				CE8041C4301DA82D00F5D6F2 /* CSVImport.swift in Sources */,
 				CE56974E301C199F00DF9142 /* ProfileImage.swift in Sources */,
-				CEB8A491301F3739002FBF31 /* MediaStore.swift in Sources */,
+				CEB8A491301F3739002FBF31 /* PersistenceCoordinator.swift in Sources */,
 				CE78BD8420C112D8001E6DB6 /* Movie.swift in Sources */,
 				CEB8A469301EE5E1002FBF31 /* SyncLog.swift in Sources */,
 				CE822F4E301D1B450070F69B /* ListIcon.swift in Sources */,
@@ -630,7 +638,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.2.6;
+				CURRENT_PROJECT_VERSION = 2026.8.2.7;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -653,7 +661,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.2.6;
+				CURRENT_PROJECT_VERSION = 2026.8.2.7;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (

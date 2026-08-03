@@ -8,7 +8,7 @@ import SwiftData
 import CoreData
 
 struct ListsView: View {
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     /// Present only when running inside the app (absent in previews).
     @Environment(CloudSyncMonitor.self) private var syncMonitor: CloudSyncMonitor?
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
@@ -271,7 +271,7 @@ struct ListsView: View {
             .detailDestinations()
     }
     .modelContainer(previewModelContainer)
-    .environment(MediaStore(previewModelContainer.mainContext))
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .environment(CloudSyncMonitor(isSyncing: false))
     .preferredColorScheme(.dark)
 }
@@ -282,7 +282,7 @@ struct ListsView: View {
             .detailDestinations()
     }
     .modelContainer(previewModelContainer)
-    .environment(MediaStore(previewModelContainer.mainContext))
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .environment(CloudSyncMonitor(isSyncing: true))
     .preferredColorScheme(.dark)
 }

@@ -17,7 +17,7 @@ struct MovieDetailView: View {
         self.movieTitle = movie.title
     }
 
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
     @State private var model = MovieDetailModel()
@@ -107,6 +107,6 @@ struct MovieDetailView: View {
         MovieDetailView(movie: .preview)
     }
     .modelContainer(previewModelContainer)
-    .environment(MediaStore(previewModelContainer.mainContext))
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

@@ -16,7 +16,7 @@ struct MovieMetadataStrip: View {
     /// animates when the status changes.
     var isWatched: Bool = false
 
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     var body: some View {
         VStack(spacing: 0) {

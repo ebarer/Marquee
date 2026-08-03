@@ -12,7 +12,7 @@ struct StarRating: View {
     let movie: Movie
     let tint: Color
 
-    @Environment(MediaStore.self) private var store: MediaStore?
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     /// In stars, 0.5-step (0 = unrated).
     @State private var rating: Double
     /// The rating when the gesture began, so a stationary tap toggles against the
@@ -98,7 +98,7 @@ struct StarRating: View {
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
-        .environment(MediaStore(previewModelContainer.mainContext))
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }
 
@@ -107,6 +107,6 @@ struct StarRating: View {
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
-        .environment(MediaStore(previewModelContainer.mainContext))
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
         .preferredColorScheme(.dark)
 }

@@ -218,7 +218,7 @@ extension LibraryBackup {
     /// entries set each title's `MediaItem` facts. Nothing existing is modified.
     @MainActor
     @discardableResult
-    static func merge(_ archive: LibraryBackup, using store: MediaStore) -> ImportSummary {
+    static func merge(_ archive: LibraryBackup, using store: PersistenceCoordinator) -> ImportSummary {
         var summary = ImportSummary()
         let context = store.context
 
@@ -257,7 +257,7 @@ extension LibraryBackup {
 
     @MainActor
     private static func target(_ archived: LibraryBackup.List, isWatchList: Bool,
-                               using store: MediaStore, summary: inout ImportSummary) -> MediaList? {
+                               using store: PersistenceCoordinator, summary: inout ImportSummary) -> MediaList? {
         if isWatchList { return store.watchList }
         if let existing = MediaList.all(in: store.context).first(where: { $0.uuid == archived.uuid }) {
             return existing

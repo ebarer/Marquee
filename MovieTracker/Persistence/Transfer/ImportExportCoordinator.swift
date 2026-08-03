@@ -26,13 +26,13 @@ final class ImportExportCoordinator {
         return "MovieTracker Backup \(stamp).json"
     }
 
-    func prepareExport(using store: MediaStore) {
-        exportDocument = LibraryBackupDocument(archive: store.exportArchive())
+    func prepareExport(using store: PersistenceCoordinator) {
+        exportDocument = LibraryBackupDocument(archive: LibraryBackup.export(from: store.context))
         showExporter = true
     }
 
     /// Routes a picked file to the archive or CSV importer by extension.
-    func handleImport(_ result: Result<URL, Error>, using store: MediaStore) {
+    func handleImport(_ result: Result<URL, Error>, using store: PersistenceCoordinator) {
         switch result {
         case .success(let url):
             if url.pathExtension.lowercased() == "csv" {
@@ -45,7 +45,7 @@ final class ImportExportCoordinator {
         }
     }
 
-    private func importArchive(from url: URL, using store: MediaStore) {
+    private func importArchive(from url: URL, using store: PersistenceCoordinator) {
         do {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
@@ -56,7 +56,7 @@ final class ImportExportCoordinator {
         }
     }
 
-    private func importCSV(from url: URL, using store: MediaStore) {
+    private func importCSV(from url: URL, using store: PersistenceCoordinator) {
         let records: [CSVMovieRecord]
         do {
             let scoped = url.startAccessingSecurityScopedResource()
