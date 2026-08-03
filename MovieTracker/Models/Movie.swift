@@ -117,6 +117,14 @@ extension Movie {
         case w1280 = "w1280"
         case orig  = "original"
     }
+
+    func posterURL(_ size: PosterSize = .w342) -> URL? {
+        TMDBWrapper.imageURL(path: poster, size: size.rawValue)
+    }
+
+    func backgroundURL(_ size: BackgroundSize = .w1280) -> URL? {
+        TMDBWrapper.imageURL(path: background, size: size.rawValue)
+    }
 }
 
 struct MovieTrailer: Identifiable {

@@ -60,4 +60,8 @@ extension Person {
         case w276 = "w276_and_h350_face"
         case orig = "original"
     }
+
+    func profileURL(_ size: ProfileSize = .w276) -> URL? {
+        TMDBWrapper.imageURL(path: profilePicture, size: size.rawValue)
+    }
 }
