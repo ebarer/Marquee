@@ -66,6 +66,9 @@ struct ListIcon: View {
     /// grow without the symbol growing with it; defaults proportional to the
     /// circle, leaving even padding on all sides.
     var symbolSize: CGFloat?
+    /// Size the glyph by point size instead of fitting its bounding box, matching
+    /// how the symbol picker renders and keeping differing shapes visually even.
+    var opticalGlyph: Bool = false
 
     var body: some View {
         Group {
@@ -74,6 +77,10 @@ struct ListIcon: View {
                 // (not the SF `symbolSize`) to fill it like the reference.
                 Text(symbol)
                     .font(.system(size: size * 0.72))
+            } else if opticalGlyph {
+                Image(systemName: ListSymbol.solid(symbol))
+                    .font(.system(size: glyphExtent, weight: .semibold))
+                    .foregroundStyle(.white)
             } else {
                 // Fit every symbol into the same square box regardless of its
                 // intrinsic shape, so a tall `bookmark.fill` and a wide

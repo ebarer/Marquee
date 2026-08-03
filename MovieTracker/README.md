@@ -1,19 +1,15 @@
 # To-Do
 
 Important:
-- [ ] App crashes when trying to use an emoji for a list icon
+- [ ] Add badges to grid view to indicate list association
 
 Smaller/Cosmetic:
 - [ ] In Lists, remove the + button, just have the list button in the top left
-- [ ] Bulk update date watched?
+- [ ] Add access to additional photos for people?
 
 Ideas:
-- [ ] Fix custom colors and offer color picker in first slot
-- [ ] Support landscape?
-- [ ] Add badges to grid view to indicate list association
-- [ ] Store more information offline (local cache) so the app can be used without internet
-- [ ] Add TV shows
 - [ ] Unify search
-- [ ] Add more symbols for lists (cloud?, lamp?)
+- [ ] Support landscape?
+- [ ] Store more information offline (local cache) so the app can be used without internet
 - [ ] Share lists
-- [ ] Add access to additional photos for people?
+- [ ] Add TV shows

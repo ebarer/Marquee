@@ -18,6 +18,10 @@ final class MediaList {
     var symbol: String = "list.bullet"
     /// Index into `Color.listPalette` for a custom list's tint.
     var colorIndex: Int = 0
+    /// A `#RRGGBB` custom tint chosen via the color picker; takes precedence over
+    /// `colorIndex` when set. Optional so CloudKit stays happy and older data still
+    /// falls back to the palette.
+    var customColorHex: String?
     var sortOrder: Int = 0
     var createdAt: Date = Date()
     /// Remembered per-list sort direction (moved off UserDefaults so it syncs).
@@ -53,8 +57,13 @@ final class MediaList {
         set { sortKeyRaw = newValue.rawValue }
     }
 
-    /// The Watch List carries the brand accent; custom lists their palette color.
-    var color: Color { isWatchList ? .appAccent : Color.listColor(colorIndex) }
+    /// The Watch List carries the brand accent; custom lists a custom tint when set,
+    /// otherwise their palette color.
+    var color: Color {
+        if isWatchList { return .appAccent }
+        if let hex = customColorHex, let custom = Color(hex: hex) { return custom }
+        return Color.listColor(colorIndex)
+    }
 
     // MARK: Membership
 

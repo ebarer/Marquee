@@ -24,7 +24,7 @@ struct MovieOverviewSection: View {
             Text(overview)
                 .font(font)
                 .foregroundStyle(.white.opacity(0.85))
-                .lineLimit(expanded ? nil : 2)
+                .lineLimit(expanded ? nil : 3)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background { truncationProbe }
 

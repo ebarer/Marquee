@@ -43,12 +43,18 @@ struct EmojiField: UIViewRepresentable {
         func textField(_ textField: UITextField,
                        shouldChangeCharactersIn range: NSRange,
                        replacementString string: String) -> Bool {
-            // Ignore deletions; on the first emoji, report it and dismiss.
+            // Ignore deletions; on the first emoji, dismiss the keyboard first,
+            // then report it. Resigning before mutating SwiftUI state matters: the
+            // field lives inside a List row, so picking the emoji queues a List
+            // diff — if the field is still first responder when the keyboard
+            // teardown forces that batch update, UICollectionView aborts with a
+            // "first responder inside a deleted section refused to resign" assert.
             guard let character = string.first else { return false }
-            parent.onPick(String(character))
+            let emoji = String(character)
             DispatchQueue.main.async { [parent] in
                 textField.resignFirstResponder()
                 parent.isActive = false
+                parent.onPick(emoji)
             }
             return false
         }

@@ -25,20 +25,24 @@ struct ListEditorView: View {
     @State private var name: String
     @State private var symbol: String
     @State private var colorIndex: Int
+    /// A user-chosen custom tint; `nil` means a palette swatch is selected.
+    @State private var customColor: Color?
     /// Raises the emoji keyboard to pick a single-emoji icon.
     @State private var emojiKeyboardActive = false
 
     /// A palette of icons suited to movie lists and leisure.
     private static let symbols = [
-        "list.bullet", "star", "heart", "bookmark", "flag", "archivebox",
-        "film", "popcorn", "ticket", "tv", "music.note", "gamecontroller",
-        "graduationcap", "books.vertical", "crown", "sparkles", "flame", "eye",
-        "clock", "moon.stars", "theatermasks", "hand.thumbsup", "figure.run", "fork.knife",
-        "wineglass", "cup.and.saucer", "birthday.cake", "house", "building.2"
+        "list.bullet", "star", "heart", "bookmark", "flag", "eye",
+        "film", "movieclapper", "popcorn", "ticket", "tv", "play.rectangle",
+        "video", "camera", "theatermasks", "crown", "trophy", "sparkles",
+        "music.note", "headphones", "guitars", "mic", "gamecontroller", "puzzlepiece",
+        "paintpalette", "books.vertical", "graduationcap", "flame", "cloud", "moon.stars",
+        "clock", "hand.thumbsup", "gift", "birthday.cake", "figure.run", "fork.knife",
+        "wineglass", "cup.and.saucer", "house", "building.2", "archivebox"
     ]
 
-    private let symbolColumns = [GridItem(.adaptive(minimum: 52), spacing: 12)]
     private let colorColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 6)
+    private var symbolColumns: [GridItem] { colorColumns }
 
     init(existing: MediaList?,
          nextSortOrder: Int = 0,
@@ -54,9 +58,17 @@ struct ListEditorView: View {
         // `.fill`/`.inverse` suffix (and legacy variants) back to the base.
         _symbol = State(initialValue: ListSymbol.canonical(storedSymbol))
         _colorIndex = State(initialValue: existing?.colorIndex ?? 0)
+        let storedHex = existing?.customColorHex
+        _customColor = State(initialValue: storedHex.flatMap { Color(hex: $0) })
     }
 
-    private var selectedColor: Color { Color.listColor(colorIndex) }
+    private var selectedColor: Color { customColor ?? Color.listColor(colorIndex) }
+
+    /// Feeds the custom `ColorPicker`: seeded with the current tint, and selecting
+    /// a color switches the list off its palette swatch.
+    private var customColorBinding: Binding<Color> {
+        Binding(get: { selectedColor }, set: { customColor = $0 })
+    }
 
     var body: some View {
         Form {
@@ -97,6 +109,8 @@ struct ListEditorView: View {
                 }
             }
         }
+        .listSectionSpacing(18)
+        .contentMargins(.top, 10, for: .scrollContent)
         .navigationTitle(existing == nil ? "New List" : "Edit List")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -113,11 +127,9 @@ struct ListEditorView: View {
     // MARK: - Icon preview
 
     private var iconPreview: some View {
-        // Matches how the icon appears elsewhere: a filled glyph (or the chosen
-        // emoji) on the colored circle.
-        ListIcon(symbol: symbol, color: selectedColor, size: 90, symbolSize: 40)
+        ListEditorIcon(symbol: symbol, color: selectedColor)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.top, 8)
         // The emoji keyboard's hidden field lives up here (not in the symbol grid)
         // so raising it doesn't scroll the form down and hide this preview.
         .background {
@@ -137,23 +149,37 @@ struct ListEditorView: View {
                     .fill(color)
                     .frame(width: 36, height: 36)
                     .overlay {
-                        if index == colorIndex {
+                        if customColor == nil && index == colorIndex {
                             Circle()
                                 .stroke(Color.secondary, lineWidth: 2)
                                 .padding(-4)
                         }
                     }
                     .contentShape(Circle())
-                    .onTapGesture { colorIndex = index }
+                    .onTapGesture {
+                        colorIndex = index
+                        customColor = nil
+                    }
             }
+            customColorCell
         }
         .padding(.vertical, 4)
+    }
+
+    /// The trailing slot: a system `ColorPicker` for an arbitrary custom tint. Its
+    /// native swatch (~28pt) is scaled up to match the 36pt palette circles.
+    private var customColorCell: some View {
+        ColorPicker(selection: customColorBinding, supportsOpacity: false) {
+            EmptyView()
+        }
+        .labelsHidden()
+        .scaleEffect(36.0 / 28.0)
     }
 
     // MARK: - Symbol picker
 
     private var symbolPicker: some View {
-        LazyVGrid(columns: symbolColumns, spacing: 12) {
+        LazyVGrid(columns: symbolColumns, spacing: 14) {
             emojiCell
             ForEach(Self.symbols, id: \.self) { option in
                 symbolCell(option)
@@ -168,18 +194,18 @@ struct ListEditorView: View {
         let hasEmoji = ListSymbol.isEmoji(symbol)
         return Group {
             if hasEmoji {
-                Text(symbol).font(.title3)
+                Text(symbol).font(.system(size: 18))
             } else {
-                Image(systemName: "face.smiling.inverse")
-                    .font(.title3)
-                    .foregroundStyle(.black)
+                Image(systemName: "face.smiling")
+                    .font(.system(size: 24))
+                    .foregroundStyle(Color(red255: 236, green255: 224, blue255: 190))
             }
         }
-        .frame(width: 48, height: 48)
+        .frame(width: 36, height: 36)
         .background(hasEmoji ? selectedColor : Color.appAccent, in: Circle())
         .overlay {
             if hasEmoji {
-                Circle().stroke(selectedColor, lineWidth: 2).padding(-3)
+                Circle().stroke(selectedColor, lineWidth: 2).padding(-4)
             }
         }
         .contentShape(Circle())
@@ -190,10 +216,10 @@ struct ListEditorView: View {
         let isSelected = option == symbol
         // The picker shows filled variants, matching the icon's final appearance.
         return Image(systemName: ListSymbol.solid(option))
-            .font(.title3)
+            .font(.system(size: 16))
             .foregroundStyle(.white)
-            .frame(width: 48, height: 48)
-            .background(isSelected ? selectedColor : Color.appSeparator.opacity(0.6), in: Circle())
+            .frame(width: 36, height: 36)
+            .background(isSelected ? selectedColor : Color(white: 0.26), in: Circle())
             .overlay {
                 if isSelected {
                     Circle()
@@ -216,11 +242,13 @@ struct ListEditorView: View {
             existing.name = trimmedName
             existing.symbol = symbol
             existing.colorIndex = colorIndex
+            existing.customColorHex = customColor?.hexString
             store?.save()
             onSaved(existing)
         } else {
             let list = MediaList(name: trimmedName, symbol: symbol,
                                  sortOrder: nextSortOrder, colorIndex: colorIndex)
+            list.customColorHex = customColor?.hexString
             store?.insert(list)
             onSaved(list)
         }
