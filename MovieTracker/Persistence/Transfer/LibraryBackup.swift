@@ -1,5 +1,5 @@
 //
-//  WatchDataArchive.swift
+//  LibraryBackup.swift
 //  MovieTracker
 //
 //  A versioned, portable backup snapshot of every list and its entries. Kept
@@ -11,7 +11,7 @@ import SwiftData
 import UniformTypeIdentifiers
 
 /// The full contents of the user's lists in a self-contained, Codable form.
-struct WatchDataArchive: Codable {
+struct LibraryBackup: Codable {
     /// Bumped whenever the on-disk shape changes so importers can refuse files
     /// written by a newer version of the app that they can't understand.
     static let currentVersion = 1
@@ -83,7 +83,7 @@ struct WatchDataArchive: Codable {
 
 // MARK: - JSON
 
-extension WatchDataArchive {
+extension LibraryBackup {
     /// ISO-8601 dates and stable key ordering keep the file human-readable and
     /// diff-friendly.
     private static func makeEncoder() -> JSONEncoder {
@@ -102,8 +102,8 @@ extension WatchDataArchive {
     func jsonData() throws -> Data { try Self.makeEncoder().encode(self) }
 
     init(json data: Data) throws {
-        let decoded = try Self.makeDecoder().decode(WatchDataArchive.self, from: data)
-        guard decoded.version <= WatchDataArchive.currentVersion else {
+        let decoded = try Self.makeDecoder().decode(LibraryBackup.self, from: data)
+        guard decoded.version <= LibraryBackup.currentVersion else {
             throw ImportError.unsupportedVersion(decoded.version)
         }
         self = decoded
@@ -146,12 +146,12 @@ struct ImportSummary {
 // MARK: - Document
 
 /// Wraps an archive as a JSON `FileDocument` for `fileExporter`/`fileImporter`.
-struct WatchDataDocument: FileDocument {
+struct LibraryBackupDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
 
-    var archive: WatchDataArchive
+    var archive: LibraryBackup
 
-    init(archive: WatchDataArchive) {
+    init(archive: LibraryBackup) {
         self.archive = archive
     }
 
@@ -159,7 +159,7 @@ struct WatchDataDocument: FileDocument {
         guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
         }
-        self.archive = try WatchDataArchive(json: data)
+        self.archive = try LibraryBackup(json: data)
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
@@ -169,7 +169,7 @@ struct WatchDataDocument: FileDocument {
 
 // MARK: - Store: export / import
 
-extension WatchDataArchive {
+extension LibraryBackup {
     /// Stable list-kind values for the on-disk format, independent of the app's
     /// runtime model so backups keep importing after schema changes.
     enum Kind: Int {
@@ -182,15 +182,15 @@ extension WatchDataArchive {
     /// Builds a complete archive of every list plus the Watched facts. The file
     /// format is unchanged from v1 — Watched is emitted as a pseudo-list carrying
     /// each title's watched date and rating — so old backups still import.
-    static func export(from context: ModelContext) -> WatchDataArchive {
+    static func export(from context: ModelContext) -> LibraryBackup {
         var lists = MediaList.all(in: context).map { list in
-            WatchDataArchive.List(
+            LibraryBackup.List(
                 uuid: list.uuid, name: list.name, symbol: list.symbol,
                 colorIndex: list.colorIndex,
                 kind: list.isWatchList ? Kind.toWatch.rawValue : Kind.custom.rawValue,
                 sortOrder: list.sortOrder, createdAt: list.createdAt,
                 entries: (list.entries ?? []).map { entry in
-                    WatchDataArchive.Entry(
+                    LibraryBackup.Entry(
                         movieID: entry.tmdbID, title: entry.title, posterPath: entry.posterPath,
                         releaseDate: entry.releaseDate, dateAdded: entry.addedAt,
                         dateWatched: nil, userRating: nil)
@@ -201,24 +201,24 @@ extension WatchDataArchive {
         let watched = (try? context.fetch(FetchDescriptor<MediaItem>(
             predicate: #Predicate { $0.watchedAt != nil }))) ?? []
         if !watched.isEmpty {
-            lists.append(WatchDataArchive.List(
+            lists.append(LibraryBackup.List(
                 uuid: UUID(), name: "Watched", symbol: "checkmark.rectangle.stack",
                 colorIndex: 0, kind: Kind.watched.rawValue, sortOrder: 2, createdAt: Date(),
                 entries: watched.map { item in
-                    WatchDataArchive.Entry(
+                    LibraryBackup.Entry(
                         movieID: item.tmdbID, title: item.title, posterPath: item.posterPath,
                         releaseDate: item.releaseDate, dateAdded: item.addedAt,
                         dateWatched: item.watchedAt, userRating: item.userRating)
                 }))
         }
-        return WatchDataArchive(lists: lists)
+        return LibraryBackup(lists: lists)
     }
 
     /// Merges an archive additively: list memberships become `ListEntry`s, Watched
     /// entries set each title's `MediaItem` facts. Nothing existing is modified.
     @MainActor
     @discardableResult
-    static func merge(_ archive: WatchDataArchive, using store: MediaStore) -> ImportSummary {
+    static func merge(_ archive: LibraryBackup, using store: MediaStore) -> ImportSummary {
         var summary = ImportSummary()
         let context = store.context
 
@@ -256,7 +256,7 @@ extension WatchDataArchive {
     }
 
     @MainActor
-    private static func target(_ archived: WatchDataArchive.List, isWatchList: Bool,
+    private static func target(_ archived: LibraryBackup.List, isWatchList: Bool,
                                using store: MediaStore, summary: inout ImportSummary) -> MediaList? {
         if isWatchList { return store.watchList }
         if let existing = MediaList.all(in: store.context).first(where: { $0.uuid == archived.uuid }) {
@@ -271,7 +271,7 @@ extension WatchDataArchive {
         return created
     }
 
-    private static func movie(from entry: WatchDataArchive.Entry) -> Movie {
+    private static func movie(from entry: LibraryBackup.Entry) -> Movie {
         var movie = Movie(id: entry.movieID, title: entry.title)
         movie.poster = entry.posterPath
         movie.releaseDate = entry.releaseDate

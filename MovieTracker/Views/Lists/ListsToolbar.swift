@@ -14,6 +14,71 @@ enum ListSelection: Hashable {
     case viewed
 }
 
+/// A `ListSelection` resolved to the identity and contents the Lists screen needs.
+/// Real lists read their name/color/symbol from the model; the built-in Watched and
+/// Viewed views define theirs here — so `ListsView` never hardcodes appearance or
+/// switches on the kind.
+struct ListDestination {
+    let selection: ListSelection
+    let name: String
+    let color: Color
+    let symbol: String
+    /// Shown beneath the icon in the empty state.
+    let emptyDescription: String
+    /// The backing model for a real list; `nil` for Watched / Viewed.
+    let list: MediaList?
+
+    /// The derived Watched / Viewed accents (custom lists carry their own color).
+    static let watchedColor = Color(red255: 90, green255: 200, blue255: 250)
+    static let viewedColor = Color.gray
+
+    static func resolve(_ selection: ListSelection, lists: [MediaList]) -> ListDestination {
+        switch selection {
+        case .list(let uuid):
+            let list = lists.first { $0.uuid == uuid }
+            return ListDestination(
+                selection: selection,
+                name: list?.name ?? "Lists",
+                color: list?.color ?? .appAccent,
+                symbol: list?.symbol ?? "list.bullet",
+                emptyDescription: list.map {
+                    $0.isWatchList ? "Movies you want to watch will appear here."
+                                   : "Movies you add to “\($0.name)” will appear here."
+                } ?? "",
+                list: list)
+        case .watched:
+            return ListDestination(
+                selection: selection, name: "Watched", color: watchedColor,
+                symbol: "checkmark.rectangle.stack",
+                emptyDescription: "Movies you mark watched will appear here.", list: nil)
+        case .viewed:
+            return ListDestination(
+                selection: selection, name: "Viewed", color: viewedColor,
+                symbol: "clock.arrow.circlepath",
+                emptyDescription: "Movies you browse will appear here.", list: nil)
+        }
+    }
+
+    /// Movie count for this view — list entries, or the derived Watched / Viewed counts.
+    @MainActor
+    func movieCount(using store: MediaStore?) -> Int {
+        switch selection {
+        case .list: return (list?.entries ?? []).count
+        case .watched: return store?.watchedCount ?? 0
+        case .viewed: return store?.viewedCount ?? 0
+        }
+    }
+
+    /// What the background `SectionBuilder` should read for this view.
+    func sectionSource(watchedByDate: Bool) -> SectionSource? {
+        switch selection {
+        case .list(let uuid): return list != nil ? .list(uuid) : nil
+        case .watched: return .watched(byWatchedDate: watchedByDate)
+        case .viewed: return .viewed
+        }
+    }
+}
+
 /// The navigation title: the name (tinted with the list color) over a title count,
 /// flanked by a menu chevron.
 struct ListTitleLabel: View {
@@ -119,8 +184,7 @@ struct ListSortMenu: View {
 #Preview("Title label") {
     VStack(spacing: 20) {
         ListTitleLabel(name: "Watch List", color: .appAccent, count: 12)
-        ListTitleLabel(name: "Watched",
-                       color: Color(red255: 90, green255: 200, blue255: 250), count: 1)
+        ListTitleLabel(name: "Watched", color: ListDestination.watchedColor, count: 1)
     }
     .padding()
     .frame(maxWidth: .infinity)

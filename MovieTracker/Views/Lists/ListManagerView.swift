@@ -27,18 +27,14 @@ struct ListManagerView: View {
     @State private var editing: MediaList?
     @State private var creatingNew = false
 
-    // Backup import/export state.
-    @State private var exportDocument: WatchDataDocument?
-    @State private var showExporter = false
-    @State private var showImporter = false
-    @State private var importSummary: ImportSummary?
-    @State private var transferError: String?
-    @State private var importProgress: (done: Int, total: Int)?
+    /// Owns the backup import/export workflow and its presentation state.
+    @State private var transfer = ImportExportCoordinator()
 
     private static let separator = Color.white.opacity(0.25)
 
     var body: some View {
-        NavigationStack {
+        @Bindable var transfer = transfer
+        return NavigationStack {
             List {
                 // Built-in views pinned at the top — shown for context, not editable.
                 Section {
@@ -48,7 +44,7 @@ struct ListManagerView: View {
                             .deleteDisabled(true)
                     }
                     virtualRow(title: "Watched", symbol: "checkmark.rectangle.stack",
-                               color: Color(red255: 90, green255: 200, blue255: 250), count: watchedCount)
+                               color: ListDestination.watchedColor, count: watchedCount)
                 }
 
                 // Custom lists: reorderable and deletable.
@@ -70,20 +66,20 @@ struct ListManagerView: View {
                 // The Viewed history pinned at the bottom.
                 Section {
                     virtualRow(title: "Viewed", symbol: "clock.arrow.circlepath",
-                               color: .gray, count: viewedCount)
+                               color: ListDestination.viewedColor, count: viewedCount)
                 }
 
                 // Library-wide actions (not lists) — tinted accent to set them apart,
                 // with the app version pinned to the footer.
                 Section {
                     Button {
-                        showImporter = true
+                        transfer.showImporter = true
                     } label: {
                         Label("Import", systemImage: "square.and.arrow.down")
                             .foregroundStyle(Color.appAccent)
                     }
                     Button {
-                        prepareExport()
+                        if let store { transfer.prepareExport(using: store) }
                     } label: {
                         Label("Export", systemImage: "square.and.arrow.up")
                             .foregroundStyle(Color.appAccent)
@@ -127,14 +123,14 @@ struct ListManagerView: View {
                 }
             }
             .modifier(BackupTransferModifier(
-                showExporter: $showExporter,
-                showImporter: $showImporter,
-                exportDocument: exportDocument,
-                exportFilename: exportFilename,
-                importSummary: $importSummary,
-                transferError: $transferError,
-                importProgress: importProgress,
-                onImport: handleImport
+                showExporter: $transfer.showExporter,
+                showImporter: $transfer.showImporter,
+                exportDocument: transfer.exportDocument,
+                exportFilename: transfer.exportFilename,
+                importSummary: $transfer.importSummary,
+                transferError: $transfer.transferError,
+                importProgress: transfer.importProgress,
+                onImport: { result in if let store { transfer.handleImport(result, using: store) } }
             ))
         }
     }
@@ -238,69 +234,6 @@ struct ListManagerView: View {
         }
     }
 
-    // MARK: - Backup import/export
-
-    private var exportFilename: String {
-        let stamp = Date().formatted(.iso8601.year().month().day().dateSeparator(.dash))
-        return "MovieTracker Backup \(stamp)"
-    }
-
-    private func prepareExport() {
-        guard let store else { return }
-        exportDocument = WatchDataDocument(archive: store.exportArchive())
-        showExporter = true
-    }
-
-    private func handleImport(_ result: Result<URL, Error>) {
-        switch result {
-        case .success(let url):
-            if url.pathExtension.lowercased() == "csv" {
-                importCSV(from: url)
-            } else {
-                importArchive(from: url)
-            }
-        case .failure(let error):
-            transferError = error.localizedDescription
-        }
-    }
-
-    private func importArchive(from url: URL) {
-        do {
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            let archive = try WatchDataArchive(json: try Data(contentsOf: url))
-            if let store { importSummary = WatchDataArchive.merge(archive, using: store) }
-        } catch {
-            transferError = error.localizedDescription
-        }
-    }
-
-    private func importCSV(from url: URL) {
-        let records: [CSVMovieRecord]
-        do {
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            records = try CSVMovieRecord.parse(data: try Data(contentsOf: url))
-        } catch {
-            transferError = error.localizedDescription
-            return
-        }
-
-        guard !records.isEmpty else {
-            transferError = "No movies found in the CSV file."
-            return
-        }
-
-        guard let store else { return }
-        importProgress = (done: 0, total: records.count)
-        Task {
-            let summary = await CSVMovieRecord.merge(records, using: store) { done, total in
-                importProgress = (done: done, total: total)
-            }
-            importProgress = nil
-            importSummary = summary
-        }
-    }
 }
 
 #Preview {

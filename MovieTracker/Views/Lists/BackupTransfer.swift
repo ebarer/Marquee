@@ -11,7 +11,7 @@ import UniformTypeIdentifiers
 struct BackupTransferModifier: ViewModifier {
     @Binding var showExporter: Bool
     @Binding var showImporter: Bool
-    let exportDocument: WatchDataDocument?
+    let exportDocument: LibraryBackupDocument?
     let exportFilename: String
     @Binding var importSummary: ImportSummary?
     @Binding var transferError: String?

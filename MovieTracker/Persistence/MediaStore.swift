@@ -133,7 +133,7 @@ final class MediaStore {
     }
 
     /// Snapshots the whole library into a backup archive.
-    func exportArchive() -> WatchDataArchive { WatchDataArchive.export(from: context) }
+    func exportArchive() -> LibraryBackup { LibraryBackup.export(from: context) }
 
     // MARK: - Maintenance (launch)
 

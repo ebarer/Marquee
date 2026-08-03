@@ -157,7 +157,6 @@ struct ListsView: View {
 
     private var watchList: MediaList? { lists.first { $0.isWatchList } }
     private var customLists: [MediaList] { lists.filter { !$0.isWatchList } }
-    private func list(_ uuid: UUID) -> MediaList? { lists.first { $0.uuid == uuid } }
 
     private func selectDefaultIfNeeded() {
         guard selection == nil, let watch = watchList else { return }
@@ -166,33 +165,20 @@ struct ListsView: View {
 
     // MARK: - Derived per-selection
 
-    private var title: String {
-        switch resolvedSelection {
-        case .list(let uuid): return list(uuid)?.name ?? "Lists"
-        case .watched: return "Watched"
-        case .viewed: return "Viewed"
-        }
-    }
+    /// The current view resolved to its identity + contents; the source of the
+    /// title, color, count, empty state, and section source below.
+    private var destination: ListDestination { .resolve(resolvedSelection, lists: lists) }
 
-    private var activeColor: Color {
-        switch resolvedSelection {
-        case .list(let uuid): return list(uuid)?.color ?? .appAccent
-        case .watched: return Color(red255: 90, green255: 200, blue255: 250)
-        case .viewed: return .gray
-        }
-    }
-
-    private var movieCount: Int {
-        switch resolvedSelection {
-        case .list(let uuid): return (list(uuid)?.entries ?? []).count
-        case .watched: return store?.watchedCount ?? 0
-        case .viewed: return store?.viewedCount ?? 0
-        }
+    private var title: String { destination.name }
+    private var activeColor: Color { destination.color }
+    private var movieCount: Int { destination.movieCount(using: store) }
+    private var sectionSource: SectionSource? {
+        destination.sectionSource(watchedByDate: watchedSortKey == .dateWatched)
     }
 
     private var currentAscending: Bool {
         switch resolvedSelection {
-        case .list(let uuid): return list(uuid)?.sortAscending ?? true
+        case .list: return destination.list?.sortAscending ?? true
         case .watched: return watchedAscending
         case .viewed: return viewedAscending
         }
@@ -204,47 +190,25 @@ struct ListsView: View {
 
     private func setAscending(_ value: Bool) {
         switch resolvedSelection {
-        case .list(let uuid): list(uuid)?.sortAscending = value
+        case .list: store?.perform { destination.list?.sortAscending = value }
         case .watched: watchedAscending = value
         case .viewed: viewedAscending = value
         }
     }
 
-    @ViewBuilder
     private var emptyState: some View {
-        switch resolvedSelection {
-        case .list(let uuid):
-            if let list = list(uuid) {
-                ContentUnavailableView {
-                    Label {
-                        Text(list.name)
-                    } icon: {
-                        ListIcon(list, size: 64)
-                    }
-                } description: {
-                    Text(list.isWatchList
-                         ? "Movies you want to watch will appear here."
-                         : "Movies you add to “\(list.name)” will appear here.")
-                }
+        ContentUnavailableView {
+            Label {
+                Text(destination.name)
+            } icon: {
+                ListIcon(symbol: destination.symbol, color: destination.color, size: 64)
             }
-        case .watched:
-            ContentUnavailableView("Watched", systemImage: "checkmark.rectangle.stack",
-                                   description: Text("Movies you mark watched will appear here."))
-        case .viewed:
-            ContentUnavailableView("Viewed", systemImage: "clock.arrow.circlepath",
-                                   description: Text("Movies you browse will appear here."))
+        } description: {
+            Text(destination.emptyDescription)
         }
     }
 
     // MARK: - Data
-
-    private var sectionSource: SectionSource? {
-        switch resolvedSelection {
-        case .list(let uuid): return list(uuid) != nil ? .list(uuid) : nil
-        case .watched: return .watched(byWatchedDate: watchedSortKey == .dateWatched)
-        case .viewed: return .viewed
-        }
-    }
 
     private struct SectionsInput: Equatable {
         var selection: ListSelection
