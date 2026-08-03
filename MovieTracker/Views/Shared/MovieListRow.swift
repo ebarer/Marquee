@@ -25,6 +25,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     var rating: Double? = nil
     /// Fill color for the rating stars.
     var ratingTint: Color = .appAccent
+    /// When set, a small watched / to-be-watched glyph precedes the subtitle.
+    var status: PosterStatus? = nil
     let lists: [MediaList]
     @ViewBuilder var leadingActions: () -> Leading
     @ViewBuilder var trailingActions: () -> Trailing
@@ -33,7 +35,7 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
         NavigationLink(value: movie) {
             MovieRow(movie: movie, subtitle: subtitle, role: role,
                      showsSubtitle: showsSubtitle, duration: duration,
-                     rating: rating, ratingTint: ratingTint)
+                     rating: rating, ratingTint: ratingTint, status: status)
         }
         // Halve the default plain-list vertical padding (~11pt) while keeping the
         // standard horizontal inset so alignment and separators are unchanged.

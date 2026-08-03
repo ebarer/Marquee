@@ -41,6 +41,12 @@ extension PersistenceCoordinator {
     func toggleWatchList(_ movie: Movie) { watchList.toggle(movie); save() }
     func addToWatchList(_ movie: Movie) { watchList.add(movie); save() }
 
+    /// Read-only Watch List membership. Unlike `watchList`, this never creates the
+    /// list, so it's safe to call from a view body (e.g. the grid poster badge).
+    func isInWatchList(_ movie: Movie) -> Bool {
+        MediaList.watchList(in: context)?.contains(movie.id) ?? false
+    }
+
     // MARK: - Deletion
 
     func deleteList(_ list: MediaList) { context.delete(list); save() }

@@ -21,6 +21,10 @@ struct ListRows: View {
     }
     private var isViewed: Bool { selection == .viewed }
     private var isWatched: Bool { selection == .watched }
+    private var isCustomList: Bool {
+        if case .list = selection { return !isWatchList }
+        return false
+    }
 
     var body: some View {
         List {
@@ -56,6 +60,7 @@ struct ListRows: View {
                 duration: duration(entry),
                 rating: rating(entry),
                 ratingTint: listColor,
+                status: status(entry),
                 lists: lists,
                 leadingActions: { leadingAction(entry) },
                 trailingActions: {
@@ -87,6 +92,13 @@ struct ListRows: View {
     private func subtitle(_ entry: MediaSnapshot) -> String? {
         guard isWatched, let date = entry.dateWatched else { return nil }
         return "Watched \(date.toString())"
+    }
+
+    private func status(_ entry: MediaSnapshot) -> PosterStatus? {
+        guard isCustomList else { return nil }
+        if entry.dateWatched != nil { return .watched }
+        if store?.isInWatchList(movie(entry)) == true { return .watchList }
+        return nil
     }
 
     /// Rating shown on Watched and custom-list rows (looked up from `MediaItem`),

@@ -24,6 +24,8 @@ struct MovieRow: View {
     var rating: Double? = nil
     /// Fill color for the rating stars.
     var ratingTint: Color = .appAccent
+    /// When set, a small watched / to-be-watched glyph precedes the subtitle.
+    var status: PosterStatus? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -40,9 +42,15 @@ struct MovieRow: View {
                     .lineLimit(2)
 
                 if showsSubtitle, let displayedSubtitle {
-                    Text(displayedSubtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text(displayedSubtitle)
+                        if let status {
+                            Text("•")
+                            Image(systemName: status.symbol)
+                        }
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 }
 
                 if let role, !role.isEmpty {
@@ -109,5 +117,11 @@ struct RatingStars: View {
 }
 
 #Preview {
-    MovieRow(movie: .preview)
+    List {
+        MovieRow(movie: .preview, status: .watched)
+        MovieRow(movie: .preview, status: .watchList)
+        MovieRow(movie: .preview)
+    }
+    .listStyle(.plain)
+    .preferredColorScheme(.dark)
 }

@@ -22,6 +22,17 @@ struct MoviePosterCard: View {
     /// aligned while their bottoms stay ragged.
     var posterWidth: CGFloat? = nil
 
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+
+    /// Watched wins over Watch List (the two are mutually exclusive in practice,
+    /// since adding to the Watch List un-marks Watched).
+    private var status: PosterStatus? {
+        guard let store else { return nil }
+        if store.isWatched(movie) { return .watched }
+        if store.isInWatchList(movie) { return .watchList }
+        return nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             poster
@@ -44,17 +55,87 @@ struct MoviePosterCard: View {
             PosterImage(url: movie.posterURL(.w342))
                 .frame(width: posterWidth, height: posterWidth * 3.0 / 2.0)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay { badge }
         } else {
             PosterImage(url: movie.posterURL(.w342))
                 .aspectRatio(2.0 / 3.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay { badge }
+        }
+    }
+
+    @ViewBuilder
+    private var badge: some View {
+        if let status {
+            PosterStatusBadge(status: status)
+                .transition(.opacity)
         }
     }
 }
 
+enum PosterStatus {
+    case watched
+    case watchList
+
+    var symbol: String {
+        switch self {
+        case .watched: return "checkmark.circle.fill"
+        case .watchList: return "bookmark.fill"
+        }
+    }
+
+    var pointSize: CGFloat {
+        switch self {
+        case .watched: return 18
+        case .watchList: return 15
+        }
+    }
+
+    var verticalNudge: CGFloat {
+        switch self {
+        case .watched: return -1
+        case .watchList: return 0
+        }
+    }
+}
+
+struct PosterStatusBadge: View {
+    let status: PosterStatus
+    var cornerRadius: CGFloat = 8
+
+    var body: some View {
+        GeometryReader { geo in
+            RadialGradient(
+                gradient: Gradient(colors: [.black.opacity(0.55), .clear]),
+                center: .topTrailing,
+                startRadius: 0,
+                endRadius: max(geo.size.width, geo.size.height) * 0.6
+            )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .overlay(alignment: .topTrailing) {
+            Image(systemName: status.symbol)
+                .font(.system(size: status.pointSize, weight: .semibold))
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
+                .padding(7)
+                .offset(y: status.verticalNudge)
+        }
+        .allowsHitTesting(false)
+    }
+}
+
 #Preview {
-    MoviePosterCard(movie: .preview)
-        .frame(width: 120)
-        .padding()
-        .background(Color.appBackground)
+    HStack(spacing: 16) {
+        ForEach([PosterStatus.watched, .watchList], id: \.symbol) { status in
+            PosterImage(url: Movie.preview.posterURL(.w342))
+                .aspectRatio(2.0 / 3.0, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay { PosterStatusBadge(status: status) }
+        }
+    }
+    .frame(width: 260)
+    .padding()
+    .background(Color.appBackground)
+    .preferredColorScheme(.dark)
 }
