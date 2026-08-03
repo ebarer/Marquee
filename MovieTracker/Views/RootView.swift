@@ -36,6 +36,10 @@ struct RootView: View {
 
     /// The selected tab, backing the re-tap gesture on Lists.
     @State private var selectedTab: RootTab = .discover
+    /// Path for the Lists tab's stack. Watched so a re-tap while a detail is
+    /// pushed only pops to root (system behavior); the list reset waits until
+    /// we're already at the root.
+    @State private var listsPath = NavigationPath()
     /// Bumped when the already-selected Lists tab is tapped again, telling
     /// `ListsView` to jump back to the Watch List.
     @State private var listsResetToken = 0
@@ -50,7 +54,7 @@ struct RootView: View {
             }
 
             Tab("Lists", systemImage: "checklist", value: RootTab.lists) {
-                NavigationStack {
+                NavigationStack(path: $listsPath) {
                     ListsView(resetToken: listsResetToken)
                         .detailDestinations()
                 }
@@ -103,7 +107,11 @@ struct RootView: View {
     /// tab, which resets that screen back to the Watch List.
     private var tabSelection: Binding<RootTab> {
         Binding(get: { selectedTab }) { newValue in
-            if newValue == .lists, selectedTab == .lists { listsResetToken += 1 }
+            // Re-tapping Lists while a detail is pushed lets the system pop the
+            // stack to root; only a re-tap that's already at root resets the list.
+            if newValue == .lists, selectedTab == .lists, listsPath.isEmpty {
+                listsResetToken += 1
+            }
             selectedTab = newValue
         }
     }

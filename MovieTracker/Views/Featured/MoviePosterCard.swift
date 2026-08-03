@@ -28,6 +28,7 @@ struct MoviePosterCard: View {
     /// since adding to the Watch List un-marks Watched).
     private var status: PosterStatus? {
         guard let store else { return nil }
+        _ = store.revision   // observe persisted changes so the badge refreshes live
         if store.isWatched(movie) { return .watched }
         if store.isInWatchList(movie) { return .watchList }
         return nil
