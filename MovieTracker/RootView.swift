@@ -34,23 +34,29 @@ struct RootView: View {
     // pushes a detail) records the current query as a recent search.
     @State private var searchPath = NavigationPath()
 
+    /// The selected tab, backing the re-tap gesture on Lists.
+    @State private var selectedTab: RootTab = .discover
+    /// Bumped when the already-selected Lists tab is tapped again, telling
+    /// `ListsView` to jump back to the Watch List.
+    @State private var listsResetToken = 0
+
     var body: some View {
-        TabView {
-            Tab("Discover", systemImage: "film") {
+        TabView(selection: tabSelection) {
+            Tab("Discover", systemImage: "film", value: RootTab.discover) {
                 NavigationStack {
                     FeaturedView()
                         .detailDestinations()
                 }
             }
 
-            Tab("Lists", systemImage: "checklist") {
+            Tab("Lists", systemImage: "checklist", value: RootTab.lists) {
                 NavigationStack {
-                    ListsView()
+                    ListsView(resetToken: listsResetToken)
                         .detailDestinations()
                 }
             }
 
-            Tab("Search", systemImage: "magnifyingglass", role: .search) {
+            Tab("Search", systemImage: "magnifyingglass", value: RootTab.search, role: .search) {
                 NavigationStack(path: $searchPath) {
                     SearchView(model: searchModel)
                         .detailDestinations()
@@ -92,6 +98,19 @@ struct RootView: View {
             await store.bootstrap()
         }
     }
+
+    /// Drives tab selection while detecting a tap on the already-selected Lists
+    /// tab, which resets that screen back to the Watch List.
+    private var tabSelection: Binding<RootTab> {
+        Binding(get: { selectedTab }) { newValue in
+            if newValue == .lists, selectedTab == .lists { listsResetToken += 1 }
+            selectedTab = newValue
+        }
+    }
+}
+
+private enum RootTab: Hashable {
+    case discover, lists, search
 }
 
 extension View {

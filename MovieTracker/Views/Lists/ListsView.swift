@@ -19,6 +19,10 @@ struct ListsView: View {
         store?.canonicalLists(allLists) ?? allLists.filter { !$0.isDeduplicated }
     }
 
+    /// Bumped by the root tab bar when the already-selected Lists tab is tapped
+    /// again; each change snaps the selection back to the Watch List.
+    var resetToken = 0
+
     /// The current view; nil until the Watch List is chosen on appear.
     @State private var selection: ListSelection?
     @State private var editor: ListEditor?
@@ -122,6 +126,9 @@ struct ListsView: View {
         .task(id: sectionsInput) { await sectionsModel.rebuild(for: sectionsInput, store: store) }
         .onAppear { selectDefaultIfNeeded() }
         .onChange(of: lists.count) { _, _ in selectDefaultIfNeeded() }
+        .onChange(of: resetToken) { _, _ in
+            if let watch = watchList { selection = .list(watch.uuid) }
+        }
         .onChange(of: selection) { _, _ in sectionsModel.clear() }
     }
 

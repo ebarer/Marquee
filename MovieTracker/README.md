@@ -4,8 +4,6 @@ Important:
 - [ ] App crashes when trying to use an emoji for a list icon
 
 Smaller/Cosmetic:
-- [ ] Animate deletion/completion in lists
-- [ ] Tapping on Lists tab a second time should change selected list back to Watch List
 - [ ] In Lists, remove the + button, just have the list button in the top left
 - [ ] Watch list, and custom, should support ordering by the date added
 - [ ] Bulk update date watched?

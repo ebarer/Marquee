@@ -33,7 +33,14 @@ final class ListSectionsModel {
         }
         let result = await store.sections(for: source, ascending: input.ascending, filter: input.filter)
         guard !Task.isCancelled else { return }
-        sections = result
+        // Animate row inserts/removals only when the *same* list's contents changed
+        // (a delete, completion, or edit). Switching selections or the first load
+        // replace the rows outright, which shouldn't fade every row in.
+        if loadedInput?.source == source {
+            withAnimation { sections = result }
+        } else {
+            sections = result
+        }
         loadedInput = input
     }
 
