@@ -20,6 +20,7 @@ struct Movie: Hashable, Identifiable, Codable {
     var runtime: Int?
     var rating: Double?
     var popularity: Double?
+    var voteCount: Int?
     var certification: String?
     var imdbID: String?
     var genres: [String]?

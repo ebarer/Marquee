@@ -460,10 +460,10 @@
 			isa = PBXGroup;
 			children = (
 				CE78BD5120C087F2001E6DB6 /* MovieTracker */,
-				CE78BD5020C087F2001E6DB6 /* Products */,
-				C92AD17F85EF27C08382AB87 /* Frameworks */,
 				D6B5113CA0091B858F7033C1 /* MarqueeTests */,
 				74225552EFF5D766CA4A086C /* MarqueeUITests */,
+				C92AD17F85EF27C08382AB87 /* Frameworks */,
+				CE78BD5020C087F2001E6DB6 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
