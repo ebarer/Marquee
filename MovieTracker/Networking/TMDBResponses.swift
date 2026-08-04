@@ -40,6 +40,7 @@ extension TMDBWrapper {
         var keywords: Keywords?
         var teamRaw: TeamRaw?
         var collectionRaw: CollectionStubRaw?
+        var watchRaw: WatchProvidersRaw?
 
         func certification() -> (certification: String?, releaseDate: Date?) {
             let regionCode = NSLocale.current.region?.identifier ?? "US"
@@ -149,6 +150,29 @@ extension TMDBWrapper {
                                    poster: stub.poster, background: stub.background)
         }
 
+        /// Streaming availability per region. Merges the flatrate, free, and
+        /// ad-supported buckets (skipping rent/buy), priority-ordered and deduped.
+        func watchByRegion() -> [String: WatchAvailability] {
+            guard let results = watchRaw?.results else { return [:] }
+            var out: [String: WatchAvailability] = [:]
+            for (code, region) in results {
+                let buckets = [region.flatrate, region.free, region.ads]
+                    .compactMap { $0 }.flatMap { $0 }
+                var seen = Set<Int>()
+                let providers = buckets
+                    .sorted { ($0.displayPriority ?? .max) < ($1.displayPriority ?? .max) }
+                    .compactMap { raw -> WatchProvider? in
+                        guard seen.insert(raw.providerId).inserted else { return nil }
+                        return WatchProvider(id: raw.providerId, name: raw.providerName,
+                                             logoPath: raw.logoPath)
+                    }
+                guard !providers.isEmpty else { continue }
+                out[code] = WatchAvailability(providers: providers,
+                                              justWatchLink: region.link.flatMap { URL(string: $0) })
+            }
+            return out
+        }
+
         enum CodingKeys: String, CodingKey {
             case id, title, overview, runtime, popularity, keywords
             case imdbID = "imdb_id"
@@ -161,6 +185,7 @@ extension TMDBWrapper {
             case trailersRaw = "videos"
             case teamRaw = "credits"
             case collectionRaw = "belongs_to_collection"
+            case watchRaw = "watch/providers"
         }
 
         struct CollectionStubRaw: Codable {
@@ -280,6 +305,45 @@ extension TMDBWrapper {
                 }
             }
         }
+
+        /// TMDB's `watch/providers` payload: a per-country map of providers,
+        /// bucketed by monetization type. JustWatch is the underlying source.
+        struct WatchProvidersRaw: Codable {
+            var results: [String: RegionRaw]
+
+            struct RegionRaw: Codable {
+                var link: String?
+                var flatrate: [ProviderRaw]?
+                var free: [ProviderRaw]?
+                var ads: [ProviderRaw]?
+            }
+
+            struct ProviderRaw: Codable {
+                var providerId: Int
+                var providerName: String
+                var logoPath: String?
+                var displayPriority: Int?
+                var displayPriorities: [String: Int]?
+
+                enum CodingKeys: String, CodingKey {
+                    case providerId = "provider_id"
+                    case providerName = "provider_name"
+                    case logoPath = "logo_path"
+                    case displayPriority = "display_priority"
+                    case displayPriorities = "display_priorities"
+                }
+
+                func isAvailable(in region: String) -> Bool {
+                    guard let displayPriorities else { return true }
+                    return displayPriorities[region] != nil
+                }
+
+                // Lower priority number = more popular in the region.
+                func priority(in region: String) -> Int {
+                    displayPriorities?[region] ?? displayPriority ?? .max
+                }
+            }
+        }
     }
 
     struct CollectionRaw: Codable {
@@ -287,6 +351,11 @@ extension TMDBWrapper {
         var name: String
         var overview: String?
         var parts: [MovieRaw]
+    }
+
+    /// The `/watch/providers/movie` catalogue: every streaming service in a region.
+    struct ProviderListRaw: Codable {
+        var results: [MovieRaw.WatchProvidersRaw.ProviderRaw]
     }
 
     struct PersonRaw: Codable {

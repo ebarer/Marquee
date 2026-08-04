@@ -11,7 +11,7 @@ extension TMDBWrapper {
             "/movie/\(id)",
             queryItems: [
                 URLQueryItem(name: "with_release_type", value: "3|2"),
-                URLQueryItem(name: "append_to_response", value: "videos,release_dates,credits,keywords"),
+                URLQueryItem(name: "append_to_response", value: "videos,release_dates,credits,keywords,watch/providers"),
             ],
             certified: true
         )
@@ -43,6 +43,17 @@ extension TMDBWrapper {
 
     static func movieRecommendations(id: Int, page: Int = 1) async throws -> PagedResult<Movie> {
         try await moviePage("/movie/\(id)/recommendations", page: page)
+    }
+
+    /// Region's streaming services, most popular first (backs the picker).
+    static func watchProviders(region: String) async throws -> [WatchProvider] {
+        let data = try await fetch("/watch/providers/movie",
+                                   queryItems: [URLQueryItem(name: "watch_region", value: region)])
+        let root = try decode(ProviderListRaw.self, from: data)
+        return root.results
+            .filter { $0.isAvailable(in: region) }
+            .sorted { $0.priority(in: region) < $1.priority(in: region) }
+            .map { WatchProvider(id: $0.providerId, name: $0.providerName, logoPath: $0.logoPath) }
     }
 
     static func searchForMovies(query: String, page: Int = 1) async throws -> PagedResult<Movie> {
@@ -93,6 +104,7 @@ extension TMDBWrapper {
         movie.team = mv.team()
         movie.trailers = mv.trailers()
         movie.collection = mv.collection()
+        movie.watchByRegion = mv.watchByRegion()
 
         return movie
     }

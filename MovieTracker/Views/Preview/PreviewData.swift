@@ -25,6 +25,16 @@ extension Movie {
         movie.genres = ["Adventure", "Action"]
         movie.bonusCredits = Movie.Credits(during: false, after: true)
         movie.team = Person.previewTeam
+        movie.watchByRegion = [
+            Region.device: WatchAvailability(
+                providers: [
+                    WatchProvider(id: 8, name: "Netflix", logoPath: nil),
+                    WatchProvider(id: 337, name: "Disney+", logoPath: nil),
+                    WatchProvider(id: 350, name: "Apple TV+", logoPath: nil),
+                    WatchProvider(id: 1899, name: "Max", logoPath: nil),
+                ],
+                justWatchLink: URL(string: "https://www.justwatch.com"))
+        ]
         return movie
     }
 

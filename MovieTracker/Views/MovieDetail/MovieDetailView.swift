@@ -86,6 +86,8 @@ struct MovieDetailView: View {
                     MovieMetadataStrip(movie: movie, tint: model.tint, isWatched: isSeen)
                         .padding(.vertical, 8)
                     MovieOverviewSection(overview: movie.overview ?? "No movie description available.")
+                    WhereToWatchSection(availabilityByRegion: movie.watchByRegion,
+                                        releaseDate: movie.releaseDate, tint: model.tint)
                     RelatedMoviesSection(collection: model.collection,
                                          recommendations: model.recommendations,
                                          lists: lists, tint: model.tint)

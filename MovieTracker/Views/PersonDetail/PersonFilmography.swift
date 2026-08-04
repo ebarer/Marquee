@@ -13,19 +13,29 @@ import SwiftData
 struct PersonFilmography: View {
     let credits: [Movie]
     let lists: [MediaList]
+    @Binding var hideExtraneous: Bool
+    /// Global Y of the nav bar's bottom edge; the header reports when it crosses above it.
+    var navBarBottom: CGFloat = 0
+    /// Called as the in-content filter button scrolls behind the nav bar.
+    var onFilterHiddenChange: (Bool) -> Void = { _ in }
 
-    @State private var hideExtraneous = true
     @State private var upcomingExpanded = false
 
     var body: some View {
         if !visibleCredits.isEmpty {
-            header
-            if !upcomingCredits.isEmpty {
-                upcomingSection
-            }
-            ForEach(releasedByYear, id: \.year) { group in
-                SectionHeader(title: String(group.year), color: .appAccent)
-                rows(group.movies)
+            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                header
+                if !upcomingCredits.isEmpty {
+                    upcomingSection
+                }
+                ForEach(releasedByYear, id: \.year) { group in
+                    Section {
+                        rows(group.movies)
+                    } header: {
+                        SectionHeader(title: String(group.year), color: .appAccent)
+                            .background(Color.appBackground)
+                    }
+                }
             }
         }
     }
@@ -89,6 +99,9 @@ struct PersonFilmography: View {
         .padding(.horizontal, 16)
         .padding(.top, 16)
         .padding(.bottom, 4)
+        .onGeometryChange(for: Bool.self) { proxy in
+            proxy.frame(in: .global).maxY <= navBarBottom
+        } action: { onFilterHiddenChange($0) }
     }
 
     @ViewBuilder
@@ -164,7 +177,8 @@ struct PersonFilmography: View {
     NavigationStack {
         ScrollView {
             LazyVStack(spacing: 0) {
-                PersonFilmography(credits: Person.preview.credits ?? [], lists: [])
+                PersonFilmography(credits: Person.preview.credits ?? [], lists: [],
+                                  hideExtraneous: .constant(true))
             }
         }
         .detailDestinations()
