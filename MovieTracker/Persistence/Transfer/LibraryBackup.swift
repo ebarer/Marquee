@@ -117,7 +117,7 @@ enum ImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedVersion:
-            return "This backup was created by a newer version of MovieTracker."
+            return "This backup was created by a newer version of Marqee."
         }
     }
 }

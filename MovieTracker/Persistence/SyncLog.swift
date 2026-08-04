@@ -13,7 +13,7 @@ import SwiftData
 import OSLog
 
 enum SyncLog {
-    static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MovieTracker",
+    static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Marquee",
                                category: "CloudKitSync")
 
     /// Logs a snapshot of the library — one line per list plus item/entry totals —

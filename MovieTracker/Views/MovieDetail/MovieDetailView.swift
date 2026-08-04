@@ -89,7 +89,7 @@ struct MovieDetailView: View {
                     RelatedMoviesSection(collection: model.collection,
                                          recommendations: model.recommendations,
                                          lists: lists, tint: model.tint)
-                    MovieCastSection(cast: movie.team)
+                    MovieCastSection(cast: movie.team, tint: model.tint)
                 }
                 .padding(.bottom, 24)
             }

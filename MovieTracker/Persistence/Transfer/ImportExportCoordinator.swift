@@ -26,10 +26,9 @@ final class ImportExportCoordinator {
     /// Non-nil while a CSV import is fetching movie details, as `(fetched, total)`.
     private(set) var importProgress: (done: Int, total: Int)?
 
-    /// Backup filename with today's date, e.g. "MovieTracker Backup 2026-08-02.json".
     var exportFilename: String {
         let stamp = Date().formatted(.iso8601.year().month().day().dateSeparator(.dash))
-        return "MovieTracker Backup \(stamp).json"
+        return "Marquee Backup \(stamp).json"
     }
 
     func prepareExport(using store: PersistenceCoordinator) {
