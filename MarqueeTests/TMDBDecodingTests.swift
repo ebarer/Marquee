@@ -65,11 +65,14 @@ import Foundation
         #expect(bonus.after)
     }
 
-    @Test func teamKeepsDirectorsAndAllCastDropsOtherCrew() throws {
+    @Test func teamKeepsDirectorsCastAndCrew() throws {
         let team = try decodeMovie(fullMovieJSON()).team()
         #expect(team.contains { $0.name == "Lana Wachowski" && $0.type == .Crew })
         #expect(team.contains { $0.name == "Keanu Reeves" && $0.type == .Cast })
-        #expect(team.contains { $0.name == "Editor Person" } == false)
+        #expect(team.contains { $0.name == "Editor Person" && $0.type == .Crew })
+        // Directors sort ahead of other crew.
+        let crewNames = team.filter { $0.type == .Crew }.map(\.name)
+        #expect(crewNames == ["Lana Wachowski", "Editor Person"])
     }
 
     @Test func trailersMapped() throws {

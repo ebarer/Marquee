@@ -93,16 +93,46 @@ extension TMDBWrapper {
         func team() -> [Person] {
             guard let teamRaw = self.teamRaw else { return [] }
 
-            var team = [Person]()
-            for person in teamRaw.crew.filter({ $0.role == "Director" }) {
-                team.append(Person(id: person.id, name: person.name, role: person.role,
-                                   pic: person.profilePicture, type: .Crew))
+            // Crew: directors first, then everyone else in the order TMDB returns.
+            let crew = teamRaw.crew.filter { $0.role == "Director" }
+                     + teamRaw.crew.filter { $0.role != "Director" }
+            let crewMembers = Self.dedupedPeople(
+                crew.map { ($0.id, $0.name, $0.role, $0.profilePicture) }, type: .Crew)
+            // Cast stays in billing order.
+            let castMembers = Self.dedupedPeople(
+                teamRaw.cast.map { ($0.id, $0.name, $0.role, $0.profilePicture) }, type: .Cast)
+
+            return crewMembers + castMembers
+        }
+
+        /// Collapses repeated entries for the same person (a director who also
+        /// wrote, an actor billed for two characters) into one row, joining their
+        /// roles in first-seen order. TMDB lists a separate credit per job, so
+        /// without this the same id would appear more than once and break list identity.
+        private static func dedupedPeople(
+            _ raw: [(id: Int, name: String, role: String, pic: String?)],
+            type: Person.PersonType
+        ) -> [Person] {
+            var order = [Int]()
+            var people = [Int: Person]()
+            var roles = [Int: [String]]()
+            for entry in raw {
+                if roles[entry.id] == nil {
+                    order.append(entry.id)
+                    roles[entry.id] = []
+                    people[entry.id] = Person(id: entry.id, name: entry.name,
+                                              role: nil, pic: entry.pic, type: type)
+                }
+                if !entry.role.isEmpty, !roles[entry.id]!.contains(entry.role) {
+                    roles[entry.id]!.append(entry.role)
+                }
             }
-            for person in teamRaw.cast {
-                team.append(Person(id: person.id, name: person.name, role: person.role,
-                                   pic: person.profilePicture, type: .Cast))
+            return order.map { id in
+                var person = people[id]!
+                let joined = roles[id]!.joined(separator: ", ")
+                person.role = joined.isEmpty ? nil : joined
+                return person
             }
-            return team
         }
 
         func trailers() -> [MovieTrailer]? {

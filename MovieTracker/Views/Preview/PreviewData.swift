@@ -24,7 +24,7 @@ extension Movie {
         movie.certification = "PG-13"
         movie.genres = ["Adventure", "Action"]
         movie.bonusCredits = Movie.Credits(during: false, after: true)
-        movie.team = [.preview, .previewActor]
+        movie.team = Person.previewTeam
         return movie
     }
 
@@ -95,6 +95,35 @@ extension Person {
         person.role = "Odysseus"
         person.type = .Cast
         return person
+    }
+
+    /// A full sample team (director, cast, and extra crew) that exercises the
+    /// Starring / Cast / Crew category menu on the movie detail screen.
+    static var previewTeam: [Person] {
+        func member(_ id: Int, _ name: String, _ role: String, _ type: PersonType) -> Person {
+            var person = Person(id: id, name: name)
+            person.role = role
+            person.type = type
+            return person
+        }
+        return [
+            .preview, // Christopher Nolan, Director
+            member(11, "Matt Damon", "Odysseus", .Cast),
+            member(12, "Tom Holland", "Telemachus", .Cast),
+            member(13, "Anne Hathaway", "Penelope", .Cast),
+            member(14, "Zendaya", "Athena", .Cast),
+            member(15, "Robert Pattinson", "Antinous", .Cast),
+            member(16, "Charlize Theron", "Circe", .Cast),
+            member(17, "Lupita Nyong'o", "Calypso", .Cast),
+            member(18, "John Leguizamo", "Eurylochus", .Cast),
+            member(19, "Benny Safdie", "Poseidon", .Cast),
+            member(20, "Mia Threapleton", "Nausicaa", .Cast),
+            member(21, "Cosmo Jarvis", "Polites", .Cast),
+            member(22, "Corey Hawkins", "Perimedes", .Cast),
+            member(30, "Hoyte van Hoytema", "Director of Photography", .Crew),
+            member(31, "Jennifer Lame", "Editor", .Crew),
+            member(32, "Ludwig Göransson", "Original Music Composer", .Crew),
+        ]
     }
 }
 
