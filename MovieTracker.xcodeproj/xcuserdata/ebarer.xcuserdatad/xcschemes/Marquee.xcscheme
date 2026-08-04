@@ -36,28 +36,12 @@
             ReferencedContainer = "container:MovieTracker.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "CE78BD6520C087F4001E6DB6"
-               BuildableName = "MovieTrackerTests.xctest"
-               BlueprintName = "MovieTrackerTests"
-               ReferencedContainer = "container:MovieTracker.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "CE78BD7020C087F4001E6DB6"
-               BuildableName = "MovieTrackerUITests.xctest"
-               BlueprintName = "MovieTrackerUITests"
-               ReferencedContainer = "container:MovieTracker.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-      </Testables>
+      <TestPlans>
+         <TestPlanReference
+            reference = "container:Marquee.xctestplan"
+            default = "YES">
+         </TestPlanReference>
+      </TestPlans>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
