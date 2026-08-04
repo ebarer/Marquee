@@ -1,7 +1,7 @@
 # To-Do
 
 Important:
-- [ ] Add badges to grid view to indicate list association
+- [ ] Expand to full cast list
 
 Smaller/Cosmetic:
 - [ ] In Lists, remove the + button, just have the list button in the top left

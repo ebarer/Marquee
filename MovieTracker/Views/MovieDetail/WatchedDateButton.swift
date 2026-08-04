@@ -44,17 +44,20 @@ struct WatchedDateButton: View {
                            displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .tint(tint)
-                    .padding()
+                    .padding(.horizontal)
                     .frame(maxHeight: .infinity, alignment: .top)
-                    .navigationTitle("Date Watched")
-                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Today") { date = Date() }
-                        }
                         ToolbarItem(placement: .confirmationAction) {
-                            Button { showPicker = false } label: {
-                                Image(systemName: "checkmark")
+                            Button(role: .confirm) {
+                                showPicker = false
+                            }
+                        }
+                        ToolbarItemGroup(placement: .topBarLeading) {
+                            Button("Today") { date = Date() }
+                            if let releaseDate = movie.releaseDate, releaseDate <= Date() {
+                                Button("Release Date") {
+                                    date = MediaItem.localDay(from: releaseDate)
+                                }
                             }
                         }
                     }

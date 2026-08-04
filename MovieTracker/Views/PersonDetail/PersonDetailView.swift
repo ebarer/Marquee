@@ -64,7 +64,7 @@ struct PersonDetailView: View {
                 .padding(.bottom, 24)
             }
         }
-        .swipeActionsContainer()
+        .swipeActionsContainerIfAvailable()
         .background(Color.appBackground)
         .navigationTitle(current.name)
         .toolbarTitleDisplayMode(.inline)
@@ -109,6 +109,19 @@ struct PersonDetailView: View {
         }
     }
 
+}
+
+private extension View {
+    /// `swipeActionsContainer()` requires iOS 27; on earlier releases the
+    /// filmography rows simply go without the swipe container.
+    @ViewBuilder
+    func swipeActionsContainerIfAvailable() -> some View {
+        if #available(iOS 27.0, *) {
+            swipeActionsContainer()
+        } else {
+            self
+        }
+    }
 }
 
 #Preview {
