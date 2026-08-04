@@ -29,11 +29,17 @@ struct PersonDetailView: View {
     /// When on, hides "Self" (talk-show) and "Thanks" credits from the filmography.
     /// On by default so the filmography leads with actual roles.
     @State private var hideExtraneous = true
+    /// True once the filmography's own filter button has scrolled behind the nav
+    /// bar, at which point the toolbar shows a stand-in.
+    @State private var filterButtonHidden = false
 
     /// Scroll target for re-anchoring to the header when the bio collapses.
     private let bioHeaderID = "personBioHeader"
 
     private var current: Person { model.person ?? person }
+    private var hasExtraneousCredits: Bool {
+        (current.credits ?? []).contains { $0.isExtraneousCredit }
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -59,7 +65,14 @@ struct PersonDetailView: View {
 
                     knownForSection
 
-                    PersonFilmography(credits: current.credits ?? [], lists: lists)
+                    PersonFilmography(credits: current.credits ?? [], lists: lists,
+                                      hideExtraneous: $hideExtraneous,
+                                      navBarBottom: navBarBottom,
+                                      onFilterHiddenChange: { hidden in
+                                          withAnimation(.easeInOut(duration: 0.2)) {
+                                              filterButtonHidden = hidden
+                                          }
+                                      })
                 }
                 .padding(.bottom, 24)
             }
@@ -74,6 +87,24 @@ struct PersonDetailView: View {
                     .font(.headline)
                     .foregroundStyle(.white)
                     .opacity(showNavTitle ? 1 : 0)
+            }
+            if filterButtonHidden && hasExtraneousCredits {
+                ToolbarItem(placement: .topBarTrailing) {
+                    let button = Button {
+                        withAnimation(.easeInOut) { hideExtraneous.toggle() }
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease")
+                    }
+                    .accessibilityLabel(hideExtraneous ? "Show all credits" : "Hide Self and Thanks credits")
+
+                    // Active filtering reads as a prominent accent-tinted glass button;
+                    // off falls back to the default toolbar glass.
+                    if hideExtraneous {
+                        button.buttonStyle(.glassProminent).tint(.appAccent)
+                    } else {
+                        button
+                    }
+                }
             }
         }
         .background {

@@ -28,6 +28,10 @@ struct Movie: Hashable, Identifiable, Codable {
     var team: [Person] = []
     var creditRole: String?
     var collection: MovieCollection?
+    /// Streaming availability keyed by region (JustWatch data, via TMDB).
+    var watchByRegion: [String: WatchAvailability]?
+
+    func watch(for region: String) -> WatchAvailability? { watchByRegion?[region] }
 
     init(id: Int, title: String) {
         self.id = id

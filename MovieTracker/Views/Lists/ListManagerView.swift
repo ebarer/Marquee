@@ -26,7 +26,12 @@ struct ListManagerView: View {
 
     @State private var editing: MediaList?
     @State private var creatingNew = false
-    @State private var showingCache = false
+    // One destination for both pushes; two `navigationDestination(isPresented:)` conflict.
+    @State private var pushed: ManagerDestination?
+
+    private enum ManagerDestination: Hashable {
+        case cache, services
+    }
 
     private static let separator = Color.white.opacity(0.25)
 
@@ -85,12 +90,30 @@ struct ListManagerView: View {
                 .moveDisabled(true)
                 .deleteDisabled(true)
 
+                Section {
+                    Button {
+                        pushed = .services
+                    } label: {
+                        HStack {
+                            Label("Streaming Services", systemImage: "tv")
+                                .foregroundStyle(Color.appAccent)
+                            Spacer()
+                            Image(systemName: "chevron.forward")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+                .listRowSeparatorTint(Self.separator)
+                .moveDisabled(true)
+                .deleteDisabled(true)
+
                 // Offline cache management, with the app version pinned to the footer.
                 // A Button (not NavigationLink) because this List is permanently in
                 // edit mode, where links don't fire; it drives a programmatic push.
                 Section {
                     Button {
-                        showingCache = true
+                        pushed = .cache
                     } label: {
                         HStack {
                             Label("Manage Cache", systemImage: "internaldrive")
@@ -111,8 +134,11 @@ struct ListManagerView: View {
                 .deleteDisabled(true)
             }
             .listStyle(.insetGrouped)
-            .navigationDestination(isPresented: $showingCache) {
-                CacheManagerView()
+            .navigationDestination(item: $pushed) { destination in
+                switch destination {
+                case .cache: CacheManagerView()
+                case .services: StreamingServicesView()
+                }
             }
             // The whole point of this screen is reordering/deleting, so it stays in
             // edit mode permanently rather than gating that behind an Edit button.

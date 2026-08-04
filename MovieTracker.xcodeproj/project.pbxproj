@@ -98,6 +98,15 @@
 		CEEAFCFD3019DEBF00D06E0E /* MovieDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCFC3019DEBF00D06E0E /* MovieDetailView.swift */; };
 		CEEAFCFF3019DEE200D06E0E /* PersonDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCFE3019DEE200D06E0E /* PersonDetailView.swift */; };
 		CEEAFD013019DEEA00D06E0E /* PosterDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFD003019DEEA00D06E0E /* PosterDetailView.swift */; };
+		CEFDA6F83021DE7B00EFAB14 /* WhereToWatchSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA6F73021DE7B00EFAB14 /* WhereToWatchSection.swift */; };
+		CEFDA6FA3021E09600EFAB14 /* StreamingServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA6F93021E09600EFAB14 /* StreamingServicesView.swift */; };
+		CEFDA6FD3021E46100EFAB14 /* WatchProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA6FC3021E46100EFAB14 /* WatchProvider.swift */; };
+		CEFDA6FF3021E47700EFAB14 /* ProviderLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA6FE3021E47700EFAB14 /* ProviderLinks.swift */; };
+		CEFDA7013021E48700EFAB14 /* ProviderCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA7003021E48700EFAB14 /* ProviderCatalog.swift */; };
+		CEFDA7033021E49000EFAB14 /* SelectedProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA7023021E49000EFAB14 /* SelectedProviders.swift */; };
+		CEFDA7053021E65400EFAB14 /* StreamingServicesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA7043021E65400EFAB14 /* StreamingServicesStore.swift */; };
+		CEFDA7073021E9A800EFAB14 /* Region.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA7063021E9A800EFAB14 /* Region.swift */; };
+		CEFDA7093021EA2F00EFAB14 /* RegionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA7083021EA2F00EFAB14 /* RegionPickerView.swift */; };
 		D21CD5D1901AD6964F9298F2 /* URLProtocolStub.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66935959C77C8B68D7338C53 /* URLProtocolStub.swift */; };
 		D46C3BCE8DC50C7B4BBC80BD /* SearchModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36484258746526D960C509D3 /* SearchModelTests.swift */; };
 		DB96D412EB28EBCBA2BF4C47 /* LibraryBackupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5340BD8B3C45936F0EFBA60 /* LibraryBackupTests.swift */; };
@@ -217,6 +226,15 @@
 		CEEAFCFE3019DEE200D06E0E /* PersonDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonDetailView.swift; sourceTree = "<group>"; };
 		CEEAFD003019DEEA00D06E0E /* PosterDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PosterDetailView.swift; sourceTree = "<group>"; };
 		CEEE5B6521AE3B35008C8EAE /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		CEFDA6F73021DE7B00EFAB14 /* WhereToWatchSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhereToWatchSection.swift; sourceTree = "<group>"; };
+		CEFDA6F93021E09600EFAB14 /* StreamingServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingServicesView.swift; sourceTree = "<group>"; };
+		CEFDA6FC3021E46100EFAB14 /* WatchProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchProvider.swift; sourceTree = "<group>"; };
+		CEFDA6FE3021E47700EFAB14 /* ProviderLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderLinks.swift; sourceTree = "<group>"; };
+		CEFDA7003021E48700EFAB14 /* ProviderCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderCatalog.swift; sourceTree = "<group>"; };
+		CEFDA7023021E49000EFAB14 /* SelectedProviders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedProviders.swift; sourceTree = "<group>"; };
+		CEFDA7043021E65400EFAB14 /* StreamingServicesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingServicesStore.swift; sourceTree = "<group>"; };
+		CEFDA7063021E9A800EFAB14 /* Region.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Region.swift; sourceTree = "<group>"; };
+		CEFDA7083021EA2F00EFAB14 /* RegionPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionPickerView.swift; sourceTree = "<group>"; };
 		D401FA2CA3B8348D2617FC74 /* MediaItemTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MediaItemTests.swift; sourceTree = "<group>"; };
 		DE1E043D1EAE163A56F1FA1C /* TMDBDecodingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TMDBDecodingTests.swift; sourceTree = "<group>"; };
 		ED65C6B66C4B2FC0F53E0717 /* TestSupport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TestSupport.swift; path = Support/TestSupport.swift; sourceTree = "<group>"; };
@@ -331,6 +349,8 @@
 				CE310EF1302030020092A86B /* ListSectionsModel.swift */,
 				CE310EF33020765D0092A86B /* ListEditorIcon.swift */,
 				CEBB7A6430209AF600ED8C51 /* CacheManagerView.swift */,
+				CEFDA6F93021E09600EFAB14 /* StreamingServicesView.swift */,
+				CEFDA7083021EA2F00EFAB14 /* RegionPickerView.swift */,
 			);
 			path = Lists;
 			sourceTree = "<group>";
@@ -349,6 +369,7 @@
 				CEB8A47A301F18F3002FBF31 /* MovieCastSection.swift */,
 				CEB8A47E301F19F5002FBF31 /* StarRating.swift */,
 				CEB8A480301F1A00002FBF31 /* WatchedDateButton.swift */,
+				CEFDA6F73021DE7B00EFAB14 /* WhereToWatchSection.swift */,
 			);
 			path = MovieDetail;
 			sourceTree = "<group>";
@@ -464,6 +485,7 @@
 				CE59561520CA69230047BC39 /* Models */,
 				CE73B027301F41FE00FA5FD6 /* Persistence */,
 				CE73B026301F41F900FA5FD6 /* Networking */,
+				CEFDA6FB3021E46100EFAB14 /* Streaming */,
 				CE569769301C7AAE00DF9142 /* Resources */,
 			);
 			path = MovieTracker;
@@ -496,6 +518,19 @@
 				CE94C8AA20CC6C2D00E3925E /* Extensions */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		CEFDA6FB3021E46100EFAB14 /* Streaming */ = {
+			isa = PBXGroup;
+			children = (
+				CEFDA6FC3021E46100EFAB14 /* WatchProvider.swift */,
+				CEFDA6FE3021E47700EFAB14 /* ProviderLinks.swift */,
+				CEFDA7003021E48700EFAB14 /* ProviderCatalog.swift */,
+				CEFDA7023021E49000EFAB14 /* SelectedProviders.swift */,
+				CEFDA7043021E65400EFAB14 /* StreamingServicesStore.swift */,
+				CEFDA7063021E9A800EFAB14 /* Region.swift */,
+			);
+			path = Streaming;
 			sourceTree = "<group>";
 		};
 		D6B5113CA0091B858F7033C1 /* MarqueeTests */ = {
@@ -668,6 +703,7 @@
 				CEDA8BC321997F71006BB3CD /* String+Extension.swift in Sources */,
 				CE8041B4301D93A200F5D6F2 /* GlassScopeBar.swift in Sources */,
 				CE569768301C71FF00DF9142 /* MovieListActions.swift in Sources */,
+				CEFDA6FD3021E46100EFAB14 /* WatchProvider.swift in Sources */,
 				CEEAFCFF3019DEE200D06E0E /* PersonDetailView.swift in Sources */,
 				CEB8A481301F1A00002FBF31 /* WatchedDateButton.swift in Sources */,
 				CEEAFCE83019D1D100D06E0E /* Color+ProjectColors.swift in Sources */,
@@ -691,6 +727,7 @@
 				CEB8A469301EE5E1002FBF31 /* SyncLog.swift in Sources */,
 				CE822F4E301D1B450070F69B /* ListIcon.swift in Sources */,
 				CEDA8BC121997F2A006BB3CD /* Person.swift in Sources */,
+				CEFDA7093021EA2F00EFAB14 /* RegionPickerView.swift in Sources */,
 				CE78BD5320C087F2001E6DB6 /* AppDelegate.swift in Sources */,
 				CEB0923220D0CA3E0050D39E /* DateFormatter+Extension.swift in Sources */,
 				CEB8A473301F1891002FBF31 /* MovieOverviewSection.swift in Sources */,
@@ -702,8 +739,10 @@
 				CE310EF43020765D0092A86B /* ListEditorIcon.swift in Sources */,
 				CEB8A463301E8BA2002FBF31 /* CloudSyncMonitor.swift in Sources */,
 				CEB8A48D301F2EDF002FBF31 /* ListEntry.swift in Sources */,
+				CEFDA6FF3021E47700EFAB14 /* ProviderLinks.swift in Sources */,
 				CE73B02A3020290200FA5FD6 /* ImportExportCoordinator.swift in Sources */,
 				CE56974C301C199C00DF9142 /* PosterImage.swift in Sources */,
+				CEFDA6FA3021E09600EFAB14 /* StreamingServicesView.swift in Sources */,
 				CEB8A48B301F2ED5002FBF31 /* MediaItem.swift in Sources */,
 				CEEAFCF93019DE0200D06E0E /* Color+AverageColor.swift in Sources */,
 				CEEAFD013019DEEA00D06E0E /* PosterDetailView.swift in Sources */,
@@ -711,6 +750,7 @@
 				CEB8A477301F18D3002FBF31 /* MovieDetailHeader.swift in Sources */,
 				CEB8A485301F1C32002FBF31 /* ListsToolbar.swift in Sources */,
 				CEB8A47D301F19BD002FBF31 /* PersonFilmography.swift in Sources */,
+				CEFDA7033021E49000EFAB14 /* SelectedProviders.swift in Sources */,
 				CEB8A471301F17B9002FBF31 /* PosterStrip.swift in Sources */,
 				CE56975E301C1A6100DF9142 /* FeaturedCollection.swift in Sources */,
 				CEB8A47F301F19F5002FBF31 /* StarRating.swift in Sources */,
@@ -718,10 +758,14 @@
 				CE8041A7301D441300F5D6F2 /* EmojiField.swift in Sources */,
 				CEB8A47B301F18F3002FBF31 /* MovieCastSection.swift in Sources */,
 				CE569758301C1A1000DF9142 /* MovieMetadataStrip.swift in Sources */,
+				CEFDA7073021E9A800EFAB14 /* Region.swift in Sources */,
+				CEFDA7013021E48700EFAB14 /* ProviderCatalog.swift in Sources */,
+				CEFDA6F83021DE7B00EFAB14 /* WhereToWatchSection.swift in Sources */,
 				CEBB7A6530209AF600ED8C51 /* CacheManagerView.swift in Sources */,
 				CE8C0C95301AFEDA00F08C6A /* ListEditorView.swift in Sources */,
 				CEEAFCF03019D1FA00D06E0E /* ListsView.swift in Sources */,
 				CEEAFCE13019D0AB00D06E0E /* RootView.swift in Sources */,
+				CEFDA7053021E65400EFAB14 /* StreamingServicesStore.swift in Sources */,
 				CEB8A487301F1C6C002FBF31 /* ListRows.swift in Sources */,
 				CE569756301C19F300DF9142 /* MovieDetailModel.swift in Sources */,
 				CEB8A46F301F17B1002FBF31 /* SectionHeader.swift in Sources */,
@@ -992,7 +1036,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.3.9;
+				CURRENT_PROJECT_VERSION = 2026.8.4.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1015,7 +1059,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.3.9;
+				CURRENT_PROJECT_VERSION = 2026.8.4.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
