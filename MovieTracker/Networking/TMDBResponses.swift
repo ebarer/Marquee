@@ -33,6 +33,7 @@ extension TMDBWrapper {
         var runtime: Int?
         var rating: Double?
         var popularity: Double?
+        var voteCount: Int?
         var releaseDates: ReleaseDatesRaw?
         var genresRaw: [GenreRaw]?
         var trailersRaw: TrailersRaw?
@@ -175,6 +176,7 @@ extension TMDBWrapper {
 
         enum CodingKeys: String, CodingKey {
             case id, title, overview, runtime, popularity, keywords
+            case voteCount = "vote_count"
             case imdbID = "imdb_id"
             case releaseDateString = "release_date"
             case poster = "poster_path"

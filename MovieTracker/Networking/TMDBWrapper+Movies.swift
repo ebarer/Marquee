@@ -56,6 +56,16 @@ extension TMDBWrapper {
             .map { WatchProvider(id: $0.providerId, name: $0.providerName, logoPath: $0.logoPath) }
     }
 
+    /// A movie's cast in billing order. Used by search to surface actors by the
+    /// character they played (e.g. "spiderman" → everyone credited as Spider-Man).
+    static func movieCast(id: Int) async throws -> [Person] {
+        let data = try await fetch("/movie/\(id)/credits")
+        let team = try decode(MovieRaw.TeamRaw.self, from: data)
+        return team.cast
+            .sorted { $0.order < $1.order }
+            .map { Person(id: $0.id, name: $0.name, role: $0.role, pic: $0.profilePicture, type: .Cast) }
+    }
+
     static func searchForMovies(query: String, page: Int = 1) async throws -> PagedResult<Movie> {
         guard !query.isEmpty else { return .empty }
         return try await moviePage("/search/movie", page: page,
@@ -89,6 +99,7 @@ extension TMDBWrapper {
         movie.runtime = mv.runtime
         movie.rating = mv.rating
         movie.popularity = mv.popularity
+        movie.voteCount = mv.voteCount
         movie.imdbID = mv.imdbID
 
         let releaseInfo = mv.certification()

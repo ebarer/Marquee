@@ -53,11 +53,13 @@ import Foundation
         let model = SearchModel()
         model.search("")
         #expect(model.movies.isEmpty)
-        #expect(model.people.isEmpty)
+        #expect(model.namedPeople.isEmpty)
+        #expect(model.movieMatchedPeople.isEmpty)
+        #expect(model.featuredPeople.isEmpty)
+        #expect(model.isLoading == false)
     }
 
-    @Test func scopePlaceholder() {
-        #expect(SearchModel.Scope.movies.placeholder == "Movies, People, etc.")
-        #expect(SearchModel.Scope.allCases.count == 2)
+    @Test func placeholderText() {
+        #expect(SearchModel.placeholder == "Movies, People, etc.")
     }
 }

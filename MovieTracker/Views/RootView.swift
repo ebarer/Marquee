@@ -67,15 +67,12 @@ struct RootView: View {
                 }
                 // Declare the search field only on the search tab, so it never
                 // appears above the Discover or Lists content.
-                .searchable(text: $searchModel.query, prompt: searchModel.scope.placeholder)
-                // The system scope bar (.searchScopes) isn't reliably shown by
-                // the bottom-docked tab search field, so SearchView renders its
-                // own scope picker. Scope changes still re-run the search below.
+                .searchable(text: $searchModel.query, prompt: SearchModel.placeholder)
+                // A single query drives both movie and people results, so there's
+                // no scope to switch — SearchView surfaces matching people in a
+                // strip above the movie list.
                 .onChange(of: searchModel.query) { _, newValue in
                     searchModel.search(newValue)
-                }
-                .onChange(of: searchModel.scope) { _, _ in
-                    searchModel.search(searchModel.query)
                 }
                 .onChange(of: searchPath) { oldPath, newPath in
                     // Opening a result (pushing onto the stack) counts as
