@@ -8,7 +8,6 @@ Smaller/Cosmetic:
 - [ ] Add access to additional photos for people?
 
 Ideas:
-- [ ] Unify search
 - [ ] Support landscape?
 - [ ] Share lists
 - [ ] Add TV shows

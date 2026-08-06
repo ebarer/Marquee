@@ -2,14 +2,9 @@
 //  SearchView.swift
 //  MovieTracker
 //
-//  Results for the unified movie/people search. A single query drives both:
-//  matching people surface in a strip pinned atop the movie list, so cast and
-//  crew are reachable without a scope toggle. People come from name matches and
-//  from the characters played in the top movie hits (see SearchModel), so
-//  "spiderman" surfaces the actors credited as Spider-Man. The search field and
-//  query state are owned by RootView's TabView so the search-role tab drives one
-//  search bar for the whole app. When there's no active query, recent searches
-//  fill the space.
+//  Results for the unified movie/people search: a people strip (SearchPeopleStrip)
+//  pinned atop the movie list. Query state is owned by RootView's TabView; recent
+//  searches fill the space when there's no active query.
 //
 
 import SwiftUI
@@ -26,7 +21,8 @@ struct SearchView: View {
             if isSearching {
                 if !featuredPeople.isEmpty {
                     Section("People") {
-                        SearchPeopleStrip(people: featuredPeople)
+                        SearchPeopleStrip(people: featuredPeople,
+                                          inlineCount: model.featuredPeopleInlineCount)
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -45,10 +41,16 @@ struct SearchView: View {
         .navigationBarTitleDisplayMode(.inline)
         .overlay {
             if isSearching {
-                // Only surface "no results" once the lookup settles, so an
-                // in-flight query doesn't flash an empty state.
-                if !model.isLoading && model.movies.isEmpty && featuredPeople.isEmpty {
-                    ContentUnavailableView.search(text: trimmedQuery)
+                if model.movies.isEmpty && featuredPeople.isEmpty {
+                    if model.isLoading {
+                        // First lookup with nothing to show yet: a spinner beats a
+                        // blank screen. (Re-searches keep the prior results visible
+                        // until the new ones commit, so this only hits a cold start.)
+                        ProgressView()
+                    } else {
+                        // Only surface "no results" once the lookup settles.
+                        ContentUnavailableView.search(text: trimmedQuery)
+                    }
                 }
             } else if model.recentSearches.isEmpty {
                 ContentUnavailableView(

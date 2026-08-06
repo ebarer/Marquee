@@ -32,6 +32,7 @@
 		CE3FE9C2302286CF00FCC44B /* SearchPeopleStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3FE9C1302286CF00FCC44B /* SearchPeopleStrip.swift */; };
 		CE3FE9DD3022D7C800FCC44B /* SearchMatching.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3FE9DC3022D7C800FCC44B /* SearchMatching.swift */; };
 		CE3FE9DF3022D84500FCC44B /* SearchMatchingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3FE9DE3022D84500FCC44B /* SearchMatchingTests.swift */; };
+		CE3FE9F6302403F700FCC44B /* SearchPeopleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3FE9F5302403F700FCC44B /* SearchPeopleListView.swift */; };
 		CE56974A301C198500DF9142 /* PreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE569749301C198500DF9142 /* PreviewData.swift */; };
 		CE56974C301C199C00DF9142 /* PosterImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE56974B301C199C00DF9142 /* PosterImage.swift */; };
 		CE56974E301C199F00DF9142 /* ProfileImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE56974D301C199F00DF9142 /* ProfileImage.swift */; };
@@ -163,6 +164,7 @@
 		CE3FE9C1302286CF00FCC44B /* SearchPeopleStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchPeopleStrip.swift; sourceTree = "<group>"; };
 		CE3FE9DC3022D7C800FCC44B /* SearchMatching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchMatching.swift; sourceTree = "<group>"; };
 		CE3FE9DE3022D84500FCC44B /* SearchMatchingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchMatchingTests.swift; sourceTree = "<group>"; };
+		CE3FE9F5302403F700FCC44B /* SearchPeopleListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchPeopleListView.swift; sourceTree = "<group>"; };
 		CE569749301C198500DF9142 /* PreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewData.swift; sourceTree = "<group>"; };
 		CE56974B301C199C00DF9142 /* PosterImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PosterImage.swift; sourceTree = "<group>"; };
 		CE56974D301C199F00DF9142 /* ProfileImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileImage.swift; sourceTree = "<group>"; };
@@ -337,8 +339,9 @@
 			isa = PBXGroup;
 			children = (
 				CEEAFCF13019D1FB00D06E0E /* SearchView.swift */,
-				CE569765301C1ABF00DF9142 /* SearchModel.swift */,
 				CE3FE9C1302286CF00FCC44B /* SearchPeopleStrip.swift */,
+				CE3FE9F5302403F700FCC44B /* SearchPeopleListView.swift */,
+				CE569765301C1ABF00DF9142 /* SearchModel.swift */,
 				CE3FE9DC3022D7C800FCC44B /* SearchMatching.swift */,
 			);
 			path = Search;
@@ -766,6 +769,7 @@
 				CE56975E301C1A6100DF9142 /* FeaturedCollection.swift in Sources */,
 				CEB8A47F301F19F5002FBF31 /* StarRating.swift in Sources */,
 				CE56975A301C1A2E00DF9142 /* PersonDetailModel.swift in Sources */,
+				CE3FE9F6302403F700FCC44B /* SearchPeopleListView.swift in Sources */,
 				CE8041A7301D441300F5D6F2 /* EmojiField.swift in Sources */,
 				CEB8A47B301F18F3002FBF31 /* MovieCastSection.swift in Sources */,
 				CE569758301C1A1000DF9142 /* MovieMetadataStrip.swift in Sources */,
@@ -1048,9 +1052,9 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.4.3;
+				CURRENT_PROJECT_VERSION = 2026.8.5.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1071,9 +1075,9 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.4.3;
+				CURRENT_PROJECT_VERSION = 2026.8.5.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

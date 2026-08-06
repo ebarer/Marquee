@@ -2,13 +2,9 @@
 //  SearchModel.swift
 //  MovieTracker
 //
-//  Debounced, cancellable search that looks up movies and people together from
-//  a single query — no scope toggle. People surface two ways: by name (TMDB
-//  person search) and from the top movie matches — either the actors credited as
-//  the searched character (so "spiderman" → the Spider-Man actors) or, when no
-//  character matches, the lead(s) of the film the query names (so "ironman" → the
-//  Iron Man lead, credited only as "Tony Stark"). Also tracks recent search
-//  terms, persisted across launches.
+//  Debounced, cancellable search over one query (no scope toggle): movies plus
+//  people by name and from the top movie matches (character or lead fallback), via
+//  the pure rules in SearchMatching. Also tracks recent search terms across launches.
 //
 
 import SwiftUI
@@ -39,11 +35,28 @@ final class SearchModel {
 
     private var searchTask: Task<Void, Never>?
 
+    /// The last query whose own results were strong (top popularity ≥
+    /// `weakMoviePopularity`). Anchors the recall recovery in `search`.
+    private var lastStrongQuery = ""
+
     private let recentsKey = "recentSearches"
     private let maxRecents = 15
 
-    /// Most people ever shown in the strip above the movie results.
-    private let maxFeaturedPeople = 12
+    /// Cap on the full ranked people list (the strip previews a few and folds the
+    /// rest behind "More"). High enough to hold every real match.
+    private let maxFeaturedPeople = 50
+
+    /// Most people shown inline in the strip before folding into "More".
+    private let stripPreviewLimit = 8
+
+    /// A name match below this popularity folds under "More" rather than showing
+    /// inline (movie matches are always inline), so a title search's namesake noise
+    /// folds while real actors stay inline.
+    private let inlinePopularityFloor: Float = 1
+
+    /// When nothing clears the notability bar (a pure obscure-name search), still
+    /// show this many inline so the strip is never just a bare "More" button.
+    private let minInlinePeople = 3
 
     /// A name match below this popularity AND without a photo is treated as a
     /// non-person TMDB entry ("Toy Story Alien") and dropped.
@@ -61,13 +74,26 @@ final class SearchModel {
     /// matching half the cast of every result.
     private let minRoleMatchLength = 4
 
+    /// Shortest query for the lead fallback's PREFIX case (exact matches fire at any
+    /// length). Lower than character-matching because it's precise on its own (title
+    /// prefix + popularity), so a 3-char prefix already surfaces the stars.
+    private let minLeadPrefixLength = 3
+
+    /// A film must have at least this many votes for its cast to surface via a character-name match
+    private let minCharacterMatchVotes = 300
+
+    /// TMDB returns a long tail of near-anonymous films (a handful of votes) that
+    /// crowd the real results. Films below this vote count are buried at the
+    /// bottom of the movie list — still reachable, just out of the way.
+    private let movieNoiseVoteFloor = 100
+
     /// Below this top-result popularity, a query is treated as having found only
     /// obscure films, triggering the spaced-variant retry (see fetchMovies).
     private let weakMoviePopularity = 5.0
 
-    /// When no character matches, surface this many of the named film's leads
-    /// (just the star — a second lead tends to be a co-star, not the hero).
-    private let leadFallbackCount = 1
+    /// When no character matches, surface this many of the named film's leads, so a
+    /// title search shows its stars, not just the top-billed one.
+    private let leadFallbackCount = 2
 
     /// The named film must be at least this popular to surface its leads, so an
     /// obscure movie sharing the query's title doesn't put randos in the strip.
@@ -87,6 +113,16 @@ final class SearchModel {
                                       namedNoiseFloor: namedNoiseFloor)
     }
 
+    /// How many featured people the strip shows inline before folding the rest
+    /// (low-popularity namesakes) behind the "More" button.
+    var featuredPeopleInlineCount: Int {
+        SearchMatching.inlinePeopleCount(featuredPeople,
+                                         movieMatchedIDs: Set(movieMatchedPeople.map(\.id)),
+                                         inlinePopularityFloor: inlinePopularityFloor,
+                                         minInline: minInlinePeople,
+                                         previewLimit: stripPreviewLimit)
+    }
+
     init() {
         recentSearches = UserDefaults.standard.stringArray(forKey: recentsKey) ?? []
     }
@@ -99,6 +135,7 @@ final class SearchModel {
             movies = []
             namedPeople = []
             movieMatchedPeople = []
+            lastStrongQuery = ""
             isLoading = false
             return
         }
@@ -113,18 +150,51 @@ final class SearchModel {
             // never discards movie results (and vice versa).
             async let movieResults = fetchMovies(query)
             async let peopleResults = fetchPeople(query)
-            let (movies, people) = await (movieResults, peopleResults)
-
+            var movies = await movieResults
+            let people = await peopleResults
             guard !Task.isCancelled else { return }
-            self.movies = movies
-            self.namedPeople = people
 
-            // Surface actors from the top movie matches.
+            // Recall recovery: TMDB's incremental search is erratic, so mid-typing a
+            // multi-word title the real film can drop out. If this weak keystroke
+            // relates to a previously-strong query, re-run that anchor and keep its
+            // results — but only if the query still leads to the anchor's top film,
+            // so typing toward a different title self-corrects to its real results.
+            let originalStrong = isStrong(movies)
+            if !originalStrong,
+               SearchMatching.shouldTryAnchorRecovery(query: query,
+                                                      lastStrongQuery: lastStrongQuery,
+                                                      minLength: minRoleMatchLength) {
+                let recovered = await fetchMovies(lastStrongQuery)
+                guard !Task.isCancelled else { return }
+                let needle = SearchMatching.normalized(SearchMatching.articleStripped(query))
+                if isStrong(recovered), let top = recovered.first,
+                   SearchMatching.topFilmLeadsApply(topTitle: top.title, normalizedQuery: needle,
+                                                    minQueryLength: minLeadPrefixLength) {
+                    movies = recovered
+                }
+            }
+
+            // Resolve movie-matched people BEFORE publishing, so results land in one
+            // complete update instead of pairing new movies with the previous query's
+            // people (a "wrong people" flash) and updating again. Old results stay on
+            // screen until this single commit, so there's no blank between queries.
             let moviePeople = await moviePeople(query: query, in: movies)
             guard !Task.isCancelled else { return }
+
+            self.movies = movies
+            self.namedPeople = people
             self.movieMatchedPeople = moviePeople
+            // Advance the anchor only when the typed query itself was strong, so
+            // recovery always re-runs a real query, never a recovered one.
+            if originalStrong { self.lastStrongQuery = query }
             self.isLoading = false
         }
+    }
+
+    /// Whether a result set has a genuinely relevant hit up top, versus only the
+    /// obscure long tail TMDB returns for a partial/compressed query.
+    private func isStrong(_ movies: [Movie]) -> Bool {
+        (movies.first?.popularity ?? 0) >= weakMoviePopularity
     }
 
     /// Movie results for the query. TMDB's title search is space-sensitive, so a
@@ -143,28 +213,42 @@ final class SearchModel {
                 let parts = (try? await TMDBWrapper.getCollection(id: id)) ?? []
                 results += parts.filter { seen.insert($0.id).inserted }
             }
-            // Read the franchise as a notability-ranked "greatest films" list, so
-            // iconic entries (e.g. The Dark Knight) lead rather than trailing the
-            // long tail of title matches.
-            results.sort { ($0.voteCount ?? 0) > ($1.voteCount ?? 0) }
+            // The popularity ranking below floats the iconic entries (e.g. The Dark
+            // Knight) ahead of the long tail of title matches, so no extra sort here.
         }
-        return results
+
+        // Rank for display: notable films first by current popularity, low-vote
+        // noise sunk below (kept reachable, not dropped).
+        return SearchMatching.rankedForDisplay(results, minVotes: movieNoiseVoteFloor)
     }
 
-    /// Title-based movie results, with the spaced-variant retry for compressed
-    /// hero names (see the class notes).
+    /// Title-based movie results. TMDB misses films spelled unlike its index, so we
+    /// also search alternate spellings and merge them in front: an interpunct variant
+    /// for separator/bullet titles, plus — when the plain results look weak — the
+    /// spaced hero variant for a compressed name. Noise a variant adds sinks in
+    /// `rankedForDisplay`.
     private func titleMovies(_ query: String) async -> [Movie] {
         let primary = await rawMovieSearch(query)
-        guard (primary.first?.popularity ?? 0) < weakMoviePopularity,
-              let spaced = SearchMatching.spacedVariant(of: query) else {
-            return primary
-        }
 
-        let alternate = await rawMovieSearch(spaced)
-        guard !alternate.isEmpty else { return primary }
+        var alternates: [String] = []
+        if let bullet = SearchMatching.interpunctVariant(of: query) {
+            alternates.append(bullet)
+        }
+        if (primary.first?.popularity ?? 0) < weakMoviePopularity,
+           let spaced = SearchMatching.spacedVariant(of: query) {
+            alternates.append(spaced)
+        }
+        guard !alternates.isEmpty else { return primary }
 
         var seen = Set<Int>()
-        return (alternate + primary).filter { seen.insert($0.id).inserted }
+        var results: [Movie] = []
+        for alternate in alternates {
+            for movie in await rawMovieSearch(alternate) where seen.insert(movie.id).inserted {
+                results.append(movie)
+            }
+        }
+        results += primary.filter { seen.insert($0.id).inserted }
+        return results
     }
 
     /// Curated franchise collections to fold into a query's movie results, keyed
@@ -196,8 +280,19 @@ final class SearchModel {
     /// People surfaced from the top movie hits. Fetches the casts, then defers
     /// the matching and ranking to the network-free `SearchMatching`.
     private func moviePeople(query: String, in movies: [Movie]) async -> [Person] {
-        guard SearchMatching.normalized(query).count >= minRoleMatchLength,
-              !movies.isEmpty else { return [] }
+        guard !movies.isEmpty else { return [] }
+
+        // Character-matching needs a non-generic query length; the lead fallback
+        // applies on an exact title (any length, so "300" works) or a title prefix
+        // (so "odysse" already surfaces The Odyssey's cast). Skip the cast fetch
+        // only when neither path could possibly apply.
+        let needle = SearchMatching.normalized(SearchMatching.articleStripped(query))
+        let canCharacterMatch = needle.count >= minRoleMatchLength
+        let canLeadFallback = movies.first.map {
+            SearchMatching.topFilmLeadsApply(topTitle: $0.title, normalizedQuery: needle,
+                                             minQueryLength: minLeadPrefixLength)
+        } ?? false
+        guard canCharacterMatch || canLeadFallback else { return [] }
 
         let topMovies = Array(movies.prefix(roleMatchMovieDepth))
         // Fetch casts concurrently but reassemble in movie order.
@@ -216,7 +311,9 @@ final class SearchModel {
         return SearchMatching.moviePeople(query: query,
                                           films: films,
                                           minQueryLength: minRoleMatchLength,
+                                          leadPrefixMinLength: minLeadPrefixLength,
                                           topBilledPerFilm: topBilledPerFilm,
+                                          minCharacterMatchVotes: minCharacterMatchVotes,
                                           leadFallbackCount: leadFallbackCount,
                                           leadFallbackMinPopularity: leadFallbackMinPopularity)
     }

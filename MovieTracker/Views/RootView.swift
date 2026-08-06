@@ -128,6 +128,9 @@ extension View {
             .navigationDestination(for: Person.self) { person in
                 PersonDetailView(person: person)
             }
+            .navigationDestination(for: PeopleList.self) { list in
+                SearchPeopleListView(list: list)
+            }
     }
 }
 

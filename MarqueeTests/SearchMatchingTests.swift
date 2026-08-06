@@ -68,6 +68,47 @@ import Foundation
         #expect(SearchMatching.spacedVariant(of: "batman") == "bat man")
     }
 
+    // MARK: - shouldTryAnchorRecovery
+
+    @Test func anchorRecoveryFiresWhenRelatedToAnchor() {
+        // Extending the anchor forward ("bad" → "bad boy", "iron" → "ironm")…
+        #expect(SearchMatching.shouldTryAnchorRecovery(query: "bad boy", lastStrongQuery: "bad", minLength: 4))
+        #expect(SearchMatching.shouldTryAnchorRecovery(query: "ironm", lastStrongQuery: "iron", minLength: 4))
+        // …or backspacing within it ("ironman" → "ironma").
+        #expect(SearchMatching.shouldTryAnchorRecovery(query: "ironma", lastStrongQuery: "ironman", minLength: 4))
+    }
+
+    @Test func anchorRecoveryDoesNotFireWhenUnrelatedOrTiny() {
+        #expect(!SearchMatching.shouldTryAnchorRecovery(query: "batma", lastStrongQuery: "ironman", minLength: 4)) // unrelated
+        #expect(!SearchMatching.shouldTryAnchorRecovery(query: "iro", lastStrongQuery: "ironman", minLength: 4))   // below stem
+        #expect(!SearchMatching.shouldTryAnchorRecovery(query: "iron", lastStrongQuery: "iron", minLength: 4))     // equal
+        #expect(!SearchMatching.shouldTryAnchorRecovery(query: "ironm", lastStrongQuery: "", minLength: 4))        // no anchor
+    }
+
+    // MARK: - articleStripped
+
+    @Test func articleStrippedRemovesLeadingArticle() {
+        #expect(SearchMatching.articleStripped("The Matrix") == "matrix")
+        #expect(SearchMatching.articleStripped("A Bug's Life") == "bug's life")
+        #expect(SearchMatching.articleStripped("An American Tail") == "american tail")
+        #expect(SearchMatching.articleStripped("Amadeus") == "amadeus")  // "a" not a standalone article
+    }
+
+    // MARK: - interpunctVariant
+
+    @Test func interpunctVariantConvertsSeparatorsToBullet() {
+        #expect(SearchMatching.interpunctVariant(of: "wall e") == "wall·e")
+        #expect(SearchMatching.interpunctVariant(of: "wall-e") == "wall·e")
+        #expect(SearchMatching.interpunctVariant(of: "wall - e") == "wall·e")   // collapses a run
+        #expect(SearchMatching.interpunctVariant(of: "spider man") == "spider·man")
+    }
+
+    @Test func interpunctVariantNilWithoutSeparator() {
+        #expect(SearchMatching.interpunctVariant(of: "walle") == nil)   // nothing to convert
+        #expect(SearchMatching.interpunctVariant(of: "batman") == nil)
+        #expect(SearchMatching.interpunctVariant(of: "wall·e") == nil)  // already a bullet
+    }
+
     @Test func spacedVariantReturnsNilWhenNotApplicable() {
         #expect(SearchMatching.spacedVariant(of: "iron man") == nil)  // already spaced
         #expect(SearchMatching.spacedVariant(of: "xman") == nil)      // prefix too short
@@ -79,6 +120,7 @@ import Foundation
     @Test func titleMatchesArticleStrippedExactly() {
         #expect(SearchMatching.titleMatches("Iron Man", normalizedQuery: "ironman"))
         #expect(SearchMatching.titleMatches("The Matrix", normalizedQuery: "matrix"))
+        #expect(SearchMatching.titleMatches("A Bug's Life", normalizedQuery: "bugslife"))  // "a" stripped
         #expect(!SearchMatching.titleMatches("Iron Man 2", normalizedQuery: "ironman"))
         #expect(!SearchMatching.titleMatches("Batman Begins", normalizedQuery: "batman"))
     }
@@ -88,8 +130,10 @@ import Foundation
     private func moviePeople(query: String,
                              _ films: [(movie: Movie, cast: [Person])]) -> [Person] {
         SearchMatching.moviePeople(query: query, films: films,
-                                   minQueryLength: 4, topBilledPerFilm: 15,
-                                   leadFallbackCount: 1, leadFallbackMinPopularity: 10)
+                                   minQueryLength: 4, leadPrefixMinLength: 3,
+                                   topBilledPerFilm: 15,
+                                   minCharacterMatchVotes: 100,
+                                   leadFallbackCount: 2, leadFallbackMinPopularity: 10)
     }
 
     @Test func characterMatchesOrderByFilmVoteCount() {
@@ -126,6 +170,22 @@ import Foundation
         #expect(moviePeople(query: "bat", films).isEmpty)  // below minQueryLength
     }
 
+    @Test func obscureFilmCharacterMatchIsIgnoredForFallbackStar() {
+        // The real "Troy" bug: a no-name film credits its lead as a character
+        // named "Troy", which used to surface a random unknown ahead of the
+        // actual star. The notability floor drops that film's cast, so the
+        // fallback surfaces the famous lead of the query-named blockbuster.
+        let films = [
+            film(652, "Troy", votes: 11_312, popularity: 64, cast: [
+                castMember(287, "Brad Pitt", "Achilles"),
+            ]),
+            film(967_252, "Troy", votes: 6, cast: [
+                castMember(9_999, "Random Unknown", "Troy"),
+            ]),
+        ]
+        #expect(moviePeople(query: "troy", films).map(\.name) == ["Brad Pitt"])
+    }
+
     // MARK: - moviePeople: lead fallback
 
     @Test func leadFallbackSurfacesStarWhenNoCharacterMatch() {
@@ -136,16 +196,100 @@ import Foundation
                 castMember(31, "Terrence Howard", "Rhodey"),
             ]),
         ]
-        // leadFallbackCount is 1, so only the star (not Rhodey) surfaces.
-        #expect(moviePeople(query: "ironman", films).map(\.name) == ["Robert Downey Jr."])
+        // leadFallbackCount is 2, so both leads surface (star + co-lead).
+        #expect(moviePeople(query: "ironman", films).map(\.name) == ["Robert Downey Jr.", "Terrence Howard"])
+    }
+
+    @Test func leadFallbackSurfacesStarForShortExactTitle() {
+        // "300" is below minQueryLength so no character match runs, but the lead
+        // fallback is exact-title + popularity gated, so it still surfaces the leads.
+        let films = [
+            film(1271, "300", votes: 14_928, popularity: 16, cast: [
+                castMember(1, "Gerard Butler", "King Leonidas"),
+                castMember(2, "Lena Headey", "Gorgo"),
+            ]),
+        ]
+        #expect(moviePeople(query: "300", films).map(\.name) == ["Gerard Butler", "Lena Headey"])
     }
 
     @Test func leadFallbackRequiresNotableFilmNamedByQuery() {
         let cast = [castMember(30, "Robert Downey Jr.", "Tony Stark")]
         // Too obscure (popularity below threshold).
         #expect(moviePeople(query: "ironman", [film(1, "Iron Man", popularity: 3, cast: cast)]).isEmpty)
-        // Title doesn't equal the query, so we don't guess a lead.
-        #expect(moviePeople(query: "ironman", [film(1, "Iron Man 2", popularity: 40, cast: cast)]).isEmpty)
+        // Title isn't the query nor a prefix of it, so we don't guess a lead.
+        #expect(moviePeople(query: "ironman", [film(1, "The Avengers", popularity: 40, cast: cast)]).isEmpty)
+    }
+
+    @Test func leadFallbackAllowsSequelPrefix() {
+        // A prefix spanning into a sequel is fine — the top hit is the film the
+        // user means, and the sequel usually shares the lead.
+        let cast = [castMember(30, "Robert Downey Jr.", "Tony Stark")]
+        #expect(moviePeople(query: "ironman", [film(1, "Iron Man 2", popularity: 40, cast: cast)]).map(\.name) == ["Robert Downey Jr."])
+    }
+
+    @Test func leadFallbackSurfacesLeadsForTitlePrefix() {
+        // Typing a prefix of the top film's title still surfaces its leads, so
+        // "odysse" suggests The Odyssey's cast before the full title is typed.
+        let films = [
+            film(1, "The Odyssey", votes: 500, popularity: 40, cast: [
+                castMember(10, "Matt Damon", "Odysseus"),
+                castMember(11, "Tom Holland", "Telemachus"),
+            ]),
+        ]
+        #expect(moviePeople(query: "odysse", films).map(\.name) == ["Matt Damon", "Tom Holland"])
+    }
+
+    @Test func leadFallbackHandlesArticleAndApostropheTitle() {
+        // "bug's" (normalized "bugs") is a prefix of "A Bug's Life" once the "a"
+        // article is stripped, so its leads surface without typing the article.
+        let films = [
+            film(1, "A Bug's Life", votes: 5_000, popularity: 40, cast: [
+                castMember(10, "Dave Foley", "Flik"),
+                castMember(11, "Kevin Spacey", "Hopper"),
+            ]),
+        ]
+        #expect(moviePeople(query: "bug's", films).map(\.name) == ["Dave Foley", "Kevin Spacey"])
+    }
+
+    @Test func leadFallbackSurfacesLeadsForThreeCharTitlePrefix() {
+        // A 3-char prefix ("ody") still surfaces the top film's leads — the lead
+        // fallback floor is lower than the character-match floor (4).
+        let films = [
+            film(1, "The Odyssey", votes: 500, popularity: 40, cast: [
+                castMember(10, "Matt Damon", "Odysseus"),
+                castMember(11, "Tom Holland", "Telemachus"),
+            ]),
+        ]
+        #expect(moviePeople(query: "ody", films).map(\.name) == ["Matt Damon", "Tom Holland"])
+    }
+
+    @Test func topFilmLeadsApplyExactAnyLengthOrPrefixAboveFloor() {
+        // Exact title matches at any length.
+        #expect(SearchMatching.topFilmLeadsApply(topTitle: "300", normalizedQuery: "300", minQueryLength: 4))
+        #expect(SearchMatching.topFilmLeadsApply(topTitle: "Up", normalizedQuery: "up", minQueryLength: 4))
+        // Prefix matches once it clears the length floor (article stripped).
+        #expect(SearchMatching.topFilmLeadsApply(topTitle: "The Odyssey", normalizedQuery: "odysse", minQueryLength: 4))
+        // Prefix below the floor is rejected (avoids churn on 1–2 char fragments).
+        #expect(!SearchMatching.topFilmLeadsApply(topTitle: "The Odyssey", normalizedQuery: "od", minQueryLength: 4))
+        // A prefix spanning into a sequel is allowed (top hit is the meant film).
+        #expect(SearchMatching.topFilmLeadsApply(topTitle: "Iron Man 2", normalizedQuery: "ironman", minQueryLength: 4))
+        // A query that isn't a prefix of the title doesn't match.
+        #expect(!SearchMatching.topFilmLeadsApply(topTitle: "The Avengers", normalizedQuery: "ironman", minQueryLength: 4))
+    }
+
+    // MARK: - rankedForDisplay
+
+    @Test func rankedForDisplaySortsNotableByPopularityThenSinksLowVote() {
+        let movies = [
+            film(1, "Old Classic", votes: 13_000, popularity: 21, cast: []).movie,   // many votes, cold
+            film(2, "Trending New", votes: 2_000, popularity: 944, cast: []).movie,  // fewer votes, hot
+            film(3, "Junk", votes: 6, popularity: 999, cast: []).movie,              // popularity spike, sub-floor
+            film(4, "At Floor", votes: 100, popularity: 5, cast: []).movie,
+        ]
+        let result = SearchMatching.rankedForDisplay(movies, minVotes: 100)
+        // Notable bucket ordered by popularity (Trending over Old Classic despite
+        // fewer votes); the 6-vote Junk stays sunk regardless of its popularity.
+        #expect(result.map(\.title) == ["Trending New", "Old Classic", "At Floor", "Junk"])
     }
 
     // MARK: - featuredPeople
@@ -169,6 +313,63 @@ import Foundation
             named: (0..<20).map { namedPerson(100 + $0, "P\($0)", popularity: Float($0)) },
             cap: 5)
         #expect(capped.count == 5)
+    }
+
+    // MARK: - inlinePeopleCount
+
+    private func inlineCount(movieMatched: [Person], named: [Person]) -> Int {
+        func withPhoto(_ p: Person) -> Person { var q = p; q.profilePicture = "/x.jpg"; return q }
+        let featured = SearchMatching.featuredPeople(
+            movieMatched: movieMatched,
+            named: named.map(withPhoto),  // photos so the noise filter keeps them
+            cap: 50, namedNoiseFloor: 1)
+        return SearchMatching.inlinePeopleCount(
+            featured, movieMatchedIDs: Set(movieMatched.map(\.id)),
+            inlinePopularityFloor: 1, minInline: 3, previewLimit: 8)
+    }
+
+    @Test func inlineFoldsLowPopularityNamesakesBehindMovieMatches() {
+        // The "Up" case: 2 movie leads + 5 obscure namesakes (pop < 1) → only the
+        // 2 leads inline, the rest fold under "More", even though total is < 8.
+        let leads = [castMember(1, "Ed Asner", "Carl"), castMember(2, "Christopher Plummer", "Muntz")]
+        let namesakes = (0..<5).map { namedPerson(100 + $0, "Namesake \($0)", popularity: 0.2) }
+        #expect(inlineCount(movieMatched: leads, named: namesakes) == 2)
+    }
+
+    @Test func inlineKeepsPopularNamedPeople() {
+        // A name search: popular namesakes clear the floor and stay inline.
+        let named = [namedPerson(1, "Famous", popularity: 30),
+                     namedPerson(2, "Known", popularity: 4),
+                     namedPerson(3, "Obscure", popularity: 0.1)]
+        #expect(inlineCount(movieMatched: [], named: named) == 2)  // Obscure folds
+    }
+
+    @Test func inlineShowsMinimumWhenNothingIsProminent() {
+        // Pure obscure-name search: nothing clears the bar, so show the top few
+        // rather than a bare "More" button.
+        let named = (0..<6).map { namedPerson(1 + $0, "Obscure \($0)", popularity: 0.1) }
+        #expect(inlineCount(movieMatched: [], named: named) == 3)  // minInline
+    }
+
+    @Test func inlineFoldsPhotolessNamesakeAbovePopularityFloor() {
+        // The "300" case: a photoless junk entry ("AI-D*300", pop just over the
+        // floor) folds under More, while the photographed real person stays inline.
+        func withPhoto(_ p: Person) -> Person { var q = p; q.profilePicture = "/x.jpg"; return q }
+        let leads = [castMember(1, "Gerard Butler", "Leonidas"), castMember(2, "Lena Headey", "Gorgo")]
+        let andre = withPhoto(namedPerson(10, "André 3000", popularity: 1.44)) // photo → prominent
+        let junk = namedPerson(11, "AI-D*300", popularity: 1.04)               // no photo → folds
+        let featured = SearchMatching.featuredPeople(movieMatched: leads, named: [andre, junk],
+                                                     cap: 50, namedNoiseFloor: 1)
+        #expect(featured.map(\.name).contains("AI-D*300"))  // still reachable in the full list
+        let inline = SearchMatching.inlinePeopleCount(
+            featured, movieMatchedIDs: Set(leads.map(\.id)),
+            inlinePopularityFloor: 1, minInline: 3, previewLimit: 8)
+        #expect(inline == 3)  // Butler, Headey, André 3000 — junk folded
+    }
+
+    @Test func inlineClampsToPreviewLimit() {
+        let many = (0..<20).map { castMember(1 + $0, "Cast \($0)", "Role \($0)") }
+        #expect(inlineCount(movieMatched: many, named: []) == 8)  // previewLimit
     }
 
     @Test func featuredPeopleDropsNoiseEntriesWithoutPhotoOrPopularity() {
