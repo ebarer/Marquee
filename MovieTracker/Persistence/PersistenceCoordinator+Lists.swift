@@ -55,4 +55,15 @@ extension PersistenceCoordinator {
     func deleteEntry(_ id: PersistentIdentifier) {
         if let entry = context.model(for: id) as? ListEntry { delete(entry) }
     }
+
+    // MARK: - Grouped sections (Lists screen)
+
+    /// Builds the month/year section snapshots for a list view off the main actor.
+    /// Callers ask the coordinator instead of holding a `ModelContainer` or building
+    /// a `SectionBuilder` themselves. The builder runs its fetches on its own
+    /// `@ModelActor` context, off the main actor.
+    func sections(for source: SectionSource, ascending: Bool, filter: String) async -> [SectionSnapshot] {
+        let builder = SectionBuilder(modelContainer: context.container)
+        return await builder.build(source: source, ascending: ascending, filter: filter)
+    }
 }

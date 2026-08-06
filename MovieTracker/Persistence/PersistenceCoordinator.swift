@@ -3,19 +3,20 @@
 //  MovieTracker
 //
 
-import SwiftUI
+import Foundation
+import Observation
 import SwiftData
 import CoreData
+import OSLog
 
-/// The single writer for the SwiftData store. Every mutation runs on the main
-/// actor and persists immediately, so the Lists views reflect changes at once
-/// (rather than waiting on autosave) and nothing is lost on a crash. Domain logic
-/// lives on the models; this coordinates applying it and saving. Heavy reads and
-/// grouping stay on the background `SectionBuilder`.
+/// The single writer for a SwiftData store. Every mutation runs on the main actor
+/// and persists immediately, so views reflect changes at once (rather than waiting
+/// on autosave) and nothing is lost on a crash.
 ///
-/// The domain surface is split across `PersistenceCoordinator+Lists` (lists and
-/// membership) and `PersistenceCoordinator+Media` (per-title facts); this file
-/// holds the shared plumbing and the launch/maintenance lifecycle.
+/// This file is deliberately app-agnostic: it knows only about `ModelContext`,
+/// saving, and CloudKit remote-change observation, so it can be reused across
+/// projects. App-specific domain logic lives in extensions — `+Lists` and `+Media`
+/// (per-domain reads/writes) and `+Lifecycle` (launch seeding and reconciliation).
 @MainActor
 @Observable
 final class PersistenceCoordinator {
@@ -27,8 +28,25 @@ final class PersistenceCoordinator {
     /// drives a refresh.
     private(set) var revision = 0
 
+    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PersistenceCoordinator",
+                                    category: "Persistence")
+
+    /// Backs `claimLaunchRoutine()`. Not observed — it gates a one-time side effect,
+    /// not UI state.
+    @ObservationIgnored private var launchRoutineClaimed = false
+
     init(_ context: ModelContext) {
         self.context = context
+    }
+
+    /// Returns `true` exactly once — on the first call — and `false` thereafter, so
+    /// a one-time launch routine stays idempotent even if the SwiftUI `.task` that
+    /// drives it re-fires (e.g. a size-class change re-running the task at launch).
+    /// Safe without locking: the coordinator is `@MainActor`.
+    func claimLaunchRoutine() -> Bool {
+        guard !launchRoutineClaimed else { return false }
+        launchRoutineClaimed = true
+        return true
     }
 
     func save() {
@@ -37,7 +55,7 @@ final class PersistenceCoordinator {
             try context.save()
             revision &+= 1
         } catch {
-            SyncLog.logger.error("💾 save failed: \(error, privacy: .public)")
+            Self.log.error("💾 save failed: \(error, privacy: .public)")
         }
     }
 
@@ -51,90 +69,23 @@ final class PersistenceCoordinator {
     func insert(_ model: any PersistentModel) { context.insert(model); save() }
     func delete(_ model: any PersistentModel) { context.delete(model); save() }
 
-    // MARK: - Grouped sections (Lists screen)
+    // MARK: - Remote-change observation (CloudKit)
 
-    /// Background reader for the Lists screen's grouped rows. Created lazily and
-    /// reused; its fetches run off the main actor on the `@ModelActor`'s own context.
-    @ObservationIgnored private var sectionBuilder: SectionBuilder?
-
-    /// Builds the month/year section snapshots for a list view off the main actor.
-    /// Callers ask the coordinator instead of holding a `ModelContainer` or building
-    /// a `SectionBuilder` themselves.
-    func sections(for source: SectionSource, ascending: Bool, filter: String) async -> [SectionSnapshot] {
-        let builder = sectionBuilder ?? SectionBuilder(modelContainer: context.container)
-        sectionBuilder = builder
-        return await builder.build(source: source, ascending: ascending, filter: filter)
-    }
-
-    // MARK: - Maintenance (launch)
-
-    /// Seeds the Watch List at launch.
-    func seedWatchList() { _ = watchList; save() }
-
-    /// Converges duplicate Watch Lists and MediaItems a CloudKit import produced.
-    func deduplicate() {
-        MediaList.deduplicateWatchList(in: context)
-        MediaItem.deduplicate(in: context)
-        save()
-    }
-
-    /// Runs the launch sequence and then keeps reconciling for the lifetime of the
-    /// scene: on a fresh store it waits for the Watch List to sync before seeding
-    /// (so it adopts the existing list instead of creating a duplicate), seeds and
-    /// deduplicates, then reconciles again whenever CloudKit imports settle.
-    func bootstrap() async {
-        SyncLog.snapshot("launch", in: context)
-
-        // Fresh local store: wait for the Watch List to sync before seeding, so we
-        // adopt the existing list instead of creating a duplicate.
-        if MediaList.watchList(in: context) == nil {
-            SyncLog.logger.log("🌱 empty local store — waiting up to 6s for the Watch List to sync before seeding")
-            let arrived = await waitForWatchList(timeout: .seconds(6))
-            SyncLog.logger.log("🌱 wait ended (\(arrived ? "Watch List arrived" : "timed out — seeding", privacy: .public))")
-        } else {
-            SyncLog.logger.log("🌱 existing local store — seeding/reconciling immediately")
-        }
-        seedWatchList()
-        // Prune any duplicates a prior session marked (past the grace period).
-        deduplicate()
-        SyncLog.snapshot("after seed", in: context)
-
-        // Pre-cache saved titles for offline use, off the main path.
-        let ids = savedMovieIDs()
-        Task.detached(priority: .utility) {
-            await MediaCachePrefetcher.prefetch(ids: ids)
-        }
-
-        await reconcileOnRemoteChanges()
-    }
-
-    /// Reconciles built-in lists whenever CloudKit remote changes land, debounced
-    /// so we act once a burst of imported records settles. Never returns.
-    private func reconcileOnRemoteChanges() async {
-        var debounce: Task<Void, Never>?
+    /// Observes CloudKit remote-store changes for the lifetime of the caller's Task:
+    /// bumps `revision` on every notification so observers refresh, and invokes
+    /// `onSettled` once — after a burst of imported records settles (debounced).
+    /// Never returns; call it from a long-lived Task.
+    func observeRemoteChanges(debounce: Duration = .seconds(2),
+                              onSettled: @MainActor @escaping () -> Void) async {
+        var pending: Task<Void, Never>?
         for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
             revision &+= 1   // a CloudKit import landed — nudge observers to refresh
-            debounce?.cancel()
-            debounce = Task {
-                try? await Task.sleep(for: .seconds(2))
+            pending?.cancel()
+            pending = Task {
+                try? await Task.sleep(for: debounce)
                 guard !Task.isCancelled else { return }
-                SyncLog.logger.log("🔁 remote change settled — reconciling")
-                self.deduplicate()
-                SyncLog.snapshot("after reconcile", in: self.context)
+                onSettled()
             }
         }
-    }
-
-    /// Polls up to `timeout` for the Watch List to sync down, so a fresh device
-    /// adopts the existing list instead of seeding a duplicate. Returns `true` if it
-    /// arrived. We poll because CloudKit imports the whole zone with no per-type
-    /// ordering — there's nothing to prioritize, so we just wait for the one record.
-    private func waitForWatchList(timeout: Duration) async -> Bool {
-        let start = ContinuousClock.now
-        while ContinuousClock.now - start < timeout {
-            if MediaList.watchList(in: context) != nil { return true }
-            try? await Task.sleep(for: .milliseconds(250))
-        }
-        return MediaList.watchList(in: context) != nil
     }
 }
