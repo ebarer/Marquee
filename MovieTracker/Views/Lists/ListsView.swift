@@ -6,6 +6,9 @@
 import SwiftUI
 import SwiftData
 
+/// The compact (iPhone) Lists host: owns the current selection, the title-bar list
+/// switcher, and the New List / Manage Lists chrome. The rows themselves are drawn
+/// by `ListContentView`, which the iPad sidebar reuses directly.
 struct ListsView: View {
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     /// Present only when running inside the app (absent in previews).
@@ -26,111 +29,65 @@ struct ListsView: View {
     /// The current view; nil until the Watch List is chosen on appear.
     @State private var selection: ListSelection?
     @State private var editor: ListEditor?
-
-    /// Builds and holds the month/year section snapshots off the main actor.
-    @State private var sectionsModel = ListSectionsModel()
-    @State private var filterText = ""
-
-    @AppStorage("watchedListAscending") private var watchedAscending = false
-    @AppStorage("viewedListAscending") private var viewedAscending = false
-    @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .dateWatched
-
     @State private var showListManager = false
 
     var body: some View {
-        ListRows(sections: sectionsModel.sections, selection: resolvedSelection, lists: lists,
-                      listColor: activeColor)
-        .listStyle(.plain)
-        .tint(activeColor)
-        .navigationTitle(title)
-        .toolbarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Menu {
-                    ListTitleMenu(selection: selectionBinding, watchList: watchList,
-                                       customLists: customLists)
-                } label: {
-                    ListTitleLabel(name: title, color: activeColor, count: movieCount)
+        ListContentView(selection: resolvedSelection)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Menu {
+                        ListTitleMenu(selection: selectionBinding, watchList: watchList,
+                                           customLists: customLists)
+                    } label: {
+                        ListTitleLabel(name: title, color: activeColor, count: movieCount)
+                    }
+                    .tint(.primary)
                 }
-                .tint(.primary)
-            }
-            ToolbarItemGroup(placement: .topBarLeading) {
-                Button {
-                    editor = .create(addMovie: nil)
-                } label: {
-                    Label("New List", systemImage: "plus")
-                }
-                .tint(activeColor)
-                // While iCloud is syncing, the manage button is briefly replaced by a
-                // spinner in place rather than adding a separate trailing indicator.
-                if syncMonitor?.isSyncing == true {
-                    ProgressView()
-                        .controlSize(.regular)
-                        .tint(activeColor)
-                        .accessibilityLabel("Syncing with iCloud")
-                } else {
+                ToolbarItemGroup(placement: .topBarLeading) {
                     Button {
-                        showListManager = true
+                        editor = .create(addMovie: nil)
                     } label: {
-                        Label("Manage Lists", systemImage: "list.bullet")
+                        Label("New List", systemImage: "plus")
                     }
                     .tint(activeColor)
-                }
-            }
-            if resolvedSelection == .viewed {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .destructive) {
-                        store?.clearViewed()
-                    } label: {
-                        Label("Clear Viewed", systemImage: "trash")
-                    }
-                    .tint(activeColor)
-                    .disabled(movieCount == 0)
-                }
-            } else {
-                ToolbarItem(placement: .topBarTrailing) {
-                    ListSortMenu(ascending: ascendingBinding,
-                                 watchedSortKey: resolvedSelection == .watched ? $watchedSortKey : nil,
-                                 listSortKey: isRealList ? listSortKeyBinding : nil)
+                    // While iCloud is syncing, the manage button is briefly replaced by a
+                    // spinner in place rather than adding a separate trailing indicator.
+                    if syncMonitor?.isSyncing == true {
+                        ProgressView()
+                            .controlSize(.regular)
+                            .tint(activeColor)
+                            .accessibilityLabel("Syncing with iCloud")
+                    } else {
+                        Button {
+                            showListManager = true
+                        } label: {
+                            Label("Manage Lists", systemImage: "list.bullet")
+                        }
                         .tint(activeColor)
+                    }
                 }
             }
-        }
-        .searchable(text: $filterText, prompt: "Search \(title)")
-        .overlay {
-            // Only once the rebuild for the current input has landed, so the empty
-            // state doesn't flash while switching lists.
-            if sectionsModel.sections.isEmpty, sectionsModel.loadedInput == sectionsInput {
-                if !filterText.isEmpty {
-                    ContentUnavailableView.search(text: filterText)
-                } else {
-                    emptyState
+            .sheet(item: $editor) { mode in
+                NavigationStack {
+                    ListEditorView(
+                        existing: mode.list,
+                        nextSortOrder: (customLists.map(\.sortOrder).max() ?? 0) + 1,
+                        onSaved: { newList in
+                            if let movie = mode.movieToAdd { store?.add(movie, to: newList) }
+                            selection = .list(newList.uuid)
+                        },
+                        onDeleted: { selection = watchList.map { .list($0.uuid) } }
+                    )
                 }
             }
-        }
-        .sheet(item: $editor) { mode in
-            NavigationStack {
-                ListEditorView(
-                    existing: mode.list,
-                    nextSortOrder: (customLists.map(\.sortOrder).max() ?? 0) + 1,
-                    onSaved: { newList in
-                        if let movie = mode.movieToAdd { store?.add(movie, to: newList) }
-                        selection = .list(newList.uuid)
-                    },
-                    onDeleted: { selection = watchList.map { .list($0.uuid) } }
-                )
+            .sheet(isPresented: $showListManager) {
+                ListManagerView()
             }
-        }
-        .sheet(isPresented: $showListManager) {
-            ListManagerView()
-        }
-        .task(id: sectionsInput) { await sectionsModel.rebuild(for: sectionsInput, store: store) }
-        .onAppear { selectDefaultIfNeeded() }
-        .onChange(of: lists.count) { _, _ in selectDefaultIfNeeded() }
-        .onChange(of: resetToken) { _, _ in
-            if let watch = watchList { selection = .list(watch.uuid) }
-        }
-        .onChange(of: selection) { _, _ in sectionsModel.clear() }
+            .onAppear { selectDefaultIfNeeded() }
+            .onChange(of: lists.count) { _, _ in selectDefaultIfNeeded() }
+            .onChange(of: resetToken) { _, _ in
+                if let watch = watchList { selection = .list(watch.uuid) }
+            }
     }
 
     // MARK: - Selection
@@ -150,76 +107,14 @@ struct ListsView: View {
         selection = .list(watch.uuid)
     }
 
-    // MARK: - Derived per-selection
+    // MARK: - Title chrome
 
-    /// The current view resolved to its identity + contents; the source of the
-    /// title, color, count, empty state, and section source below.
+    /// Resolves the current selection to the name / color / count shown in the
+    /// title menu label. (The rows and their toolbar live in `ListContentView`.)
     private var destination: ListDestination { .resolve(resolvedSelection, lists: lists) }
-
     private var title: String { destination.name }
     private var activeColor: Color { destination.color }
     private var movieCount: Int { destination.movieCount(using: store) }
-    private var sectionSource: SectionSource? {
-        destination.sectionSource(watchedByDate: watchedSortKey == .dateWatched,
-                                  listByDateAdded: currentListSortKey == .dateAdded)
-    }
-
-    /// True for the Watch List and custom lists (real `MediaList`s), false for
-    /// the derived Watched / Viewed views.
-    private var isRealList: Bool {
-        if case .list = resolvedSelection { return true }
-        return false
-    }
-
-    private var currentListSortKey: ListSortKey { destination.list?.sortKey ?? .releaseDate }
-
-    private var listSortKeyBinding: Binding<ListSortKey> {
-        Binding(get: { currentListSortKey },
-                set: { value in store?.perform { destination.list?.sortKey = value } })
-    }
-
-    private var currentAscending: Bool {
-        switch resolvedSelection {
-        case .list: return destination.list?.sortAscending ?? true
-        case .watched: return watchedAscending
-        case .viewed: return viewedAscending
-        }
-    }
-
-    private var ascendingBinding: Binding<Bool> {
-        Binding(get: { currentAscending }, set: { setAscending($0) })
-    }
-
-    private func setAscending(_ value: Bool) {
-        switch resolvedSelection {
-        case .list: store?.perform { destination.list?.sortAscending = value }
-        case .watched: watchedAscending = value
-        case .viewed: viewedAscending = value
-        }
-    }
-
-    private var emptyState: some View {
-        ContentUnavailableView {
-            Label {
-                Text(destination.name)
-            } icon: {
-                ListIcon(symbol: destination.symbol, color: destination.color, size: 64)
-            }
-        } description: {
-            Text(destination.emptyDescription)
-        }
-    }
-
-    // MARK: - Data
-
-    /// The current build input; `sectionSource` already encodes the selection and
-    /// watched-sort key, and the store's `revision` forces a rebuild after a silent
-    /// edit (or CloudKit import) that leaves the count unchanged.
-    private var sectionsInput: ListSectionsModel.Input {
-        ListSectionsModel.Input(source: sectionSource, count: movieCount,
-                                ascending: currentAscending, filter: filterText,
-                                version: store?.revision ?? 0)
-    }
 }
 
 #Preview("Idle") {
