@@ -24,14 +24,22 @@ struct MovieRow: View {
     var rating: Double? = nil
     /// Fill color for the rating stars.
     var ratingTint: Color = .appAccent
-    /// When set, a small watched / to-be-watched glyph precedes the subtitle.
+    /// When set, a watched / to-be-watched badge is overlaid on the poster. Takes
+    /// precedence over `derivesStatus` so a caller can force (or suppress) the badge.
     var status: PosterStatus? = nil
+    /// When true and no explicit `status` is given, the row derives its own badge
+    /// from the environment's persistence store — used where the caller can't know
+    /// list membership up front (search results, filmographies).
+    var derivesStatus: Bool = false
+
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     var body: some View {
         HStack(spacing: 12) {
             PosterImage(url: movie.posterURL(.w185))
                 .frame(width: 51, height: 76)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay { badge }
                 // Slightly shorter poster (3pt top/bottom) so rows breathe and
                 // the first result clears the scope bar.
                 .padding(.vertical, 3)
@@ -42,15 +50,9 @@ struct MovieRow: View {
                     .lineLimit(2)
 
                 if showsSubtitle, let displayedSubtitle {
-                    HStack(spacing: 6) {
-                        Text(displayedSubtitle)
-                        if let status {
-                            Text("•")
-                            Image(systemName: status.symbol)
-                        }
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    Text(displayedSubtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let role, !role.isEmpty {
@@ -75,6 +77,24 @@ struct MovieRow: View {
 
             Spacer()
         }
+    }
+
+    @ViewBuilder
+    private var badge: some View {
+        if let effectiveStatus {
+            PosterStatusBadge(status: effectiveStatus, cornerRadius: 6, scale: 0.72)
+                .transition(.opacity)
+        }
+    }
+
+    /// Watched wins over the Watch List (the two are mutually exclusive in practice).
+    private var effectiveStatus: PosterStatus? {
+        if let status { return status }
+        guard derivesStatus, let store else { return nil }
+        _ = store.revision   // observe persisted changes so the badge refreshes live
+        if store.isWatched(movie) { return .watched }
+        if store.isInWatchList(movie) { return .watchList }
+        return nil
     }
 
     private var displayedSubtitle: String? {

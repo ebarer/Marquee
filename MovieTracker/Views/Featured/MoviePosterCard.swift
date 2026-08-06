@@ -103,6 +103,10 @@ enum PosterStatus {
 struct PosterStatusBadge: View {
     let status: PosterStatus
     var cornerRadius: CGFloat = 8
+    /// Scales the glyph and its inset down for smaller posters (e.g. the list-row
+    /// thumbnail). The gradient tracks the poster's own size, so only the glyph
+    /// needs adjusting.
+    var scale: CGFloat = 1
 
     var body: some View {
         GeometryReader { geo in
@@ -116,11 +120,11 @@ struct PosterStatusBadge: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .overlay(alignment: .topTrailing) {
             Image(systemName: status.symbol)
-                .font(.system(size: status.pointSize, weight: .semibold))
+                .font(.system(size: status.pointSize * scale, weight: .semibold))
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
-                .padding(7)
-                .offset(y: status.verticalNudge)
+                .padding(7 * scale)
+                .offset(y: status.verticalNudge * scale)
         }
         .allowsHitTesting(false)
     }

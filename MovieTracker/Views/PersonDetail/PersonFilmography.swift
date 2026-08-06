@@ -57,7 +57,7 @@ struct PersonFilmography: View {
     private func row(_ movie: Movie) -> some View {
         NavigationLink(value: movie) {
             HStack(spacing: 8) {
-                MovieRow(movie: movie, role: movie.creditRole)
+                MovieRow(movie: movie, role: movie.creditRole, derivesStatus: true)
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.tertiary)

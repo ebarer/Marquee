@@ -77,6 +77,7 @@ struct SearchView: View {
             ForEach(Array(model.movies.enumerated()), id: \.element.id) { index, movie in
                 MovieListRow(
                     movie: movie,
+                    derivesStatus: true,
                     lists: lists,
                     leadingActions: {
                         WatchedSwipeButton(movie: movie)
