@@ -30,15 +30,31 @@ extension TMDBWrapper {
     }
 
     static func moviesNowPlaying(page: Int) async throws -> PagedResult<Movie> {
-        try await moviePage("/movie/now_playing", page: page)
+        // Films whose original release was in the last six weeks, most popular first.
+        // Filtering on `primary_release_date` (not region release dates) keeps
+        // re-releases of old titles out — e.g. a 2016 film back in theatres.
+        try await discoverMovies(page: page, extra: [
+            URLQueryItem(name: "primary_release_date.gte", value: dateParam(daysFromNow: -42)),
+            URLQueryItem(name: "primary_release_date.lte", value: dateParam(daysFromNow: 0)),
+            URLQueryItem(name: "sort_by", value: "popularity.desc"),
+        ])
     }
 
     static func moviesPopular(page: Int) async throws -> PagedResult<Movie> {
-        try await moviePage("/movie/popular", page: page)
+        try await discoverMovies(page: page, extra: [
+            URLQueryItem(name: "sort_by", value: "popularity.desc"),
+        ])
     }
 
     static func moviesComingSoon(page: Int) async throws -> PagedResult<Movie> {
-        try await moviePage("/movie/upcoming", page: page)
+        // Films with an original release still to come (within the next year), most
+        // anticipated first. `primary_release_date` excludes re-releases of old films
+        // that a plain region release-date filter would otherwise pull in.
+        try await discoverMovies(page: page, extra: [
+            URLQueryItem(name: "primary_release_date.gte", value: dateParam(daysFromNow: 1)),
+            URLQueryItem(name: "primary_release_date.lte", value: dateParam(daysFromNow: 365)),
+            URLQueryItem(name: "sort_by", value: "popularity.desc"),
+        ])
     }
 
     static func movieRecommendations(id: Int, page: Int = 1) async throws -> PagedResult<Movie> {
@@ -70,6 +86,20 @@ extension TMDBWrapper {
         guard !query.isEmpty else { return .empty }
         return try await moviePage("/search/movie", page: page,
                                    queryItems: [URLQueryItem(name: "query", value: query)])
+    }
+
+    /// The Discover feeds. `/discover/movie` honors the region, original-language,
+    /// and release filters that the curated `/movie/*` lists silently ignore — so a
+    /// title that merely ranks high globally but has no US release (and isn't in the
+    /// user's language) no longer leaks into Popular / Now Playing / Coming Soon.
+    private static func discoverMovies(page: Int, extra: [URLQueryItem]) async throws -> PagedResult<Movie> {
+        try await moviePage("/discover/movie", page: page, queryItems: extra)
+    }
+
+    /// A `yyyy-MM-dd` param offset from today, for Discover release-date windows.
+    private static func dateParam(daysFromNow days: Int) -> String {
+        let date = Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
+        return DateFormatter.iso8601DAw.string(from: date)
     }
 
     /// Shared fetch/decode for the paged movie list and search endpoints.
