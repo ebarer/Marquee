@@ -57,15 +57,15 @@ extension TMDBWrapper {
                 release = filteredReleases[0].dates.filter { $0.type == .TheatricalLimited }
             }
 
-            guard release.count > 0 else {
+            // Pick the earliest theatrical date: TMDB lists re-releases (e.g. the 1997
+            // Star Wars Special Edition) as additional Theatrical entries in no guaranteed
+            // order, so `dates[0]` can surface the re-release over the original release.
+            guard let earliest = release.min(by: { $0.releaseDate < $1.releaseDate }) else {
                 return (nil, nil)
             }
 
-            if !release[0].certification.isEmpty {
-                return (release[0].certification, release[0].releaseDate)
-            } else {
-                return ("Unavailable", release[0].releaseDate)
-            }
+            let certification = release.first { !$0.certification.isEmpty }?.certification
+            return (certification ?? "Unavailable", earliest.releaseDate)
         }
 
         func genres() -> [String]? {

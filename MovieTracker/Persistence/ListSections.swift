@@ -31,6 +31,12 @@ struct SectionSnapshot: Identifiable, Sendable, Equatable {
     let id: DateComponents
     let title: String
     let entries: [MediaSnapshot]
+    /// True for the "Older" archive bucket, which the list renders collapsed.
+    let isCollapsible: Bool
+
+    /// Sentinel id for the "Older" section; the negative year never collides with a
+    /// real `[.year, .month]` key.
+    static let olderID = DateComponents(year: -1, month: -1)
 }
 
 /// Builds a source's month/year sections on a background context.
@@ -74,7 +80,7 @@ actor SectionBuilder {
                                   userRating: facts?.rating))
         }
         if byDateAdded { return flat(dated, ascending: ascending) }
-        return group(dated, ascending: ascending)
+        return group(dated, ascending: ascending, foldOlderThan: olderCutoff())
     }
 
     // MARK: Derived Watched (MediaItem, grouped by month)
@@ -107,7 +113,7 @@ actor SectionBuilder {
         let sorted = filtered.sorted { ($0.lastViewedAt ?? .distantPast) < ($1.lastViewedAt ?? .distantPast) }
         let ordered = ascending ? sorted : Array(sorted.reversed())
         let snapshots = ordered.map(snapshot(from:))
-        return snapshots.isEmpty ? [] : [SectionSnapshot(id: DateComponents(), title: "", entries: snapshots)]
+        return snapshots.isEmpty ? [] : [SectionSnapshot(id: DateComponents(), title: "", entries: snapshots, isCollapsible: false)]
     }
 
     private func snapshot(from item: MediaItem) -> MediaSnapshot {
@@ -123,12 +129,33 @@ actor SectionBuilder {
         let sorted = dated.sorted { $0.date < $1.date }
         let ordered = ascending ? sorted : Array(sorted.reversed())
         let snapshots = ordered.map(\.snapshot)
-        return snapshots.isEmpty ? [] : [SectionSnapshot(id: DateComponents(), title: "", entries: snapshots)]
+        return snapshots.isEmpty ? [] : [SectionSnapshot(id: DateComponents(), title: "", entries: snapshots, isCollapsible: false)]
     }
 
+    /// Start of last month. Release dates before this fold into the collapsed
+    /// "Older" bucket; the whole current and previous month stay live. Relative to
+    /// now, so the window slides forward each month.
+    private func olderCutoff() -> Date {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+        return calendar.date(byAdding: .month, value: -1, to: startOfMonth) ?? startOfMonth
+    }
+
+    /// Groups by month/year. When `cutoff` is set, entries dated before it are pulled
+    /// out of the month sections and appended as one collapsible "Older" bucket at the
+    /// bottom, regardless of sort direction (it reads as an archive).
     private func group(_ dated: [(date: Date, snapshot: MediaSnapshot)],
-                       ascending: Bool) -> [SectionSnapshot] {
-        let sorted = dated.sorted { $0.date < $1.date }
+                       ascending: Bool, foldOlderThan cutoff: Date? = nil) -> [SectionSnapshot] {
+        var recent = dated
+        var older: [MediaSnapshot] = []
+        if let cutoff {
+            recent = dated.filter { $0.date >= cutoff }
+            let olderSorted = dated.filter { $0.date < cutoff }.sorted { $0.date < $1.date }
+            older = (ascending ? olderSorted : Array(olderSorted.reversed())).map(\.snapshot)
+        }
+
+        let sorted = recent.sorted { $0.date < $1.date }
         let ordered = ascending ? sorted : Array(sorted.reversed())
 
         let calendar = Calendar.current
@@ -140,7 +167,8 @@ actor SectionBuilder {
 
         func flush() {
             guard let key = currentKey else { return }
-            result.append(SectionSnapshot(id: key, title: currentTitle, entries: currentEntries))
+            result.append(SectionSnapshot(id: key, title: currentTitle, entries: currentEntries,
+                                          isCollapsible: false))
         }
 
         for item in ordered {
@@ -155,6 +183,14 @@ actor SectionBuilder {
             }
         }
         flush()
+
+        if !older.isEmpty {
+            let olderSection = SectionSnapshot(id: SectionSnapshot.olderID, title: "Older",
+                                               entries: older, isCollapsible: true)
+            // Chronological placement: oldest-first (ascending) leads with the archive;
+            // newest-first (descending) parks it at the bottom.
+            if ascending { result.insert(olderSection, at: 0) } else { result.append(olderSection) }
+        }
         return result
     }
 }

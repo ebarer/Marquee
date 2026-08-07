@@ -104,15 +104,24 @@ struct ListTitleMenu: View {
     @Binding var selection: ListSelection
     let watchList: MediaList?
     let customLists: [MediaList]
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     var body: some View {
         Picker("List", selection: $selection) {
             if let watchList {
-                Label(watchList.name, systemImage: ListSymbol.outline(watchList.symbol))
-                    .tag(ListSelection.list(watchList.uuid))
+                Label {
+                    titleText(watchList.name, watchList.entries?.count ?? 0)
+                } icon: {
+                    Image(systemName: ListSymbol.outline(watchList.symbol))
+                }
+                .tag(ListSelection.list(watchList.uuid))
             }
-            Label("Watched", systemImage: "checkmark.rectangle.stack")
-                .tag(ListSelection.watched)
+            Label {
+                titleText("Watched", store?.watchedCount ?? 0)
+            } icon: {
+                Image(systemName: "checkmark.rectangle.stack")
+            }
+            .tag(ListSelection.watched)
         }
 
         if !customLists.isEmpty {
@@ -120,7 +129,7 @@ struct ListTitleMenu: View {
             Picker("Custom List", selection: $selection) {
                 ForEach(customLists) { list in
                     Label {
-                        Text(list.name)
+                        titleText(list.name, list.entries?.count ?? 0)
                     } icon: {
                         if let image = ListSymbol.menuImage(list.symbol) {
                             Image(uiImage: image)
@@ -136,9 +145,18 @@ struct ListTitleMenu: View {
 
         Divider()
         Picker("Viewed", selection: $selection) {
-            Label("Viewed", systemImage: "clock.arrow.circlepath")
-                .tag(ListSelection.viewed)
+            Label {
+                titleText("Viewed", store?.viewedCount ?? 0)
+            } icon: {
+                Image(systemName: "clock.arrow.circlepath")
+            }
+            .tag(ListSelection.viewed)
         }
+    }
+
+    /// The list name with its count trailing.
+    private func titleText(_ name: String, _ count: Int) -> Text {
+        Text("\(name) (\(count))")
     }
 }
 
@@ -219,5 +237,6 @@ struct ListSortMenu: View {
     }
     .tint(.appAccent)
     .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }
