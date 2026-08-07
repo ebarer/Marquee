@@ -7,8 +7,8 @@ Smaller/Cosmetic:
 - [ ] 
 
 Ideas:
-- [ ] Support landscape?
 - [ ] Share lists
+- [ ] Support landscape?
 - [ ] Add TV shows
 
 Description:

@@ -86,24 +86,62 @@ import SwiftData
         #expect(sections.isEmpty)
     }
 
-    @Test func watchListFoldsOlderTitlesWhenEnabled() async {
-        // A distantFuture release stays live; the 2000 title folds into "Older".
-        let id = seedList([
-            (1, "Old", .utc(2000, 1, 15), .utc(2022, 1, 1)),
-            (2, "Future", .distantFuture, .utc(2022, 1, 2)),
-        ], isWatchList: true)
+    /// Watch List rows: `recent` upcoming (distantFuture) titles + `old` archived
+    /// (early-2000s) titles. Folds into "Older" only when both counts clear the
+    /// thresholds (recent >= 3 && older >= 3).
+    private func seedWatchList(recent: Int, old: Int) -> UUID {
+        var rows: [(id: Int, title: String, release: Date?, added: Date)] = []
+        for i in 0..<recent {
+            rows.append((100 + i, "New\(i)", .distantFuture, .utc(2022, 1, i + 1)))
+        }
+        for i in 0..<old {
+            rows.append((200 + i, "Old\(i)", .utc(2000 + i, 1, 15), .utc(2022, 2, i + 1)))
+        }
+        return seedList(rows, isWatchList: true)
+    }
+
+    @Test func watchListFoldsOlderWhenBothCountsClearThreshold() async {
+        let id = seedWatchList(recent: 2, old: 3)
         let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
                                              ascending: false, filter: "")
         #expect(sections.contains { $0.isCollapsible })
         #expect(sections.last?.title == "Older")
-        #expect(sections.last?.entries.map(\.tmdbID) == [1])
+        #expect(Set(sections.last?.entries.map(\.tmdbID) ?? []) == [200, 201, 202])
+    }
+
+    @Test func watchListStaysExpandedWhenEverythingIsOld() async {
+        // No recent releases at all, so folding would hide the whole list behind a
+        // collapsed "Older" bucket. Keep every title visible in its month section.
+        let id = seedWatchList(recent: 0, old: 5)
+        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
+                                             ascending: false, filter: "")
+        #expect(!sections.contains { $0.isCollapsible })
+        #expect(sections.flatMap(\.entries).count == 5)
+    }
+
+    @Test func watchListStaysExpandedWithTooFewRecent() async {
+        // Only one upcoming title — not a big enough new-releases block to justify
+        // tucking the backlog away; keep it all inline.
+        let id = seedWatchList(recent: 1, old: 6)
+        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
+                                             ascending: false, filter: "")
+        #expect(!sections.contains { $0.isCollapsible })
+        #expect(sections.flatMap(\.entries).count == 7)
+    }
+
+    @Test func watchListStaysExpandedWithTooSmallBacklog() async {
+        // Plenty of upcoming titles but only two old ones — folding two rows into a
+        // bucket saves nothing, so leave them visible.
+        let id = seedWatchList(recent: 5, old: 2)
+        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
+                                             ascending: false, filter: "")
+        #expect(!sections.contains { $0.isCollapsible })
+        #expect(sections.flatMap(\.entries).count == 7)
     }
 
     @Test func watchListKeepsAllMonthsWhenFoldDisabled() async {
-        let id = seedList([
-            (1, "Old", .utc(2000, 1, 15), .utc(2022, 1, 1)),
-            (2, "Future", .distantFuture, .utc(2022, 1, 2)),
-        ], isWatchList: true)
+        // Counts clear the thresholds, so only the toggle keeps it expanded.
+        let id = seedWatchList(recent: 3, old: 3)
         let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: false),
                                              ascending: false, filter: "")
         #expect(!sections.contains { $0.isCollapsible })
