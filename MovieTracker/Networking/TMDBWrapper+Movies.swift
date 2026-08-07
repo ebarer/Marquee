@@ -41,8 +41,13 @@ extension TMDBWrapper {
     }
 
     static func moviesPopular(page: Int) async throws -> PagedResult<Movie> {
+        // `vote_count.gte` filters out thin duplicate records that ride a title's
+        // popularity without the audience to back it — e.g. a 9-vote second "The
+        // Odyssey" trailing Nolan's. Popularity alone (page views / searches) can't
+        // tell them apart; a vote floor can.
         try await discoverMovies(page: page, extra: [
             URLQueryItem(name: "sort_by", value: "popularity.desc"),
+            URLQueryItem(name: "vote_count.gte", value: "100"),
         ])
     }
 
