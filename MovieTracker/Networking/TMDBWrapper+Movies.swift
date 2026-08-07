@@ -30,12 +30,15 @@ extension TMDBWrapper {
     }
 
     static func moviesNowPlaying(page: Int) async throws -> PagedResult<Movie> {
-        // Films whose original release was in the last six weeks, most popular first.
-        // Filtering on `primary_release_date` (not region release dates) keeps
-        // re-releases of old titles out — e.g. a 2016 film back in theatres.
+        // Films with a US theatrical release in the last six weeks, most popular
+        // first. This uses the region release date (not `primary_release_date`) so a
+        // film that premiered abroad earlier but is in US theatres now still shows —
+        // "now playing" is about what's on screens here, so a current re-release
+        // legitimately belongs (unlike Coming Soon, which stays on primary date).
         try await discoverMovies(page: page, extra: [
-            URLQueryItem(name: "primary_release_date.gte", value: dateParam(daysFromNow: -42)),
-            URLQueryItem(name: "primary_release_date.lte", value: dateParam(daysFromNow: 0)),
+            URLQueryItem(name: "with_release_type", value: "2|3"),
+            URLQueryItem(name: "release_date.gte", value: dateParam(daysFromNow: -42)),
+            URLQueryItem(name: "release_date.lte", value: dateParam(daysFromNow: 0)),
             URLQueryItem(name: "sort_by", value: "popularity.desc"),
         ])
     }
