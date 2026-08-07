@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// A horizontally scrolling row of poster cards linking to each movie, with an
-/// optional release-year caption. Used by the Related and Known For sections.
+/// A horizontally scrolling row of poster cards linking to each movie.
 struct PosterStrip: View {
     let movies: [Movie]
     let lists: [MediaList]

@@ -6,20 +6,14 @@
 import SwiftUI
 import SwiftData
 
-/// A poster strip below the description whose title flips between the movie's
-/// franchise ("Related") and TMDB "Recommendations". Shown when either has
-/// content; the title becomes a menu only when both do. When only
-/// recommendations exist the strip starts collapsed behind a tappable header.
+/// A poster strip whose title flips between the movie's franchise and TMDB recommendations.
 struct RelatedMoviesSection: View {
     let collection: [Movie]
     let recommendations: [Movie]
     let lists: [MediaList]
     let tint: Color
 
-    /// The user's pick from the title menu; nil follows the default (franchise first).
     @State private var selection: Mode?
-    /// User's expand/collapse override; nil follows the default. Recommendations-only
-    /// sections start collapsed since they aren't tied to what the user is viewing.
     @State private var userExpanded: Bool?
 
     private enum Mode: CaseIterable {
@@ -39,8 +33,6 @@ struct RelatedMoviesSection: View {
         return availableModes.first
     }
 
-    /// Collapse only applies when recommendations are all we have; a franchise
-    /// stays expanded so the strip is visible without an extra tap.
     private var isCollapsible: Bool { collection.isEmpty }
 
     private var isExpanded: Bool { userExpanded ?? !isCollapsible }
@@ -102,8 +94,6 @@ struct RelatedMoviesSection: View {
         }
     }
 
-    /// A tappable header that expands or collapses the strip, with a chevron
-    /// that rotates to reflect the current state.
     private func collapsibleHeader(mode: Mode) -> some View {
         Button {
             withAnimation(.easeInOut) { userExpanded = !isExpanded }

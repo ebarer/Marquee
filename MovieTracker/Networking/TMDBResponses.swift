@@ -2,15 +2,12 @@
 //  TMDBResponses.swift
 //  MovieTracker
 //
-//  The raw `Codable` shapes returned by the TMDB API, kept separate from the
-//  client and the domain models. Mapped to domain types by the `translate(...)`
-//  helpers in `TMDBWrapper+Movies` / `TMDBWrapper+People`.
+//  The raw `Codable` shapes returned by the TMDB API.
 //
 
 import Foundation
 
 extension TMDBWrapper {
-    // Pass a Codable generic to specify the type of `results`.
     struct RootRaw<T: Codable>: Codable {
         var results: [T]
         var totalResults: Int
@@ -95,22 +92,18 @@ extension TMDBWrapper {
         func team() -> [Person] {
             guard let teamRaw = self.teamRaw else { return [] }
 
-            // Crew: directors first, then everyone else in the order TMDB returns.
             let crew = teamRaw.crew.filter { $0.role == "Director" }
                      + teamRaw.crew.filter { $0.role != "Director" }
             let crewMembers = Self.dedupedPeople(
                 crew.map { ($0.id, $0.name, $0.role, $0.profilePicture) }, type: .Crew)
-            // Cast stays in billing order.
             let castMembers = Self.dedupedPeople(
                 teamRaw.cast.map { ($0.id, $0.name, $0.role, $0.profilePicture) }, type: .Cast)
 
             return crewMembers + castMembers
         }
 
-        /// Collapses repeated entries for the same person (a director who also
-        /// wrote, an actor billed for two characters) into one row, joining their
-        /// roles in first-seen order. TMDB lists a separate credit per job, so
-        /// without this the same id would appear more than once and break list identity.
+        /// TMDB lists a separate credit per job, so collapse repeated ids into one
+        /// row (joining roles) or the same id breaks list identity.
         private static func dedupedPeople(
             _ raw: [(id: Int, name: String, role: String, pic: String?)],
             type: Person.PersonType
@@ -151,8 +144,6 @@ extension TMDBWrapper {
                                    poster: stub.poster, background: stub.background)
         }
 
-        /// Streaming availability per region. Merges the flatrate, free, and
-        /// ad-supported buckets (skipping rent/buy), priority-ordered and deduped.
         func watchByRegion() -> [String: WatchAvailability] {
             guard let results = watchRaw?.results else { return [:] }
             var out: [String: WatchAvailability] = [:]
@@ -308,8 +299,6 @@ extension TMDBWrapper {
             }
         }
 
-        /// TMDB's `watch/providers` payload: a per-country map of providers,
-        /// bucketed by monetization type. JustWatch is the underlying source.
         struct WatchProvidersRaw: Codable {
             var results: [String: RegionRaw]
 
@@ -355,7 +344,6 @@ extension TMDBWrapper {
         var parts: [MovieRaw]
     }
 
-    /// The `/watch/providers/movie` catalogue: every streaming service in a region.
     struct ProviderListRaw: Codable {
         var results: [MovieRaw.WatchProvidersRaw.ProviderRaw]
     }
@@ -389,7 +377,6 @@ extension TMDBWrapper {
                 }
             }
 
-            // De-duplicate, then sort newest-first.
             return Set(credits).sorted {
                 guard let releaseA = $0.releaseDate else { return false }
                 guard let releaseB = $1.releaseDate else { return true }

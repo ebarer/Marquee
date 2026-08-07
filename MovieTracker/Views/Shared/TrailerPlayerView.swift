@@ -13,8 +13,6 @@ import WebKit
 
 struct TrailerPlayerView: UIViewControllerRepresentable {
     let trailer: MovieTrailer
-    /// Called when the video finishes or the player is closed, so the presenter
-    /// can dismiss the cover.
     var onFinish: () -> Void
 
     func makeUIViewController(context: Context) -> TrailerPlayerViewController {
@@ -67,7 +65,6 @@ final class TrailerPlayerViewController: UIViewController {
         view.addSubview(webView)
         self.webView = webView
 
-        // Tear down once the video exits fullscreen (finished or closed).
         fullscreenObservation = webView.observe(\.fullscreenState) { [weak self] webView, _ in
             guard let self else { return }
             switch webView.fullscreenState {

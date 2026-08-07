@@ -2,9 +2,6 @@
 //  PreviewData.swift
 //  MovieTracker
 //
-//  Sample data and an in-memory SwiftData container for SwiftUI previews.
-//  Kept lightweight (no network) so previews render instantly.
-//
 
 import SwiftUI
 import SwiftData
@@ -12,7 +9,6 @@ import SwiftData
 // MARK: - Sample movies
 
 extension Movie {
-    /// A fully-populated sample movie for previews.
     static var preview: Movie {
         var movie = Movie(id: 1, title: "The Odyssey")
         movie.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 17).date
@@ -38,7 +34,6 @@ extension Movie {
         return movie
     }
 
-    /// A short list of sample movies for grids and lists.
     static var previewList: [Movie] {
         [
             Movie.preview,
@@ -61,7 +56,6 @@ extension Movie {
 // MARK: - Sample people
 
 extension Person {
-    /// A sample crew member (director).
     static var preview: Person {
         var person = Person(id: 10, name: "Christopher Nolan")
         person.role = "Director"
@@ -99,7 +93,6 @@ extension Person {
         return person
     }
 
-    /// A sample cast member (actor).
     static var previewActor: Person {
         var person = Person(id: 11, name: "Matt Damon")
         person.role = "Odysseus"
@@ -107,8 +100,6 @@ extension Person {
         return person
     }
 
-    /// A full sample team (director, cast, and extra crew) that exercises the
-    /// Starring / Cast / Crew category menu on the movie detail screen.
     static var previewTeam: [Person] {
         func member(_ id: Int, _ name: String, _ role: String, _ type: PersonType) -> Person {
             var person = Person(id: id, name: name)
@@ -117,7 +108,7 @@ extension Person {
             return person
         }
         return [
-            .preview, // Christopher Nolan, Director
+            .preview,
             member(11, "Matt Damon", "Odysseus", .Cast),
             member(12, "Tom Holland", "Telemachus", .Cast),
             member(13, "Anne Hathaway", "Penelope", .Cast),
@@ -139,9 +130,6 @@ extension Person {
 
 // MARK: - Sample SwiftData container
 
-/// An in-memory container seeded with the Watch List, one custom list with a few
-/// movies, and a watched + a viewed title for the derived views.
-///
 /// Everything is inserted directly (never fetched) — a freshly created in-memory
 /// store has no connection until SwiftUI attaches it, so fetching here would crash
 /// with "No eligible connection available". `@Query` picks the objects up once the

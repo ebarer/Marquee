@@ -5,18 +5,15 @@
 
 import SwiftUI
 
-/// Holds the Lists screen's month/year section snapshots and asks the coordinator
-/// to (re)build them, so `ListsView` stays layout.
+/// Builds the Lists screen's month/year section snapshots off the main actor.
 @MainActor
 @Observable
 final class ListSectionsModel {
     private(set) var sections: [SectionSnapshot] = []
-    /// The input the current `sections` were built for. Lets the view suppress the
-    /// empty state during the async rebuild after a selection change (so it doesn't flash).
+    /// The input the current `sections` were built for; lets the view suppress the empty-state flash.
     private(set) var loadedInput: Input?
 
-    /// Everything a build depends on. Bumping `version` forces a rebuild after a
-    /// silent edit (e.g. a watched-date change) that doesn't alter `count`.
+    /// Bumping `version` forces a rebuild after a silent edit that doesn't alter `count`.
     struct Input: Equatable {
         var source: SectionSource?
         var count: Int
@@ -33,9 +30,7 @@ final class ListSectionsModel {
         }
         let result = await store.sections(for: source, ascending: input.ascending, filter: input.filter)
         guard !Task.isCancelled else { return }
-        // Animate row inserts/removals only when the *same* list's contents changed
-        // (a delete, completion, or edit). Switching selections or the first load
-        // replace the rows outright, which shouldn't fade every row in.
+        // Animate only when the same list's contents changed; a selection switch replaces rows outright.
         if loadedInput?.source == source {
             withAnimation { sections = result }
         } else {
@@ -44,7 +39,5 @@ final class ListSectionsModel {
         loadedInput = input
     }
 
-    /// Clears the rows immediately (e.g. on a selection change) so stale rows don't
-    /// linger while the next build runs.
     func clear() { sections = [] }
 }

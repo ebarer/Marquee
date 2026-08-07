@@ -6,10 +6,7 @@
 import Foundation
 import SwiftData
 
-/// A tracked title's **private** per-user state — rating, watched date, and last
-/// viewed time — plus a display snapshot. One row per (`tmdbID`, `mediaType`).
-/// Never shared; list membership lives separately in `ListEntry`. Watched and
-/// Viewed are derived from this (`watchedAt`/`lastViewedAt`), not from lists.
+/// A tracked title's private per-user state; list membership lives in `ListEntry`.
 @Model
 final class MediaItem {
     var tmdbID: Int = 0
@@ -18,11 +15,9 @@ final class MediaItem {
     var posterPath: String?
     var releaseDate: Date?
     var runtime: Int?
-    /// Personal rating in stars (0.5–5.0, half steps).
     var userRating: Double?
-    /// Non-nil ⇒ Watched. Stored as a canonical UTC-midnight day (see `floatingDay`).
+    /// Stored as a canonical UTC-midnight day (see `floatingDay`).
     var watchedAt: Date?
-    /// Non-nil ⇒ in the Viewed history; the browse timestamp.
     var lastViewedAt: Date?
     var addedAt: Date = Date()
 
@@ -44,7 +39,6 @@ final class MediaItem {
         TMDBWrapper.imageURL(path: posterPath, size: size.rawValue)
     }
 
-    /// Refreshes the display snapshot from a freshly-fetched DTO.
     func refreshSnapshot(from movie: Movie) {
         title = movie.title
         posterPath = movie.poster
@@ -52,8 +46,6 @@ final class MediaItem {
         runtime = movie.runtime
     }
 
-    /// Deletes this item once it carries no personal state — a `MediaItem` only
-    /// exists to hold facts; list membership is `ListEntry`.
     func pruneIfEmpty() {
         guard userRating == nil, watchedAt == nil, lastViewedAt == nil else { return }
         modelContext?.delete(self)
@@ -76,7 +68,6 @@ extension MediaItem {
         find(tmdbID: movie.id, in: context)
     }
 
-    /// The existing item for a movie, or a freshly inserted one, snapshot refreshed.
     @discardableResult
     static func upsert(_ movie: Movie, in context: ModelContext) -> MediaItem {
         if let existing = find(movie, in: context) {
@@ -96,8 +87,6 @@ extension MediaItem {
         find(movie, in: context)?.userRating
     }
 
-    /// Sets or clears (`nil`/≤0) the personal rating, snapped to the nearest half
-    /// star. Removes the item if it ends up holding no state.
     static func setRating(_ stars: Double?, for movie: Movie, in context: ModelContext) {
         let snapped = stars.flatMap { $0 > 0 ? ($0 * 2).rounded() / 2 : nil }
         if snapped == nil, find(movie, in: context) == nil { return }
@@ -118,8 +107,7 @@ extension MediaItem {
         find(movie, in: context)?.watchedAt = date
     }
 
-    /// Marks a movie watched (or unmarks it). Marking removes it from the Watch
-    /// List (the two are mutually exclusive); unmarking prunes an empty item.
+    /// Marking watched removes it from the Watch List — the two are mutually exclusive.
     static func setWatched(_ watched: Bool, for movie: Movie, in context: ModelContext) {
         if watched {
             let item = upsert(movie, in: context)
@@ -131,8 +119,6 @@ extension MediaItem {
         }
     }
 
-    /// Records that a title's detail page was browsed, keeping the Viewed history
-    /// to the most-recent `limit` items (older ones fall out of the history).
     static func recordView(_ movie: Movie, in context: ModelContext, keeping limit: Int = 20) {
         upsert(movie, in: context).lastViewedAt = Date()
 
@@ -151,9 +137,7 @@ extension MediaItem {
 // MARK: - Watched-date timezone
 
 extension MediaItem {
-    /// A watched date stored canonically as midnight UTC for a calendar day, so it
-    /// reads as the same day on every device. Pass a local-time date; its local
-    /// year/month/day is preserved.
+    /// Stores a local calendar day as midnight UTC, so it reads as the same day on every device.
     static func floatingDay(from localDate: Date) -> Date {
         var utc = Calendar(identifier: .gregorian)
         utc.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -161,7 +145,6 @@ extension MediaItem {
         return utc.date(from: comps) ?? localDate
     }
 
-    /// Converts a canonical UTC-midnight watched date back to local midnight.
     static func localDay(from storedDate: Date) -> Date {
         var utc = Calendar(identifier: .gregorian)
         utc.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -173,9 +156,7 @@ extension MediaItem {
 // MARK: - De-duplication
 
 extension MediaItem {
-    /// Collapses items sharing a (`tmdbID`, `mediaType`) — a CloudKit sync can
-    /// create duplicates since there's no unique constraint. Keeps the earliest
-    /// `addedAt` and OR-s the facts together.
+    /// CloudKit has no unique constraint, so sync can create duplicates to collapse.
     @discardableResult
     static func deduplicate(in context: ModelContext) -> Bool {
         let all = (try? context.fetch(FetchDescriptor<MediaItem>())) ?? []

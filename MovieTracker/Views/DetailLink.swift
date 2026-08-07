@@ -5,7 +5,6 @@
 
 import SwiftUI
 
-/// A detail target opened as a modal on iPad (movie / person / people list).
 enum DetailRoot: Hashable, Identifiable {
     case movie(Movie)
     case person(Person)
@@ -25,8 +24,7 @@ private struct OpenDetailKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// Present only in the iPad shell. When set, a top-level result tap opens the
-    /// detail modal instead of pushing within the current stack.
+    /// Set only in the iPad shell; when nil, taps push within the current stack.
     var openDetail: ((AnyHashable) -> Void)? {
         get { self[OpenDetailKey.self] }
         set { self[OpenDetailKey.self] = newValue }
@@ -38,8 +36,7 @@ private struct CloseModalKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// Present inside the iPad detail modal (injected on its NavigationStack, so it
-    /// reaches every pushed screen). Dismisses the whole modal.
+    /// Injected on the modal's NavigationStack so every pushed screen inherits it.
     var closeModal: (() -> Void)? {
         get { self[CloseModalKey.self] }
         set { self[CloseModalKey.self] = newValue }
@@ -63,19 +60,12 @@ private struct ModalDismissable: ViewModifier {
 }
 
 extension View {
-    /// Adds a trailing Close button when presented inside the iPad detail modal
-    /// (i.e. when a `closeModal` action is in the environment). A no-op everywhere
-    /// else, so the same detail screens push normally on iPhone.
     func modalDismissable() -> some View {
         modifier(ModalDismissable())
     }
 }
 
-/// A link that pushes within a `NavigationStack` (iPhone, and the detail column's
-/// own deep navigation), but fills the detail column when an `openDetail` action is
-/// in the environment (iPad three-column layout). The concrete `Value` is preserved
-/// in the `NavigationLink` branch so it keeps matching the existing
-/// `navigationDestination(for:)` registrations.
+/// Pushes within a `NavigationStack`, or opens the detail modal when `openDetail` is set.
 struct DetailLink<Value: Hashable, Label: View>: View {
     let value: Value
     @ViewBuilder var label: () -> Label

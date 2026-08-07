@@ -2,10 +2,7 @@
 //  ListEditorView.swift
 //  MovieTracker
 //
-//  Create or edit a custom movie list: choose a name, a tint color, and an SF
-//  Symbol icon, previewed together at the top. Built-in lists (To Watch /
-//  Watched) are never edited here. Editing an existing custom list also offers
-//  deletion (which cascades to its entries).
+//  Create or edit a custom list: name, tint color, and SF Symbol / emoji icon.
 //
 
 import SwiftUI
@@ -15,9 +12,7 @@ struct ListEditorView: View {
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Environment(\.dismiss) private var dismiss
 
-    /// The list being edited, or `nil` when creating a new one.
     let existing: MediaList?
-    /// Sort order to assign to a newly created list.
     var nextSortOrder: Int = 0
     var onSaved: (MediaList) -> Void = { _ in }
     var onDeleted: () -> Void = {}
@@ -25,12 +20,10 @@ struct ListEditorView: View {
     @State private var name: String
     @State private var symbol: String
     @State private var colorIndex: Int
-    /// A user-chosen custom tint; `nil` means a palette swatch is selected.
     @State private var customColor: Color?
-    /// Raises the emoji keyboard to pick a single-emoji icon.
     @State private var emojiKeyboardActive = false
+    @FocusState private var nameFocused: Bool
 
-    /// A palette of icons suited to movie lists and leisure.
     private static let symbols = [
         "list.bullet", "star", "heart", "bookmark", "flag", "eye",
         "film", "movieclapper", "popcorn", "ticket", "tv", "play.rectangle",
@@ -54,8 +47,7 @@ struct ListEditorView: View {
         self.onDeleted = onDeleted
         _name = State(initialValue: existing?.name ?? "")
         let storedSymbol = existing?.symbol ?? Self.symbols.first!
-        // The picker works in canonical base names; normalize any stored
-        // `.fill`/`.inverse` suffix (and legacy variants) back to the base.
+        // The picker works in canonical base names; strip any stored `.fill`/`.inverse` suffix.
         _symbol = State(initialValue: ListSymbol.canonical(storedSymbol))
         _colorIndex = State(initialValue: existing?.colorIndex ?? 0)
         let storedHex = existing?.customColorHex
@@ -64,8 +56,6 @@ struct ListEditorView: View {
 
     private var selectedColor: Color { customColor ?? Color.listColor(colorIndex) }
 
-    /// Feeds the custom `ColorPicker`: seeded with the current tint, and selecting
-    /// a color switches the list off its palette swatch.
     private var customColorBinding: Binding<Color> {
         Binding(get: { selectedColor }, set: { customColor = $0 })
     }
@@ -80,12 +70,11 @@ struct ListEditorView: View {
 
             Section {
                 TextField("List Name", text: $name)
+                    .focused($nameFocused)
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(selectedColor)
-                    // Pin the height so the row doesn't resize when the field
-                    // becomes first responder (placeholder vs. caret metrics
-                    // otherwise report slightly different intrinsic heights).
+                    // Pin the height so the row doesn't resize when the field becomes first responder.
                     .frame(height: 28)
             }
 
@@ -100,9 +89,7 @@ struct ListEditorView: View {
             if existing != nil {
                 Section {
                     Button(role: .destructive, action: delete) {
-                        // Color the label directly so the trash glyph turns red
-                        // too — in a Form the symbol otherwise takes the app's
-                        // accent tint, not the button's destructive role.
+                        // In a Form the symbol takes the accent tint, not the destructive role; color it directly.
                         Label("Delete List", systemImage: "trash")
                             .foregroundStyle(.red)
                     }
@@ -111,6 +98,7 @@ struct ListEditorView: View {
         }
         .listSectionSpacing(18)
         .contentMargins(.top, 10, for: .scrollContent)
+        .onAppear { if existing == nil { nameFocused = true } }
         .navigationTitle(existing == nil ? "New List" : "Edit List")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -130,8 +118,7 @@ struct ListEditorView: View {
         ListEditorIcon(symbol: symbol, color: selectedColor)
         .frame(maxWidth: .infinity)
         .padding(.top, 8)
-        // The emoji keyboard's hidden field lives up here (not in the symbol grid)
-        // so raising it doesn't scroll the form down and hide this preview.
+        // Emoji keyboard's hidden field lives here, not in the grid, so raising it doesn't scroll the preview away.
         .background {
             EmojiField(isActive: $emojiKeyboardActive) { emoji in
                 symbol = emoji
@@ -166,8 +153,7 @@ struct ListEditorView: View {
         .padding(.vertical, 4)
     }
 
-    /// The trailing slot: a system `ColorPicker` for an arbitrary custom tint. Its
-    /// native swatch (~28pt) is scaled up to match the 36pt palette circles.
+    /// Its native ~28pt swatch is scaled up to match the 36pt palette circles.
     private var customColorCell: some View {
         ColorPicker(selection: customColorBinding, supportsOpacity: false) {
             EmptyView()
@@ -188,8 +174,6 @@ struct ListEditorView: View {
         .padding(.vertical, 4)
     }
 
-    /// The leading cell (Reminders-style): tap to pick a single emoji instead of
-    /// an SF Symbol. Shows the chosen emoji once one is set.
     private var emojiCell: some View {
         let hasEmoji = ListSymbol.isEmoji(symbol)
         return Group {
@@ -214,7 +198,6 @@ struct ListEditorView: View {
 
     private func symbolCell(_ option: String) -> some View {
         let isSelected = option == symbol
-        // The picker shows filled variants, matching the icon's final appearance.
         return Image(systemName: ListSymbol.solid(option))
             .font(.system(size: 16))
             .foregroundStyle(.white)

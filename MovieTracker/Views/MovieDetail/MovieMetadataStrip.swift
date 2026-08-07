@@ -6,14 +6,10 @@
 import SwiftUI
 import SwiftData
 
-/// A horizontal strip of metadata cells (rating, credit clips, TMDB score, genre)
-/// on the movie detail screen. Watched movies lead with the user's own rating and
-/// watched date.
+/// A horizontal strip of metadata cells; watched movies lead with the user's rating and date.
 struct MovieMetadataStrip: View {
     let movie: Movie
     var tint: Color = .appAccent
-    /// Whether the movie is Watched; passed in (not derived) so the MY RATING cell
-    /// animates when the status changes.
     var isWatched: Bool = false
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -23,8 +19,6 @@ struct MovieMetadataStrip: View {
             hairline
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 0) {
-                    // The personal cells only appear in the app (store present) for a
-                    // watched title.
                     if let store, isWatched {
                         HStack(alignment: .top, spacing: 0) {
                             cell(header: "MY RATING") {
@@ -66,8 +60,6 @@ struct MovieMetadataStrip: View {
         }
     }
 
-    /// The TMDB score over "/ 5", with the number emphasized. Whole scores drop the
-    /// decimal (4.0 → "4").
     private var tmdbScore: Text {
         guard let rating = movie.rating, rating > 0 else {
             return Text("N/A")

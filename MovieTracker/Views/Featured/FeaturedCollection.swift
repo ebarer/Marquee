@@ -2,8 +2,6 @@
 //  FeaturedCollection.swift
 //  MovieTracker
 //
-//  The two collections shown on the Featured screen.
-//
 
 import Foundation
 

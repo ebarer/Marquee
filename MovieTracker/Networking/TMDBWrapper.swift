@@ -8,10 +8,6 @@
 
 import Foundation
 
-/// A thin client for the TMDB API. Endpoints (and their raw→domain `translate`
-/// helpers) live in `TMDBWrapper+Movies` and `TMDBWrapper+People`, and the raw
-/// response types in `TMDBResponses`. This file holds the shared request/decode
-/// plumbing, image helpers, and the result/error types.
 class TMDBWrapper {
     private static let baseURL = "https://api.themoviedb.org"
     private static let imageBaseURL = "https://image.tmdb.org/t/p"
@@ -27,7 +23,6 @@ class TMDBWrapper {
 // MARK: - Requests
 
 extension TMDBWrapper {
-    /// The locale/key query items sent with every request.
     private static var localeQueryItems: [URLQueryItem] {
         [
             URLQueryItem(name: "api_key", value: apiKey),
@@ -38,8 +33,6 @@ extension TMDBWrapper {
         ]
     }
 
-    /// Performs a GET against the API, appending the shared query items (plus a
-    /// certification country for movie endpoints), and returns the raw response.
     static func fetch(_ path: String, queryItems: [URLQueryItem] = [],
                       certified: Bool = false) async throws -> Data {
         var components = URLComponents(string: baseURL)!
@@ -78,13 +71,11 @@ extension TMDBWrapper {
 // MARK: - Images
 
 extension TMDBWrapper {
-    /// A fully-qualified TMDB image URL for the given path and size.
     static func imageURL(path: String?, size: String) -> URL? {
         guard let path else { return nil }
         return URL(string: "\(imageBaseURL)/\(size)/\(path)")
     }
 
-    /// Raw image data (e.g. for average-color extraction).
     static func imageData(from url: URL) async throws -> Data {
         try await URLSession.shared.data(from: url).0
     }
@@ -92,7 +83,6 @@ extension TMDBWrapper {
 
 // MARK: - Results & errors
 
-/// A page of results returned by a TMDB list/search endpoint.
 struct PagedResult<Element> {
     let items: [Element]
     let totalResults: Int

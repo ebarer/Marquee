@@ -2,19 +2,15 @@
 //  PosterDetailView.swift
 //  MovieTracker
 //
-//  Full-screen poster with pinch/double-tap zoom and edge-locked pan, over a
-//  blurred backdrop. The zoom transition is applied to the poster itself so it
-//  morphs into the enlarged frame.
-//  NOTE: must NOT be wrapped in a NavigationStack — that falls back to a
-//  slide-up and the zoom transition is lost.
+//  Full-screen poster with pinch/double-tap zoom and edge-locked pan.
+//  NOTE: must NOT be wrapped in a NavigationStack — that falls back to a slide-up
+//  and the zoom transition is lost.
 //
 
 import SwiftUI
 
 struct PosterDetailView: View {
     let imageURL: URL?
-    /// The enlarged image's aspect ratio (width / height). Defaults to a 2:3
-    /// movie poster; person profile photos pass their own portrait ratio.
     var aspectRatio: CGFloat = 2.0 / 3.0
     var tint: Color = .appAccent
     let zoomSourceID: Int
@@ -77,8 +73,6 @@ struct PosterDetailView: View {
         }
     }
 
-    /// Circular Liquid Glass close button (an X), sized to match a navigation bar's
-    /// close control since there's no nav stack here to host a real toolbar item.
     private var closeButton: some View {
         Button {
             dismiss()
@@ -170,8 +164,6 @@ struct PosterDetailView: View {
             }
     }
 
-    /// Zooms in about the tapped point (in the poster's unscaled local space),
-    /// or resets if already zoomed.
     private func toggleZoom(at location: CGPoint) {
         withAnimation(.spring(duration: 0.3)) {
             if scale > 1 {

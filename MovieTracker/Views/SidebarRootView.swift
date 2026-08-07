@@ -2,10 +2,6 @@
 //  SidebarRootView.swift
 //  MovieTracker
 //
-//  The regular-width (iPad) shell: a sidebar (collections + lists) beside a wide
-//  content column (grid or list). Selecting a movie/person opens its detail as a
-//  modal sheet rather than a third column.
-//
 
 import SwiftUI
 
@@ -31,14 +27,10 @@ struct SidebarRootView: View {
             // Injected on the stack so every pushed screen (cast → person, related
             // → movie) inherits it and keeps its own Close button.
             .environment(\.closeModal) { presented = nil }
-            // `.page` is the larger built-in sheet size — the default form sizing
-            // left the detail cramped on iPad.
             .presentationSizing(.page)
         }
     }
 
-    /// Opens the tapped result as a modal, committing the query to recents when the
-    /// tap came from a search.
     private func present(_ value: AnyHashable) {
         if let movie = value.base as? Movie {
             presented = .movie(movie)

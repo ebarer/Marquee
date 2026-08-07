@@ -2,8 +2,7 @@
 //  ListManagerView.swift
 //  MovieTracker
 //
-//  A modal for reordering, deleting, and editing custom lists. The Watch List,
-//  Watched, and Viewed are shown for context (with counts) but pinned and inert.
+//  A modal for reordering, deleting, and editing custom lists.
 //
 
 import SwiftUI
@@ -38,7 +37,6 @@ struct ListManagerView: View {
     var body: some View {
         NavigationStack {
             List {
-                // Built-in views pinned at the top — shown for context, not editable.
                 Section {
                     if let watchList {
                         row(for: watchList, editable: false)
@@ -49,7 +47,6 @@ struct ListManagerView: View {
                                color: ListDestination.watchedColor, count: watchedCount)
                 }
 
-                // Custom lists: reorderable and deletable.
                 Section {
                     if customLists.isEmpty {
                         Text("No custom lists yet")
@@ -65,13 +62,11 @@ struct ListManagerView: View {
                     }
                 }
 
-                // The Viewed history pinned at the bottom.
                 Section {
                     virtualRow(title: "Viewed", symbol: "clock.arrow.circlepath",
                                color: ListDestination.viewedColor, count: viewedCount)
                 }
 
-                // Library-wide actions (not lists) — tinted accent to set them apart.
                 Section {
                     Button {
                         ImportExportCoordinator.shared.showImporter = true
@@ -108,7 +103,6 @@ struct ListManagerView: View {
                 .moveDisabled(true)
                 .deleteDisabled(true)
 
-                // Offline cache management, with the app version pinned to the footer.
                 // A Button (not NavigationLink) because this List is permanently in
                 // edit mode, where links don't fire; it drives a programmatic push.
                 Section {
@@ -204,7 +198,6 @@ struct ListManagerView: View {
                 }
                 .buttonStyle(.borderless)
 
-                // Full-height reorder-gutter line echoing the UIKit reorder divider.
                 Rectangle()
                     .fill(Self.separator)
                     .frame(width: 1)
@@ -216,7 +209,6 @@ struct ListManagerView: View {
         .listRowSeparatorTint(Self.separator)
     }
 
-    /// An inert row for a derived view (Watched / Viewed), shown for context.
     private func virtualRow(title: String, symbol: String, color: Color, count: Int) -> some View {
         HStack(spacing: 0) {
             ListIcon(symbol: symbol, color: color, size: 38, symbolSize: 18)
@@ -244,7 +236,6 @@ struct ListManagerView: View {
         "\(count) \(count == 1 ? "movie" : "movies")"
     }
 
-    /// App version/build, e.g. "1.2 (34)", shown in the actions footer.
     private var appInfo: String {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String
@@ -263,8 +254,7 @@ struct ListManagerView: View {
         offsets.map { customLists[$0] }.forEach { store?.delete($0) }
     }
 
-    /// Reorders custom lists and rewrites their sort orders (starting at 1, after
-    /// the Watch List at 0).
+    /// Sort orders start at 1; the Watch List holds 0.
     private func move(from source: IndexSet, to destination: Int) {
         store?.perform {
             var reordered = customLists

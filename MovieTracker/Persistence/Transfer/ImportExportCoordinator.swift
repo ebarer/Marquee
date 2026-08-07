@@ -5,12 +5,7 @@
 
 import SwiftUI
 
-/// Owns the backup import/export workflow — choosing files, merging archives/CSV,
-/// and the presentation state the sheets and alerts bind to. Keeps that business
-/// logic out of `ListManagerView`, which just presents what this exposes.
-///
-/// A shared singleton so any surface can trigger a backup without threading an
-/// instance through; the store is still passed per call (the view holds it).
+/// Owns the backup import/export workflow and the presentation state its sheets bind to.
 @MainActor
 @Observable
 final class ImportExportCoordinator {
@@ -23,7 +18,6 @@ final class ImportExportCoordinator {
 
     var importSummary: ImportSummary?
     var transferError: String?
-    /// Non-nil while a CSV import is fetching movie details, as `(fetched, total)`.
     private(set) var importProgress: (done: Int, total: Int)?
 
     var exportFilename: String {
@@ -36,7 +30,6 @@ final class ImportExportCoordinator {
         showExporter = true
     }
 
-    /// Routes a picked file to the archive or CSV importer by extension.
     func handleImport(_ result: Result<URL, Error>, using store: PersistenceCoordinator) {
         switch result {
         case .success(let url):

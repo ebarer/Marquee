@@ -13,8 +13,7 @@ struct StreamingServicesView: View {
     @State private var loadFailed = false
     @State private var query = ""
     @State private var showingRegion = false
-    // Snapshot taken when the picker opens, so toggling doesn't reshuffle rows
-    // between sections mid-interaction; they relocate next time it's presented.
+    // Snapshotted when the picker opens so toggling doesn't reshuffle rows between sections mid-interaction.
     @State private var initialSelection: Set<Int> = []
 
     private var filtered: [ProviderGroup] {

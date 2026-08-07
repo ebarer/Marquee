@@ -44,10 +44,8 @@ struct Person: Hashable, Identifiable, Codable {
     static func == (lhs: Person, rhs: Person) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 
-    /// The person's most notable credits (their "known for"), sorted by vote count.
-    /// Vote count is cumulative over a film's lifetime, so it reflects enduring
-    /// notability — unlike TMDB's `popularity`, a volatile daily trending score.
-    /// Popularity breaks ties. Excludes "Self"/"Thanks" credits and posterless entries.
+    /// Sorted by vote count (cumulative, so it reflects enduring notability) rather
+    /// than TMDB's `popularity`, a volatile daily trending score.
     var knownFor: [Movie] {
         (credits ?? [])
             .filter { !$0.isExtraneousCredit && $0.poster != nil }

@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-// A ScrollView + LazyVStack (not a List) so the expandable bio animates its height
-// without disturbing scroll offset; swipe actions come from swipeActionsContainer().
+// A ScrollView + LazyVStack (not a List) so the expandable bio animates its height without disturbing scroll offset.
 
 struct PersonDetailView: View {
     let person: Person
@@ -16,24 +15,15 @@ struct PersonDetailView: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
 
-    /// Zoom transition namespace + presentation flag for the full-screen profile
-    /// photo viewer (the same viewer used for movie posters).
     @Namespace private var photoNamespace
     @State private var showPhoto = false
 
-    /// Reveal the nav-bar title only once the on-page name is hidden behind it.
     @State private var showNavTitle = false
-    /// Global Y of the nav bar's bottom edge (the scroll view's top), fed to the header.
     @State private var navBarBottom: CGFloat = 0
 
-    /// When on, hides "Self" (talk-show) and "Thanks" credits from the filmography.
-    /// On by default so the filmography leads with actual roles.
     @State private var hideExtraneous = true
-    /// True once the filmography's own filter button has scrolled behind the nav
-    /// bar, at which point the toolbar shows a stand-in.
     @State private var filterButtonHidden = false
 
-    /// Scroll target for re-anchoring to the header when the bio collapses.
     private let bioHeaderID = "personBioHeader"
 
     private var current: Person { model.person ?? person }
@@ -97,8 +87,6 @@ struct PersonDetailView: View {
                     }
                     .accessibilityLabel(hideExtraneous ? "Show all credits" : "Hide Self and Thanks credits")
 
-                    // Active filtering reads as a prominent accent-tinted glass button;
-                    // off falls back to the default toolbar glass.
                     if hideExtraneous {
                         button.buttonStyle(.glassProminent).tint(.appAccent)
                     } else {

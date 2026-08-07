@@ -5,14 +5,12 @@
 
 import Foundation
 
-/// The user's service selection and region, synced across devices via iCloud.
 @MainActor
 @Observable
 final class StreamingServicesStore {
     static let shared = StreamingServicesStore()
 
     private(set) var selected: SelectedProviders
-    /// nil follows the device region; a code overrides it.
     private(set) var regionOverride: String?
 
     var region: String { regionOverride ?? Region.device }

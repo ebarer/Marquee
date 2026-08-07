@@ -2,38 +2,31 @@
 //  LibraryBackup.swift
 //  MovieTracker
 //
-//  A versioned, portable backup snapshot of every list and its entries. Kept
-//  independent of the SwiftData `@Model` types so the on-disk format stays stable.
+//  A versioned backup snapshot, kept independent of the `@Model` types so the format stays stable.
 //
 
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
-/// The full contents of the user's lists in a self-contained, Codable form.
 struct LibraryBackup: Codable {
-    /// Bumped whenever the on-disk shape changes so importers can refuse files
-    /// written by a newer version of the app that they can't understand.
     static let currentVersion = 1
 
     var version = currentVersion
     var exportedAt = Date()
     var lists: [List]
 
-    /// One list plus the entries it owns.
     struct List: Codable {
         var uuid: UUID
         var name: String
         var symbol: String
         var colorIndex: Int
-        /// Raw `Kind` value (the Watch List restores by kind, custom lists by UUID).
         var kind: Int
         var sortOrder: Int
         var createdAt: Date
         var entries: [Entry]
     }
 
-    /// A movie's membership in a list — its display snapshot plus any personal facts.
     struct Entry: Codable {
         var movieID: Int
         var title: String
@@ -41,8 +34,6 @@ struct LibraryBackup: Codable {
         var releaseDate: Date?
         var dateAdded: Date
         var dateWatched: Date?
-        /// Personal rating in stars (half-step). Optional so older files without
-        /// it still import.
         var userRating: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -68,8 +59,7 @@ struct LibraryBackup: Codable {
             releaseDate = try c.decodeIfPresent(Date.self, forKey: .releaseDate)
             dateAdded = try c.decode(Date.self, forKey: .dateAdded)
             dateWatched = try c.decodeIfPresent(Date.self, forKey: .dateWatched)
-            // Accept a decimal rating, or map a whole integer (e.g. legacy
-            // whole-star scores) to a Double.
+            // Legacy files store rating as a whole Int; accept either.
             if let d = try? c.decode(Double.self, forKey: .userRating) {
                 userRating = d
             } else if let i = try? c.decode(Int.self, forKey: .userRating) {
@@ -84,8 +74,6 @@ struct LibraryBackup: Codable {
 // MARK: - JSON
 
 extension LibraryBackup {
-    /// ISO-8601 dates and stable key ordering keep the file human-readable and
-    /// diff-friendly.
     private static func makeEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -110,7 +98,6 @@ extension LibraryBackup {
     }
 }
 
-/// Reasons an import can fail beyond the system's own file-access errors.
 enum ImportError: LocalizedError {
     case unsupportedVersion(Int)
 
@@ -124,7 +111,6 @@ enum ImportError: LocalizedError {
 
 // MARK: - Import summary
 
-/// The result of merging an archive, surfaced to the user after an import.
 struct ImportSummary {
     var listsCreated = 0
     var entriesAdded = 0
@@ -145,7 +131,6 @@ struct ImportSummary {
 
 // MARK: - Document
 
-/// Wraps an archive as a JSON `FileDocument` for `fileExporter`/`fileImporter`.
 struct LibraryBackupDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
 
@@ -170,8 +155,7 @@ struct LibraryBackupDocument: FileDocument {
 // MARK: - Store: export / import
 
 extension LibraryBackup {
-    /// Stable list-kind values for the on-disk format, independent of the app's
-    /// runtime model so backups keep importing after schema changes.
+    /// Stable on-disk values, independent of the runtime model so backups keep importing.
     enum Kind: Int {
         case custom = 0
         case toWatch = 1
@@ -179,9 +163,7 @@ extension LibraryBackup {
         case viewed = 3
     }
 
-    /// Builds a complete archive of every list plus the Watched facts. The file
-    /// format is unchanged from v1 — Watched is emitted as a pseudo-list carrying
-    /// each title's watched date and rating — so old backups still import.
+    /// Watched is emitted as a v1 pseudo-list carrying dates/ratings, so old backups still import.
     static func export(from context: ModelContext) -> LibraryBackup {
         var lists = MediaList.all(in: context).map { list in
             LibraryBackup.List(
@@ -214,8 +196,7 @@ extension LibraryBackup {
         return LibraryBackup(lists: lists)
     }
 
-    /// Merges an archive additively: list memberships become `ListEntry`s, Watched
-    /// entries set each title's `MediaItem` facts. Nothing existing is modified.
+    /// Merges an archive additively; nothing existing is modified.
     @MainActor
     @discardableResult
     static func merge(_ archive: LibraryBackup, using store: PersistenceCoordinator) -> ImportSummary {

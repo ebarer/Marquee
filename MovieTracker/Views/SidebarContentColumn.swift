@@ -2,11 +2,6 @@
 //  SidebarContentColumn.swift
 //  MovieTracker
 //
-//  The wide content column of the iPad layout: the grid / list for the current
-//  sidebar selection, with a global search field in the trailing nav bar. A non-
-//  empty query shows global results; movie/person taps open the detail modal via
-//  the `openDetail` action (see DetailLink), so this column never pushes.
-//
 
 import SwiftUI
 import SwiftData

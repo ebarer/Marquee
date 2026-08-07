@@ -2,19 +2,11 @@
 //  SearchPeopleStrip.swift
 //  MovieTracker
 //
-//  Horizontal strip of matching people atop the movie results (no scope toggle).
-//  Shows the top-ranked few inline; a trailing circular "More" button pushes the
-//  full list when there are extras.
-//
 
 import SwiftUI
 
 struct SearchPeopleStrip: View {
     let people: [Person]
-
-    /// How many people show inline before the rest fold behind "More". This is a
-    /// notability count computed by the model (see SearchMatching.inlinePeopleCount),
-    /// so low-popularity namesakes fold even when the total is small.
     var inlineCount = 8
 
     private let itemWidth: CGFloat = 76

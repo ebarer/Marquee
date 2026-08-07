@@ -2,8 +2,6 @@
 //  FeaturedModel.swift
 //  MovieTracker
 //
-//  Loads and paginates the Featured movie collections (Now Playing / Coming Soon).
-//
 
 import SwiftUI
 
@@ -17,10 +15,8 @@ final class FeaturedModel {
     private var lastPageFetched = 0
     private var totalPages = 1
 
-    /// Loads `collection`, unless it's already the one showing. Idempotent so a
-    /// re-fired `.task` — e.g. the grid reappearing after a push → pop — doesn't
-    /// wipe and reload the movies, which would reset the grid's scroll position.
-    /// Switching to a different collection still resets and reloads.
+    /// Idempotent for the showing collection so a re-fired `.task` doesn't wipe and
+    /// reload (which would reset scroll position); a different collection still reloads.
     func load(_ collection: FeaturedCollection) async {
         guard collection != self.collection || movies.isEmpty else { return }
         self.collection = collection
@@ -30,7 +26,6 @@ final class FeaturedModel {
         await loadNextPage()
     }
 
-    /// Triggers pagination as the user approaches the end of the grid.
     func loadMoreIfNeeded(currentItem movie: Movie) async {
         guard let index = movies.firstIndex(of: movie) else { return }
         if index >= movies.count - 8 {

@@ -2,17 +2,12 @@
 //  MovieListActions.swift
 //  MovieTracker
 //
-//  Shared movie actions reused across the Featured grid, the Lists screen, and
-//  Search results so every surface offers the same swipe actions and long-press
-//  context menu.
-//
 
 import SwiftUI
 import SwiftData
 
 // MARK: - Swipe buttons
 
-/// Leading-swipe action: toggle a movie's Watched state.
 struct WatchedSwipeButton: View {
     let movie: Movie
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -33,7 +28,6 @@ struct WatchedSwipeButton: View {
     }
 }
 
-/// Trailing-swipe action: add a movie to the Watch List.
 struct WatchListSwipeButton: View {
     let movie: Movie
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -50,8 +44,6 @@ struct WatchListSwipeButton: View {
 
 // MARK: - Context menu
 
-/// The shared long-press menu: toggle Watched and membership across the Watch List
-/// and any custom lists.
 struct MovieContextMenu: ViewModifier {
     let movie: Movie
     let lists: [MediaList]
@@ -73,14 +65,12 @@ struct MovieContextMenu: ViewModifier {
 }
 
 extension View {
-    /// Attaches the shared movie long-press menu (Watched + list membership).
     func movieContextMenu(for movie: Movie, lists: [MediaList]) -> some View {
         modifier(MovieContextMenu(movie: movie, lists: lists))
     }
 }
 
 #Preview("Swipe actions + context menu") {
-    // Swipe a row to reveal the actions; long-press for the membership menu.
     NavigationStack {
         List {
             MovieRow(movie: .preview)

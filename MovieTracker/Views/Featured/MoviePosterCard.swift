@@ -2,30 +2,17 @@
 //  MoviePosterCard.swift
 //  MovieTracker
 //
-//  Grid card: poster above a centered title. Replaces `MovieCollectionViewCell`.
-//
 
 import SwiftUI
 
 struct MoviePosterCard: View {
     let movie: Movie
-    /// Number of lines reserved for the title. Narrow layouts (e.g. the
-    /// "Known For" strip) need more lines to avoid truncating long titles.
     var titleLineLimit: Int = 2
-    /// Whether the title always reserves `titleLineLimit` lines of height. On
-    /// keeps posters aligned across a grid; off lets the title hug its content
-    /// so anything below it (e.g. a year caption) sits directly beneath.
     var reservesTitleSpace: Bool = true
-    /// When set, the poster is laid out at this exact width (height = 3:2 of it).
-    /// Single-row strips use this so the poster never shrinks to share vertical
-    /// space with a taller title — keeping posters a uniform size and title tops
-    /// aligned while their bottoms stay ragged.
     var posterWidth: CGFloat? = nil
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
-    /// Watched wins over Watch List (the two are mutually exclusive in practice,
-    /// since adding to the Watch List un-marks Watched).
     private var status: PosterStatus? {
         guard let store else { return nil }
         _ = store.revision   // observe persisted changes so the badge refreshes live
@@ -48,8 +35,6 @@ struct MoviePosterCard: View {
         }
     }
 
-    /// The poster image. Fixed-size when `posterWidth` is given, otherwise
-    /// aspect-fit to fill the card's width (the grid layout).
     @ViewBuilder
     private var poster: some View {
         if let posterWidth {
@@ -103,9 +88,6 @@ enum PosterStatus {
 struct PosterStatusBadge: View {
     let status: PosterStatus
     var cornerRadius: CGFloat = 8
-    /// Scales the glyph and its inset down for smaller posters (e.g. the list-row
-    /// thumbnail). The gradient tracks the poster's own size, so only the glyph
-    /// needs adjusting.
     var scale: CGFloat = 1
 
     var body: some View {

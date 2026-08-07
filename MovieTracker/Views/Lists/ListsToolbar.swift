@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// Which list-like view is showing: a real `MediaList` (Watch List or custom) or
-/// the derived Watched / Viewed queries.
+/// A real `MediaList` (Watch List or custom) or the derived Watched / Viewed queries.
 enum ListSelection: Hashable {
     case list(UUID)
     case watched
@@ -15,20 +14,14 @@ enum ListSelection: Hashable {
 }
 
 /// A `ListSelection` resolved to the identity and contents the Lists screen needs.
-/// Real lists read their name/color/symbol from the model; the built-in Watched and
-/// Viewed views define theirs here — so `ListsView` never hardcodes appearance or
-/// switches on the kind.
 struct ListDestination {
     let selection: ListSelection
     let name: String
     let color: Color
     let symbol: String
-    /// Shown beneath the icon in the empty state.
     let emptyDescription: String
-    /// The backing model for a real list; `nil` for Watched / Viewed.
     let list: MediaList?
 
-    /// The derived Watched / Viewed accents (custom lists carry their own color).
     static let watchedColor = Color(red255: 90, green255: 200, blue255: 250)
     static let viewedColor = Color.gray
 
@@ -59,7 +52,6 @@ struct ListDestination {
         }
     }
 
-    /// Movie count for this view — list entries, or the derived Watched / Viewed counts.
     @MainActor
     func movieCount(using store: PersistenceCoordinator?) -> Int {
         switch selection {
@@ -69,7 +61,6 @@ struct ListDestination {
         }
     }
 
-    /// What the background `SectionBuilder` should read for this view.
     func sectionSource(watchedByDate: Bool, listByDateAdded: Bool) -> SectionSource? {
         switch selection {
         case .list(let uuid): return list != nil ? .list(uuid, byDateAdded: listByDateAdded) : nil
@@ -79,8 +70,6 @@ struct ListDestination {
     }
 }
 
-/// The navigation title: the name (tinted with the list color) over a title count,
-/// flanked by a menu chevron.
 struct ListTitleLabel: View {
     let name: String
     let color: Color
@@ -111,8 +100,6 @@ struct ListTitleLabel: View {
     }
 }
 
-/// The title-menu switcher: Watch List + Watched on top, custom lists next, Viewed
-/// last.
 struct ListTitleMenu: View {
     @Binding var selection: ListSelection
     let watchList: MediaList?
@@ -155,13 +142,9 @@ struct ListTitleMenu: View {
     }
 }
 
-/// The trailing sort menu: an optional sort-key picker (watched date on Watched,
-/// date added on real lists) above the order direction.
 struct ListSortMenu: View {
     @Binding var ascending: Bool
-    /// Present only on Watched: release vs. watched date.
     var watchedSortKey: Binding<WatchedSortKey>?
-    /// Present only on the Watch List / custom lists: release vs. date added.
     var listSortKey: Binding<ListSortKey>?
 
     var body: some View {

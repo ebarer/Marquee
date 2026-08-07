@@ -23,7 +23,6 @@ extension TMDBWrapper {
                            totalResults: root.totalResults, totalPages: root.totalPages)
     }
 
-    /// Maps a raw person response onto the domain `Person`.
     static func translate(person p: PersonRaw) -> Person {
         var person = Person(id: p.id, name: p.name)
         person.popularity = p.popularity

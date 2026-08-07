@@ -7,7 +7,7 @@ import SwiftUI
 import UIKit
 
 /// Decoded-image cache keyed by URL. `URLCache` only holds encoded bytes, so
-/// re-decoding on every appearance is what made images visibly "fault in".
+/// without this, re-decoding on every appearance makes images visibly "fault in".
 final class RemoteImageCache: @unchecked Sendable {
     static let shared = RemoteImageCache()
     private let cache = NSCache<NSURL, UIImage>()
@@ -22,9 +22,8 @@ private enum RemoteImageRevalidation {
     static var done: Set<URL> = []
 }
 
-/// A remote image that fills its frame. Cached bytes render instantly (and offline);
-/// when online it revalidates once per session and cross-fades in changed artwork.
-/// Callers supply the placeholder (and any clip shape).
+/// A remote image that fills its frame, revalidating once per session and
+/// cross-fading in changed artwork. Callers supply the placeholder.
 struct RemoteImage<Placeholder: View>: View {
     let url: URL?
     @ViewBuilder var placeholder: () -> Placeholder
@@ -32,7 +31,6 @@ struct RemoteImage<Placeholder: View>: View {
     @State private var image: Image?
     @State private var loadedURL: URL?
 
-    /// Falls back to a synchronous memory hit so a return visit paints on the first frame.
     private var displayed: Image? {
         if let image { return image }
         if let url, let cached = RemoteImageCache.shared.image(for: url) {

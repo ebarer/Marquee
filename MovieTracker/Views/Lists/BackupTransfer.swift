@@ -6,11 +6,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Surfaces the `ImportExportCoordinator`'s state as file pickers, a progress
-/// overlay, and result alerts — the SwiftUI presentation that can't live on the
-/// coordinator itself. Kept out of `ListManagerView.body` so its modifier chain
-/// stays type-checkable. `onImport` is a closure because handling a picked file
-/// needs the store, which the view holds.
+/// Surfaces the `ImportExportCoordinator`'s state as file pickers, a progress overlay, and result alerts.
 struct BackupTransferModifier: ViewModifier {
     @Bindable var coordinator = ImportExportCoordinator.shared
     let onImport: (Result<URL, Error>) -> Void
@@ -53,7 +49,6 @@ struct BackupTransferModifier: ViewModifier {
     }
 }
 
-/// A determinate blocking card shown while a CSV import fetches details from TMDB.
 private struct ImportProgressOverlay: View {
     let done: Int
     let total: Int

@@ -2,9 +2,7 @@
 //  SearchMatching.swift
 //  MovieTracker
 //
-//  Pure, network-free matching/ranking used by SearchModel, isolated so the rules
-//  can be unit-tested against synthetic data and tuned as TMDB's behaviour changes,
-//  without touching networking or views.
+//  Pure, network-free matching/ranking used by SearchModel.
 //
 
 import Foundation

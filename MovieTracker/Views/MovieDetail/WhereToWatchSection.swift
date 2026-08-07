@@ -19,7 +19,6 @@ struct WhereToWatchSection: View {
 
     private var availability: WatchAvailability? { availabilityByRegion?[store.region] }
 
-    /// Released within the theatrical window — shown instead of "Unavailable".
     private var inTheatres: Bool {
         guard let releaseDate, releaseDate <= .now,
               let cutoff = Calendar.current.date(byAdding: .day, value: -120, to: .now)
@@ -27,7 +26,6 @@ struct WhereToWatchSection: View {
         return releaseDate > cutoff
     }
 
-    /// Grouped services, filtered to the user's picks once they've configured any.
     private var shown: [ProviderGroup] {
         guard let availability else { return [] }
         let groups = ProviderCatalog.grouped(availability.providers)

@@ -2,16 +2,11 @@
 //  FeaturedView.swift
 //  MovieTracker
 //
-//  Featured movies grid. `FeaturedGridView` renders a single collection and is
-//  reused by the iPad sidebar (which picks the collection). `FeaturedView` wraps
-//  it with the compact (iPhone) title menu that flips between collections.
-//
 
 import SwiftUI
 import SwiftData
 
-/// The poster grid for one `FeaturedCollection`, with no collection switcher of
-/// its own — the host decides which collection to show.
+/// The poster grid for one `FeaturedCollection`; the host chooses the collection.
 struct FeaturedGridView: View {
     let collection: FeaturedCollection
 
@@ -21,15 +16,10 @@ struct FeaturedGridView: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    /// Wider layouts (iPad, windowed) get larger, roomier posters by raising the
-    /// adaptive minimum and spacing. The column count falls out of the available
-    /// width — it's never hardcoded — and posters never drop below the iPhone size.
     private var isRegularWidth: Bool { horizontalSizeClass == .regular }
 
     private var columns: [GridItem] {
         if isRegularWidth {
-            // Cap the poster width so wider layouts add columns instead of
-            // ballooning each poster; the floor keeps posters at least iPhone-sized.
             return [GridItem(.adaptive(minimum: 120, maximum: 150), spacing: 16)]
         } else {
             return [GridItem(.adaptive(minimum: 110), spacing: 10)]
@@ -59,14 +49,12 @@ struct FeaturedGridView: View {
                 ProgressView()
             }
         }
-        // Loads on first appear and when the host switches collections. Idempotent
-        // for an unchanged collection, so reappearing after a push → pop keeps the
-        // loaded movies (and the grid's scroll position) instead of reloading.
+        // Idempotent for an unchanged collection, so a push → pop reappear keeps the
+        // loaded movies (and scroll position) instead of reloading.
         .task(id: collection) { await model.load(collection) }
     }
 }
 
-/// The compact Discover screen: the grid plus a title menu that flips collections.
 struct FeaturedView: View {
     @State private var collection: FeaturedCollection = .popular
 

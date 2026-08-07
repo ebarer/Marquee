@@ -2,9 +2,6 @@
 //  Color+AverageColor.swift
 //  MovieTracker
 //
-//  A themable accent from a poster's average color (CIAreaAverage → HSB with
-//  boosted saturation), falling back to the app accent for grayscale images.
-//
 
 import SwiftUI
 import UIKit
@@ -45,7 +42,6 @@ extension Color {
             return .appAccent
         }
 
-        // Use the average hue with stronger saturation and full brightness.
         return Color(hue: hue, saturation: max(0.5, sat), brightness: 1)
     }
 }

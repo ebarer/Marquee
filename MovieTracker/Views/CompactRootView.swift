@@ -2,8 +2,6 @@
 //  CompactRootView.swift
 //  MovieTracker
 //
-//  The compact (iPhone) shell: the three-tab Discover / Lists / Search experience.
-//
 
 import SwiftUI
 import UIKit
@@ -11,18 +9,9 @@ import UIKit
 struct CompactRootView: View {
     @Bindable var searchModel: SearchModel
 
-    // Path for the search tab's stack. Watched so that opening a result (which
-    // pushes a detail) records the current query as a recent search.
     @State private var searchPath = NavigationPath()
-
-    /// The selected tab, backing the re-tap gesture on Lists.
     @State private var selectedTab: RootTab = .discover
-    /// Path for the Lists tab's stack. Watched so a re-tap while a detail is
-    /// pushed only pops to root (system behavior); the list reset waits until
-    /// we're already at the root.
     @State private var listsPath = NavigationPath()
-    /// Bumped when the already-selected Lists tab is tapped again, telling
-    /// `ListsView` to jump back to the Watch List.
     @State private var listsResetToken = 0
 
     var body: some View {
@@ -58,16 +47,12 @@ struct CompactRootView: View {
                         }
                 }
                 .onChange(of: searchPath) { oldPath, newPath in
-                    // Opening a result (pushing onto the stack) counts as
-                    // committing the current query to recent searches.
                     if newPath.count > oldPath.count {
                         searchModel.commit()
                     }
                 }
             }
         }
-        // Selecting the search tab activates its search field (and dismissing
-        // search returns to the previously selected tab).
         .tabViewSearchActivation(.searchTabSelection)
     }
 
@@ -80,8 +65,6 @@ struct CompactRootView: View {
         DispatchQueue.main.async { searchPath.append(movie) }
     }
 
-    /// Drives tab selection while detecting a tap on the already-selected Lists
-    /// tab, which resets that screen back to the Watch List.
     private var tabSelection: Binding<RootTab> {
         Binding(get: { selectedTab }) { newValue in
             if newValue == .lists, selectedTab == .lists, listsPath.isEmpty {

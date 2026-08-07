@@ -17,9 +17,7 @@ struct CachedMedia: Codable {
     }
 }
 
-/// Bounded on-disk JSON cache of fetched media, keyed by TMDB id, so detail renders
-/// offline. Lives in Caches (OS-reclaimable, never CloudKit-synced); a FIFO cap of
-/// `maxEntries` bounds its size.
+/// Bounded on-disk JSON cache of fetched media, keyed by TMDB id, so detail renders offline.
 actor MediaCacheStore {
     static let shared = MediaCacheStore()
 
@@ -49,8 +47,7 @@ actor MediaCacheStore {
         directory.appendingPathComponent("media-\(id).json")
     }
 
-    /// Stale entries are still returned (usable offline); freshness only gates the
-    /// prefetcher's re-fetch. A decode failure reads as a miss.
+    /// Stale entries are still returned (usable offline); freshness only gates re-fetch.
     func load(id: Int) -> CachedMedia? {
         guard let data = try? Data(contentsOf: fileURL(id: id)) else { return nil }
         return try? decoder.decode(CachedMedia.self, from: data)

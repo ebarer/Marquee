@@ -2,11 +2,10 @@
 //  PosterImage.swift
 //  MovieTracker
 //
-//  A movie poster / backdrop image that fills its frame, with a placeholder.
-//  Loading, caching, and revalidation live in the shared `RemoteImage`.
-//
 
 import SwiftUI
+
+/// A movie poster that fills its frame, with a film-icon placeholder.
 
 struct PosterImage: View {
     let url: URL?

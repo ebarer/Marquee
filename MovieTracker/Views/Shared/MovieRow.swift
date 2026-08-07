@@ -2,34 +2,18 @@
 //  MovieRow.swift
 //  MovieTracker
 //
-//  Presentational list row: poster beside title, subtitle, and optional rating.
-//
 
 import SwiftUI
 
 struct MovieRow: View {
     let movie: Movie
     var subtitle: String? = nil
-    /// An optional secondary line below the subtitle, e.g. the person's role in
-    /// this movie when shown in a filmography.
     var role: String? = nil
-    /// When false, the row shows no subtitle line at all — no explicit subtitle
-    /// and no release-date fallback.
     var showsSubtitle: Bool = true
-    /// An optional duration line (e.g. "2 hr 8 min") shown beneath the subtitle,
-    /// formatted like the movie detail page.
     var duration: String? = nil
-    /// The user's personal rating in stars (0.5-step); when set and > 0, a compact
-    /// read-only star row appears beneath the subtitle.
     var rating: Double? = nil
-    /// Fill color for the rating stars.
     var ratingTint: Color = .appAccent
-    /// When set, a watched / to-be-watched badge is overlaid on the poster. Takes
-    /// precedence over `derivesStatus` so a caller can force (or suppress) the badge.
     var status: PosterStatus? = nil
-    /// When true and no explicit `status` is given, the row derives its own badge
-    /// from the environment's persistence store — used where the caller can't know
-    /// list membership up front (search results, filmographies).
     var derivesStatus: Bool = false
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -40,8 +24,6 @@ struct MovieRow: View {
                 .frame(width: 51, height: 76)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .overlay { badge }
-                // Slightly shorter poster (3pt top/bottom) so rows breathe and
-                // the first result clears the scope bar.
                 .padding(.vertical, 3)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -87,7 +69,6 @@ struct MovieRow: View {
         }
     }
 
-    /// Watched wins over the Watch List (the two are mutually exclusive in practice).
     private var effectiveStatus: PosterStatus? {
         if let status { return status }
         guard derivesStatus, let store else { return nil }
@@ -102,10 +83,7 @@ struct MovieRow: View {
     }
 }
 
-/// A compact, read-only five-star display of a personal rating (0.5-step). Mirrors
-/// the interactive star rendering on the movie detail screen, shrunk to fit a row.
 struct RatingStars: View {
-    /// In stars, 0.5-step (0 = unrated).
     let rating: Double
     var starSize: CGFloat = 13
     var spacing: CGFloat = 2
@@ -120,8 +98,6 @@ struct RatingStars: View {
         .font(.system(size: starSize * 0.85))
     }
 
-    /// A single star: a dim outline with `fraction` (0, 0.5, or 1) of its width
-    /// filled in the tint color.
     private func star(filledBy fraction: Double) -> some View {
         Image(systemName: "star")
             .foregroundStyle(.tertiary)

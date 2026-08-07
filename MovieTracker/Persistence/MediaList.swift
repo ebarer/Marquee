@@ -6,32 +6,20 @@
 import SwiftUI
 import SwiftData
 
-/// A user-facing list of titles, synced via CloudKit. The single built-in list is
-/// the Watch List (`isWatchList`); the rest are custom. Watched and Viewed are not
-/// lists — they're derived from `MediaItem`. Owns its members as `ListEntry`
-/// children (a self-contained, shareable tree). CloudKit-friendly: properties
-/// default or optional, no unique constraints, relationships optional with inverse.
+/// A user-facing list of titles owning `ListEntry` children. CloudKit-friendly:
+/// properties default or optional, no unique constraints, relationships have inverses.
 @Model
 final class MediaList {
     var uuid: UUID = UUID()
     var name: String = ""
     var symbol: String = "list.bullet"
-    /// Index into `Color.listPalette` for a custom list's tint.
     var colorIndex: Int = 0
-    /// A `#RRGGBB` custom tint chosen via the color picker; takes precedence over
-    /// `colorIndex` when set. Optional so CloudKit stays happy and older data still
-    /// falls back to the palette.
     var customColorHex: String?
     var sortOrder: Int = 0
     var createdAt: Date = Date()
-    /// Remembered per-list sort direction (moved off UserDefaults so it syncs).
     var sortAscending: Bool = true
-    /// Remembered per-list sort key (release date vs. date added), stored raw so
-    /// it's CloudKit-friendly and syncs alongside the direction.
     var sortKeyRaw: String = ListSortKey.releaseDate.rawValue
-    /// The one built-in list; can't be renamed or deleted.
     var isWatchList: Bool = false
-    /// Set when a duplicate built-in has been merged away and is awaiting deletion.
     var deduplicatedDate: Date?
 
     @Relationship(deleteRule: .cascade, inverse: \ListEntry.list)
@@ -51,14 +39,11 @@ final class MediaList {
     var isDeduplicated: Bool { deduplicatedDate != nil }
     var isEditable: Bool { !isWatchList }
 
-    /// The list's sort key, backed by `sortKeyRaw`.
     var sortKey: ListSortKey {
         get { ListSortKey(rawValue: sortKeyRaw) ?? .releaseDate }
         set { sortKeyRaw = newValue.rawValue }
     }
 
-    /// The Watch List carries the brand accent; custom lists a custom tint when set,
-    /// otherwise their palette color.
     var color: Color {
         if isWatchList { return .appAccent }
         if let hex = customColorHex, let custom = Color(hex: hex) { return custom }
@@ -75,8 +60,7 @@ final class MediaList {
         entry(for: tmdbID, mediaType) != nil
     }
 
-    /// Adds a movie (idempotent). Adding to the Watch List un-marks Watched — the
-    /// two are mutually exclusive.
+    /// Adding to the Watch List un-marks Watched — the two are mutually exclusive.
     func add(_ movie: Movie) {
         guard let context = modelContext else { return }
         if entry(for: movie.id) == nil {
@@ -98,7 +82,6 @@ final class MediaList {
         contains(movie.id) ? remove(movie) : add(movie)
     }
 
-    /// Collapses entries that share a title (after a merge), keeping the earliest.
     func dedupeEntries() {
         guard let context = modelContext else { return }
         let groups = Dictionary(grouping: entries ?? []) { "\($0.tmdbID)-\($0.mediaTypeRaw)" }
@@ -113,8 +96,6 @@ final class MediaList {
 // MARK: - Fetch / seed / dedup
 
 extension MediaList {
-    /// All canonical lists in display order: duplicates awaiting cleanup excluded and
-    /// any duplicate live Watch List collapsed to the canonical copy.
     static func all(in context: ModelContext) -> [MediaList] {
         let descriptor = FetchDescriptor<MediaList>(
             sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]
@@ -128,9 +109,7 @@ extension MediaList {
         all(in: context).filter { !$0.isWatchList }
     }
 
-    /// The canonical Watch List (the oldest live copy; UUID breaks ties), if it
-    /// exists. Must match the de-dup winner so adds never target a soon-to-be-merged
-    /// duplicate.
+    /// Must match the de-dup winner so adds never target a soon-to-be-merged duplicate.
     static func watchList(in context: ModelContext) -> MediaList? {
         ((try? context.fetch(FetchDescriptor<MediaList>())) ?? [])
             .filter { $0.isWatchList && !$0.isDeduplicated }
@@ -138,7 +117,6 @@ extension MediaList {
             .first
     }
 
-    /// Creates the Watch List if missing (seeded at launch).
     @discardableResult
     static func ensureWatchList(in context: ModelContext) -> MediaList {
         if let existing = watchList(in: context) { return existing }
@@ -147,18 +125,12 @@ extension MediaList {
         return list
     }
 
-    /// How long a merged-away duplicate waits before it's actually deleted, so its
-    /// entry re-parent has time to sync and the delete can't race it.
+    /// Grace before a merged-away duplicate is deleted, so its entry re-parent syncs first.
     private static let deduplicationGracePeriod: TimeInterval = 30
 
-    /// Converges duplicate Watch Lists onto the oldest (UUID breaks ties) so every
-    /// device agrees. Two-phase, CloudKit-safe:
-    ///  - **Merge:** re-parent each duplicate's entries onto the winner, then mark
-    ///    the duplicate (hidden via `isDeduplicated`) — not deleted yet.
-    ///  - **Prune:** delete a marked duplicate only once empty and past the grace
-    ///    period, by when the re-parent has converged so the cascade drops nothing.
-    ///    Deleting sooner could wipe entries on a device that applies the delete
-    ///    before the re-parent arrives.
+    /// Two-phase, CloudKit-safe: re-parent duplicates' entries onto the winner and mark
+    /// them, then delete only once empty and past the grace period — deleting sooner
+    /// could wipe entries on a device that applies the delete before the re-parent arrives.
     @discardableResult
     static func deduplicateWatchList(in context: ModelContext) -> Bool {
         let watchLists = ((try? context.fetch(FetchDescriptor<MediaList>())) ?? [])
@@ -168,7 +140,6 @@ extension MediaList {
         var changed = false
         var merged = false
 
-        // Merge live duplicates onto the winner, then mark them.
         for other in watchLists where other.uuid != keep.uuid && !other.isDeduplicated {
             for entry in other.entries ?? [] { entry.list = keep; merged = true }
             other.deduplicatedDate = Date()
@@ -176,7 +147,6 @@ extension MediaList {
         }
         if merged { keep.dedupeEntries() }
 
-        // Prune marked duplicates once empty and past the grace period.
         for dup in watchLists where dup.isDeduplicated {
             let age = Date().timeIntervalSince(dup.deduplicatedDate ?? .distantFuture)
             if age > deduplicationGracePeriod, (dup.entries ?? []).isEmpty {

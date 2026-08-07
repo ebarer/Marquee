@@ -11,13 +11,10 @@ import UIKit
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    /// While `true`, the app permits landscape so the user can rotate a trailer
-    /// into landscape to watch it fullscreen. Outside of trailer playback the app
-    /// stays portrait-only on iPhone, matching Info.plist.
+    /// Permits landscape while set, so a trailer can play fullscreen; else portrait-only on iPhone.
     static var isPlayingTrailer = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Roomy image cache so posters/backdrops survive offline (URLCache self-evicts).
         URLCache.shared = URLCache(memoryCapacity: 50 * 1024 * 1024,
                                    diskCapacity: 500 * 1024 * 1024)
         return true

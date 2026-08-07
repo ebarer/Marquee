@@ -2,10 +2,6 @@
 //  SearchView.swift
 //  MovieTracker
 //
-//  Results for the unified movie/people search: a people strip (SearchPeopleStrip)
-//  pinned atop the movie list. Query state is owned by RootView's TabView; recent
-//  searches fill the space when there's no active query.
-//
 
 import SwiftUI
 import SwiftData
@@ -17,11 +13,8 @@ struct SearchView: View {
     private var lists: [MediaList]
 
     @Environment(\.openDetail) private var openDetail
-    /// iPad only: the tapped movie row, routed to a modal (see MovieListRow / ListRows).
     @State private var tappedMovie: Movie?
 
-    /// iPhone only: opens a tapped movie result. The host (CompactRootView) resigns
-    /// the search field's focus and defers the push so it animates with the keyboard up.
     var onSelectMovie: ((Movie) -> Void)? = nil
 
     var body: some View {
@@ -38,12 +31,8 @@ struct SearchView: View {
             if isSearching {
                 if model.movies.isEmpty && featuredPeople.isEmpty {
                     if model.isLoading {
-                        // First lookup with nothing to show yet: a spinner beats a
-                        // blank screen. (Re-searches keep the prior results visible
-                        // until the new ones commit, so this only hits a cold start.)
                         ProgressView()
                     } else {
-                        // Only surface "no results" once the lookup settles.
                         ContentUnavailableView.search(text: trimmedQuery)
                     }
                 }
@@ -59,13 +48,10 @@ struct SearchView: View {
 
     // MARK: - Results
 
-    /// People worth showing above the movie results for the current query.
     private var featuredPeople: [Person] {
         model.featuredPeople
     }
 
-    /// Movie results. A "Movies" header only appears when the people strip is
-    /// above them, so a plain movie search stays header-free.
     @ViewBuilder
     private var movieSection: some View {
         Section {
@@ -79,8 +65,6 @@ struct SearchView: View {
         }
     }
 
-    /// One movie result row. Extracted so the `ForEach` body stays simple enough for
-    /// the type-checker.
     @ViewBuilder
     private func movieRow(index: Int, movie: Movie) -> some View {
         MovieListRow(
@@ -143,10 +127,7 @@ struct SearchView: View {
         !trimmedQuery.isEmpty
     }
 
-    /// On iPad the search field already displays the query, so repeating it in the
-    /// title is redundant; the compact search tab keeps the query for context.
-    /// iPhone uses a plain List so NavigationLink rows push; iPad drives selection
-    /// so a movie tap opens the modal.
+    /// iPhone uses a plain List so rows push; iPad drives selection so a tap opens the modal.
     @ViewBuilder
     private var searchList: some View {
         if openDetail == nil {

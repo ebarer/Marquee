@@ -2,17 +2,13 @@
 //  PersistenceCoordinator+Media.swift
 //  MovieTracker
 //
-//  Per-title facts: the private Watched / rating / Viewed state read and written
-//  through `MediaItem`, plus the derived Watched / Viewed counts. These never touch
-//  list membership directly — the model rules bridge the two.
-//
 
 import SwiftUI
 import SwiftData
 
 extension PersistenceCoordinator {
 
-    // MARK: - Reads (so views never touch the context)
+    // MARK: - Reads
 
     func isWatched(_ movie: Movie) -> Bool { MediaItem.isWatched(movie, in: context) }
     func rating(for movie: Movie) -> Double? { MediaItem.rating(for: movie, in: context) }
@@ -27,7 +23,6 @@ extension PersistenceCoordinator {
             predicate: #Predicate { $0.lastViewedAt != nil }))) ?? 0
     }
 
-    /// TMDB ids across all list entries and fact-bearing items — the prefetcher's seed.
     func savedMovieIDs() -> [Int] {
         let movieType = MediaType.movie.rawValue
         let entries = (try? context.fetch(FetchDescriptor<ListEntry>())) ?? []
@@ -54,11 +49,9 @@ extension PersistenceCoordinator {
 
     // MARK: - Clearing derived state
 
-    /// Clears a derived flag (Watched / Viewed) and prunes the item if it's now empty.
     func unwatch(_ item: MediaItem) { item.watchedAt = nil; item.pruneIfEmpty(); save() }
     func removeFromViewed(_ item: MediaItem) { item.lastViewedAt = nil; item.pruneIfEmpty(); save() }
 
-    /// The same, resolving a row-snapshot id back to its live model. No-op if gone.
     func unwatch(_ id: PersistentIdentifier) {
         if let item = context.model(for: id) as? MediaItem { unwatch(item) }
     }

@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// The user's chosen services, persisted via `@AppStorage`. Empty means "not
-/// configured" — the detail screen then shows every service.
+/// The user's chosen services; empty means "not configured" — show every service.
 struct SelectedProviders: RawRepresentable, Equatable {
     var ids: Set<Int>
 

@@ -2,14 +2,11 @@
 //  PersonRow.swift
 //  MovieTracker
 //
-//  Shared list row for a person: circular profile beside the name and optional role.
-//
 
 import SwiftUI
 
 struct PersonRow: View {
     let person: Person
-    /// Show the person's role (character/job). Used in the movie detail cast list.
     var showRole = true
 
     var body: some View {

@@ -1,5 +1,5 @@
 //
-//  DateFormatter+Formats.swift
+//  DateFormatter+Extension.swift
 //  MovieTracker
 //
 //  Created by Elliot Barer on 6/12/18.

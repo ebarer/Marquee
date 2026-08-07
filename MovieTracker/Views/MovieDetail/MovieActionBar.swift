@@ -84,8 +84,6 @@ struct MovieActionBar: View {
         .glassEffectID("watched", in: glassNamespace)
     }
 
-    /// Hidden with no custom lists; a direct toggle for a single list; a popover
-    /// menu for several.
     @ViewBuilder
     private var customListsControl: some View {
         if customLists.count == 1, let list = customLists.first {
@@ -97,7 +95,8 @@ struct MovieActionBar: View {
             }
             .glassEffectID("plus", in: glassNamespace)
         } else if !customLists.isEmpty {
-            glassButton(system: "plus", isOn: false, shape: Circle()) {
+            let anyMember = customLists.contains { $0.contains(movie.id) }
+            glassButton(system: "plus", isOn: anyMember, shape: Circle()) {
                 showListPicker = true
             }
             .glassEffectID("plus", in: glassNamespace)
@@ -208,4 +207,24 @@ private struct ListPickerPopover: View {
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
         .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+}
+
+#Preview("On a custom list") {
+    // Two custom lists (so the popover branch renders) with the movie on one —
+    // the plus should pick up the tint to signal membership.
+    let context = previewModelContainer.mainContext
+    let seen = MediaList(name: "Seen It", symbol: "eye", sortOrder: 2, colorIndex: 1)
+    let queued = MediaList(name: "Queued", symbol: "clock", sortOrder: 3, colorIndex: 3)
+    context.insert(seen)
+    context.insert(queued)
+    let entry = ListEntry(movie: .preview)
+    entry.list = seen
+    context.insert(entry)
+
+    return MovieActionBar(movie: .preview, lists: [seen, queued], tint: .appAccent,
+                          isSeen: .constant(false))
+        .padding()
+        .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .environment(PersistenceCoordinator(context))
 }

@@ -6,27 +6,19 @@
 import SwiftUI
 import SwiftData
 
-/// The compact (iPhone) Lists host: owns the current selection, the title-bar list
-/// switcher, and the Manage Lists chrome. The rows themselves are drawn by
-/// `ListContentView`, which the iPad sidebar reuses directly.
+/// The compact (iPhone) Lists host: owns selection and chrome; rows come from `ListContentView`.
 struct ListsView: View {
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
-    /// Present only when running inside the app (absent in previews).
     @Environment(CloudSyncMonitor.self) private var syncMonitor: CloudSyncMonitor?
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var allLists: [MediaList]
 
-    /// Canonical, display-ready lists. `@Query` drives reactivity; the store owns the
-    /// decision of which duplicate copies to collapse.
     private var lists: [MediaList] {
         store?.canonicalLists(allLists) ?? allLists.filter { !$0.isDeduplicated }
     }
 
-    /// Bumped by the root tab bar when the already-selected Lists tab is tapped
-    /// again; each change snaps the selection back to the Watch List.
     var resetToken = 0
 
-    /// The current view; nil until the Watch List is chosen on appear.
     @State private var selection: ListSelection?
     @State private var showListManager = false
 
@@ -42,23 +34,22 @@ struct ListsView: View {
                     }
                     .tint(.primary)
                 }
-                // New lists are created from within Manage Lists (consistent with iPad).
                 ToolbarItem(placement: .topBarLeading) {
-                    // While iCloud is syncing, the manage button is briefly replaced by a
-                    // spinner in place rather than adding a separate trailing indicator.
-                    if syncMonitor?.isSyncing == true {
+                    Button {
+                        showListManager = true
+                    } label: {
+                        Label("Manage Lists", systemImage: "list.bullet")
+                    }
+                    .tint(activeColor)
+                }
+                if syncMonitor?.isSyncing == true {
+                    ToolbarItem(placement: .topBarLeading) {
                         ProgressView()
                             .controlSize(.regular)
                             .tint(activeColor)
                             .accessibilityLabel("Syncing with iCloud")
-                    } else {
-                        Button {
-                            showListManager = true
-                        } label: {
-                            Label("Manage Lists", systemImage: "list.bullet")
-                        }
-                        .tint(activeColor)
                     }
+                    .sharedBackgroundVisibility(.hidden)
                 }
             }
             .sheet(isPresented: $showListManager) {
@@ -90,8 +81,6 @@ struct ListsView: View {
 
     // MARK: - Title chrome
 
-    /// Resolves the current selection to the name / color / count shown in the
-    /// title menu label. (The rows and their toolbar live in `ListContentView`.)
     private var destination: ListDestination { .resolve(resolvedSelection, lists: lists) }
     private var title: String { destination.name }
     private var activeColor: Color { destination.color }

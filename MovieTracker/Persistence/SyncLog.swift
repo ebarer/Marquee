@@ -2,10 +2,7 @@
 //  SyncLog.swift
 //  MovieTracker
 //
-//  Central logging for CloudKit sync and de-duplication. Filter in Console or the
-//  Xcode debug console by subsystem (the app's bundle id) and category
-//  "CloudKitSync". Values are logged `.public` so they're readable while
-//  diagnosing sync on your own devices.
+//  Central logging for CloudKit sync and de-duplication (category "CloudKitSync").
 //
 
 import Foundation
@@ -16,8 +13,6 @@ enum SyncLog {
     static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Marquee",
                                category: "CloudKitSync")
 
-    /// Logs a snapshot of the library — one line per list plus item/entry totals —
-    /// before/after key moments (seed, import, dedup) to see what CloudKit delivered.
     static func snapshot(_ label: String, in context: ModelContext) {
         let lists = (try? context.fetch(FetchDescriptor<MediaList>(
             sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]))) ?? []

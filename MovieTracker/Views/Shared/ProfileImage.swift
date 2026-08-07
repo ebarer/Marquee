@@ -2,11 +2,10 @@
 //  ProfileImage.swift
 //  MovieTracker
 //
-//  A circular person profile image with a placeholder. Loading, caching, and
-//  revalidation live in the shared `RemoteImage`.
-//
 
 import SwiftUI
+
+/// A circular person profile image, with a placeholder.
 
 struct ProfileImage: View {
     let url: URL?

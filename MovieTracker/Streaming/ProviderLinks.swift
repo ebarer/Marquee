@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// Universal links that open a service's app or website. TMDB has no per-title
-/// provider links, so these land on the service's home.
+/// TMDB has no per-title provider links, so these land on the service's home.
 enum ProviderLinks {
     static func appURL(for providerID: Int) -> URL? {
         links[providerID].flatMap { URL(string: $0) }

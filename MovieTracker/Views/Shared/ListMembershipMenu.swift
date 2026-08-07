@@ -6,15 +6,11 @@
 import SwiftUI
 import SwiftData
 
-/// Shared context-menu content: a Watched toggle on top, then the Watch List and
-/// any custom lists. Each row shows the list's icon plus a checkmark when the movie
-/// is already on it.
 struct ListMembershipMenu: View {
     let movie: Movie
     let watchList: MediaList?
     let customLists: [MediaList]
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
-    /// Called after any change (e.g. to refresh derived UI state).
     var onChange: () -> Void = {}
 
     var body: some View {

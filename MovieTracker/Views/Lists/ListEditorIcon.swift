@@ -2,10 +2,6 @@
 //  ListEditorIcon.swift
 //  MovieTracker
 //
-//  The large list icon shown at the top of the list editor: an SF Symbol (or
-//  emoji) on the list's colored circle, sized optically so glyphs of differing
-//  shapes read at a consistent size.
-//
 
 import SwiftUI
 

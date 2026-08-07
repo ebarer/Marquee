@@ -7,31 +7,20 @@ import SwiftUI
 import SwiftData
 
 /// Renders the rows, sort/clear toolbar, and filter for a single `ListSelection`.
-/// Selection ownership and the list switcher live in the host — `ListsView` on
-/// iPhone, the sidebar on iPad — so this view is driven purely by the `selection`
-/// it's handed.
-///
-/// When `externalFilter` is `nil` (iPhone) the view owns its own search field.
-/// When it's non-`nil` (iPad) the host's single search field supplies the filter
-/// text and this view adds no search field of its own.
+/// `externalFilter` nil (iPhone) means this view owns its search field; non-nil (iPad) the host supplies it.
 struct ListContentView: View {
     let selection: ListSelection
     var externalFilter: String? = nil
-    /// Where the sort / clear buttons sit. iPhone keeps them trailing; the iPad
-    /// detail puts them at the leading edge, away from the trailing search field.
     var sortPlacement: ToolbarItemPlacement = .topBarTrailing
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var allLists: [MediaList]
 
-    /// Canonical, display-ready lists. `@Query` drives reactivity; the store owns the
-    /// decision of which duplicate copies to collapse.
     private var lists: [MediaList] {
         store?.canonicalLists(allLists) ?? allLists.filter { !$0.isDeduplicated }
     }
 
-    /// Builds and holds the month/year section snapshots off the main actor.
     @State private var sectionsModel = ListSectionsModel()
     @State private var localFilter = ""
 
@@ -39,7 +28,6 @@ struct ListContentView: View {
     @AppStorage("viewedListAscending") private var viewedAscending = false
     @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .dateWatched
 
-    /// The active filter: injected by the host on iPad, or the local field on iPhone.
     private var filterText: String { externalFilter ?? localFilter }
 
     var body: some View {
@@ -50,9 +38,6 @@ struct ListContentView: View {
         }
     }
 
-    /// iPhone shows the row list (swipe actions, inline filter); iPad — where the
-    /// host injects `externalFilter` — shows a poster grid that uses the wide column
-    /// and whose taps route reliably through `DetailLink`.
     @ViewBuilder
     private var entries: some View {
         if externalFilter == nil {
@@ -91,8 +76,7 @@ struct ListContentView: View {
             }
         }
         .overlay {
-            // Only once the rebuild for the current input has landed, so the empty
-            // state doesn't flash while switching lists.
+            // Gate on loadedInput == sectionsInput so the empty state doesn't flash while switching lists.
             if sectionsModel.sections.isEmpty, sectionsModel.loadedInput == sectionsInput {
                 if !filterText.isEmpty {
                     ContentUnavailableView.search(text: filterText)
@@ -107,8 +91,6 @@ struct ListContentView: View {
 
     // MARK: - Derived per-selection
 
-    /// The current view resolved to its identity + contents; the source of the
-    /// title, color, count, empty state, and section source below.
     private var destination: ListDestination { .resolve(selection, lists: lists) }
 
     private var title: String { destination.name }
@@ -119,8 +101,6 @@ struct ListContentView: View {
                                   listByDateAdded: currentListSortKey == .dateAdded)
     }
 
-    /// True for the Watch List and custom lists (real `MediaList`s), false for
-    /// the derived Watched / Viewed views.
     private var isRealList: Bool {
         if case .list = selection { return true }
         return false
@@ -167,9 +147,7 @@ struct ListContentView: View {
 
     // MARK: - Data
 
-    /// The current build input; `sectionSource` already encodes the selection and
-    /// watched-sort key, and the store's `revision` forces a rebuild after a silent
-    /// edit (or CloudKit import) that leaves the count unchanged.
+    // `version` (store revision) forces a rebuild after a silent edit that leaves the count unchanged.
     private var sectionsInput: ListSectionsModel.Input {
         ListSectionsModel.Input(source: sectionSource, count: movieCount,
                                 ascending: currentAscending, filter: filterText,

@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// The month/year grouped list for the current selection. Rows render from Sendable
-/// snapshots; the live model is only refetched (by persistent id) on delete.
+/// The month/year grouped list for the current selection, rendered from Sendable snapshots.
 struct ListRows: View {
     let sections: [SectionSnapshot]
     let selection: ListSelection
@@ -16,9 +15,7 @@ struct ListRows: View {
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Environment(\.openDetail) private var openDetail
 
-    /// iPad only: the row the user tapped. `List(selection:)` sets this even while
-    /// the list re-renders during sync, then we open the movie as a modal and clear
-    /// it. On iPhone `openDetail` is nil and rows navigate via NavigationLink.
+    /// iPad: `List(selection:)` fires even during sync re-renders that were swallowing in-row taps.
     @State private var tappedMovie: Movie?
 
     private var isWatchList: Bool {
@@ -34,11 +31,8 @@ struct ListRows: View {
 
     var body: some View {
         if openDetail == nil {
-            // iPhone: a plain List so NavigationLink rows push normally.
             List { sectionsContent }
         } else {
-            // iPad: selection-driven so the tap opens a modal, immune to the sync-time
-            // re-renders that were swallowing in-row taps.
             List(selection: $tappedMovie) { sectionsContent }
                 .onChange(of: tappedMovie) { _, movie in
                     guard let movie else { return }
@@ -50,13 +44,10 @@ struct ListRows: View {
 
     @ViewBuilder
     private var sectionsContent: some View {
-        // Viewed is a flat recency history — no month sections.
         if isViewed {
             rows(for: sections.first?.entries ?? [], hasHeader: false)
         } else {
             ForEach(sections) { section in
-                // A headerless section (e.g. a list ordered by date added)
-                // renders its rows flat, with no month header above them.
                 if section.title.isEmpty {
                     rows(for: section.entries, hasHeader: false)
                 } else {
@@ -94,13 +85,11 @@ struct ListRows: View {
                 }
             )
             .listRowSeparator(index == entries.count - 1 ? .hidden : .automatic, edges: .bottom)
-            // Without a header above them, the first row's top separator floats on
-            // its own — hide it so the list starts cleanly.
+            // Hide the first row's top separator when it has no header above it.
             .listRowSeparator(!hasHeader && index == 0 ? .hidden : .automatic, edges: .top)
         }
     }
 
-    /// Leading swipe: on Watched, send back to the Watch List; elsewhere mark Watched.
     @ViewBuilder
     private func leadingAction(_ entry: MediaSnapshot) -> some View {
         if isWatched {
@@ -122,8 +111,6 @@ struct ListRows: View {
         return nil
     }
 
-    /// Rating shown on Watched and custom-list rows (looked up from `MediaItem`),
-    /// not on the Watch List or Viewed.
     private func rating(_ entry: MediaSnapshot) -> Double? {
         (isWatched || (!isWatchList && !isViewed)) ? entry.userRating : nil
     }
@@ -141,8 +128,6 @@ struct ListRows: View {
         return movie
     }
 
-    /// Delete depends on the selection: remove the list entry, unmark Watched, or
-    /// drop from the Viewed history.
     private func delete(_ entry: MediaSnapshot) {
         switch selection {
         case .list: store?.deleteEntry(entry.persistentID)

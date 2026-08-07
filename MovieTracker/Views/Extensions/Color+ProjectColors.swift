@@ -2,9 +2,6 @@
 //  Color+ProjectColors.swift
 //  MovieTracker
 //
-//  SwiftUI equivalents of the project's UIColor palette
-//  (see Extensions/UIColor+ProjectColors.swift).
-//
 
 import SwiftUI
 import UIKit
@@ -18,7 +15,6 @@ extension Color {
         )
     }
 
-    /// Parses a `#RRGGBB` (or `RRGGBB`) hex string; returns `nil` if malformed.
     init?(hex: String) {
         var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if s.hasPrefix("#") { s.removeFirst() }
@@ -30,7 +26,6 @@ extension Color {
         )
     }
 
-    /// The color as an uppercase `#RRGGBB` string, for persisting a custom tint.
     var hexString: String? {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
@@ -38,21 +33,15 @@ extension Color {
                       Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255)))
     }
 
-    /// App background (near-black).
     static let appBackground = Color(red255: 12, green255: 12, blue255: 12)
-    /// Hairline separator / inactive / selection tone.
     static let appSeparator = Color(red255: 35, green255: 35, blue255: 35)
-    /// Brand accent (gold).
     static let appAccent = Color(red255: 200, green255: 180, blue255: 130)
 
-    /// Grayscale white at the given brightness, matching `UIColor.whiteFaded`.
     static func whiteFaded(_ a: Double = 0.75) -> Color {
         let c = (a < 0 || a > 1) ? 0.75 : a
         return Color(red: c, green: c, blue: c)
     }
 
-    /// Selectable tints for custom movie lists (see `ListEditorView`), matching
-    /// the system list palette exactly.
     static let listPalette: [Color] = [
         Color(red255: 235, green255: 85, blue255: 69),    // red
         Color(red255: 241, green255: 163, blue255: 59),   // orange
@@ -67,8 +56,6 @@ extension Color {
         Color(red255: 226, green255: 183, blue255: 175),  // light pink
     ]
 
-    /// The list palette color at an index, wrapping so an out-of-range stored
-    /// value never traps.
     static func listColor(_ index: Int) -> Color {
         let palette = listPalette
         return palette[((index % palette.count) + palette.count) % palette.count]

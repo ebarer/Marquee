@@ -16,11 +16,6 @@ struct GlassScopeBar<Option: Hashable>: View {
     @Binding private var selection: Option
     private let title: (Option) -> String
 
-    /// Creates a scope bar.
-    /// - Parameters:
-    ///   - options: The selectable options, in display order.
-    ///   - selection: A binding to the currently selected option.
-    ///   - title: Maps an option to the text shown in its segment.
     init(_ options: [Option], selection: Binding<Option>, title: @escaping (Option) -> String) {
         self.options = options
         self._selection = selection
@@ -52,7 +47,6 @@ struct GlassScopeBar<Option: Hashable>: View {
     }
 }
 
-/// Convenience for the common case where each option is its own title.
 extension GlassScopeBar where Option == String {
     init(_ options: [String], selection: Binding<String>) {
         self.init(options, selection: selection, title: { $0 })

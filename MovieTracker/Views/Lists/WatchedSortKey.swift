@@ -2,8 +2,6 @@
 //  WatchedSortKey.swift
 //  MovieTracker
 //
-//  Sort key available for the Watched list (other lists always sort by release date).
-//
 
 import Foundation
 
@@ -19,8 +17,6 @@ enum WatchedSortKey: String {
     }
 }
 
-/// Sort key available for the Watch List and custom lists: by the movie's release
-/// date, or by when it was added to the list. Persisted per-list on `MediaList`.
 enum ListSortKey: String {
     case releaseDate
     case dateAdded

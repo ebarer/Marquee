@@ -6,17 +6,12 @@
 import SwiftUI
 import SwiftData
 
-/// The person's credits grouped into per-year sections, with a toggle that hides
-/// "Self" and "Thanks" credits (on by default so real roles lead). Unreleased
-/// credits (future or undated) are pulled into a collapsible "Upcoming" section,
-/// collapsed by default so the filmography leads with released work.
+/// The person's credits grouped into per-year sections, with upcoming work in a collapsible section.
 struct PersonFilmography: View {
     let credits: [Movie]
     let lists: [MediaList]
     @Binding var hideExtraneous: Bool
-    /// Global Y of the nav bar's bottom edge; the header reports when it crosses above it.
     var navBarBottom: CGFloat = 0
-    /// Called as the in-content filter button scrolls behind the nav bar.
     var onFilterHiddenChange: (Bool) -> Void = { _ in }
 
     @State private var upcomingExpanded = false
@@ -45,7 +40,6 @@ struct PersonFilmography: View {
         ForEach(Array(movies.enumerated()), id: \.element.id) { index, movie in
             row(movie)
             if index < movies.count - 1 {
-                // Inset to start under the title, past the poster.
                 Rectangle()
                     .fill(Color.appSeparator)
                     .frame(height: 0.5)

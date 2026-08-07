@@ -6,9 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// The parallax backdrop header: a top-pinned image that stretches on pull-down
-/// and collapses to a floor on scroll-up, with the poster, title, and action bar
-/// anchored to its bottom edge.
+/// The parallax backdrop header, with poster, title, and action bar anchored to its bottom edge.
 struct MovieDetailHeader: View {
     let movie: Movie
     let tint: Color
@@ -116,8 +114,6 @@ struct MovieDetailHeader: View {
         }
     }
 
-    /// Breaks a "Subtitle: Title" name after the colon when it can't fit one line,
-    /// rather than wrapping mid-phrase.
     @ViewBuilder
     private var titleView: some View {
         if let colon = movie.title.range(of: ": ") {

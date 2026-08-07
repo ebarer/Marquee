@@ -13,7 +13,6 @@ struct StarRating: View {
     let tint: Color
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
-    /// In stars, 0.5-step (0 = unrated).
     @State private var rating: Double
     /// The rating when the gesture began, so a stationary tap toggles against the
     /// pre-gesture value rather than the one `onChanged` previewed.
@@ -69,12 +68,10 @@ struct StarRating: View {
             .frame(width: starSize, height: starSize)
     }
 
-    /// How much of star `index` (1–5) the current rating fills: 1, 0.5, or 0.
     private func fillFraction(for index: Int) -> Double {
         min(1, max(0, rating - Double(index - 1)))
     }
 
-    /// The whole-star value under a horizontal offset (for taps).
     private func wholeStars(at x: CGFloat) -> Double {
         guard x >= 0 else { return 0 }
         let slot = starSize + spacing

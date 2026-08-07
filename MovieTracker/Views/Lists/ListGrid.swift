@@ -2,11 +2,8 @@
 //  ListGrid.swift
 //  MovieTracker
 //
-//  The iPad list presentation: the same month/year sections and per-entry details
-//  as `ListRows`, but each entry is a `MovieGridCard` (poster-left / details-right
-//  in a rounded rect) tiled in a grid so the wide content column is used well. Taps
-//  route through `DetailLink` (→ the detail modal), reliable in a grid where in-
-//  `List` row taps were being swallowed during sync.
+//  iPad list presentation: `ListRows`' sections/details as grid cards. Taps route through
+//  `DetailLink` because in-`List` row taps were being swallowed during sync.
 //
 
 import SwiftUI
@@ -19,8 +16,6 @@ struct ListGrid: View {
     let listColor: Color
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
-    // A fixed three-up grid: these detail cards read best at three across, and the
-    // count stays stable as the column widens rather than reflowing.
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 3)
 
     private var isWatchList: Bool {
@@ -75,7 +70,6 @@ struct ListGrid: View {
         .modifier(SwipeGridContainer())
     }
 
-    /// Leading swipe: on Watched, send back to the Watch List; elsewhere mark Watched.
     @ViewBuilder
     private func leadingAction(_ entry: MediaSnapshot) -> some View {
         if isWatched {
@@ -85,8 +79,6 @@ struct ListGrid: View {
         }
     }
 
-    /// Remove depends on the selection: drop the list entry, unmark Watched, or
-    /// drop from the Viewed history — matching the row list.
     private func delete(_ entry: MediaSnapshot) {
         switch selection {
         case .list: store?.deleteEntry(entry.persistentID)
@@ -95,7 +87,7 @@ struct ListGrid: View {
         }
     }
 
-    // MARK: - Per-entry details (mirrors ListRows)
+    // MARK: - Per-entry details
 
     private func subtitle(_ entry: MediaSnapshot) -> String? {
         guard isWatched, let date = entry.dateWatched else { return nil }
@@ -127,8 +119,7 @@ struct ListGrid: View {
     }
 }
 
-/// Enables `swipeActions` on the grid's cells (iOS 27+ lets swipe actions work
-/// outside a `List`). A no-op on earlier systems, where the cells simply don't swipe.
+/// iOS 27+ enables `swipeActions` outside a `List`; a no-op (no swipe) on earlier systems.
 private struct SwipeGridContainer: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 27, *) {

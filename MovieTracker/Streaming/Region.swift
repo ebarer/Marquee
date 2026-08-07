@@ -8,7 +8,6 @@ import Foundation
 enum Region {
     static var device: String { Locale.current.region?.identifier ?? "US" }
 
-    /// Flag emoji for a two-letter ISO region code.
     static func flag(_ code: String) -> String {
         let base: UInt32 = 0x1F1E6
         var flag = ""
@@ -22,7 +21,6 @@ enum Region {
         Locale.current.localizedString(forRegionCode: code) ?? code
     }
 
-    /// Two-letter ISO regions, sorted by localized name.
     static var all: [String] {
         Locale.Region.isoRegions
             .map(\.identifier)

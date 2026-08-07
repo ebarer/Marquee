@@ -6,9 +6,7 @@
 import Foundation
 import SwiftData
 
-/// A title's membership in one `MediaList` — a display snapshot only, with no
-/// personal facts, so a list is self-contained and shareable. A title on N lists
-/// has N entries; its private state lives once in `MediaItem`.
+/// A title's membership in one `MediaList` — a display snapshot, no personal facts.
 @Model
 final class ListEntry {
     var tmdbID: Int = 0
@@ -19,7 +17,6 @@ final class ListEntry {
     var runtime: Int?
     var addedAt: Date = Date()
 
-    /// The owning list (inverse of `MediaList.entries`).
     var list: MediaList?
 
     init(movie: Movie) {
@@ -36,7 +33,6 @@ final class ListEntry {
         TMDBWrapper.imageURL(path: posterPath, size: size.rawValue)
     }
 
-    /// Rebuilds a display `Movie` from the snapshot (for rows/moves).
     var movie: Movie {
         var movie = Movie(id: tmdbID, title: title)
         movie.poster = posterPath

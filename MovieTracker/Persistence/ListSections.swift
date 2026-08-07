@@ -2,27 +2,18 @@
 //  ListSections.swift
 //  MovieTracker
 //
-//  Off-main-thread section building for the Lists screen. Fetching and grouping a
-//  large list (and the SwiftData faulting they trigger) runs on a background
-//  context and returns Sendable snapshots; rows render entirely from those.
-//
 
 import Foundation
 import SwiftData
 
-/// What a section build reads: a list's `ListEntry` members, or the derived
-/// Watched / Viewed queries over `MediaItem`.
+/// What a section build reads.
 enum SectionSource: Sendable, Equatable {
-    /// A list's members, grouped by date added when `byDateAdded`, else release date.
     case list(UUID, byDateAdded: Bool)
-    /// Watched titles, grouped by watched date when `byWatchedDate`, else release.
     case watched(byWatchedDate: Bool)
     case viewed
 }
 
-/// A Sendable snapshot of a row, safe to hand from the background build context to
-/// the main-actor UI. `persistentID` is the `ListEntry` (for list rows) or the
-/// `MediaItem` (for Watched/Viewed), used to act on the live model.
+/// A Sendable snapshot of a row, handed from the background build context to the UI.
 struct MediaSnapshot: Identifiable, Sendable, Equatable {
     let persistentID: PersistentIdentifier
     let tmdbID: Int
@@ -36,7 +27,6 @@ struct MediaSnapshot: Identifiable, Sendable, Equatable {
     var id: PersistentIdentifier { persistentID }
 }
 
-/// A month/year group of snapshots, e.g. "May 2025".
 struct SectionSnapshot: Identifiable, Sendable, Equatable {
     let id: DateComponents
     let title: String
@@ -65,7 +55,6 @@ actor SectionBuilder {
         )
         guard let entries = try? modelContext.fetch(descriptor) else { return [] }
 
-        // Personal facts (rating / watched date) for the rows, joined by tmdbID.
         let items = (try? modelContext.fetch(FetchDescriptor<MediaItem>())) ?? []
         var factsByID: [Int: (rating: Double?, watched: Date?)] = [:]
         for item in items { factsByID[item.tmdbID] = (item.userRating, item.watchedAt) }
@@ -84,8 +73,6 @@ actor SectionBuilder {
                                   runtime: entry.runtime, dateWatched: facts?.watched,
                                   userRating: facts?.rating))
         }
-        // Date-added order reads as a flat recency list — month headers add no
-        // value there, so return a single headerless section like Viewed does.
         if byDateAdded { return flat(dated, ascending: ascending) }
         return group(dated, ascending: ascending)
     }
@@ -131,8 +118,6 @@ actor SectionBuilder {
 
     // MARK: Grouping
 
-    /// Orders `dated` by date and returns it as a single headerless section (empty
-    /// title), or nothing when empty.
     private func flat(_ dated: [(date: Date, snapshot: MediaSnapshot)],
                       ascending: Bool) -> [SectionSnapshot] {
         let sorted = dated.sorted { $0.date < $1.date }

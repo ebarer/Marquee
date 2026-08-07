@@ -5,20 +5,14 @@
 
 import SwiftUI
 
-/// Cast & crew on the movie detail screen. The director(s) sit at the top under
-/// their own header; below, a menu switches between the full cast (shown ten at a
-/// time behind a "show more" row) and the rest of the crew. Each row navigates to
-/// the person's detail.
+/// Cast & crew on the movie detail screen, with directors surfaced at the top.
 struct MovieCastSection: View {
     let cast: [Person]
     var tint: Color = .appAccent
 
-    /// The user's pick from the category menu; nil follows the default (first available).
     @State private var selection: Category?
-    /// Whether the full cast is revealed past the initial cap.
     @State private var castExpanded = false
 
-    /// How many cast rows show before the "show more" row appears.
     private let castLimit = 10
 
     enum Category: CaseIterable {
@@ -40,7 +34,6 @@ struct MovieCastSection: View {
         cast.filter { $0.type == .Crew && isDirector($0) }
     }
 
-    /// Crew other than the directors already surfaced at the top.
     private var crewMembers: [Person] {
         cast.filter { $0.type == .Crew && !isDirector($0) }
     }
@@ -83,8 +76,6 @@ struct MovieCastSection: View {
         }
     }
 
-    /// A menu header styled like the Related/Recommendations switcher; falls back
-    /// to a plain header when only one category is available.
     @ViewBuilder
     private func categoryHeader(_ category: Category) -> some View {
         let categories = availableCategories
@@ -125,7 +116,6 @@ struct MovieCastSection: View {
     @ViewBuilder
     private func categoryList(_ category: Category) -> some View {
         let all = members(for: category)
-        // Only the cast is capped; crew shows in full.
         let collapsed = category == .cast && !castExpanded && all.count > castLimit
         let shown = collapsed ? Array(all.prefix(castLimit)) : all
         VStack(spacing: 0) {
@@ -179,7 +169,6 @@ struct MovieCastSection: View {
         .buttonStyle(.plain)
     }
 
-    /// Hairline inset to start under the name, past the avatar.
     private var rowSeparator: some View {
         Rectangle()
             .fill(Color.appSeparator)

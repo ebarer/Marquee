@@ -7,14 +7,11 @@ import SwiftUI
 import SwiftData
 
 /// The date the user watched a title, tappable to open a graphical date picker.
-/// Changes write straight through to the `MediaItem`.
 struct WatchedDateButton: View {
     let movie: Movie
     let tint: Color
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
-    /// Defaults to today for items that predate watched-date tracking (only
-    /// persisted once the user picks a date).
     @State private var date: Date
     @State private var showPicker = false
 

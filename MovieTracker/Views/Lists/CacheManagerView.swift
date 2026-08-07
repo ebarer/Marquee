@@ -5,9 +5,7 @@
 
 import SwiftUI
 
-/// Shows how much space the offline caches use and lets the user clear them. The
-/// detail cache is on-disk JSON (`MediaCacheStore`); images live in the shared
-/// `URLCache`. Cleared content is re-downloaded automatically when next viewed online.
+/// Shows offline cache usage (detail JSON + images) and lets the user clear it.
 struct CacheManagerView: View {
     @State private var detail: MediaCacheStore.Usage?
     @State private var imageBytes: Int = 0

@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The movie description, collapsed to two lines with a tap-to-expand "More" pill
-/// that appears only when the text actually overflows.
+/// The movie description, collapsed to three lines with a tap-to-expand "More" pill.
 struct MovieOverviewSection: View {
     let overview: String
 
@@ -19,13 +18,23 @@ struct MovieOverviewSection: View {
     private var font: Font { .system(size: fontSize) }
     private var truncated: Bool { fullHeight > limitedHeight + 1 }
 
+    // The text is always laid out in full (so wrapping never changes) and only
+    // its clip height toggles; nil until measured, so the first frame isn't clamped to 0.
+    private var clipHeight: CGFloat? {
+        guard limitedHeight > 0 else { return nil }
+        return expanded ? max(fullHeight, limitedHeight) : limitedHeight
+    }
+
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             Text(overview)
                 .font(font)
                 .foregroundStyle(.white.opacity(0.85))
-                .lineLimit(expanded ? nil : 3)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: clipHeight, alignment: .top)
+                .clipped()
+                .opacity(limitedHeight > 0 ? 1 : 0)
                 .background { truncationProbe }
 
             if truncated && !expanded {
@@ -40,7 +49,6 @@ struct MovieOverviewSection: View {
         }
     }
 
-    /// A glass pill over a gradient that masks the truncated words behind it.
     private var morePill: some View {
         Text("More")
             .textCase(.uppercase)
@@ -57,7 +65,6 @@ struct MovieOverviewSection: View {
                     endPoint: .trailing
                 )
             )
-            // Sit on the description's baseline rather than the top of its line spacing.
             .offset(y: moreBaselineNudge)
     }
 
@@ -67,7 +74,7 @@ struct MovieOverviewSection: View {
         ZStack {
             Text(overview)
                 .font(font)
-                .lineLimit(2)
+                .lineLimit(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background { heightReader { limitedHeight = $0 } }
             Text(overview)

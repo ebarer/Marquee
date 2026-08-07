@@ -29,7 +29,6 @@ struct Movie: Hashable, Identifiable, Codable {
     var team: [Person] = []
     var creditRole: String?
     var collection: MovieCollection?
-    /// Streaming availability keyed by region (JustWatch data, via TMDB).
     var watchByRegion: [String: WatchAvailability]?
 
     func watch(for region: String) -> WatchAvailability? { watchByRegion?[region] }
@@ -58,7 +57,6 @@ struct Movie: Hashable, Identifiable, Codable {
             }
     }
 
-    /// Credits for "self", "guest", "thanks", etc. that aren't primary roles.
     var isExtraneousCredit: Bool {
         guard let role = creditRole?.lowercased() else { return false }
         if role == "self" || role.hasPrefix("self ") || role.hasPrefix("self-") { return true }
@@ -163,7 +161,6 @@ struct MovieTrailer: Identifiable, Codable {
         type == .Trailer || type == .Teaser
     }
 
-    /// Used to help identify the primary trailer.
     var primaryScore: Int {
         var score: Int
         switch type {
@@ -179,7 +176,6 @@ struct MovieTrailer: Identifiable, Codable {
         URL(string: "https://www.youtube.com/embed")?.appendingPathComponent(key)
     }
 
-    /// Standard YouTube watch URL, suitable for opening in Safari.
     var watchURL: URL? {
         URL(string: "https://www.youtube.com/watch?v=\(key)")
     }
@@ -187,7 +183,6 @@ struct MovieTrailer: Identifiable, Codable {
 
 // MARK: - Collection (franchise)
 
-/// A collection of movies comprising a franchise (e.g. Star Wars).
 struct MovieCollection: Codable {
     var id: Int
     var name: String

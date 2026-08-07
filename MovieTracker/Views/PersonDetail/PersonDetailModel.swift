@@ -2,8 +2,6 @@
 //  PersonDetailModel.swift
 //  MovieTracker
 //
-//  Loads the full person (bio, birthday, filmography) for the detail screen.
-//
 
 import SwiftUI
 

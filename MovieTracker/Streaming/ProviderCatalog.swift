@@ -5,7 +5,6 @@
 
 import Foundation
 
-/// One user-facing service standing in for its TMDB tier/reseller variants.
 struct ProviderGroup: Identifiable {
     let representative: WatchProvider
     let name: String
@@ -18,9 +17,7 @@ struct ProviderGroup: Identifiable {
 }
 
 enum ProviderCatalog {
-    /// Collapses variants of a service into one group, dropping rent/buy
-    /// storefronts. Input is priority-sorted; the representative is the preferred
-    /// (or first) member, with tier words stripped from its name.
+    /// Collapses variants of a service into one group, dropping rent/buy storefronts.
     static func grouped(_ providers: [WatchProvider]) -> [ProviderGroup] {
         var order: [String] = []
         var members: [String: [WatchProvider]] = [:]
@@ -53,8 +50,6 @@ enum ProviderCatalog {
 
     private static let stopwords: Set<String> = ["free"]
 
-    /// The name shown for a group: the base brand with tier words removed but
-    /// brand words ("Plus"/"+") kept.
     static func displayName(_ name: String) -> String {
         var value = name
         for tier in tierWords {

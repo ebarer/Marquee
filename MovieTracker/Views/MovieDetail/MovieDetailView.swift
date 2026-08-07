@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// The movie detail screen: a parallax backdrop header, metadata strip, expandable
-/// overview, related movies, and cast, composed over an async-loaded movie.
+/// The movie detail screen composed over an async-loaded movie.
 struct MovieDetailView: View {
     private let movieID: Int
     private let movieTitle: String
@@ -22,8 +21,6 @@ struct MovieDetailView: View {
     private var lists: [MediaList]
     @State private var model = MovieDetailModel()
     @State private var showNavTitle = false
-    /// Whether the movie is Watched; owned here so the action bar and the metadata
-    /// strip's rating cell stay in sync.
     @State private var isSeen = false
 
     var body: some View {
@@ -96,8 +93,6 @@ struct MovieDetailView: View {
                 .padding(.bottom, 24)
             }
             .coordinateSpace(name: "scroll")
-            // Hide the top scroll-edge blur until the title appears, so the bar reads
-            // as transparent over the backdrop on first presentation.
             .scrollEdgeEffectHidden(!showNavTitle, for: .top)
             .ignoresSafeArea(edges: .top)
         }

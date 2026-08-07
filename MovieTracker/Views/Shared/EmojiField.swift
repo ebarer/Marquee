@@ -2,19 +2,14 @@
 //  EmojiField.swift
 //  MovieTracker
 //
-//  A zero-size text field used to pick a single emoji for a list icon. UIKit has
-//  no public "emoji picker", so this forces the emoji keyboard by reporting the
-//  emoji input mode, then grabs the first emoji typed and dismisses itself.
-//
 
 import SwiftUI
 import UIKit
 
+/// Picks a single emoji for a list icon. UIKit has no public emoji picker, so this
+/// forces the emoji keyboard, grabs the first emoji typed, and dismisses itself.
 struct EmojiField: UIViewRepresentable {
-    /// Set true to raise the emoji keyboard; cleared once an emoji is picked or
-    /// the keyboard is dismissed.
     @Binding var isActive: Bool
-    /// Called with the chosen emoji.
     var onPick: (String) -> Void
 
     func makeUIView(context: Context) -> EmojiTextField {

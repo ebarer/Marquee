@@ -2,12 +2,10 @@
 //  MovieGridCard.swift
 //  MovieTracker
 //
-//  A grid cell for the iPad list views: the same poster-left / details-right layout
-//  as `MovieRow`, wrapped in a rounded-rect card so entries tile the wide content
-//  column instead of stretching as full-width rows.
-//
 
 import SwiftUI
+
+/// A `MovieRow` in a rounded-rect card, for the iPad list grid.
 
 struct MovieGridCard: View {
     let movie: Movie
