@@ -136,6 +136,14 @@ actor SectionBuilder {
         return snapshots.isEmpty ? [] : [SectionSnapshot(id: DateComponents(), title: "", entries: snapshots, isCollapsible: false)]
     }
 
+    /// Fold thresholds. Only tuck old titles into the collapsed "Older" bucket when
+    /// there's a meaningful block of recent/upcoming releases worth keeping on screen
+    /// (>= `foldMinRecent`) and a backlog large enough to be worth hiding
+    /// (>= `foldMinOlder`). Below either, an "Older" bucket would hide more than it
+    /// helps, so the list stays fully expanded.
+    private static let foldMinRecent = 2
+    private static let foldMinOlder = 3
+
     /// Start of last month. Release dates before this fold into the collapsed
     /// "Older" bucket; the whole current and previous month stay live. Relative to
     /// now, so the window slides forward each month.
@@ -154,9 +162,16 @@ actor SectionBuilder {
         var recent = dated
         var older: [MediaSnapshot] = []
         if let cutoff {
-            recent = dated.filter { $0.date >= cutoff }
-            let olderSorted = dated.filter { $0.date < cutoff }.sorted { $0.date < $1.date }
-            older = (ascending ? olderSorted : Array(olderSorted.reversed())).map(\.snapshot)
+            let recentSplit = dated.filter { $0.date >= cutoff }
+            let olderSplit = dated.filter { $0.date < cutoff }
+            // Fold only when there's a real new-releases block to protect and a backlog
+            // worth hiding; otherwise (e.g. an all-old list, or just a couple of each)
+            // an "Older" bucket would bury content instead of surfacing what's next.
+            if recentSplit.count >= Self.foldMinRecent && olderSplit.count >= Self.foldMinOlder {
+                recent = recentSplit
+                let olderSorted = olderSplit.sorted { $0.date < $1.date }
+                older = (ascending ? olderSorted : Array(olderSorted.reversed())).map(\.snapshot)
+            }
         }
 
         let sorted = recent.sorted { $0.date < $1.date }

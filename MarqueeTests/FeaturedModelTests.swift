@@ -20,37 +20,37 @@ import Foundation
         }
     }
 
-    @Test func startLoadsFirstPage() async {
+    @Test func loadFetchesFirstPage() async {
         installPagedStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.start(.popular)
+        await model.load(.popular)
         #expect(model.movies.map(\.id) == [1, 2])
         #expect(model.isLoading == false)
     }
 
-    @Test func startIsNoOpWhenAlreadyLoaded() async {
+    @Test func loadIsNoOpForSameCollectionAlreadyLoaded() async {
         installPagedStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.start(.popular)
+        await model.load(.popular)
         let count = URLProtocolStub.requestedURLs.count
-        await model.start(.nowPlaying)  // ignored: movies already loaded
+        await model.load(.popular)  // ignored: same collection already loaded
         #expect(URLProtocolStub.requestedURLs.count == count)
     }
 
     @Test func paginationAppendsAndDedupes() async {
         installPagedStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.start(.popular)
+        await model.load(.popular)
         await model.loadMoreIfNeeded(currentItem: model.movies.last!)
         #expect(model.movies.map(\.id) == [1, 2, 3])  // id 2 not duplicated
     }
 
-    @Test func changeResetsAndReloads() async {
+    @Test func loadingDifferentCollectionResetsAndReloads() async {
         installPagedStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.start(.popular)
+        await model.load(.popular)
         await model.loadMoreIfNeeded(currentItem: model.movies.last!)
-        await model.change(to: .comingSoon)
+        await model.load(.comingSoon)
         #expect(model.movies.map(\.id) == [1, 2])  // back to a fresh first page
     }
 
@@ -60,7 +60,7 @@ import Foundation
         }
         defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.start(.popular)
+        await model.load(.popular)
         let count = URLProtocolStub.requestedURLs.count
         await model.loadMoreIfNeeded(currentItem: model.movies.last!)
         #expect(URLProtocolStub.requestedURLs.count == count)  // no further fetch
