@@ -42,7 +42,7 @@ final class PerformanceTests: XCTestCase {
             let expectation = expectation(description: "build")
             Task {
                 let builder = SectionBuilder(modelContainer: container)
-                _ = await builder.build(source: .list(uuid, byDateAdded: false),
+                _ = await builder.build(source: .list(uuid, byDateAdded: false, foldOlder: true),
                                         ascending: false, filter: "")
                 expectation.fulfill()
             }

@@ -17,8 +17,9 @@ import SwiftData
     }
 
     /// Seeds a custom list with entries carrying explicit release/added dates.
-    private func seedList(_ rows: [(id: Int, title: String, release: Date?, added: Date)]) -> UUID {
-        let list = MediaList(name: "Custom")
+    private func seedList(_ rows: [(id: Int, title: String, release: Date?, added: Date)],
+                          isWatchList: Bool = false) -> UUID {
+        let list = MediaList(name: isWatchList ? "Watch List" : "Custom", isWatchList: isWatchList)
         store.context.insert(list)
         for row in rows {
             var movie = makeMovie(id: row.id, title: row.title)
@@ -38,7 +39,7 @@ import SwiftData
             (2, "Mar", .utc(2020, 3, 15), .utc(2022, 1, 2)),
             (3, "Jan2", .utc(2020, 1, 20), .utc(2022, 1, 3)),
         ])
-        let sections = await builder().build(source: .list(id, byDateAdded: false),
+        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
                                              ascending: true, filter: "")
         #expect(sections.count == 2)
         #expect(sections.first?.entries.count == 2)   // two January titles
@@ -50,7 +51,7 @@ import SwiftData
             (1, "Jan", .utc(2020, 1, 15), .utc(2022, 1, 1)),
             (2, "Mar", .utc(2020, 3, 15), .utc(2022, 1, 2)),
         ])
-        let sections = await builder().build(source: .list(id, byDateAdded: false),
+        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
                                              ascending: false, filter: "")
         #expect(sections.first?.entries.map(\.tmdbID) == [2])  // March first
     }
@@ -61,7 +62,7 @@ import SwiftData
             (2, "B", nil, .utc(2022, 6, 1)),
             (3, "C", nil, .utc(2022, 3, 1)),
         ])
-        let sections = await builder().build(source: .list(id, byDateAdded: true),
+        let sections = await builder().build(source: .list(id, byDateAdded: true, foldOlder: true),
                                              ascending: true, filter: "")
         #expect(sections.count == 1)
         #expect(sections[0].title.isEmpty)
@@ -73,16 +74,39 @@ import SwiftData
             (1, "The Matrix", .utc(2020, 1, 15), .utc(2022, 1, 1)),
             (2, "Inception", .utc(2020, 2, 15), .utc(2022, 1, 2)),
         ])
-        let sections = await builder().build(source: .list(id, byDateAdded: false),
+        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
                                              ascending: true, filter: "matrix")
         #expect(sections.flatMap(\.entries).map(\.tmdbID) == [1])
     }
 
     @Test func emptyListYieldsNoSections() async {
         let id = seedList([])
-        let sections = await builder().build(source: .list(id, byDateAdded: false),
+        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
                                              ascending: true, filter: "")
         #expect(sections.isEmpty)
+    }
+
+    @Test func watchListFoldsOlderTitlesWhenEnabled() async {
+        // A distantFuture release stays live; the 2000 title folds into "Older".
+        let id = seedList([
+            (1, "Old", .utc(2000, 1, 15), .utc(2022, 1, 1)),
+            (2, "Future", .distantFuture, .utc(2022, 1, 2)),
+        ], isWatchList: true)
+        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
+                                             ascending: false, filter: "")
+        #expect(sections.contains { $0.isCollapsible })
+        #expect(sections.last?.title == "Older")
+        #expect(sections.last?.entries.map(\.tmdbID) == [1])
+    }
+
+    @Test func watchListKeepsAllMonthsWhenFoldDisabled() async {
+        let id = seedList([
+            (1, "Old", .utc(2000, 1, 15), .utc(2022, 1, 1)),
+            (2, "Future", .distantFuture, .utc(2022, 1, 2)),
+        ], isWatchList: true)
+        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: false),
+                                             ascending: false, filter: "")
+        #expect(!sections.contains { $0.isCollapsible })
     }
 
     @Test func watchedGroupsByWatchedDateAndCarriesFacts() async {

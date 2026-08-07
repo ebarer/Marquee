@@ -27,6 +27,7 @@ struct ListContentView: View {
     @AppStorage("watchedListAscending") private var watchedAscending = false
     @AppStorage("viewedListAscending") private var viewedAscending = false
     @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .dateWatched
+    @AppStorage("watchListFoldOlder") private var watchListFoldOlder = true
 
     private var filterText: String { externalFilter ?? localFilter }
 
@@ -70,7 +71,8 @@ struct ListContentView: View {
                 ToolbarItem(placement: sortPlacement) {
                     ListSortMenu(ascending: ascendingBinding,
                                  watchedSortKey: selection == .watched ? $watchedSortKey : nil,
-                                 listSortKey: isRealList ? listSortKeyBinding : nil)
+                                 listSortKey: isRealList ? listSortKeyBinding : nil,
+                                 foldOlder: showsFoldToggle ? $watchListFoldOlder : nil)
                         .tint(activeColor)
                 }
             }
@@ -98,7 +100,8 @@ struct ListContentView: View {
     private var movieCount: Int { destination.movieCount(using: store) }
     private var sectionSource: SectionSource? {
         destination.sectionSource(watchedByDate: watchedSortKey == .dateWatched,
-                                  listByDateAdded: currentListSortKey == .dateAdded)
+                                  listByDateAdded: currentListSortKey == .dateAdded,
+                                  listFoldOlder: watchListFoldOlder)
     }
 
     private var isRealList: Bool {
@@ -107,6 +110,12 @@ struct ListContentView: View {
     }
 
     private var currentListSortKey: ListSortKey { destination.list?.sortKey ?? .releaseDate }
+
+    // Folding only produces an "Older" bucket for the Watch List sorted by release
+    // date; under date-added the list is flat, so the toggle would be a no-op.
+    private var showsFoldToggle: Bool {
+        destination.list?.isWatchList == true && currentListSortKey == .releaseDate
+    }
 
     private var listSortKeyBinding: Binding<ListSortKey> {
         Binding(get: { currentListSortKey },

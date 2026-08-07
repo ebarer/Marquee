@@ -61,9 +61,9 @@ struct ListDestination {
         }
     }
 
-    func sectionSource(watchedByDate: Bool, listByDateAdded: Bool) -> SectionSource? {
+    func sectionSource(watchedByDate: Bool, listByDateAdded: Bool, listFoldOlder: Bool) -> SectionSource? {
         switch selection {
-        case .list(let uuid): return list != nil ? .list(uuid, byDateAdded: listByDateAdded) : nil
+        case .list(let uuid): return list != nil ? .list(uuid, byDateAdded: listByDateAdded, foldOlder: listFoldOlder) : nil
         case .watched: return .watched(byWatchedDate: watchedByDate)
         case .viewed: return .viewed
         }
@@ -164,6 +164,7 @@ struct ListSortMenu: View {
     @Binding var ascending: Bool
     var watchedSortKey: Binding<WatchedSortKey>?
     var listSortKey: Binding<ListSortKey>?
+    var foldOlder: Binding<Bool>?
 
     var body: some View {
         Menu {
@@ -184,6 +185,12 @@ struct ListSortMenu: View {
             Picker("Order", selection: $ascending) {
                 Text("Ascending").tag(true)
                 Text("Descending").tag(false)
+            }
+
+            if let foldOlder {
+                Section {
+                    Toggle("Hide Old Movies", isOn: foldOlder)
+                }
             }
         } label: {
             Label("Sort", systemImage: "arrow.up.arrow.down")
@@ -216,6 +223,17 @@ struct ListSortMenu: View {
     @Previewable @State var ascending = true
     @Previewable @State var key: ListSortKey = .dateAdded
     ListSortMenu(ascending: $ascending, listSortKey: $key)
+        .tint(.appAccent)
+        .padding()
+        .background(Color.appBackground)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Sort menu — Watch List") {
+    @Previewable @State var ascending = true
+    @Previewable @State var key: ListSortKey = .releaseDate
+    @Previewable @State var fold = true
+    ListSortMenu(ascending: $ascending, listSortKey: $key, foldOlder: $fold)
         .tint(.appAccent)
         .padding()
         .background(Color.appBackground)

@@ -8,7 +8,7 @@ import SwiftData
 
 /// What a section build reads.
 enum SectionSource: Sendable, Equatable {
-    case list(UUID, byDateAdded: Bool)
+    case list(UUID, byDateAdded: Bool, foldOlder: Bool)
     case watched(byWatchedDate: Bool)
     case viewed
 }
@@ -44,8 +44,8 @@ struct SectionSnapshot: Identifiable, Sendable, Equatable {
 actor SectionBuilder {
     func build(source: SectionSource, ascending: Bool, filter: String) -> [SectionSnapshot] {
         switch source {
-        case .list(let listID, let byDateAdded):
-            return buildList(listID, byDateAdded: byDateAdded, ascending: ascending, filter: filter)
+        case .list(let listID, let byDateAdded, let foldOlder):
+            return buildList(listID, byDateAdded: byDateAdded, foldOlder: foldOlder, ascending: ascending, filter: filter)
         case .watched(let byWatchedDate):
             return buildWatched(byWatchedDate: byWatchedDate, ascending: ascending, filter: filter)
         case .viewed:
@@ -55,7 +55,7 @@ actor SectionBuilder {
 
     // MARK: List membership (ListEntry)
 
-    private func buildList(_ listID: UUID, byDateAdded: Bool, ascending: Bool, filter: String) -> [SectionSnapshot] {
+    private func buildList(_ listID: UUID, byDateAdded: Bool, foldOlder: Bool, ascending: Bool, filter: String) -> [SectionSnapshot] {
         let descriptor = FetchDescriptor<ListEntry>(
             predicate: #Predicate { $0.list?.uuid == listID }
         )
@@ -80,7 +80,11 @@ actor SectionBuilder {
                                   userRating: facts?.rating))
         }
         if byDateAdded { return flat(dated, ascending: ascending) }
-        return group(dated, ascending: ascending, foldOlderThan: olderCutoff())
+        // Only the Watch List folds stale titles into an "Older" bucket, and only
+        // when the user leaves the toggle on; custom lists keep every month live.
+        let isWatchList = entries.first?.list?.isWatchList ?? false
+        let cutoff = (isWatchList && foldOlder) ? olderCutoff() : nil
+        return group(dated, ascending: ascending, foldOlderThan: cutoff)
     }
 
     // MARK: Derived Watched (MediaItem, grouped by month)

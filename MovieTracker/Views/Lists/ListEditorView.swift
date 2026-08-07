@@ -60,6 +60,15 @@ struct ListEditorView: View {
         Binding(get: { selectedColor }, set: { customColor = $0 })
     }
 
+    /// A brand-new list with any user input; blocks accidental drag-to-dismiss.
+    private var hasUnsavedInput: Bool {
+        guard existing == nil else { return false }
+        return !trimmedName.isEmpty
+            || colorIndex != 0
+            || customColor != nil
+            || symbol != ListSymbol.canonical(Self.symbols.first!)
+    }
+
     var body: some View {
         Form {
             Section {
@@ -101,6 +110,7 @@ struct ListEditorView: View {
         .onAppear { if existing == nil { nameFocused = true } }
         .navigationTitle(existing == nil ? "New List" : "Edit List")
         .navigationBarTitleDisplayMode(.inline)
+        .interactiveDismissDisabled(hasUnsavedInput)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button(role: .cancel) { dismiss() }
