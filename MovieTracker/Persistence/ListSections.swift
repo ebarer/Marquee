@@ -80,7 +80,10 @@ actor SectionBuilder {
                                   userRating: facts?.rating))
         }
         if byDateAdded { return flat(dated, ascending: ascending) }
-        return group(dated, ascending: ascending, foldOlderThan: olderCutoff())
+        // Only the Watch List folds stale titles into an "Older" bucket; custom
+        // lists keep every month section live.
+        let isWatchList = entries.first?.list?.isWatchList ?? false
+        return group(dated, ascending: ascending, foldOlderThan: isWatchList ? olderCutoff() : nil)
     }
 
     // MARK: Derived Watched (MediaItem, grouped by month)

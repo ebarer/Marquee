@@ -20,6 +20,12 @@ struct ListManagerView: View {
     private var watchList: MediaList? { visibleLists.first { $0.isWatchList } }
     private var customLists: [MediaList] { visibleLists.filter { !$0.isWatchList } }
 
+    /// One past the highest custom sort order so new lists land at the bottom.
+    /// Orders can be non-contiguous (e.g. after an import), so use max + 1, not count.
+    private var nextCustomSortOrder: Int {
+        (customLists.map(\.sortOrder).max() ?? 0) + 1
+    }
+
     private var watchedCount: Int { trackedItems.lazy.filter { $0.watchedAt != nil }.count }
     private var viewedCount: Int { trackedItems.lazy.filter { $0.lastViewedAt != nil }.count }
 
@@ -27,6 +33,9 @@ struct ListManagerView: View {
     @State private var creatingNew = false
     // One destination for both pushes; two `navigationDestination(isPresented:)` conflict.
     @State private var pushed: ManagerDestination?
+#if targetEnvironment(simulator)
+    @State private var confirmingReset = false
+#endif
 
     private enum ManagerDestination: Hashable {
         case cache, services
@@ -68,6 +77,23 @@ struct ListManagerView: View {
                 }
 
                 Section {
+#if targetEnvironment(simulator)
+                    // Import/export are useless in a bare simulator; seed sample data or wipe instead.
+                    Button {
+                        if let store, let summary = SimulatorTools.populate(using: store) {
+                            ImportExportCoordinator.shared.importSummary = summary
+                        }
+                    } label: {
+                        Label("Populate", systemImage: "wand.and.stars")
+                            .foregroundStyle(Color.appAccent)
+                    }
+                    Button(role: .destructive) {
+                        confirmingReset = true
+                    } label: {
+                        Label("Reset", systemImage: "trash")
+                            .foregroundStyle(.red)
+                    }
+#else
                     Button {
                         ImportExportCoordinator.shared.showImporter = true
                     } label: {
@@ -80,6 +106,7 @@ struct ListManagerView: View {
                         Label("Export", systemImage: "square.and.arrow.up")
                             .foregroundStyle(Color.appAccent)
                     }
+#endif
                 }
                 .listRowSeparatorTint(Self.separator)
                 .moveDisabled(true)
@@ -158,8 +185,8 @@ struct ListManagerView: View {
             }
             .sheet(isPresented: $creatingNew) {
                 NavigationStack {
-                    // Custom lists sit after the Watch List (order 0).
-                    ListEditorView(existing: nil, nextSortOrder: 1 + customLists.count)
+                    // Custom lists sit after the Watch List (order 0), new ones at the bottom.
+                    ListEditorView(existing: nil, nextSortOrder: nextCustomSortOrder)
                 }
             }
             .modifier(BackupTransferModifier(
@@ -167,6 +194,17 @@ struct ListManagerView: View {
                     if let store { ImportExportCoordinator.shared.handleImport(result, using: store) }
                 }
             ))
+#if targetEnvironment(simulator)
+            .confirmationDialog("Reset to factory state?", isPresented: $confirmingReset,
+                                titleVisibility: .visible) {
+                Button("Reset", role: .destructive) {
+                    if let store { SimulatorTools.reset(using: store) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Deletes all lists, movies, and watch history, then restores the default Watch List.")
+            }
+#endif
         }
     }
 
