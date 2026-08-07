@@ -34,23 +34,43 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     @ViewBuilder var leadingActions: () -> Leading
     @ViewBuilder var trailingActions: () -> Trailing
 
+    /// Present in the iPad content column, where the row is a tappable button that
+    /// fills the detail column; absent on iPhone, where it's a pushing link.
+    @Environment(\.openDetail) private var openDetail
+
     var body: some View {
-        NavigationLink(value: movie) {
-            MovieRow(movie: movie, subtitle: subtitle, role: role,
-                     showsSubtitle: showsSubtitle, duration: duration,
-                     rating: rating, ratingTint: ratingTint, status: status,
-                     derivesStatus: derivesStatus)
+        rowContent
+            // Halve the default plain-list vertical padding (~11pt) while keeping the
+            // standard horizontal inset so alignment and separators are unchanged.
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .swipeActions(edge: .leading, allowsFullSwipe: true, content: leadingActions)
+            .swipeActions(edge: .trailing, allowsFullSwipe: true, content: trailingActions)
+            .movieContextMenu(for: movie, lists: lists)
+            // Outermost so `List(selection:)` in the iPad content column sees it;
+            // inert on iPhone, where the row is a NavigationLink in a plain List.
+            .tag(movie)
+    }
+
+    @ViewBuilder
+    private var rowContent: some View {
+        if openDetail == nil {
+            // iPhone: a pushing link within the tab's navigation stack. Opt out of
+            // selection so a value already on the path doesn't stray-highlight.
+            NavigationLink(value: movie) { row }
+                .selectionDisabled()
+        } else {
+            // iPad: a selectable row. `List(selection:)` in the content column turns
+            // the tap into a modal — immune to the sync-time re-renders that were
+            // swallowing in-row button taps.
+            row
         }
-        // Halve the default plain-list vertical padding (~11pt) while keeping the
-        // standard horizontal inset so alignment and separators are unchanged.
-        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-        // A value-based link highlights whenever its value is already on the path
-        // (e.g. a filmography listing the movie you came from). We never drive
-        // selection off these rows, so opt out to drop that stray highlight.
-        .selectionDisabled()
-        .swipeActions(edge: .leading, allowsFullSwipe: true, content: leadingActions)
-        .swipeActions(edge: .trailing, allowsFullSwipe: true, content: trailingActions)
-        .movieContextMenu(for: movie, lists: lists)
+    }
+
+    private var row: some View {
+        MovieRow(movie: movie, subtitle: subtitle, role: role,
+                 showsSubtitle: showsSubtitle, duration: duration,
+                 rating: rating, ratingTint: ratingTint, status: status,
+                 derivesStatus: derivesStatus)
     }
 }
 

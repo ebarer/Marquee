@@ -10,9 +10,3 @@ enum SidebarItem: Hashable {
     case collection(FeaturedCollection)
     case list(ListSelection)
 }
-
-/// Whether the detail search field queries everything or filters the selected list.
-enum SearchScope: Hashable {
-    case all
-    case list
-}

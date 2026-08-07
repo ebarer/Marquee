@@ -23,6 +23,18 @@ struct SidebarColumn: View {
     private var watchList: MediaList? { lists.first { $0.isWatchList } }
     private var customLists: [MediaList] { lists.filter { !$0.isWatchList } }
 
+    // The Watched / Viewed counts come from a fetch, not an observed property, so
+    // touch `revision` to re-read them after any write (marking a movie watched
+    // otherwise left these badges stale until an unrelated change refreshed the row).
+    private var watchedCount: Int {
+        _ = store?.revision
+        return store?.watchedCount ?? 0
+    }
+    private var viewedCount: Int {
+        _ = store?.revision
+        return store?.viewedCount ?? 0
+    }
+
     @State private var showListManager = false
 
     var body: some View {
@@ -35,16 +47,16 @@ struct SidebarColumn: View {
             }
 
             Section("Lists") {
-                if let watchList {
-                    listRow(watchList)
-                }
+                // A ForEach (not a bare `if let`) so the row carries its selection
+                // tag into `List(selection:)`; a conditional row silently loses it.
+                ForEach(watchList.map { [$0] } ?? []) { listRow($0) }
                 derivedRow(name: "Watched", symbol: "checkmark.rectangle.stack",
                            color: ListDestination.watchedColor, tag: .list(.watched),
-                           count: store?.watchedCount ?? 0)
+                           count: watchedCount)
                 ForEach(customLists) { listRow($0) }
                 derivedRow(name: "Viewed", symbol: "clock.arrow.circlepath",
                            color: ListDestination.viewedColor, tag: .list(.viewed),
-                           count: store?.viewedCount ?? 0)
+                           count: viewedCount)
             }
         }
         .navigationTitle("")
@@ -71,8 +83,10 @@ struct SidebarColumn: View {
                     .foregroundStyle(selected ? Color.white : list.color)
             }
         }
-        .tag(tag)
+        // `.tag` must be the outermost modifier or `List(selection:)` won't see it
+        // (a trailing `.badge` shadows it — this is why the Watch List row was dead).
         .badge(list.entries?.count ?? 0)
+        .tag(tag)
     }
 
     /// A derived view (Watched / Viewed) with a fixed symbol + tint and count.
@@ -86,8 +100,8 @@ struct SidebarColumn: View {
             Image(systemName: symbol)
                 .foregroundStyle(selected ? Color.white : color)
         }
-        .tag(tag)
         .badge(count)
+        .tag(tag)
     }
 
     // MARK: - Chrome

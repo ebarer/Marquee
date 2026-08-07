@@ -93,7 +93,10 @@
 		CEB9BA8B3024A016002C6ED4 /* CompactRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB9BA8A3024A016002C6ED4 /* CompactRootView.swift */; };
 		CEB9BA8D3024A021002C6ED4 /* SidebarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB9BA8C3024A021002C6ED4 /* SidebarItem.swift */; };
 		CEB9BA8F3024A033002C6ED4 /* SidebarColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB9BA8E3024A033002C6ED4 /* SidebarColumn.swift */; };
-		CEB9BA913024A05E002C6ED4 /* SidebarDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB9BA903024A05E002C6ED4 /* SidebarDetailView.swift */; };
+		CEB9BA9C302557AF002C6ED4 /* DetailLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB9BA9B302557AF002C6ED4 /* DetailLink.swift */; };
+		CEB9BA9E302557C0002C6ED4 /* SidebarContentColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB9BA9D302557C0002C6ED4 /* SidebarContentColumn.swift */; };
+		CEB9BAA230257847002C6ED4 /* ListGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB9BAA130257847002C6ED4 /* ListGrid.swift */; };
+		CEB9BAA430257A12002C6ED4 /* MovieGridCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB9BAA330257A12002C6ED4 /* MovieGridCard.swift */; };
 		CEBB7A5F302098DD00ED8C51 /* MediaCacheStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEBB7A5E302098DD00ED8C51 /* MediaCacheStore.swift */; };
 		CEBB7A613020999600ED8C51 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEBB7A603020999600ED8C51 /* RemoteImage.swift */; };
 		CEBB7A63302099A000ED8C51 /* MediaCachePrefetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEBB7A62302099A000ED8C51 /* MediaCachePrefetcher.swift */; };
@@ -232,7 +235,10 @@
 		CEB9BA8A3024A016002C6ED4 /* CompactRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactRootView.swift; sourceTree = "<group>"; };
 		CEB9BA8C3024A021002C6ED4 /* SidebarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarItem.swift; sourceTree = "<group>"; };
 		CEB9BA8E3024A033002C6ED4 /* SidebarColumn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarColumn.swift; sourceTree = "<group>"; };
-		CEB9BA903024A05E002C6ED4 /* SidebarDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarDetailView.swift; sourceTree = "<group>"; };
+		CEB9BA9B302557AF002C6ED4 /* DetailLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailLink.swift; sourceTree = "<group>"; };
+		CEB9BA9D302557C0002C6ED4 /* SidebarContentColumn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarContentColumn.swift; sourceTree = "<group>"; };
+		CEB9BAA130257847002C6ED4 /* ListGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListGrid.swift; sourceTree = "<group>"; };
+		CEB9BAA330257A12002C6ED4 /* MovieGridCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieGridCard.swift; sourceTree = "<group>"; };
 		CEBB7A5E302098DD00ED8C51 /* MediaCacheStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCacheStore.swift; sourceTree = "<group>"; };
 		CEBB7A603020999600ED8C51 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
 		CEBB7A62302099A000ED8C51 /* MediaCachePrefetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCachePrefetcher.swift; sourceTree = "<group>"; };
@@ -379,6 +385,7 @@
 				CEFDA6F93021E09600EFAB14 /* StreamingServicesView.swift */,
 				CEFDA7083021EA2F00EFAB14 /* RegionPickerView.swift */,
 				CEB9BA7330249B8B002C6ED4 /* ListContentView.swift */,
+				CEB9BAA130257847002C6ED4 /* ListGrid.swift */,
 			);
 			path = Lists;
 			sourceTree = "<group>";
@@ -430,6 +437,7 @@
 				CEB8A46E301F17B1002FBF31 /* SectionHeader.swift */,
 				CEB8A470301F17B9002FBF31 /* PosterStrip.swift */,
 				CEBB7A603020999600ED8C51 /* RemoteImage.swift */,
+				CEB9BAA330257A12002C6ED4 /* MovieGridCard.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -550,7 +558,8 @@
 				CEB9BA8A3024A016002C6ED4 /* CompactRootView.swift */,
 				CEB9BA8C3024A021002C6ED4 /* SidebarItem.swift */,
 				CEB9BA8E3024A033002C6ED4 /* SidebarColumn.swift */,
-				CEB9BA903024A05E002C6ED4 /* SidebarDetailView.swift */,
+				CEB9BA9B302557AF002C6ED4 /* DetailLink.swift */,
+				CEB9BA9D302557C0002C6ED4 /* SidebarContentColumn.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -750,7 +759,9 @@
 				CE822F4C301D13DF0070F69B /* ListManagerView.swift in Sources */,
 				CEEAFCEE3019D1F800D06E0E /* FeaturedView.swift in Sources */,
 				CEEAFCF23019D1FB00D06E0E /* SearchView.swift in Sources */,
+				CEB9BA9C302557AF002C6ED4 /* DetailLink.swift in Sources */,
 				CE569766301C1ABF00DF9142 /* SearchModel.swift in Sources */,
+				CEB9BA9E302557C0002C6ED4 /* SidebarContentColumn.swift in Sources */,
 				CE310EF2302030020092A86B /* ListSectionsModel.swift in Sources */,
 				CEB8A46B301EF1E5002FBF31 /* TrailerPlayerView.swift in Sources */,
 				CE56975C301C1A4500DF9142 /* PersonBioHeader.swift in Sources */,
@@ -760,7 +771,6 @@
 				CE56974E301C199F00DF9142 /* ProfileImage.swift in Sources */,
 				CEBB7A613020999600ED8C51 /* RemoteImage.swift in Sources */,
 				CEB8A491301F3739002FBF31 /* PersistenceCoordinator.swift in Sources */,
-				CEB9BA913024A05E002C6ED4 /* SidebarDetailView.swift in Sources */,
 				CE78BD8420C112D8001E6DB6 /* Movie.swift in Sources */,
 				CE310EF030202F760092A86B /* TMDBResponses.swift in Sources */,
 				CEB8A469301EE5E1002FBF31 /* SyncLog.swift in Sources */,
@@ -770,6 +780,7 @@
 				CE78BD5320C087F2001E6DB6 /* AppDelegate.swift in Sources */,
 				CEB0923220D0CA3E0050D39E /* DateFormatter+Extension.swift in Sources */,
 				CEB8A473301F1891002FBF31 /* MovieOverviewSection.swift in Sources */,
+				CEB9BAA230257847002C6ED4 /* ListGrid.swift in Sources */,
 				CEB9BA8B3024A016002C6ED4 /* CompactRootView.swift in Sources */,
 				CE3FEA023024709D00FCC44B /* PersistenceCoordinator+Lifecycle.swift in Sources */,
 				CEBB7A63302099A000ED8C51 /* MediaCachePrefetcher.swift in Sources */,
@@ -794,6 +805,7 @@
 				CEB9BA7430249B8B002C6ED4 /* ListContentView.swift in Sources */,
 				CEB8A477301F18D3002FBF31 /* MovieDetailHeader.swift in Sources */,
 				CEB8A485301F1C32002FBF31 /* ListsToolbar.swift in Sources */,
+				CEB9BAA430257A12002C6ED4 /* MovieGridCard.swift in Sources */,
 				CEB8A47D301F19BD002FBF31 /* PersonFilmography.swift in Sources */,
 				CEFDA7033021E49000EFAB14 /* SelectedProviders.swift in Sources */,
 				CEB8A471301F17B9002FBF31 /* PosterStrip.swift in Sources */,
@@ -1084,7 +1096,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.6.2;
+				CURRENT_PROJECT_VERSION = 2026.8.6.3;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1107,7 +1119,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.6.2;
+				CURRENT_PROJECT_VERSION = 2026.8.6.3;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (

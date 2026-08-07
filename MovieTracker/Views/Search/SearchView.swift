@@ -16,8 +16,12 @@ struct SearchView: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
 
+    @Environment(\.openDetail) private var openDetail
+    /// iPad only: the tapped movie row, routed to a modal (see MovieListRow / ListRows).
+    @State private var tappedMovie: Movie?
+
     var body: some View {
-        List {
+        List(selection: openDetail == nil ? .constant(nil) : $tappedMovie) {
             if isSearching {
                 if !featuredPeople.isEmpty {
                     Section("People") {
@@ -37,8 +41,13 @@ struct SearchView: View {
             }
         }
         .listStyle(.plain)
-        .navigationTitle(isSearching ? "Search: \(trimmedQuery)" : "Search")
+        .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: tappedMovie) { _, movie in
+            guard let movie else { return }
+            openDetail?(AnyHashable(movie))
+            tappedMovie = nil
+        }
         .overlay {
             if isSearching {
                 if model.movies.isEmpty && featuredPeople.isEmpty {
@@ -142,6 +151,13 @@ struct SearchView: View {
 
     private var isSearching: Bool {
         !trimmedQuery.isEmpty
+    }
+
+    /// On iPad the search field already displays the query, so repeating it in the
+    /// title is redundant; the compact search tab keeps the query for context.
+    private var navigationTitle: String {
+        if openDetail != nil { return "Search" }
+        return isSearching ? "Search: \(trimmedQuery)" : "Search"
     }
 }
 

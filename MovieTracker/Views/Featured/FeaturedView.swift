@@ -40,7 +40,7 @@ struct FeaturedGridView: View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: isRegularWidth ? 24 : 16) {
                 ForEach(model.movies, id: \.id) { movie in
-                    NavigationLink(value: movie) {
+                    DetailLink(value: movie) {
                         MoviePosterCard(movie: movie)
                     }
                     .buttonStyle(.plain)

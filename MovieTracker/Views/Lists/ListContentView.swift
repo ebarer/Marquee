@@ -50,10 +50,23 @@ struct ListContentView: View {
         }
     }
 
+    /// iPhone shows the row list (swipe actions, inline filter); iPad — where the
+    /// host injects `externalFilter` — shows a poster grid that uses the wide column
+    /// and whose taps route reliably through `DetailLink`.
+    @ViewBuilder
+    private var entries: some View {
+        if externalFilter == nil {
+            ListRows(sections: sectionsModel.sections, selection: selection, lists: lists,
+                          listColor: activeColor)
+                .listStyle(.plain)
+        } else {
+            ListGrid(sections: sectionsModel.sections, selection: selection, lists: lists,
+                     listColor: activeColor)
+        }
+    }
+
     private var core: some View {
-        ListRows(sections: sectionsModel.sections, selection: selection, lists: lists,
-                      listColor: activeColor)
-        .listStyle(.plain)
+        entries
         .tint(activeColor)
         .navigationTitle(title)
         .toolbarTitleDisplayMode(.inline)

@@ -32,14 +32,14 @@ struct SearchPeopleStrip: View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(alignment: .top, spacing: 16) {
                 ForEach(preview, id: \.id) { person in
-                    NavigationLink(value: person) {
+                    DetailLink(value: person) {
                         personCell(person)
                     }
                     .buttonStyle(.plain)
                 }
 
                 if hiddenCount > 0 {
-                    NavigationLink(value: PeopleList(title: "People", people: people)) {
+                    DetailLink(value: PeopleList(title: "People", people: people)) {
                         moreCell
                     }
                     .buttonStyle(.plain)

@@ -14,6 +14,12 @@ struct ListRows: View {
     let lists: [MediaList]
     let listColor: Color
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+    @Environment(\.openDetail) private var openDetail
+
+    /// iPad only: the row the user tapped. `List(selection:)` sets this even while
+    /// the list re-renders during sync, then we open the movie as a modal and clear
+    /// it. On iPhone `openDetail` is nil and rows navigate via NavigationLink.
+    @State private var tappedMovie: Movie?
 
     private var isWatchList: Bool {
         if case .list(let uuid) = selection { return lists.first { $0.uuid == uuid }?.isWatchList == true }
@@ -27,7 +33,7 @@ struct ListRows: View {
     }
 
     var body: some View {
-        List {
+        List(selection: openDetail == nil ? .constant(nil) : $tappedMovie) {
             // Viewed is a flat recency history — no month sections.
             if isViewed {
                 rows(for: sections.first?.entries ?? [], hasHeader: false)
@@ -47,6 +53,11 @@ struct ListRows: View {
                     }
                 }
             }
+        }
+        .onChange(of: tappedMovie) { _, movie in
+            guard let movie else { return }
+            openDetail?(AnyHashable(movie))
+            tappedMovie = nil
         }
     }
 

@@ -11,13 +11,13 @@ extension View {
     func detailDestinations() -> some View {
         self
             .navigationDestination(for: Movie.self) { movie in
-                MovieDetailView(movie: movie)
+                MovieDetailView(movie: movie).modalDismissable()
             }
             .navigationDestination(for: Person.self) { person in
-                PersonDetailView(person: person)
+                PersonDetailView(person: person).modalDismissable()
             }
             .navigationDestination(for: PeopleList.self) { list in
-                SearchPeopleListView(list: list)
+                SearchPeopleListView(list: list).modalDismissable()
             }
     }
 }
