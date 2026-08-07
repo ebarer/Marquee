@@ -34,11 +34,28 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     @ViewBuilder var leadingActions: () -> Leading
     @ViewBuilder var trailingActions: () -> Trailing
 
+    /// When set (iPhone search), the row is a button running this action instead of
+    /// a pushing link — the caller resigns the search field's focus and defers the
+    /// push so it isn't swallowed by the concurrent keyboard dismissal.
+    var onTap: ((Movie) -> Void)? = nil
+
     /// Present in the iPad content column, where the row is a tappable button that
     /// fills the detail column; absent on iPhone, where it's a pushing link.
     @Environment(\.openDetail) private var openDetail
 
     var body: some View {
+        if onTap == nil, openDetail != nil {
+            // iPad: tagged (outermost) so `List(selection:)` routes the tap to a modal.
+            decorated.tag(movie)
+        } else {
+            // iPhone: a NavigationLink (or, with `onTap`, a button) in a plain List.
+            // No selection tag — a tagged link in a selectable List becomes a
+            // selection row and the tap toggles selection instead of pushing.
+            decorated
+        }
+    }
+
+    private var decorated: some View {
         rowContent
             // Halve the default plain-list vertical padding (~11pt) while keeping the
             // standard horizontal inset so alignment and separators are unchanged.
@@ -46,14 +63,26 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
             .swipeActions(edge: .leading, allowsFullSwipe: true, content: leadingActions)
             .swipeActions(edge: .trailing, allowsFullSwipe: true, content: trailingActions)
             .movieContextMenu(for: movie, lists: lists)
-            // Outermost so `List(selection:)` in the iPad content column sees it;
-            // inert on iPhone, where the row is a NavigationLink in a plain List.
-            .tag(movie)
     }
 
     @ViewBuilder
     private var rowContent: some View {
-        if openDetail == nil {
+        if let onTap {
+            // iPhone search: resign focus + deferred push happens in the action, so
+            // the push animates rather than sharing the keyboard-dismissal transaction.
+            // A NavigationLink normally supplies the full-row hit area and the trailing
+            // chevron; recreate both since this is a plain button.
+            Button { onTap(movie) } label: {
+                HStack(spacing: 0) {
+                    row
+                    Image(systemName: "chevron.forward")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else if openDetail == nil {
             // iPhone: a pushing link within the tab's navigation stack. Opt out of
             // selection so a value already on the path doesn't stray-highlight.
             NavigationLink(value: movie) { row }

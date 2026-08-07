@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct CompactRootView: View {
     @Bindable var searchModel: SearchModel
@@ -42,14 +43,19 @@ struct CompactRootView: View {
 
             Tab("Search", systemImage: "magnifyingglass", value: RootTab.search, role: .search) {
                 NavigationStack(path: $searchPath) {
-                    SearchView(model: searchModel)
+                    SearchView(model: searchModel, onSelectMovie: openSearchResult)
                         .detailDestinations()
-                }
-                // Declare the search field only on the search tab, so it never
-                // appears above the Discover or Lists content.
-                .searchable(text: $searchModel.query, prompt: SearchModel.placeholder)
-                .onChange(of: searchModel.query) { _, newValue in
-                    searchModel.search(newValue)
+                        // Declare the search field on the content inside the stack
+                        // (Apple's recommended placement). On the NavigationStack
+                        // itself, a push while the field is focused skipped its
+                        // animation; inside, the push animates with the keyboard up.
+                        .searchable(text: $searchModel.query, prompt: SearchModel.placeholder)
+                        .onChange(of: searchModel.query) { _, newValue in
+                            searchModel.search(newValue)
+                        }
+                        .onSubmit(of: .search) {
+                            searchModel.commit()
+                        }
                 }
                 .onChange(of: searchPath) { oldPath, newPath in
                     // Opening a result (pushing onto the stack) counts as
@@ -58,14 +64,20 @@ struct CompactRootView: View {
                         searchModel.commit()
                     }
                 }
-                .onSubmit(of: .search) {
-                    searchModel.commit()
-                }
             }
         }
         // Selecting the search tab activates its search field (and dismissing
         // search returns to the previously selected tab).
         .tabViewSearchActivation(.searchTabSelection)
+    }
+
+    /// Opens a tapped search result: resign the search field's focus first so the
+    /// keyboard's collapse doesn't share the push transaction, then push on the next
+    /// runloop so the navigation animates even with the keyboard up.
+    private func openSearchResult(_ movie: Movie) {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                        to: nil, from: nil, for: nil)
+        DispatchQueue.main.async { searchPath.append(movie) }
     }
 
     /// Drives tab selection while detecting a tap on the already-selected Lists

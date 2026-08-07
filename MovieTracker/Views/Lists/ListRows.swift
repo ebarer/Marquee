@@ -33,31 +33,41 @@ struct ListRows: View {
     }
 
     var body: some View {
-        List(selection: openDetail == nil ? .constant(nil) : $tappedMovie) {
-            // Viewed is a flat recency history — no month sections.
-            if isViewed {
-                rows(for: sections.first?.entries ?? [], hasHeader: false)
-            } else {
-                ForEach(sections) { section in
-                    // A headerless section (e.g. a list ordered by date added)
-                    // renders its rows flat, with no month header above them.
-                    if section.title.isEmpty {
-                        rows(for: section.entries, hasHeader: false)
-                    } else {
-                        Section {
-                            rows(for: section.entries, hasHeader: true)
-                        } header: {
-                            Text(section.title)
-                                .foregroundStyle(listColor)
-                        }
+        if openDetail == nil {
+            // iPhone: a plain List so NavigationLink rows push normally.
+            List { sectionsContent }
+        } else {
+            // iPad: selection-driven so the tap opens a modal, immune to the sync-time
+            // re-renders that were swallowing in-row taps.
+            List(selection: $tappedMovie) { sectionsContent }
+                .onChange(of: tappedMovie) { _, movie in
+                    guard let movie else { return }
+                    openDetail?(AnyHashable(movie))
+                    tappedMovie = nil
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var sectionsContent: some View {
+        // Viewed is a flat recency history — no month sections.
+        if isViewed {
+            rows(for: sections.first?.entries ?? [], hasHeader: false)
+        } else {
+            ForEach(sections) { section in
+                // A headerless section (e.g. a list ordered by date added)
+                // renders its rows flat, with no month header above them.
+                if section.title.isEmpty {
+                    rows(for: section.entries, hasHeader: false)
+                } else {
+                    Section {
+                        rows(for: section.entries, hasHeader: true)
+                    } header: {
+                        Text(section.title)
+                            .foregroundStyle(listColor)
                     }
                 }
             }
-        }
-        .onChange(of: tappedMovie) { _, movie in
-            guard let movie else { return }
-            openDetail?(AnyHashable(movie))
-            tappedMovie = nil
         }
     }
 
