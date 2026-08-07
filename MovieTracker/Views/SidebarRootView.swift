@@ -31,6 +31,9 @@ struct SidebarRootView: View {
             // Injected on the stack so every pushed screen (cast → person, related
             // → movie) inherits it and keeps its own Close button.
             .environment(\.closeModal) { presented = nil }
+            // `.page` is the larger built-in sheet size — the default form sizing
+            // left the detail cramped on iPad.
+            .presentationSizing(.page)
         }
     }
 

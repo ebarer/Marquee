@@ -14,31 +14,6 @@ enum ListSelection: Hashable {
     case viewed
 }
 
-/// Drives the Lists screen's create/edit sheet.
-enum ListEditor: Identifiable {
-    case create(addMovie: Movie?)
-    case edit(MediaList)
-
-    var id: String {
-        switch self {
-        case .create: return "create"
-        case .edit(let list): return list.uuid.uuidString
-        }
-    }
-
-    var list: MediaList? {
-        switch self {
-        case .create: return nil
-        case .edit(let list): return list
-        }
-    }
-
-    var movieToAdd: Movie? {
-        if case .create(let movie) = self { return movie }
-        return nil
-    }
-}
-
 /// A `ListSelection` resolved to the identity and contents the Lists screen needs.
 /// Real lists read their name/color/symbol from the model; the built-in Watched and
 /// Viewed views define theirs here — so `ListsView` never hardcodes appearance or

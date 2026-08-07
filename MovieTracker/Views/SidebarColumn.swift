@@ -46,6 +46,9 @@ struct SidebarColumn: View {
                 }
             }
 
+            // Split into separate sections so the built-in views, custom lists, and
+            // Viewed history read as divider-separated groups — the same grouping the
+            // title menu uses.
             Section("Lists") {
                 // A ForEach (not a bare `if let`) so the row carries its selection
                 // tag into `List(selection:)`; a conditional row silently loses it.
@@ -53,7 +56,15 @@ struct SidebarColumn: View {
                 derivedRow(name: "Watched", symbol: "checkmark.rectangle.stack",
                            color: ListDestination.watchedColor, tag: .list(.watched),
                            count: watchedCount)
-                ForEach(customLists) { listRow($0) }
+            }
+
+            if !customLists.isEmpty {
+                Section {
+                    ForEach(customLists) { listRow($0) }
+                }
+            }
+
+            Section {
                 derivedRow(name: "Viewed", symbol: "clock.arrow.circlepath",
                            color: ListDestination.viewedColor, tag: .list(.viewed),
                            count: viewedCount)
@@ -125,10 +136,13 @@ struct SidebarColumn: View {
     }
 }
 
+// A `.constant` binding (not `@Previewable @State`): under Xcode Previews the
+// `@Previewable` local runs the view's `@Query` before `.modelContainer` attaches
+// the in-memory store, which crashes with an uncatchable "No eligible connection
+// available" NSException. A constant binding sidesteps that timing.
 #Preview {
-    @Previewable @State var selection: SidebarItem? = .collection(.popular)
     NavigationStack {
-        SidebarColumn(selection: $selection)
+        SidebarColumn(selection: .constant(.collection(.popular)))
     }
     .modelContainer(previewModelContainer)
     .environment(PersistenceCoordinator(previewModelContainer.mainContext))

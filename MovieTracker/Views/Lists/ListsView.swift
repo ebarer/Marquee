@@ -7,8 +7,8 @@ import SwiftUI
 import SwiftData
 
 /// The compact (iPhone) Lists host: owns the current selection, the title-bar list
-/// switcher, and the New List / Manage Lists chrome. The rows themselves are drawn
-/// by `ListContentView`, which the iPad sidebar reuses directly.
+/// switcher, and the Manage Lists chrome. The rows themselves are drawn by
+/// `ListContentView`, which the iPad sidebar reuses directly.
 struct ListsView: View {
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     /// Present only when running inside the app (absent in previews).
@@ -28,7 +28,6 @@ struct ListsView: View {
 
     /// The current view; nil until the Watch List is chosen on appear.
     @State private var selection: ListSelection?
-    @State private var editor: ListEditor?
     @State private var showListManager = false
 
     var body: some View {
@@ -43,13 +42,8 @@ struct ListsView: View {
                     }
                     .tint(.primary)
                 }
-                ToolbarItemGroup(placement: .topBarLeading) {
-                    Button {
-                        editor = .create(addMovie: nil)
-                    } label: {
-                        Label("New List", systemImage: "plus")
-                    }
-                    .tint(activeColor)
+                // New lists are created from within Manage Lists (consistent with iPad).
+                ToolbarItem(placement: .topBarLeading) {
                     // While iCloud is syncing, the manage button is briefly replaced by a
                     // spinner in place rather than adding a separate trailing indicator.
                     if syncMonitor?.isSyncing == true {
@@ -65,19 +59,6 @@ struct ListsView: View {
                         }
                         .tint(activeColor)
                     }
-                }
-            }
-            .sheet(item: $editor) { mode in
-                NavigationStack {
-                    ListEditorView(
-                        existing: mode.list,
-                        nextSortOrder: (customLists.map(\.sortOrder).max() ?? 0) + 1,
-                        onSaved: { newList in
-                            if let movie = mode.movieToAdd { store?.add(movie, to: newList) }
-                            selection = .list(newList.uuid)
-                        },
-                        onDeleted: { selection = watchList.map { .list($0.uuid) } }
-                    )
                 }
             }
             .sheet(isPresented: $showListManager) {
