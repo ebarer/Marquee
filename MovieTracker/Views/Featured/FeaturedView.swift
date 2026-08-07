@@ -59,8 +59,10 @@ struct FeaturedGridView: View {
                 ProgressView()
             }
         }
-        // Reloads whenever the host switches collections (and on first appear).
-        .task(id: collection) { await model.change(to: collection) }
+        // Loads on first appear and when the host switches collections. Idempotent
+        // for an unchanged collection, so reappearing after a push → pop keeps the
+        // loaded movies (and the grid's scroll position) instead of reloading.
+        .task(id: collection) { await model.load(collection) }
     }
 }
 

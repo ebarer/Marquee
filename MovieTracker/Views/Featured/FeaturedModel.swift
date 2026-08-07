@@ -17,15 +17,12 @@ final class FeaturedModel {
     private var lastPageFetched = 0
     private var totalPages = 1
 
-    /// Loads the first page for the initial collection (no-op if already loaded).
-    func start(_ collection: FeaturedCollection) async {
-        guard movies.isEmpty else { return }
-        self.collection = collection
-        await loadNextPage()
-    }
-
-    /// Resets and reloads when the user switches collections.
-    func change(to collection: FeaturedCollection) async {
+    /// Loads `collection`, unless it's already the one showing. Idempotent so a
+    /// re-fired `.task` — e.g. the grid reappearing after a push → pop — doesn't
+    /// wipe and reload the movies, which would reset the grid's scroll position.
+    /// Switching to a different collection still resets and reloads.
+    func load(_ collection: FeaturedCollection) async {
+        guard collection != self.collection || movies.isEmpty else { return }
         self.collection = collection
         movies = []
         lastPageFetched = 0
