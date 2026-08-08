@@ -17,9 +17,16 @@ enum SectionSource: Sendable, Equatable {
 struct MediaSnapshot: Identifiable, Sendable, Equatable {
     let persistentID: PersistentIdentifier
     let tmdbID: Int
+    let mediaType: MediaType
     let title: String
     let posterPath: String?
     let releaseDate: Date?
+    let sortDate: Date?
+    /// Set for a watched-season row (the show's season number); nil for movies and shows.
+    let seasonNumber: Int?
+    /// Season progress for a watched-season row: watched vs. total episodes.
+    let seasonWatched: Int?
+    let seasonTotal: Int?
     let runtime: Int?
     let dateWatched: Date?
     let userRating: Double?
@@ -62,22 +69,50 @@ actor SectionBuilder {
         guard let entries = try? modelContext.fetch(descriptor) else { return [] }
 
         let items = (try? modelContext.fetch(FetchDescriptor<MediaItem>())) ?? []
-        var factsByID: [Int: (rating: Double?, watched: Date?)] = [:]
-        for item in items { factsByID[item.tmdbID] = (item.userRating, item.watchedAt) }
+        // Key facts by (tmdbID, mediaType) so a movie and show sharing a tmdbID don't collide.
+        var factsByKey: [String: (rating: Double?, watched: Date?)] = [:]
+        for item in items { factsByKey["\(item.tmdbID)-\(item.mediaTypeRaw)"] = (item.userRating, item.watchedAt) }
 
         let filtered = filter.isEmpty
             ? entries
             : entries.filter { $0.title.localizedCaseInsensitiveContains(filter) }
 
+        // A show in any list except Watched is represented by its tracked (next-incomplete)
+        // season, keyed by show id. Last write wins if sync momentarily duplicates.
+        var trackedByShow: [Int: TrackedSeason] = [:]
+        for tracked in (try? modelContext.fetch(FetchDescriptor<TrackedSeason>())) ?? [] {
+            trackedByShow[tracked.showTmdbID] = tracked
+        }
+        let watchedBySeason = watchedEpisodeCounts()
+
         let dated = filtered.map { entry -> (date: Date, snapshot: MediaSnapshot) in
-            let facts = factsByID[entry.tmdbID]
-            let date = byDateAdded ? entry.addedAt : (entry.releaseDate ?? .distantFuture)
+            let facts = factsByKey["\(entry.tmdbID)-\(entry.mediaTypeRaw)"]
+            if entry.mediaType == .tv, let tracked = trackedByShow[entry.tmdbID] {
+                let watched = watchedBySeason["\(entry.tmdbID)-\(tracked.seasonNumber)"] ?? 0
+                // The tracked season buckets by its next unwatched episode's air date.
+                let date = byDateAdded ? entry.addedAt
+                    : (tracked.nextEpisodeDate ?? entry.sortDate ?? entry.releaseDate ?? .distantFuture)
+                return (date,
+                        MediaSnapshot(persistentID: entry.persistentModelID,
+                                      tmdbID: entry.tmdbID, mediaType: .tv,
+                                      title: tracked.showName.isEmpty ? entry.title : tracked.showName,
+                                      posterPath: tracked.posterPath ?? entry.posterPath,
+                                      releaseDate: entry.releaseDate,
+                                      sortDate: tracked.nextEpisodeDate ?? entry.sortDate,
+                                      seasonNumber: tracked.seasonNumber,
+                                      seasonWatched: watched, seasonTotal: tracked.episodeCount,
+                                      runtime: entry.runtime,
+                                      dateWatched: facts?.watched, userRating: facts?.rating))
+            }
+            // Movies, and untracked shows (no progress / fully watched), keep the whole-title snapshot.
+            let date = byDateAdded ? entry.addedAt : (entry.sortDate ?? entry.releaseDate ?? .distantFuture)
             return (date,
                     MediaSnapshot(persistentID: entry.persistentModelID,
-                                  tmdbID: entry.tmdbID, title: entry.title,
+                                  tmdbID: entry.tmdbID, mediaType: entry.mediaType, title: entry.title,
                                   posterPath: entry.posterPath, releaseDate: entry.releaseDate,
-                                  runtime: entry.runtime, dateWatched: facts?.watched,
-                                  userRating: facts?.rating))
+                                  sortDate: entry.sortDate, seasonNumber: nil,
+                                  seasonWatched: nil, seasonTotal: nil, runtime: entry.runtime,
+                                  dateWatched: facts?.watched, userRating: facts?.rating))
         }
         if byDateAdded { return flat(dated, ascending: ascending) }
         // Only the Watch List folds stale titles into an "Older" bucket, and only
@@ -90,17 +125,31 @@ actor SectionBuilder {
     // MARK: Derived Watched (MediaItem, grouped by month)
 
     private func buildWatched(byWatchedDate: Bool, ascending: Bool, filter: String) -> [SectionSnapshot] {
-        let descriptor = FetchDescriptor<MediaItem>(predicate: #Predicate { $0.watchedAt != nil })
-        guard let items = try? modelContext.fetch(descriptor) else { return [] }
+        var dated: [(date: Date, snapshot: MediaSnapshot)] = []
 
-        let filtered = filter.isEmpty
-            ? items
-            : items.filter { $0.title.localizedCaseInsensitiveContains(filter) }
-
-        let dated = filtered.map { item -> (date: Date, snapshot: MediaSnapshot) in
-            let date = byWatchedDate ? (item.watchedAt ?? .distantFuture) : (item.releaseDate ?? .distantFuture)
-            return (date, snapshot(from: item))
+        // Movies track watched at the item level; TV tracks at the season level, so pull
+        // only movie MediaItems here and add watched seasons below.
+        let movieType = MediaType.movie.rawValue
+        let itemDescriptor = FetchDescriptor<MediaItem>(
+            predicate: #Predicate { $0.watchedAt != nil && $0.mediaTypeRaw == movieType })
+        for item in (try? modelContext.fetch(itemDescriptor)) ?? []
+        where filter.isEmpty || item.title.localizedCaseInsensitiveContains(filter) {
+            let anchor = item.sortDate ?? item.releaseDate ?? .distantFuture
+            let date = byWatchedDate ? (item.watchedAt ?? .distantFuture) : anchor
+            dated.append((date, snapshot(from: item)))
         }
+
+        // Watched counts derive from the episode source of truth, keyed by show+season.
+        let watchedBySeason = watchedEpisodeCounts()
+
+        for season in (try? modelContext.fetch(FetchDescriptor<WatchedSeason>())) ?? []
+        where filter.isEmpty || season.showName.localizedCaseInsensitiveContains(filter) {
+            let anchor = season.airDate ?? season.watchedAt
+            let date = byWatchedDate ? season.watchedAt : anchor
+            let watched = watchedBySeason["\(season.showTmdbID)-\(season.seasonNumber)"] ?? 0
+            dated.append((date, snapshot(from: season, watched: watched)))
+        }
+
         return group(dated, ascending: ascending)
     }
 
@@ -120,10 +169,32 @@ actor SectionBuilder {
         return snapshots.isEmpty ? [] : [SectionSnapshot(id: DateComponents(), title: "", entries: snapshots, isCollapsible: false)]
     }
 
+    /// Watched-episode counts keyed `"showID-season"`, derived from the `WatchedEpisode`
+    /// source of truth. Shared by the Watched rows and the tracked-season membership rows.
+    private func watchedEpisodeCounts() -> [String: Int] {
+        var map: [String: Int] = [:]
+        for episode in (try? modelContext.fetch(FetchDescriptor<WatchedEpisode>())) ?? [] {
+            map["\(episode.showTmdbID)-\(episode.seasonNumber)", default: 0] += 1
+        }
+        return map
+    }
+
     private func snapshot(from item: MediaItem) -> MediaSnapshot {
-        MediaSnapshot(persistentID: item.persistentModelID, tmdbID: item.tmdbID, title: item.title,
-                      posterPath: item.posterPath, releaseDate: item.releaseDate, runtime: item.runtime,
+        MediaSnapshot(persistentID: item.persistentModelID, tmdbID: item.tmdbID,
+                      mediaType: item.mediaType, title: item.title,
+                      posterPath: item.posterPath, releaseDate: item.releaseDate,
+                      sortDate: item.sortDate, seasonNumber: nil,
+                      seasonWatched: nil, seasonTotal: nil, runtime: item.runtime,
                       dateWatched: item.watchedAt, userRating: item.userRating)
+    }
+
+    private func snapshot(from season: WatchedSeason, watched: Int) -> MediaSnapshot {
+        MediaSnapshot(persistentID: season.persistentModelID, tmdbID: season.showTmdbID,
+                      mediaType: .tv, title: season.showName,
+                      posterPath: season.posterPath, releaseDate: season.airDate,
+                      sortDate: season.airDate, seasonNumber: season.seasonNumber,
+                      seasonWatched: watched, seasonTotal: season.episodeCount,
+                      runtime: nil, dateWatched: season.watchedAt, userRating: nil)
     }
 
     // MARK: Grouping

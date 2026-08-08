@@ -17,6 +17,17 @@ struct CachedMedia: Codable {
     }
 }
 
+struct CachedShow: Codable {
+    var show: Show
+    var tint: [Double]?
+    var cachedAt: Date
+
+    var color: Color? {
+        guard let c = tint, c.count == 4 else { return nil }
+        return Color(.sRGB, red: c[0], green: c[1], blue: c[2], opacity: c[3])
+    }
+}
+
 /// Bounded on-disk JSON cache of fetched media, keyed by TMDB id, so detail renders offline.
 actor MediaCacheStore {
     static let shared = MediaCacheStore()
@@ -47,6 +58,11 @@ actor MediaCacheStore {
         directory.appendingPathComponent("media-\(id).json")
     }
 
+    /// Shows use a separate `show-` prefix so movie/TV ids can't collide.
+    private func showFileURL(id: Int) -> URL {
+        directory.appendingPathComponent("show-\(id).json")
+    }
+
     /// Stale entries are still returned (usable offline); freshness only gates re-fetch.
     func load(id: Int) -> CachedMedia? {
         guard let data = try? Data(contentsOf: fileURL(id: id)) else { return nil }
@@ -63,6 +79,24 @@ actor MediaCacheStore {
                                 cachedAt: Date())
         guard let data = try? encoder.encode(entry) else { return }
         try? data.write(to: fileURL(id: movie.id), options: .atomic)
+        evictIfNeeded()
+    }
+
+    func loadShow(id: Int) -> CachedShow? {
+        guard let data = try? Data(contentsOf: showFileURL(id: id)) else { return nil }
+        return try? decoder.decode(CachedShow.self, from: data)
+    }
+
+    func isShowFresh(id: Int, ttl: TimeInterval) -> Bool {
+        guard let cached = loadShow(id: id) else { return false }
+        return Date().timeIntervalSince(cached.cachedAt) < ttl
+    }
+
+    func save(_ show: Show, tint: Color?) {
+        let entry = CachedShow(show: show, tint: tint.flatMap(Self.rgba(from:)),
+                               cachedAt: Date())
+        guard let data = try? encoder.encode(entry) else { return }
+        try? data.write(to: showFileURL(id: show.id), options: .atomic)
         evictIfNeeded()
     }
 

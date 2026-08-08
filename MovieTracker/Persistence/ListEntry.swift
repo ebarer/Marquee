@@ -14,17 +14,35 @@ final class ListEntry {
     var title: String = ""
     var posterPath: String?
     var releaseDate: Date?
+    /// Timeline anchor for list sorting; nil means "use releaseDate". Additive/optional
+    /// for CloudKit (a show's most-recent air date vs. its premiere).
+    var sortDate: Date?
     var runtime: Int?
     var addedAt: Date = Date()
 
     var list: MediaList?
 
-    init(movie: Movie) {
-        self.tmdbID = movie.id
-        self.title = movie.title
-        self.posterPath = movie.poster
-        self.releaseDate = movie.releaseDate
-        self.runtime = movie.runtime
+    convenience init(movie: Movie) {
+        self.init(key: movie.mediaKey)
+    }
+
+    init(key: MediaKey) {
+        self.tmdbID = key.tmdbID
+        self.mediaTypeRaw = key.mediaType.rawValue
+        self.title = key.title
+        self.posterPath = key.posterPath
+        self.releaseDate = key.releaseDate
+        self.sortDate = key.sortDate
+        self.runtime = key.runtime
+    }
+
+    /// Update the display snapshot when richer data arrives (e.g. a show's last-air date).
+    func refreshSnapshot(from key: MediaKey) {
+        title = key.title
+        posterPath = key.posterPath
+        releaseDate = key.releaseDate
+        runtime = key.runtime
+        if let sortDate = key.sortDate { self.sortDate = sortDate }
     }
 
     var mediaType: MediaType { MediaType(rawValue: mediaTypeRaw) ?? .movie }

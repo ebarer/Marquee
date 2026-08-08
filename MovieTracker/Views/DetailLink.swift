@@ -7,12 +7,16 @@ import SwiftUI
 
 enum DetailRoot: Hashable, Identifiable {
     case movie(Movie)
+    case show(Show)
+    case episode(Episode)
     case person(Person)
     case people(PeopleList)
 
     var id: String {
         switch self {
         case .movie(let movie): return "movie-\(movie.id)"
+        case .show(let show): return "show-\(show.id)"
+        case .episode(let episode): return "episode-\(episode.id)"
         case .person(let person): return "person-\(person.id)"
         case .people(let list): return "people-\(list.title)"
         }

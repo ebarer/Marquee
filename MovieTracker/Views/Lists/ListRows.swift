@@ -113,28 +113,84 @@ struct ListRows: View {
     @ViewBuilder
     private func rows(for entries: [MediaSnapshot], hasHeader: Bool) -> some View {
         ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-            MovieListRow(
-                movie: movie(entry),
-                subtitle: subtitle(entry),
-                showsSubtitle: !isViewed,
-                duration: duration(entry),
-                rating: rating(entry),
-                ratingTint: listColor,
-                status: status(entry),
-                lists: lists,
-                leadingActions: { leadingAction(entry) },
-                trailingActions: {
-                    Button(role: .destructive) {
-                        delete(entry)
-                    } label: {
-                        Image(systemName: "trash")
-                            .tint(.red)
+            let firstEdge: Visibility = (!hasHeader && index == 0) ? .hidden : .automatic
+            let lastEdge: Visibility = index == entries.count - 1 ? .hidden : .automatic
+            Group {
+                if entry.mediaType == .tv {
+                    if isWatched {
+                        watchedSeasonRow(entry)       // a completed season in the Watched list
+                    } else if entry.seasonNumber != nil {
+                        trackedSeasonRow(entry)       // a Watch List / custom-list show, shown as its next season
+                    } else {
+                        showRow(entry)                // an untracked show (e.g. fully watched on a custom list)
                     }
+                } else {
+                    movieRow(entry)
                 }
-            )
-            .listRowSeparator(index == entries.count - 1 ? .hidden : .automatic, edges: .bottom)
+            }
+            .listRowSeparator(lastEdge, edges: .bottom)
             // Hide the first row's top separator when it has no header above it.
-            .listRowSeparator(!hasHeader && index == 0 ? .hidden : .automatic, edges: .top)
+            .listRowSeparator(firstEdge, edges: .top)
+        }
+    }
+
+    private func movieRow(_ entry: MediaSnapshot) -> some View {
+        MovieListRow(
+            movie: movie(entry),
+            subtitle: subtitle(entry),
+            showsSubtitle: !isViewed,
+            duration: duration(entry),
+            rating: rating(entry),
+            ratingTint: listColor,
+            status: status(entry),
+            lists: lists,
+            leadingActions: { leadingAction(entry) },
+            trailingActions: { deleteButton(entry) }
+        )
+    }
+
+    private func showRow(_ entry: MediaSnapshot) -> some View {
+        DetailLink(value: show(entry)) {
+            ShowRow(show: show(entry), showsSeasonCount: false)
+        }
+        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            if isWatched {
+                WatchListSwipeButton(key: key(entry))
+            } else {
+                WatchedSwipeButton(key: key(entry))
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
+    }
+
+    /// A completed season in the Watched list: tapping opens the show on that season, a
+    /// trailing swipe un-watches the whole season.
+    private func watchedSeasonRow(_ entry: MediaSnapshot) -> some View {
+        DetailLink(value: show(entry, openingSeason: entry.seasonNumber)) {
+            SeasonRowContent(entry: entry)
+        }
+        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
+    }
+
+    /// A Watch List / custom-list show, represented by its next-incomplete season: same look
+    /// as a Watched row (poster, "Season N • x of y", partial badge), tapping opens the show
+    /// on that season, a trailing swipe removes it from the list.
+    private func trackedSeasonRow(_ entry: MediaSnapshot) -> some View {
+        DetailLink(value: show(entry, openingSeason: entry.seasonNumber)) {
+            SeasonRowContent(entry: entry)
+        }
+        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
+    }
+
+    private func deleteButton(_ entry: MediaSnapshot) -> some View {
+        Button(role: .destructive) {
+            delete(entry)
+        } label: {
+            Image(systemName: "trash")
+                .tint(.red)
         }
     }
 
@@ -164,7 +220,7 @@ struct ListRows: View {
     }
 
     private func duration(_ entry: MediaSnapshot) -> String? {
-        guard isWatchList, let runtime = entry.runtime else { return nil }
+        guard isWatchList, let runtime = entry.runtime, runtime > 0 else { return nil }
         return "\(runtime / 60) hr \(runtime % 60) min"
     }
 
@@ -176,12 +232,79 @@ struct ListRows: View {
         return movie
     }
 
+    private func show(_ entry: MediaSnapshot, openingSeason: Int? = nil) -> Show {
+        var show = Show(id: entry.tmdbID, name: entry.title)
+        show.poster = entry.posterPath
+        show.firstAirDate = entry.releaseDate
+        show.initialSeason = openingSeason
+        return show
+    }
+
+    private func key(_ entry: MediaSnapshot) -> MediaKey {
+        MediaKey(tmdbID: entry.tmdbID, mediaType: entry.mediaType, title: entry.title,
+                 posterPath: entry.posterPath, releaseDate: entry.releaseDate,
+                 runtime: entry.runtime, sortDate: entry.sortDate)
+    }
+
     private func delete(_ entry: MediaSnapshot) {
         switch selection {
+        case .watched:
+            // A watched-season row clears that whole season; a movie clears its watched fact.
+            if let season = entry.seasonNumber {
+                store?.unwatchSeason(showID: entry.tmdbID, seasonNumber: season)
+            } else {
+                store?.unwatch(entry.persistentID)
+            }
         case .list: store?.deleteEntry(entry.persistentID)
-        case .watched: store?.unwatch(entry.persistentID)
         case .viewed: store?.removeFromViewed(entry.persistentID)
         }
+    }
+}
+
+/// The poster + "Season N • x of y Episodes" body shared by the Watched-list season rows
+/// and the membership (Watch List / custom) tracked-season rows. Partial seasons get the
+/// half-filled corner badge over the app's standard poster gradient.
+private struct SeasonRowContent: View {
+    let entry: MediaSnapshot
+
+    var body: some View {
+        HStack(spacing: 12) {
+            PosterImage(url: TMDBWrapper.imageURL(path: entry.posterPath,
+                                                  size: Movie.PosterSize.w185.rawValue))
+                .frame(width: 51, height: 76)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay {
+                    if isPartial {
+                        PosterSymbolBadge(symbol: "circle.tophalf.filled",
+                                          cornerRadius: 6, pointSize: 15, padding: 5)
+                    }
+                }
+                .padding(.vertical, 3)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.title)
+                    .font(.body)
+                    .lineLimit(2)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+    }
+
+    private var subtitle: String {
+        guard let season = entry.seasonNumber else { return "" }
+        guard let watched = entry.seasonWatched, let total = entry.seasonTotal, total > 0 else {
+            return "Season \(season)"
+        }
+        let remaining = total - watched
+        guard remaining > 0 else { return "Season \(season)" }
+        return "Season \(season)  •  \(remaining) ep. left"
+    }
+
+    private var isPartial: Bool {
+        guard let watched = entry.seasonWatched, let total = entry.seasonTotal, total > 0 else { return false }
+        return watched < total
     }
 }
 
@@ -198,9 +321,10 @@ struct ListRows: View {
     func snap(_ id: Int, _ title: String) -> MediaSnapshot {
         let entry = ListEntry(movie: Movie(id: id, title: title))
         context.insert(entry)
-        return MediaSnapshot(persistentID: entry.persistentModelID, tmdbID: id, title: title,
-                             posterPath: nil, releaseDate: nil, runtime: 120,
-                             dateWatched: nil, userRating: nil)
+        return MediaSnapshot(persistentID: entry.persistentModelID, tmdbID: id, mediaType: .movie,
+                             title: title, posterPath: nil, releaseDate: nil, sortDate: nil,
+                             seasonNumber: nil, seasonWatched: nil, seasonTotal: nil,
+                             runtime: 120, dateWatched: nil, userRating: nil)
     }
     let sections = [
         SectionSnapshot(id: DateComponents(year: 2026, month: 8), title: "August 2026",

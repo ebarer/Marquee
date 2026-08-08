@@ -91,6 +91,23 @@ struct PosterStatusBadge: View {
     var scale: CGFloat = 1
 
     var body: some View {
+        PosterSymbolBadge(symbol: status.symbol, cornerRadius: cornerRadius,
+                          pointSize: status.pointSize * scale, padding: 7 * scale,
+                          verticalNudge: status.verticalNudge * scale)
+    }
+}
+
+/// A dark top-trailing corner gradient behind an SF Symbol, so any symbol laid over
+/// poster art stays legible. Shared by the browse status badges and the Watched-list
+/// partial-season mark.
+struct PosterSymbolBadge: View {
+    let symbol: String
+    var cornerRadius: CGFloat = 8
+    var pointSize: CGFloat = 18
+    var padding: CGFloat = 7
+    var verticalNudge: CGFloat = 0
+
+    var body: some View {
         GeometryReader { geo in
             RadialGradient(
                 gradient: Gradient(colors: [.black.opacity(0.55), .clear]),
@@ -101,12 +118,12 @@ struct PosterStatusBadge: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .overlay(alignment: .topTrailing) {
-            Image(systemName: status.symbol)
-                .font(.system(size: status.pointSize * scale, weight: .semibold))
+            Image(systemName: symbol)
+                .font(.system(size: pointSize, weight: .semibold))
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
-                .padding(7 * scale)
-                .offset(y: status.verticalNudge * scale)
+                .padding(padding)
+                .offset(y: verticalNudge)
         }
         .allowsHitTesting(false)
     }
@@ -122,6 +139,30 @@ struct PosterStatusBadge: View {
         }
     }
     .frame(width: 260)
+    .padding()
+    .background(Color.appBackground)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Incomplete") {
+    HStack(spacing: 16) {
+        // Solid fills stand in for poster art so the corner gradient behind the
+        // symbol is obvious even without a network image.
+        Rectangle().fill(.orange)
+            .frame(width: 51, height: 76)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay {
+                PosterSymbolBadge(symbol: "circle.tophalf.filled",
+                                  cornerRadius: 6, pointSize: 15, padding: 5)
+            }
+        Rectangle().fill(.white)
+            .frame(width: 51, height: 76)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay {
+                PosterSymbolBadge(symbol: "circle.tophalf.filled",
+                                  cornerRadius: 6, pointSize: 15, padding: 5)
+            }
+    }
     .padding()
     .background(Color.appBackground)
     .preferredColorScheme(.dark)

@@ -6,9 +6,10 @@
 import SwiftUI
 import SwiftData
 
-/// The person's credits grouped into per-year sections, with upcoming work in a collapsible section.
+/// The person's movie + TV credits grouped into per-year sections, with upcoming work
+/// in a collapsible section.
 struct PersonFilmography: View {
-    let credits: [Movie]
+    let credits: [MediaRef]
     let lists: [MediaList]
     @Binding var hideExtraneous: Bool
     var navBarBottom: CGFloat = 0
@@ -25,7 +26,7 @@ struct PersonFilmography: View {
                 }
                 ForEach(releasedByYear, id: \.year) { group in
                     Section {
-                        rows(group.movies)
+                        rows(group.credits)
                     } header: {
                         SectionHeader(title: String(group.year), color: .appAccent)
                             .background(Color.appBackground)
@@ -36,10 +37,10 @@ struct PersonFilmography: View {
     }
 
     @ViewBuilder
-    private func rows(_ movies: [Movie]) -> some View {
-        ForEach(Array(movies.enumerated()), id: \.element.id) { index, movie in
-            row(movie)
-            if index < movies.count - 1 {
+    private func rows(_ items: [MediaRef]) -> some View {
+        ForEach(Array(items.enumerated()), id: \.element.id) { index, ref in
+            row(ref)
+            if index < items.count - 1 {
                 Rectangle()
                     .fill(Color.appSeparator)
                     .frame(height: 0.5)
@@ -48,13 +49,19 @@ struct PersonFilmography: View {
         }
     }
 
-    private func row(_ movie: Movie) -> some View {
+    @ViewBuilder
+    private func row(_ ref: MediaRef) -> some View {
+        switch ref {
+        case .movie(let movie): movieRow(movie)
+        case .show(let show): showRow(show)
+        }
+    }
+
+    private func movieRow(_ movie: Movie) -> some View {
         NavigationLink(value: movie) {
             HStack(spacing: 8) {
                 MovieRow(movie: movie, role: movie.creditRole, derivesStatus: true)
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                chevron
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
@@ -70,9 +77,28 @@ struct PersonFilmography: View {
         .movieContextMenu(for: movie, lists: lists)
     }
 
+    private func showRow(_ show: Show) -> some View {
+        NavigationLink(value: show) {
+            HStack(spacing: 8) {
+                ShowRow(show: show, role: show.creditRole, showsSeasonCount: false)
+                chevron
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var chevron: some View {
+        Image(systemName: "chevron.right")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.tertiary)
+    }
+
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text("Filmography")
+            Text("Credits")
                 .font(.headline)
                 .foregroundStyle(.white)
             Spacer(minLength: 8)
@@ -123,7 +149,7 @@ struct PersonFilmography: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Upcoming, \(upcomingCredits.count) movies")
+        .accessibilityLabel("Upcoming, \(upcomingCredits.count) titles")
         .accessibilityHint(upcomingExpanded ? "Collapses the section" : "Expands the section")
 
         if upcomingExpanded {
@@ -135,32 +161,28 @@ struct PersonFilmography: View {
         credits.contains { $0.isExtraneousCredit }
     }
 
-    private var visibleCredits: [Movie] {
+    private var visibleCredits: [MediaRef] {
         hideExtraneous ? credits.filter { !$0.isExtraneousCredit } : credits
     }
 
-    /// Credits with a release date still in the future. Undated credits are omitted
-    /// from the filmography entirely.
-    private var upcomingCredits: [Movie] {
+    /// Credits with a date still in the future. Undated credits are omitted entirely.
+    private var upcomingCredits: [MediaRef] {
         let now = Date()
-        return visibleCredits.filter { movie in
-            guard let date = movie.releaseDate else { return false }
-            return date > now
-        }
+        return visibleCredits.filter { ($0.date.map { $0 > now }) ?? false }
     }
 
     /// Released credits grouped into descending per-year sections. Credits arrive
     /// sorted newest-first, so grouping in order preserves that ordering.
-    private var releasedByYear: [(year: Int, movies: [Movie])] {
+    private var releasedByYear: [(year: Int, credits: [MediaRef])] {
         let now = Date()
-        var groups: [(year: Int, movies: [Movie])] = []
-        for movie in visibleCredits {
-            guard let date = movie.releaseDate, date <= now else { continue }
+        var groups: [(year: Int, credits: [MediaRef])] = []
+        for ref in visibleCredits {
+            guard let date = ref.date, date <= now else { continue }
             let year = Calendar.current.component(.year, from: date)
             if let index = groups.indices.last, groups[index].year == year {
-                groups[index].movies.append(movie)
+                groups[index].credits.append(ref)
             } else {
-                groups.append((year: year, movies: [movie]))
+                groups.append((year: year, credits: [ref]))
             }
         }
         return groups
@@ -171,7 +193,7 @@ struct PersonFilmography: View {
     NavigationStack {
         ScrollView {
             LazyVStack(spacing: 0) {
-                PersonFilmography(credits: Person.preview.credits ?? [], lists: [],
+                PersonFilmography(credits: Person.preview.allCredits, lists: [],
                                   hideExtraneous: .constant(true))
             }
         }

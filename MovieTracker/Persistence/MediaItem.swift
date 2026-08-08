@@ -14,6 +14,9 @@ final class MediaItem {
     var title: String = ""
     var posterPath: String?
     var releaseDate: Date?
+    /// Timeline anchor for list sorting; nil means "use releaseDate" (all movies, and
+    /// shows whose most-recent air date isn't known yet). Additive/optional for CloudKit.
+    var sortDate: Date?
     var runtime: Int?
     var userRating: Double?
     /// Stored as a canonical UTC-midnight day (see `floatingDay`).
@@ -28,8 +31,12 @@ final class MediaItem {
     }
 
     convenience init(movie: Movie) {
-        self.init(tmdbID: movie.id, title: movie.title)
-        refreshSnapshot(from: movie)
+        self.init(key: movie.mediaKey)
+    }
+
+    convenience init(key: MediaKey) {
+        self.init(tmdbID: key.tmdbID, mediaType: key.mediaType, title: key.title)
+        refreshSnapshot(from: key)
     }
 
     var mediaType: MediaType { MediaType(rawValue: mediaTypeRaw) ?? .movie }
@@ -40,10 +47,16 @@ final class MediaItem {
     }
 
     func refreshSnapshot(from movie: Movie) {
-        title = movie.title
-        posterPath = movie.poster
-        releaseDate = movie.releaseDate
-        runtime = movie.runtime
+        refreshSnapshot(from: movie.mediaKey)
+    }
+
+    func refreshSnapshot(from key: MediaKey) {
+        title = key.title
+        posterPath = key.posterPath
+        releaseDate = key.releaseDate
+        runtime = key.runtime
+        // Don't clobber a known timeline date with nil (search-sourced keys lack it).
+        if let sortDate = key.sortDate { self.sortDate = sortDate }
     }
 
     func pruneIfEmpty() {
@@ -64,63 +77,90 @@ extension MediaItem {
         return (try? context.fetch(descriptor))?.first
     }
 
+    static func find(key: MediaKey, in context: ModelContext) -> MediaItem? {
+        find(tmdbID: key.tmdbID, mediaType: key.mediaType, in: context)
+    }
+
     static func find(_ movie: Movie, in context: ModelContext) -> MediaItem? {
-        find(tmdbID: movie.id, in: context)
+        find(key: movie.mediaKey, in: context)
+    }
+
+    @discardableResult
+    static func upsert(key: MediaKey, in context: ModelContext) -> MediaItem {
+        if let existing = find(key: key, in: context) {
+            existing.refreshSnapshot(from: key)
+            return existing
+        }
+        let item = MediaItem(key: key)
+        context.insert(item)
+        return item
     }
 
     @discardableResult
     static func upsert(_ movie: Movie, in context: ModelContext) -> MediaItem {
-        if let existing = find(movie, in: context) {
-            existing.refreshSnapshot(from: movie)
-            return existing
-        }
-        let item = MediaItem(movie: movie)
-        context.insert(item)
-        return item
+        upsert(key: movie.mediaKey, in: context)
     }
 }
 
-// MARK: - Facts (movie-keyed conveniences)
+// MARK: - Facts (key-keyed core, with Movie conveniences)
 
 extension MediaItem {
+    static func rating(for key: MediaKey, in context: ModelContext) -> Double? {
+        find(key: key, in: context)?.userRating
+    }
     static func rating(for movie: Movie, in context: ModelContext) -> Double? {
-        find(movie, in: context)?.userRating
+        rating(for: movie.mediaKey, in: context)
     }
 
-    static func setRating(_ stars: Double?, for movie: Movie, in context: ModelContext) {
+    static func setRating(_ stars: Double?, for key: MediaKey, in context: ModelContext) {
         let snapped = stars.flatMap { $0 > 0 ? ($0 * 2).rounded() / 2 : nil }
-        if snapped == nil, find(movie, in: context) == nil { return }
-        let item = upsert(movie, in: context)
+        if snapped == nil, find(key: key, in: context) == nil { return }
+        let item = upsert(key: key, in: context)
         item.userRating = snapped
         item.pruneIfEmpty()
     }
+    static func setRating(_ stars: Double?, for movie: Movie, in context: ModelContext) {
+        setRating(stars, for: movie.mediaKey, in: context)
+    }
 
+    static func isWatched(key: MediaKey, in context: ModelContext) -> Bool {
+        find(key: key, in: context)?.isWatched ?? false
+    }
     static func isWatched(_ movie: Movie, in context: ModelContext) -> Bool {
-        find(movie, in: context)?.isWatched ?? false
+        isWatched(key: movie.mediaKey, in: context)
     }
 
+    static func dateWatched(for key: MediaKey, in context: ModelContext) -> Date? {
+        find(key: key, in: context)?.watchedAt
+    }
     static func dateWatched(for movie: Movie, in context: ModelContext) -> Date? {
-        find(movie, in: context)?.watchedAt
+        dateWatched(for: movie.mediaKey, in: context)
     }
 
+    static func setDateWatched(_ date: Date?, for key: MediaKey, in context: ModelContext) {
+        find(key: key, in: context)?.watchedAt = date
+    }
     static func setDateWatched(_ date: Date?, for movie: Movie, in context: ModelContext) {
-        find(movie, in: context)?.watchedAt = date
+        setDateWatched(date, for: movie.mediaKey, in: context)
     }
 
     /// Marking watched removes it from the Watch List — the two are mutually exclusive.
-    static func setWatched(_ watched: Bool, for movie: Movie, in context: ModelContext) {
+    static func setWatched(_ watched: Bool, for key: MediaKey, in context: ModelContext) {
         if watched {
-            let item = upsert(movie, in: context)
+            let item = upsert(key: key, in: context)
             item.watchedAt = floatingDay(from: Date())
-            MediaList.watchList(in: context)?.remove(movie)
-        } else if let item = find(movie, in: context) {
+            MediaList.watchList(in: context)?.remove(key: key)
+        } else if let item = find(key: key, in: context) {
             item.watchedAt = nil
             item.pruneIfEmpty()
         }
     }
+    static func setWatched(_ watched: Bool, for movie: Movie, in context: ModelContext) {
+        setWatched(watched, for: movie.mediaKey, in: context)
+    }
 
-    static func recordView(_ movie: Movie, in context: ModelContext, keeping limit: Int = 20) {
-        upsert(movie, in: context).lastViewedAt = Date()
+    static func recordView(key: MediaKey, in context: ModelContext, keeping limit: Int = 20) {
+        upsert(key: key, in: context).lastViewedAt = Date()
 
         let descriptor = FetchDescriptor<MediaItem>(
             predicate: #Predicate { $0.lastViewedAt != nil },
@@ -131,6 +171,9 @@ extension MediaItem {
             stale.lastViewedAt = nil
             stale.pruneIfEmpty()
         }
+    }
+    static func recordView(_ movie: Movie, in context: ModelContext, keeping limit: Int = 20) {
+        recordView(key: movie.mediaKey, in: context, keeping: limit)
     }
 }
 
@@ -169,6 +212,7 @@ extension MediaItem {
                 keep.userRating = keep.userRating ?? drop.userRating
                 keep.watchedAt = keep.watchedAt ?? drop.watchedAt
                 keep.lastViewedAt = keep.lastViewedAt ?? drop.lastViewedAt
+                keep.sortDate = keep.sortDate ?? drop.sortDate
                 context.delete(drop)
             }
             changed = true

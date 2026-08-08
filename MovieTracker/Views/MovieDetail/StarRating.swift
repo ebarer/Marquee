@@ -9,7 +9,7 @@ import SwiftData
 /// Five stars bound to a title's personal rating. Tap for whole stars, sweep for
 /// half-star precision; tapping the current rating clears it.
 struct StarRating: View {
-    let movie: Movie
+    let key: MediaKey
     let tint: Color
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -21,10 +21,14 @@ struct StarRating: View {
     private let starSize: CGFloat = 20
     private let spacing: CGFloat = 3
 
-    init(movie: Movie, rating: Double, tint: Color) {
-        self.movie = movie
+    init(key: MediaKey, rating: Double, tint: Color) {
+        self.key = key
         self.tint = tint
         _rating = State(initialValue: rating)
+    }
+
+    init(movie: Movie, rating: Double, tint: Color) {
+        self.init(key: movie.mediaKey, rating: rating, tint: tint)
     }
 
     var body: some View {
@@ -49,7 +53,7 @@ struct StarRating: View {
                     } else {
                         rating = halfStars(at: value.location.x)
                     }
-                    store?.setRating(rating == 0 ? nil : rating, for: movie)
+                    store?.setRating(rating == 0 ? nil : rating, forKey: key)
                     dragStartRating = nil
                 }
         )

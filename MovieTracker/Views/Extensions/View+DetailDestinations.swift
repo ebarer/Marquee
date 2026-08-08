@@ -11,6 +11,12 @@ extension View {
             .navigationDestination(for: Movie.self) { movie in
                 MovieDetailView(movie: movie).modalDismissable()
             }
+            .navigationDestination(for: Show.self) { show in
+                ShowDetailView(show: show).modalDismissable()
+            }
+            .navigationDestination(for: Episode.self) { episode in
+                EpisodeDetailView(episode: episode).modalDismissable()
+            }
             .navigationDestination(for: Person.self) { person in
                 PersonDetailView(person: person).modalDismissable()
             }

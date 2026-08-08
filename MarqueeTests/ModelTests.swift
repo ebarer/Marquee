@@ -23,6 +23,8 @@ import Foundation
         #expect(m.duration == "2 hr 5 min")
         m.runtime = 45
         #expect(m.duration == "0 hr 45 min")
+        m.runtime = 0                       // unknown (e.g. unreleased) — not "0 hr 0 min"
+        #expect(m.duration == nil)
     }
 
     @Test func genresStringShortensAndJoins() {

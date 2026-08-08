@@ -84,7 +84,8 @@ struct ListTitleLabel: View {
                     .foregroundStyle(color)
                 chevron
             }
-            Text("^[\(count) Movie](inflect: true)")
+            // Neutral "Title" since lists now mix movies, shows, and seasons.
+            Text("^[\(count) Title](inflect: true)")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }

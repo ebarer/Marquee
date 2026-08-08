@@ -20,6 +20,7 @@ func makeInMemoryStore() -> PersistenceCoordinator {
     let config = ModelConfiguration(url: url)
     let container = try! ModelContainer(
         for: MediaItem.self, MediaList.self, ListEntry.self,
+        WatchedEpisode.self, WatchedSeason.self, TrackedSeason.self,
         configurations: config)
     return PersistenceCoordinator(ModelContext(container))
 }

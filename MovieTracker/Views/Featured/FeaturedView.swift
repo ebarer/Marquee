@@ -29,14 +29,26 @@ struct FeaturedGridView: View {
     var body: some View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: isRegularWidth ? 24 : 16) {
-                ForEach(model.movies, id: \.id) { movie in
-                    DetailLink(value: movie) {
-                        MoviePosterCard(movie: movie)
+                if collection.isShow {
+                    ForEach(model.shows, id: \.id) { show in
+                        DetailLink(value: show) {
+                            ShowPosterCard(show: show)
+                        }
+                        .buttonStyle(.plain)
+                        .task {
+                            await model.loadMoreIfNeeded(currentShow: show)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .movieContextMenu(for: movie, lists: lists)
-                    .task {
-                        await model.loadMoreIfNeeded(currentItem: movie)
+                } else {
+                    ForEach(model.movies, id: \.id) { movie in
+                        DetailLink(value: movie) {
+                            MoviePosterCard(movie: movie)
+                        }
+                        .buttonStyle(.plain)
+                        .movieContextMenu(for: movie, lists: lists)
+                        .task {
+                            await model.loadMoreIfNeeded(currentItem: movie)
+                        }
                     }
                 }
             }
@@ -45,7 +57,7 @@ struct FeaturedGridView: View {
         .navigationTitle(collection.title)
         .navigationBarTitleDisplayMode(.inline)
         .overlay {
-            if model.isLoading && model.movies.isEmpty {
+            if model.isLoading && (collection.isShow ? model.shows.isEmpty : model.movies.isEmpty) {
                 ProgressView()
             }
         }

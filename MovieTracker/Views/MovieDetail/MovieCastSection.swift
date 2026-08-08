@@ -9,6 +9,11 @@ import SwiftUI
 struct MovieCastSection: View {
     let cast: [Person]
     var tint: Color = .appAccent
+    /// The crew role surfaced above the cast/crew tabs (Director for films,
+    /// Creator for shows), matched exactly against a person's joined roles.
+    var leadRole: String = "Director"
+    var leadTitleSingular: String = "Director"
+    var leadTitlePlural: String = "Directors"
 
     @State private var selection: Category?
     @State private var castExpanded = false
@@ -27,19 +32,18 @@ struct MovieCastSection: View {
 
     private var castMembers: [Person] { cast.filter { $0.type == .Cast } }
 
-    /// Crew whose joined roles include an exact "Director" credit (so "Art
-    /// Director" or "Director of Photography" don't match). Shown above, not in the
-    /// crew list.
+    /// Crew whose joined roles include an exact lead credit (so "Art Director" or
+    /// "Director of Photography" don't match "Director"). Shown above the crew list.
     private var directors: [Person] {
-        cast.filter { $0.type == .Crew && isDirector($0) }
+        cast.filter { $0.type == .Crew && isLead($0) }
     }
 
     private var crewMembers: [Person] {
-        cast.filter { $0.type == .Crew && !isDirector($0) }
+        cast.filter { $0.type == .Crew && !isLead($0) }
     }
 
-    private func isDirector(_ person: Person) -> Bool {
-        (person.role ?? "").components(separatedBy: ", ").contains("Director")
+    private func isLead(_ person: Person) -> Bool {
+        (person.role ?? "").components(separatedBy: ", ").contains(leadRole)
     }
 
     private func members(for category: Category) -> [Person] {
@@ -62,7 +66,7 @@ struct MovieCastSection: View {
         if !directors.isEmpty || currentCategory != nil {
             VStack(spacing: 0) {
                 if !directors.isEmpty {
-                    SectionHeader(title: directors.count > 1 ? "Directors" : "Director")
+                    SectionHeader(title: directors.count > 1 ? leadTitlePlural : leadTitleSingular)
                     personList(directors)
                 }
                 if let category = currentCategory {

@@ -9,14 +9,18 @@ import SwiftData
 // MARK: - Swipe buttons
 
 struct WatchedSwipeButton: View {
-    let movie: Movie
+    let key: MediaKey
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
-    private var isWatched: Bool { store?.isWatched(movie) ?? false }
+    init(key: MediaKey) { self.key = key }
+    init(movie: Movie) { self.key = movie.mediaKey }
+    init(show: Show) { self.key = show.mediaKey }
+
+    private var isWatched: Bool { store?.isWatched(key: key) ?? false }
 
     var body: some View {
         Button {
-            store?.setWatched(!isWatched, for: movie)
+            store?.setWatched(!isWatched, forKey: key)
         } label: {
             if isWatched {
                 Image("checkmark.slashed")
@@ -29,12 +33,16 @@ struct WatchedSwipeButton: View {
 }
 
 struct WatchListSwipeButton: View {
-    let movie: Movie
+    let key: MediaKey
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+
+    init(key: MediaKey) { self.key = key }
+    init(movie: Movie) { self.key = movie.mediaKey }
+    init(show: Show) { self.key = show.mediaKey }
 
     var body: some View {
         Button {
-            store?.addToWatchList(movie)
+            store?.addToWatchList(forKey: key)
         } label: {
             Image(systemName: "bookmark")
         }

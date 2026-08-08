@@ -12,6 +12,13 @@ extension Date {
     func toString() -> String {
         return DateFormatter.detailPresentation.string(from: self)
     }
+
+    /// Calendar year in UTC, matching the ISO-8601 formatters used across the app.
+    var year: Int {
+        var calendar = Calendar(identifier: .iso8601)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar.component(.year, from: self)
+    }
 }
 
 extension DateFormatter {

@@ -8,7 +8,7 @@ import SwiftData
 
 /// The date the user watched a title, tappable to open a graphical date picker.
 struct WatchedDateButton: View {
-    let movie: Movie
+    let key: MediaKey
     let tint: Color
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -16,12 +16,16 @@ struct WatchedDateButton: View {
     @State private var showPicker = false
 
     /// `watchedDate` is the stored canonical UTC-midnight value (nil if unset).
-    init(movie: Movie, watchedDate: Date?, tint: Color) {
-        self.movie = movie
+    init(key: MediaKey, watchedDate: Date?, tint: Color) {
+        self.key = key
         self.tint = tint
         // Map the stored UTC-midnight day back to the same local day.
         _date = State(initialValue: watchedDate.map(MediaItem.localDay)
                       ?? Calendar.current.startOfDay(for: Date()))
+    }
+
+    init(movie: Movie, watchedDate: Date?, tint: Color) {
+        self.init(key: movie.mediaKey, watchedDate: watchedDate, tint: tint)
     }
 
     var body: some View {
@@ -51,7 +55,7 @@ struct WatchedDateButton: View {
                         }
                         ToolbarItemGroup(placement: .topBarLeading) {
                             Button("Today") { date = Date() }
-                            if let releaseDate = movie.releaseDate, releaseDate <= Date() {
+                            if let releaseDate = key.releaseDate, releaseDate <= Date() {
                                 Button("Release Date") {
                                     date = MediaItem.localDay(from: releaseDate)
                                 }
@@ -59,7 +63,7 @@ struct WatchedDateButton: View {
                         }
                     }
                     .onChange(of: date) { _, newValue in
-                        store?.setDateWatched(MediaItem.floatingDay(from: newValue), for: movie)
+                        store?.setDateWatched(MediaItem.floatingDay(from: newValue), forKey: key)
                     }
             }
             .presentationDetents([.medium])

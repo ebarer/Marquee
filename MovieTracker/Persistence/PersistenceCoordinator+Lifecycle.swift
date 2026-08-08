@@ -12,10 +12,13 @@ extension PersistenceCoordinator {
 
     func seedWatchList() { _ = watchList; save() }
 
-    /// Converges duplicate Watch Lists and MediaItems a CloudKit import produced.
+    /// Converges duplicate Watch Lists, MediaItems, and TV-progress records a CloudKit import produced.
     func deduplicate() {
         MediaList.deduplicateWatchList(in: context)
         MediaItem.deduplicate(in: context)
+        WatchedEpisode.deduplicate(in: context)
+        WatchedSeason.deduplicate(in: context)
+        TrackedSeason.deduplicate(in: context)
         save()
     }
 
@@ -45,6 +48,8 @@ extension PersistenceCoordinator {
         Task.detached(priority: .utility) {
             await MediaCachePrefetcher.prefetch(ids: ids)
         }
+        // Poll in-progress shows for newly-aired seasons (reconciles on the main actor).
+        Task { await self.refreshWatchedShows() }
 
         await observeRemoteChanges {
             SyncLog.logger.log("🔁 remote change settled — reconciling")

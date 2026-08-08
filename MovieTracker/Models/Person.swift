@@ -22,6 +22,7 @@ struct Person: Hashable, Identifiable, Codable {
     var imdbID: String?
     var bio: String?
     var credits: [Movie]?
+    var tvCredits: [Show]?
 
     enum PersonType: Codable {
         case Cast
@@ -55,6 +56,19 @@ struct Person: Hashable, Identifiable, Codable {
                 }
                 return ($0.popularity ?? 0) > ($1.popularity ?? 0)
             }
+    }
+
+    /// Movie and TV credits interlaced, newest first (undated last) — the "Credits" list.
+    var allCredits: [MediaRef] {
+        let refs = (credits ?? []).map(MediaRef.movie) + (tvCredits ?? []).map(MediaRef.show)
+        return refs.sorted {
+            switch ($0.date, $1.date) {
+            case let (a?, b?): return a > b
+            case (nil, _?): return false
+            case (_?, nil): return true
+            case (nil, nil): return false
+            }
+        }
     }
 }
 

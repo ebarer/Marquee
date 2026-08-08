@@ -65,4 +65,50 @@ import Foundation
         await model.loadMoreIfNeeded(currentItem: model.movies.last!)
         #expect(URLProtocolStub.requestedURLs.count == count)  // no further fetch
     }
+
+    // MARK: - TV shelves
+
+    /// Same paging shape as the movie stub, but with `name` so `ShowRaw` decodes.
+    private func installShowStub() {
+        URLProtocolStub.install { request in
+            let page = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
+                .queryItems?.first { $0.name == "page" }?.value ?? "1"
+            let ids = page == "2" ? [2, 3] : [1, 2]
+            let items = ids.map { #"{"id":\#($0),"name":"S\#($0)"}"# }.joined(separator: ",")
+            return (Data(#"{"results":[\#(items)],"total_results":3,"total_pages":2}"#.utf8), 200)
+        }
+    }
+
+    @Test func showShelfLoadsShows() async {
+        installShowStub(); defer { URLProtocolStub.remove() }
+        let model = FeaturedModel()
+        await model.load(.showsPopular)
+        #expect(model.shows.map(\.id) == [1, 2])
+        #expect(model.movies.isEmpty)
+    }
+
+    @Test func showShelfPaginationAppendsAndDedupes() async {
+        installShowStub(); defer { URLProtocolStub.remove() }
+        let model = FeaturedModel()
+        await model.load(.showsAiringToday)
+        await model.loadMoreIfNeeded(currentShow: model.shows.last!)
+        #expect(model.shows.map(\.id) == [1, 2, 3])  // id 2 not duplicated
+    }
+
+    @Test func switchingFromMovieToShowCollectionResets() async {
+        URLProtocolStub.install { request in
+            let page = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
+                .queryItems?.first { $0.name == "page" }?.value ?? "1"
+            let ids = page == "2" ? [2, 3] : [1, 2]
+            let items = ids.map { #"{"id":\#($0),"title":"M\#($0)","name":"S\#($0)"}"# }.joined(separator: ",")
+            return (Data(#"{"results":[\#(items)],"total_results":3,"total_pages":2}"#.utf8), 200)
+        }
+        defer { URLProtocolStub.remove() }
+        let model = FeaturedModel()
+        await model.load(.popular)
+        #expect(model.movies.map(\.id) == [1, 2])
+        await model.load(.showsPopular)
+        #expect(model.shows.map(\.id) == [1, 2])
+        #expect(model.movies.isEmpty)   // movie shelf cleared on switch
+    }
 }

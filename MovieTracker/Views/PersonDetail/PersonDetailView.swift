@@ -28,7 +28,7 @@ struct PersonDetailView: View {
 
     private var current: Person { model.person ?? person }
     private var hasExtraneousCredits: Bool {
-        (current.credits ?? []).contains { $0.isExtraneousCredit }
+        current.allCredits.contains { $0.isExtraneousCredit }
     }
 
     var body: some View {
@@ -55,7 +55,7 @@ struct PersonDetailView: View {
 
                     knownForSection
 
-                    PersonFilmography(credits: current.credits ?? [], lists: lists,
+                    PersonFilmography(credits: current.allCredits, lists: lists,
                                       hideExtraneous: $hideExtraneous,
                                       navBarBottom: navBarBottom,
                                       onFilterHiddenChange: { hidden in

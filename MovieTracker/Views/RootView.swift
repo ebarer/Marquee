@@ -12,6 +12,7 @@ struct RootView: View {
         do {
             return try ModelContainer(
                 for: MediaItem.self, MediaList.self, ListEntry.self,
+                WatchedEpisode.self, WatchedSeason.self, TrackedSeason.self,
                 configurations: configuration)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
@@ -25,6 +26,7 @@ struct RootView: View {
     @State private var searchModel = SearchModel()
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
@@ -41,6 +43,10 @@ struct RootView: View {
         .environment(store)
         .task {
             await store.bootstrap()
+        }
+        // Re-poll in-progress shows for newly-aired seasons on each foreground (TTL-gated).
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await store.refreshWatchedShows() } }
         }
     }
 }

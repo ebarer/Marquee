@@ -8,7 +8,7 @@ import Foundation
 extension TMDBWrapper {
     static func getPerson(id: Int) async throws -> Person {
         let data = try await fetch("/person/\(id)",
-                                   queryItems: [URLQueryItem(name: "append_to_response", value: "movie_credits")])
+                                   queryItems: [URLQueryItem(name: "append_to_response", value: "movie_credits,tv_credits")])
         return translate(person: try decode(PersonRaw.self, from: data))
     }
 
@@ -32,6 +32,7 @@ extension TMDBWrapper {
         person.bio = p.biography
         person.imdbID = p.imdbID
         person.credits = p.credits()
+        person.tvCredits = p.tvCredits()
         return person
     }
 }

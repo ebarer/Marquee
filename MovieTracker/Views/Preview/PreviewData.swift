@@ -138,6 +138,7 @@ extension Person {
 let previewModelContainer: ModelContainer = {
     let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: MediaItem.self, MediaList.self, ListEntry.self,
+                                        WatchedEpisode.self, WatchedSeason.self, TrackedSeason.self,
                                         configurations: configuration)
     let context = container.mainContext
 

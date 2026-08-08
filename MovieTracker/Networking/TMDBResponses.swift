@@ -358,6 +358,7 @@ extension TMDBWrapper {
         var biography: String?
         var imdbID: String?
         var creditsRaw: CreditsRaw?
+        var tvCreditsRaw: TVCreditsRaw?
 
         func credits() -> [Movie] {
             guard let creditsRaw = self.creditsRaw else { return [] }
@@ -384,13 +385,65 @@ extension TMDBWrapper {
             }
         }
 
+        func tvCredits() -> [Show] {
+            guard let raw = tvCreditsRaw else { return [] }
+
+            var credits = [Show]()
+            for collection in [raw.cast, raw.crew] {
+                for item in collection {
+                    var credit = Show(id: item.id, name: item.name)
+                    credit.poster = item.poster
+                    credit.creditRole = item.role
+                    credit.popularity = item.popularity
+                    credit.voteCount = item.voteCount
+                    if let airDateString = item.firstAirDateString, !airDateString.isEmpty {
+                        credit.firstAirDate = airDateString.toDate(format: .iso8601DAw)
+                    }
+                    credits.append(credit)
+                }
+            }
+
+            return Set(credits).sorted {
+                guard let airA = $0.firstAirDate else { return false }
+                guard let airB = $1.firstAirDate else { return true }
+                return airA.compare(airB) == .orderedDescending
+            }
+        }
+
         enum CodingKeys: String, CodingKey {
             case id, name, popularity
             case birthday, biography
             case imdbID = "imdb_id"
             case creditsRaw = "movie_credits"
+            case tvCreditsRaw = "tv_credits"
             case profilePicture = "profile_path"
             case placeOfBirth = "place_of_birth"
+        }
+
+        struct TVCreditsRaw: Codable {
+            var cast: [TVCreditRaw]
+            var crew: [TVCreditRaw]
+
+            struct TVCreditRaw: Codable {
+                var id: Int
+                var name: String
+                var firstAirDateString: String?
+                var overview: String?
+                var poster: String?
+                var character: String?
+                var job: String?
+                var popularity: Double?
+                var voteCount: Int?
+
+                var role: String? { character ?? job }
+
+                enum CodingKeys: String, CodingKey {
+                    case id, name, overview, character, job, popularity
+                    case voteCount = "vote_count"
+                    case firstAirDateString = "first_air_date"
+                    case poster = "poster_path"
+                }
+            }
         }
 
         struct CreditsRaw: Codable {

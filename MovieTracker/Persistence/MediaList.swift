@@ -61,26 +61,31 @@ final class MediaList {
     }
 
     /// Adding to the Watch List un-marks Watched — the two are mutually exclusive.
-    func add(_ movie: Movie) {
+    func add(key: MediaKey) {
         guard let context = modelContext else { return }
-        if entry(for: movie.id) == nil {
-            let entry = ListEntry(movie: movie)
+        if entry(for: key.tmdbID, key.mediaType) == nil {
+            let entry = ListEntry(key: key)
             entry.list = self
             context.insert(entry)
         }
         if isWatchList {
-            MediaItem.setWatched(false, for: movie, in: context)
+            MediaItem.setWatched(false, for: key, in: context)
         }
     }
 
-    func remove(_ movie: Movie) {
-        guard let context = modelContext, let entry = entry(for: movie.id) else { return }
+    func remove(key: MediaKey) {
+        guard let context = modelContext,
+              let entry = entry(for: key.tmdbID, key.mediaType) else { return }
         context.delete(entry)
     }
 
-    func toggle(_ movie: Movie) {
-        contains(movie.id) ? remove(movie) : add(movie)
+    func toggle(key: MediaKey) {
+        contains(key.tmdbID, key.mediaType) ? remove(key: key) : add(key: key)
     }
+
+    func add(_ movie: Movie) { add(key: movie.mediaKey) }
+    func remove(_ movie: Movie) { remove(key: movie.mediaKey) }
+    func toggle(_ movie: Movie) { toggle(key: movie.mediaKey) }
 
     func dedupeEntries() {
         guard let context = modelContext else { return }

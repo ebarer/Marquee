@@ -3,10 +3,8 @@
 Important:
 - [ ] 
 
-Smaller/Cosmetic:
-- [ ] 
-
 Ideas:
+- [ ] Filter watch list by what's streamable
 - [ ] Share lists
 - [ ] Support landscape?
 - [ ] Add TV shows
