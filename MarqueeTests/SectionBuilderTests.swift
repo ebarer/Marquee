@@ -156,13 +156,29 @@ import SwiftData
         store.setDateWatched(.utc(2021, 5, 10), for: a)
         store.setDateWatched(.utc(2021, 8, 10), for: b)
 
-        let sections = await builder().build(source: .watched(byWatchedDate: true),
+        let sections = await builder().build(source: .watched(sort: .dateWatched),
                                              ascending: true, filter: "")
         #expect(sections.count == 2)
         let first = sections.first?.entries.first
         #expect(first?.tmdbID == 1)
         #expect(first?.dateWatched == .utc(2021, 5, 10))
         #expect(first?.userRating == 4)
+    }
+
+    @Test func watchedRatingSortGroupsByStars() async {
+        let a = makeMovie(id: 1, title: "A")
+        let b = makeMovie(id: 2, title: "B")
+        let c = makeMovie(id: 3, title: "C")
+        for m in [a, b, c] { store.setWatched(true, for: m) }
+        store.setRating(5, for: a)
+        store.setRating(4.5, for: b)
+        // c left unrated
+
+        let sections = await builder().build(source: .watched(sort: .rating),
+                                             ascending: false, filter: "")
+        #expect(sections.map(\.title) == ["5 Stars", "4.5 Stars", "Unrated"])
+        #expect(sections.first?.entries.map(\.tmdbID) == [1])
+        #expect(sections.last?.entries.map(\.tmdbID) == [3])
     }
 
     @Test func viewedIsFlatByRecency() async {

@@ -15,6 +15,9 @@ struct Season: Hashable, Identifiable, Codable {
     var airDate: Date?
     var episodeCount: Int
     var episodes: [Episode] = []
+    /// The season's billed cast (from its aggregate credits), ranked by episodes in the
+    /// season — so the show detail's cast list follows the selected season.
+    var cast: [Person] = []
 
     init(id: Int, seasonNumber: Int, name: String, episodeCount: Int = 0) {
         self.id = id

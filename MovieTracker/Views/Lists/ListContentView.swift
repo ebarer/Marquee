@@ -28,6 +28,7 @@ struct ListContentView: View {
     @AppStorage("viewedListAscending") private var viewedAscending = false
     @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .dateWatched
     @AppStorage("watchListFoldOlder") private var watchListFoldOlder = true
+    @AppStorage("listMediaTypeFilter") private var mediaFilter: MediaTypeFilter = .all
 
     private var filterText: String { externalFilter ?? localFilter }
 
@@ -72,7 +73,8 @@ struct ListContentView: View {
                     ListSortMenu(ascending: ascendingBinding,
                                  watchedSortKey: selection == .watched ? $watchedSortKey : nil,
                                  listSortKey: isRealList ? listSortKeyBinding : nil,
-                                 foldOlder: showsFoldToggle ? $watchListFoldOlder : nil)
+                                 foldOlder: showsFoldToggle ? $watchListFoldOlder : nil,
+                                 mediaFilter: $mediaFilter)
                         .tint(activeColor)
                 }
             }
@@ -99,7 +101,7 @@ struct ListContentView: View {
     private var activeColor: Color { destination.color }
     private var movieCount: Int { destination.movieCount(using: store) }
     private var sectionSource: SectionSource? {
-        destination.sectionSource(watchedByDate: watchedSortKey == .dateWatched,
+        destination.sectionSource(watchedSort: watchedSortKey,
                                   listByDateAdded: currentListSortKey == .dateAdded,
                                   listFoldOlder: watchListFoldOlder)
     }
@@ -160,7 +162,7 @@ struct ListContentView: View {
     private var sectionsInput: ListSectionsModel.Input {
         ListSectionsModel.Input(source: sectionSource, count: movieCount,
                                 ascending: currentAscending, filter: filterText,
-                                version: store?.revision ?? 0)
+                                mediaFilter: mediaFilter, version: store?.revision ?? 0)
     }
 }
 

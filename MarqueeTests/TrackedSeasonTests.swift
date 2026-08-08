@@ -136,6 +136,22 @@ import SwiftData
         #expect(rows.contains { $0.tmdbID == 30 && $0.seasonNumber == 1 && $0.seasonTotal == 3 })
     }
 
+    @Test func customListRendersTrackedShowAsWholeShow() async {
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 31, seasons: [makeSeason(1, episodes: 3, airStart: .utc(2024, 6, 1))])
+        let list = MediaList(name: "Favorites", symbol: "heart", sortOrder: 1, colorIndex: 2)
+        store.context.insert(list)
+        store.add(show, to: list)
+        store.reconcileMembership(show)   // a TrackedSeason exists (show is on a list)…
+
+        let sections = await store.sections(for: .list(list.uuid, byDateAdded: false, foldOlder: false),
+                                            ascending: false, filter: "")
+        let rows = sections.flatMap(\.entries)
+        // …but a custom list shows the whole show, never a season.
+        #expect(rows.contains { $0.tmdbID == 31 && $0.seasonNumber == nil })
+        #expect(!rows.contains { $0.tmdbID == 31 && $0.seasonNumber != nil })
+    }
+
     @Test func caughtUpWithUnairedSeasonReadsAsWatchedAndReturnsWhenItAirs() {
         let store = makeInMemoryStore()
         let s1 = makeSeason(1, episodes: 2)

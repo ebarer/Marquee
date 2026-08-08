@@ -80,7 +80,8 @@ struct PersonFilmography: View {
     private func showRow(_ show: Show) -> some View {
         NavigationLink(value: show) {
             HStack(spacing: 8) {
-                ShowRow(show: show, role: show.creditRole, showsSeasonCount: false)
+                ShowRow(show: show, role: show.creditRole, showsSeasonCount: false,
+                        episodeCount: show.episodeCount)
                 chevron
             }
             .padding(.horizontal, 16)

@@ -14,9 +14,12 @@ struct EpisodesBySeasonSection: View {
     var tint: Color = .appAccent
     /// A season to open on (e.g. from a Watched-list season row); nil starts at season 1.
     var initialSeason: Int? = nil
+    /// Owned by the detail screen so the header poster can follow the chosen season.
+    @Binding var selectedSeason: Int?
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
-    @State private var selectedSeason: Int?
+    /// Non-nil while a mark-season-watched (true) / unmark (false) confirmation is pending.
+    @State private var pendingSeasonWatched: Bool?
 
     private var seasons: [Season] { show.regularSeasons }
 
@@ -94,9 +97,24 @@ struct EpisodesBySeasonSection: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            seasonPicker
-            subheader
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                seasonPicker
+                subheader
+            }
+            Spacer(minLength: 0)
+            if allWatched, let current = currentSeason {
+                VStack(alignment: .trailing, spacing: 4) {
+                    SeasonWatchedDateButton(showID: show.id, seasonNumber: current,
+                                            watchedDate: seasonWatchedDate,
+                                            lastEpisodeDate: lastEpisodeDate, tint: tint)
+                    StarRating(rating: seasonRating, tint: tint) { newValue in
+                        store?.setSeasonRating(newValue, showID: show.id, season: current)
+                    }
+                }
+                .id(current)
+            }
+            seasonWatchedToggle
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
@@ -110,7 +128,7 @@ struct EpisodesBySeasonSection: View {
         Menu {
             Picker("Season", selection: seasonSelection) {
                 ForEach(seasons, id: \.seasonNumber) { season in
-                    Text(seasonLabel(season)).tag(season.seasonNumber)
+                    Text(season.name).tag(season.seasonNumber)
                 }
             }
         } label: {
@@ -127,29 +145,42 @@ struct EpisodesBySeasonSection: View {
         .buttonStyle(.plain)
     }
 
-    /// "n Episodes  •  Mark All as Watched" while in progress; once the season is complete,
-    /// the count is replaced by its editable "Watched <date>" (per-season date-watched).
+    /// "<year> • <episode count>" beneath the season picker.
     private var subheader: some View {
-        HStack(spacing: 6) {
-            if allWatched, let current = currentSeason {
-                SeasonWatchedDateButton(showID: show.id, seasonNumber: current,
-                                        watchedDate: seasonWatchedDate, tint: tint)
-                    .id(current)
-            } else {
-                Text(episodeCountText)
-            }
-            Text("•")
-            Button {
-                withAnimation(.easeInOut) { toggleAllWatched() }
-            } label: {
-                Text(allWatched ? "Mark All as Unwatched" : "Mark All as Watched")
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(tint)
-            .disabled(currentEpisodes.isEmpty)
+        Text(yearAndEpisodeText)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+    }
+
+    /// A glass checkmark toggling the whole season's watched state, mirroring the
+    /// show-level checkmark — confirmed before marking on or off.
+    private var seasonWatchedToggle: some View {
+        Button {
+            pendingSeasonWatched = !allWatched
+        } label: {
+            Image(systemName: "checkmark")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(allWatched ? .appBackground : tint)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
+        .buttonStyle(.plain)
+        .glassEffect(allWatched ? .regular.tint(tint).interactive() : .regular.interactive(),
+                     in: Circle())
+        .disabled(currentEpisodes.isEmpty)
+        .accessibilityLabel(allWatched ? "Mark season unwatched" : "Mark season watched")
+        .confirmationDialog(
+            pendingSeasonWatched == true ? "Mark season as watched?" : "Mark season as unwatched?",
+            isPresented: Binding(get: { pendingSeasonWatched != nil },
+                                 set: { if !$0 { pendingSeasonWatched = nil } }),
+            titleVisibility: .visible) {
+            if pendingSeasonWatched == true {
+                Button("Mark Watched") { applySeasonWatched(true) }
+            } else {
+                Button("Mark Unwatched", role: .destructive) { applySeasonWatched(false) }
+            }
+            Button("Cancel", role: .cancel) { pendingSeasonWatched = nil }
+        }
     }
 
     /// The completion date for the current season (reactive to persisted edits).
@@ -159,19 +190,40 @@ struct EpisodesBySeasonSection: View {
         return store.seasonWatchedDate(showID: show.id, season: current)
     }
 
+    /// The latest episode air date in the current season, offered in the date picker.
+    private var lastEpisodeDate: Date? {
+        currentEpisodes.compactMap(\.airDate).max()
+    }
+
+    /// The current season's star rating (reactive to persisted edits).
+    private var seasonRating: Double {
+        guard let store, let current = currentSeason else { return 0 }
+        _ = store.revision
+        return store.seasonRating(showID: show.id, season: current) ?? 0
+    }
+
+    private var currentSeasonObject: Season? {
+        seasons.first { $0.seasonNumber == currentSeason }
+    }
+
     private var currentSeasonLabel: String {
-        guard let current = currentSeason,
-              let season = seasons.first(where: { $0.seasonNumber == current }) else { return "Season" }
-        return seasonLabel(season)
+        currentSeasonObject?.name ?? "Season"
     }
 
     private var episodeCount: Int {
         if let episodes { return episodes.count }
-        return seasons.first { $0.seasonNumber == currentSeason }?.episodeCount ?? 0
+        return currentSeasonObject?.episodeCount ?? 0
     }
 
     private var episodeCountText: String {
         "\(episodeCount) Episode\(episodeCount == 1 ? "" : "s")"
+    }
+
+    private var yearAndEpisodeText: String {
+        var parts: [String] = []
+        if let year = currentSeasonObject?.startYear { parts.append("\(year)") }
+        parts.append(episodeCountText)
+        return parts.joined(separator: "  •  ")
     }
 
     private var allWatched: Bool {
@@ -183,9 +235,12 @@ struct EpisodesBySeasonSection: View {
         store.toggleEpisodeWatched(show: show, season: season, episodeNumber: episode.episodeNumber)
     }
 
-    private func toggleAllWatched() {
+    private func applySeasonWatched(_ watched: Bool) {
         guard let store, let season = currentSeasonModel else { return }
-        store.setSeasonWatched(!allWatched, show: show, season: season)
+        withAnimation(.easeInOut) {
+            store.setSeasonWatched(watched, show: show, season: season)
+        }
+        pendingSeasonWatched = nil
     }
 
     private var seasonSelection: Binding<Int> {
@@ -193,11 +248,6 @@ struct EpisodesBySeasonSection: View {
             get: { currentSeason ?? seasons.first?.seasonNumber ?? 0 },
             set: { newValue in withAnimation(.easeInOut) { selectedSeason = newValue } }
         )
-    }
-
-    private func seasonLabel(_ season: Season) -> String {
-        if let year = season.startYear { return "\(season.name) (\(year))" }
-        return season.name
     }
 
     private var rowSeparator: some View {
@@ -209,8 +259,10 @@ struct EpisodesBySeasonSection: View {
 }
 
 #Preview {
+    @Previewable @State var selectedSeason: Int?
     ScrollView {
-        EpisodesBySeasonSection(show: .preview, model: ShowDetailModel())
+        EpisodesBySeasonSection(show: .preview, model: ShowDetailModel(),
+                                selectedSeason: $selectedSeason)
     }
     .background(Color.appBackground)
     .modelContainer(previewModelContainer)

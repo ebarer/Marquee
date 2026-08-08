@@ -12,12 +12,17 @@ import SwiftUI
 final class SearchModel {
     var query = ""
     private(set) var movies: [Movie] = []
+    private(set) var shows: [Show] = []
+    /// Movies and shows interlaced, ranked by popularity so the strongest match leads.
+    private(set) var results: [MediaRef] = []
 
     private(set) var namedPeople: [Person] = []
     private(set) var movieMatchedPeople: [Person] = []
+    /// Recurring cast of the top matching show, surfaced in the People strip like film cast.
+    private(set) var showMatchedPeople: [Person] = []
     private(set) var isLoading = false
 
-    static let placeholder = "Movies, People, etc."
+    static let placeholder = "Movies, TV, People, etc."
 
     private(set) var recentSearches: [String] = []
 
@@ -40,12 +45,17 @@ final class SearchModel {
     private let minCharacterMatchVotes = 300
     private let movieNoiseVoteFloor = 100
     private let weakMoviePopularity = 5.0
+    private let showNoiseVoteFloor = 10
+    private let weakShowPopularity = 5.0
     private let leadFallbackCount = 2
     private let leadFallbackMinPopularity = 10.0
     private let debounce = Duration.milliseconds(300)
 
+    /// Cast surfaced from matched titles: a film's cast plus the top show's recurring cast.
+    private var titleMatchedPeople: [Person] { movieMatchedPeople + showMatchedPeople }
+
     var featuredPeople: [Person] {
-        SearchMatching.featuredPeople(movieMatched: movieMatchedPeople,
+        SearchMatching.featuredPeople(movieMatched: titleMatchedPeople,
                                       named: namedPeople,
                                       cap: maxFeaturedPeople,
                                       namedNoiseFloor: namedNoiseFloor)
@@ -53,7 +63,7 @@ final class SearchModel {
 
     var featuredPeopleInlineCount: Int {
         SearchMatching.inlinePeopleCount(featuredPeople,
-                                         movieMatchedIDs: Set(movieMatchedPeople.map(\.id)),
+                                         movieMatchedIDs: Set(titleMatchedPeople.map(\.id)),
                                          inlinePopularityFloor: inlinePopularityFloor,
                                          minInline: minInlinePeople,
                                          previewLimit: stripPreviewLimit)
@@ -69,8 +79,11 @@ final class SearchModel {
         let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !query.isEmpty else {
             movies = []
+            shows = []
+            results = []
             namedPeople = []
             movieMatchedPeople = []
+            showMatchedPeople = []
             lastStrongQuery = ""
             isLoading = false
             return
@@ -85,8 +98,10 @@ final class SearchModel {
             // never discards the other's results.
             async let movieResults = fetchMovies(query)
             async let peopleResults = fetchPeople(query)
+            async let showResults = fetchShows(query)
             var movies = await movieResults
             let people = await peopleResults
+            let shows = await showResults
             guard !Task.isCancelled else { return }
 
             // Recall recovery: TMDB's incremental search is erratic, so mid-typing a
@@ -109,16 +124,22 @@ final class SearchModel {
                 }
             }
 
-            // Resolve movie-matched people BEFORE publishing, so results land in one
-            // complete update instead of pairing new movies with the previous query's
+            // Resolve title-matched people BEFORE publishing, so results land in one
+            // complete update instead of pairing new titles with the previous query's
             // people (a "wrong people" flash) and updating again. Old results stay on
             // screen until this single commit, so there's no blank between queries.
             let moviePeople = await moviePeople(query: query, in: movies)
+            let showPeople = await showPeople(in: shows)
             guard !Task.isCancelled else { return }
 
             self.movies = movies
+            self.shows = shows
+            self.results = Self.interlaced(movies: movies, shows: shows, query: query,
+                                           voteFloor: movieNoiseVoteFloor,
+                                           popularityFloor: weakMoviePopularity)
             self.namedPeople = people
             self.movieMatchedPeople = moviePeople
+            self.showMatchedPeople = showPeople
             // Advance the anchor only when the typed query itself was strong, so
             // recovery always re-runs a real query, never a recovered one.
             if originalStrong { self.lastStrongQuery = query }
@@ -203,6 +224,67 @@ final class SearchModel {
             if !Task.isCancelled { print("People search error: \(error)") }
             return []
         }
+    }
+
+    /// Shows for the query: trimmed to US-aired/established (or exactly-named) series to cut
+    /// TMDB's noisy TV relevance, then ordered most-popular first.
+    private func fetchShows(_ query: String) async -> [Show] {
+        do {
+            let items = try await TMDBWrapper.searchForShows(query: query).items
+            let needle = SearchMatching.normalized(SearchMatching.articleStripped(query))
+            return SearchMatching.relevantShows(items, normalizedQuery: needle,
+                                                voteFloor: showNoiseVoteFloor,
+                                                popularityFloor: weakShowPopularity)
+                .sorted { ($0.popularity ?? 0) > ($1.popularity ?? 0) }
+        } catch {
+            if !Task.isCancelled { print("Show search error: \(error)") }
+            return []
+        }
+    }
+
+    /// Movies and shows in one list. Ordering, in order of precedence:
+    ///  1. **Notable pool first, obscure pool last.** Low-signal results (`voteCount` below
+    ///     `voteFloor` *and* `popularity` below `popularityFloor`) sink beneath every notable
+    ///     result regardless of title — since almost every search targets something popular,
+    ///     an obscure item is fine to bury (users can scroll). A brand-new trending release
+    ///     (few votes but real popularity) escapes the obscure pool.
+    ///  2. **Title relevance** within each pool: exact title (so "house" leads with *House*,
+    ///     "star wars" with the film), then prefix, then everything else — including relevant
+    ///     non-literal matches like "The Dark Knight" for "batman", which stay in the notable
+    ///     pool rather than being buried.
+    ///  3. Notability (`voteCount`), then popularity, then original order (movies precede shows).
+    nonisolated static func interlaced(movies: [Movie], shows: [Show], query: String = "",
+                                       voteFloor: Int = 0, popularityFloor: Double = 0) -> [MediaRef] {
+        let needle = SearchMatching.normalized(SearchMatching.articleStripped(query))
+        let refs = movies.map(MediaRef.movie) + shows.map(MediaRef.show)
+        // Relevance capped at 2 (exact/prefix/rest); obscure results add 3 so they trail
+        // the whole notable pool while still ordering sensibly among themselves.
+        func rank(_ ref: MediaRef) -> Int {
+            let relevance = min(SearchMatching.titleRelevance(ref.title, normalizedQuery: needle), 2)
+            let obscure = ref.voteCount < voteFloor && ref.popularity < popularityFloor
+            return obscure ? relevance + 3 : relevance
+        }
+        return refs.enumerated()
+            .sorted { lhs, rhs in
+                let (lr, rr) = (rank(lhs.element), rank(rhs.element))
+                if lr != rr { return lr < rr }
+                if lhs.element.voteCount != rhs.element.voteCount {
+                    return lhs.element.voteCount > rhs.element.voteCount
+                }
+                if lhs.element.popularity != rhs.element.popularity {
+                    return lhs.element.popularity > rhs.element.popularity
+                }
+                return lhs.offset < rhs.offset
+            }
+            .map(\.element)
+    }
+
+    /// Recurring cast of the top matching show, surfaced in the People strip — only when
+    /// that show is a strong, front-of-results match (mirrors how a film surfaces its cast).
+    private func showPeople(in shows: [Show]) async -> [Person] {
+        guard let top = shows.first, (top.popularity ?? 0) >= weakMoviePopularity else { return [] }
+        guard let full = try? await TMDBWrapper.getShow(id: top.id) else { return [] }
+        return Array(full.recurringCast.prefix(topBilledPerFilm))
     }
 
     private func moviePeople(query: String, in movies: [Movie]) async -> [Person] {

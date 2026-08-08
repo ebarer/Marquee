@@ -9,8 +9,11 @@ import SwiftData
 /// Five stars bound to a title's personal rating. Tap for whole stars, sweep for
 /// half-star precision; tapping the current rating clears it.
 struct StarRating: View {
-    let key: MediaKey
+    let key: MediaKey?
     let tint: Color
+    /// Custom persistence hook (used for per-season ratings, which aren't keyed by
+    /// `MediaKey`); when nil, the rating writes through the `MediaItem` for `key`.
+    private let onCommit: ((Double?) -> Void)?
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @State private var rating: Double
@@ -24,11 +27,20 @@ struct StarRating: View {
     init(key: MediaKey, rating: Double, tint: Color) {
         self.key = key
         self.tint = tint
+        self.onCommit = nil
         _rating = State(initialValue: rating)
     }
 
     init(movie: Movie, rating: Double, tint: Color) {
         self.init(key: movie.mediaKey, rating: rating, tint: tint)
+    }
+
+    /// Closure-driven rating (e.g. a season): the caller persists the new value.
+    init(rating: Double, tint: Color, onCommit: @escaping (Double?) -> Void) {
+        self.key = nil
+        self.tint = tint
+        self.onCommit = onCommit
+        _rating = State(initialValue: rating)
     }
 
     var body: some View {
@@ -53,7 +65,12 @@ struct StarRating: View {
                     } else {
                         rating = halfStars(at: value.location.x)
                     }
-                    store?.setRating(rating == 0 ? nil : rating, forKey: key)
+                    let newValue = rating == 0 ? nil : rating
+                    if let onCommit {
+                        onCommit(newValue)
+                    } else if let key {
+                        store?.setRating(newValue, forKey: key)
+                    }
                     dragStartRating = nil
                 }
         )

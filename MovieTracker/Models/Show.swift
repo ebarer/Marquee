@@ -27,6 +27,9 @@ struct Show: Hashable, Identifiable, Codable {
     var originCountry: [String]?
     var trailers: [MovieTrailer]?
     var creditRole: String?
+    /// Episodes the credited person appeared in (from a person's TV credits); shown in
+    /// their filmography instead of the year range. Nil outside that context.
+    var episodeCount: Int?
     var creators: [Person] = []
     var recurringCast: [Person] = []
     var seasons: [Season] = []
@@ -42,8 +45,15 @@ struct Show: Hashable, Identifiable, Codable {
         self.name = name
     }
 
-    static func == (lhs: Show, rhs: Show) -> Bool { lhs.id == rhs.id }
-    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    // `initialSeason` participates so that the same show opened at different seasons are
+    // distinct navigation values — otherwise a List highlights the wrong season's row.
+    static func == (lhs: Show, rhs: Show) -> Bool {
+        lhs.id == rhs.id && lhs.initialSeason == rhs.initialSeason
+    }
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(initialSeason)
+    }
 }
 
 // MARK: - Air range & status

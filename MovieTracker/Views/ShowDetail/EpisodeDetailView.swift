@@ -13,6 +13,9 @@ struct EpisodeDetailView: View {
 
     @State private var tint: Color = .appAccent
     @State private var showNavTitle = false
+    /// The show's series regulars (from the cached show), shown as the "Cast" tab alongside
+    /// the episode's Guests and Crew. Empty if the show isn't cached.
+    @State private var seriesCast: [Person] = []
 
     var body: some View {
         GeometryReader { container in
@@ -26,7 +29,8 @@ struct EpisodeDetailView: View {
 
                     MovieOverviewSection(overview: episode.overview ?? "No episode description available.")
 
-                    MovieCastSection(cast: episode.guestCast + episode.crew, tint: tint)
+                    MovieCastSection(cast: seriesCast + episode.crew, guests: episode.guestCast,
+                                     tint: tint)
                 }
                 .padding(.bottom, 24)
             }
@@ -56,6 +60,7 @@ struct EpisodeDetailView: View {
     /// color wasn't cached, derive it from the cached show poster the same way the show does.
     private func loadTint() async {
         guard let cached = await MediaCacheStore.shared.loadShow(id: episode.showTmdbID) else { return }
+        seriesCast = cached.show.recurringCast
         if let color = cached.color {
             withAnimation(.easeInOut) { tint = color }
         } else if let url = cached.show.posterURL(.w342),

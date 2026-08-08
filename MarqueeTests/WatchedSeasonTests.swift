@@ -82,6 +82,23 @@ import SwiftData
         #expect(store.isShowFullyWatched(show))
     }
 
+    @Test func cachedFullyWatchedFlagStaysInSync() {
+        let store = makeInMemoryStore()
+        let s1 = makeSeason(1, episodes: 2), s2 = makeSeason(2, episodes: 2)
+        let show = makeShow(id: 42, seasons: [s1, s2])
+
+        #expect(!store.isShowWatchedCached(showID: 42))
+
+        store.setSeasonWatched(true, show: show, season: s1)
+        #expect(!store.isShowWatchedCached(showID: 42))          // only one season complete
+
+        store.setSeasonWatched(true, show: show, season: s2)
+        #expect(store.isShowWatchedCached(showID: 42))           // fully watched → cached true
+
+        store.unwatchSeason(showID: 42, seasonNumber: 2)
+        #expect(!store.isShowWatchedCached(showID: 42))          // dropped below complete → cleared
+    }
+
     @Test func markingShowWatchedMarksAllSeasonsAndLeavesWatchList() {
         let store = makeInMemoryStore()
         let show = makeShow(id: 7, seasons: [makeSeason(1, episodes: 2), makeSeason(2, episodes: 2)])
@@ -131,7 +148,7 @@ import SwiftData
         let show = makeShow(id: 10, seasons: [season])
         store.setSeasonWatched(true, show: show, season: season)
 
-        let sections = await store.sections(for: .watched(byWatchedDate: false),
+        let sections = await store.sections(for: .watched(sort: .releaseDate),
                                              ascending: false, filter: "")
         let rows = sections.flatMap(\.entries)
         #expect(rows.contains { $0.mediaType == .tv && $0.seasonNumber == 2 && $0.tmdbID == 10 })

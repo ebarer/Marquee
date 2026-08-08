@@ -15,6 +15,9 @@ final class ShowDetailModel {
     /// Episodes fetched lazily per season number, so long-running shows don't
     /// pull every episode up front.
     private(set) var seasonEpisodes: [Int: [Episode]] = [:]
+    /// The billed cast per season (from each season's aggregate credits), so the detail's
+    /// cast list follows the selected season — anthologies especially.
+    private(set) var seasonCast: [Int: [Person]] = [:]
     private(set) var loadingSeasons: Set<Int> = []
 
     private var loaded = false
@@ -69,6 +72,7 @@ final class ShowDetailModel {
         do {
             let season = try await TMDBWrapper.getSeason(showID: showID, seasonNumber: seasonNumber)
             seasonEpisodes[seasonNumber] = season.episodes
+            if !season.cast.isEmpty { seasonCast[seasonNumber] = season.cast }
         } catch {
             print("Season load error: \(error)")
         }

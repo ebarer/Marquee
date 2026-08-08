@@ -6,21 +6,23 @@
 import SwiftUI
 import SwiftData
 
-/// The date a season was watched, tappable to open a graphical date picker — the per-season
-/// analogue of `WatchedDateButton`, editing the season's `WatchedSeason.watchedAt`. Shown in
-/// the episodes header once a season is complete.
+/// The season's watched date beside the checkmark, tappable to open a graphical date picker —
+/// the per-season analogue of `WatchedDateButton`, editing `WatchedSeason.watchedAt`. Shown in
+/// the episodes header once a season is complete, with the season's star rating stacked below.
 struct SeasonWatchedDateButton: View {
     let showID: Int
     let seasonNumber: Int
+    let lastEpisodeDate: Date?
     let tint: Color
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @State private var date: Date
     @State private var showPicker = false
 
-    init(showID: Int, seasonNumber: Int, watchedDate: Date?, tint: Color) {
+    init(showID: Int, seasonNumber: Int, watchedDate: Date?, lastEpisodeDate: Date?, tint: Color) {
         self.showID = showID
         self.seasonNumber = seasonNumber
+        self.lastEpisodeDate = lastEpisodeDate
         self.tint = tint
         _date = State(initialValue: watchedDate ?? Calendar.current.startOfDay(for: Date()))
     }
@@ -29,7 +31,8 @@ struct SeasonWatchedDateButton: View {
         Button {
             showPicker = true
         } label: {
-            Text("Watched \(date.formatted(.dateTime.month(.abbreviated).day().year()))")
+            Text(date.formatted(.dateTime.month(.abbreviated).day().year()))
+                .font(.subheadline)
                 .foregroundStyle(tint)
                 .contentShape(Rectangle())
         }
@@ -46,8 +49,11 @@ struct SeasonWatchedDateButton: View {
                         ToolbarItem(placement: .confirmationAction) {
                             Button(role: .confirm) { showPicker = false }
                         }
-                        ToolbarItem(placement: .topBarLeading) {
+                        ToolbarItemGroup(placement: .topBarLeading) {
                             Button("Today") { date = Date() }
+                            if let lastEpisodeDate, lastEpisodeDate <= Date() {
+                                Button("Last Episode Date") { date = lastEpisodeDate }
+                            }
                         }
                     }
                     .onChange(of: date) { _, newValue in
@@ -62,7 +68,8 @@ struct SeasonWatchedDateButton: View {
 }
 
 #Preview {
-    SeasonWatchedDateButton(showID: 1, seasonNumber: 1, watchedDate: Date(), tint: .appAccent)
+    SeasonWatchedDateButton(showID: 1, seasonNumber: 1, watchedDate: Date(),
+                            lastEpisodeDate: Date(), tint: .appAccent)
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)

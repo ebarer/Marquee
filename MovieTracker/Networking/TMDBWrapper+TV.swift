@@ -20,7 +20,10 @@ extension TMDBWrapper {
     }
 
     static func getSeason(showID: Int, seasonNumber: Int) async throws -> Season {
-        let data = try await fetch("/tv/\(showID)/season/\(seasonNumber)")
+        let data = try await fetch(
+            "/tv/\(showID)/season/\(seasonNumber)",
+            queryItems: [URLQueryItem(name: "append_to_response", value: "aggregate_credits")]
+        )
         var season = try decode(SeasonRaw.self, from: data).season()
         // Stamp the show id onto each episode (TMDB omits it) so a standalone episode
         // can address its watched record.

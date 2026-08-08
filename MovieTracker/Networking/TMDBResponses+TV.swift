@@ -58,17 +58,7 @@ extension TMDBWrapper {
 
         /// Cast ranked by episodes appeared in, so the enduring regulars surface first.
         func recurringCast(limit: Int = 15) -> [Person] {
-            guard let cast = aggregateCreditsRaw?.cast else { return [] }
-            return cast
-                .sorted {
-                    if $0.totalEpisodeCount != $1.totalEpisodeCount {
-                        return $0.totalEpisodeCount > $1.totalEpisodeCount
-                    }
-                    return ($0.order ?? .max) < ($1.order ?? .max)
-                }
-                .prefix(limit)
-                .map { Person(id: $0.id, name: $0.name, role: $0.characterName,
-                              pic: $0.profilePicture, type: .Cast) }
+            aggregateCreditsRaw?.rankedCast(limit: limit) ?? []
         }
 
         func trailers() -> [MovieTrailer]? {
@@ -132,6 +122,8 @@ extension TMDBWrapper {
         var airDateString: String?
         var episodeCount: Int?
         var episodes: [EpisodeRaw]?
+        /// Present only when the season is fetched with `append_to_response=aggregate_credits`.
+        var aggregateCreditsRaw: AggregateCreditsRaw?
 
         func season() -> Season {
             var season = Season(id: id, seasonNumber: seasonNumber, name: name,
@@ -142,6 +134,7 @@ extension TMDBWrapper {
             season.episodes = (episodes ?? [])
                 .map { $0.episode() }
                 .sorted { $0.episodeNumber < $1.episodeNumber }
+            season.cast = aggregateCreditsRaw?.rankedCast(limit: 15) ?? []
             return season
         }
 
@@ -151,6 +144,7 @@ extension TMDBWrapper {
             case poster = "poster_path"
             case airDateString = "air_date"
             case episodeCount = "episode_count"
+            case aggregateCreditsRaw = "aggregate_credits"
         }
     }
 
@@ -204,6 +198,21 @@ extension TMDBWrapper {
 
     struct AggregateCreditsRaw: Codable {
         var cast: [AggregateCastRaw]
+
+        /// Cast ranked by episodes appeared in (then billing order), capped at `limit`.
+        /// Shared by the show's recurring cast and a season's cast.
+        func rankedCast(limit: Int) -> [Person] {
+            cast
+                .sorted {
+                    if $0.totalEpisodeCount != $1.totalEpisodeCount {
+                        return $0.totalEpisodeCount > $1.totalEpisodeCount
+                    }
+                    return ($0.order ?? .max) < ($1.order ?? .max)
+                }
+                .prefix(limit)
+                .map { Person(id: $0.id, name: $0.name, role: $0.characterName,
+                              pic: $0.profilePicture, type: .Cast) }
+        }
 
         struct AggregateCastRaw: Codable {
             var id: Int

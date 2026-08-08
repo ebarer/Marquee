@@ -29,7 +29,7 @@ struct SearchView: View {
         }
         .overlay {
             if isSearching {
-                if model.movies.isEmpty && featuredPeople.isEmpty {
+                if model.results.isEmpty && featuredPeople.isEmpty {
                     if model.isLoading {
                         ProgressView()
                     } else {
@@ -38,9 +38,9 @@ struct SearchView: View {
                 }
             } else if model.recentSearches.isEmpty {
                 ContentUnavailableView(
-                    "Search Movies & People",
+                    "Search Movies, TV & People",
                     systemImage: "magnifyingglass",
-                    description: Text("Find movies and cast or crew. Your recent searches will show up here.")
+                    description: Text("Find movies, TV, cast, or crew. Your recent searches will show up here.")
                 )
             }
         }
@@ -53,30 +53,42 @@ struct SearchView: View {
     }
 
     @ViewBuilder
-    private var movieSection: some View {
+    private var resultsSection: some View {
         Section {
-            ForEach(Array(model.movies.enumerated()), id: \.element.id) { index, movie in
-                movieRow(index: index, movie: movie)
+            ForEach(Array(model.results.enumerated()), id: \.element.id) { index, ref in
+                resultRow(index: index, ref: ref)
             }
         } header: {
             if !featuredPeople.isEmpty {
-                Text("Movies")
+                Text("Movies & TV")
             }
         }
     }
 
     @ViewBuilder
-    private func movieRow(index: Int, movie: Movie) -> some View {
-        MovieListRow(
-            movie: movie,
-            derivesStatus: true,
-            lists: lists,
-            leadingActions: { WatchedSwipeButton(movie: movie) },
-            trailingActions: { WatchListSwipeButton(movie: movie) },
-            onTap: onSelectMovie
-        )
-        .listRowSeparator(index == 0 ? .hidden : .automatic, edges: .top)
-        .listRowSeparator(index == model.movies.count - 1 ? .hidden : .automatic, edges: .bottom)
+    private func resultRow(index: Int, ref: MediaRef) -> some View {
+        let firstEdge: Visibility = index == 0 ? .hidden : .automatic
+        let lastEdge: Visibility = index == model.results.count - 1 ? .hidden : .automatic
+        switch ref {
+        case .movie(let movie):
+            MovieListRow(
+                movie: movie,
+                derivesStatus: true,
+                lists: lists,
+                leadingActions: { WatchedSwipeButton(movie: movie) },
+                trailingActions: { WatchListSwipeButton(movie: movie) },
+                onTap: onSelectMovie
+            )
+            .listRowSeparator(firstEdge, edges: .top)
+            .listRowSeparator(lastEdge, edges: .bottom)
+        case .show(let show):
+            DetailLink(value: show) {
+                ShowRow(show: show)
+            }
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .listRowSeparator(firstEdge, edges: .top)
+            .listRowSeparator(lastEdge, edges: .bottom)
+        }
     }
 
     // MARK: - Recent searches
@@ -150,8 +162,8 @@ struct SearchView: View {
                 }
             }
 
-            if !model.movies.isEmpty {
-                movieSection
+            if !model.results.isEmpty {
+                resultsSection
             }
         } else {
             recentRows

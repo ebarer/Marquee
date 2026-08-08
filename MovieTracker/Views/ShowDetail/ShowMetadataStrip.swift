@@ -6,33 +6,16 @@
 import SwiftUI
 import SwiftData
 
-/// Horizontal strip of show metadata cells, mirroring `MovieMetadataStrip`'s layout;
-/// watched shows lead with the user's rating and watched date.
+/// Horizontal strip of show metadata cells, mirroring `MovieMetadataStrip`'s layout.
+/// Rating and watched dates are tracked per season, not at the show level.
 struct ShowMetadataStrip: View {
     let show: Show
-    var tint: Color = .appAccent
-    var isWatched: Bool = false
-
-    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     var body: some View {
         VStack(spacing: 0) {
             hairline
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 0) {
-                    if let store, isWatched {
-                        HStack(alignment: .top, spacing: 0) {
-                            cell(header: "MY RATING") {
-                                StarRating(key: show.mediaKey, rating: store.rating(for: show) ?? 0, tint: tint)
-                            }
-                            divider
-                            cell(header: "WATCHED", minWidth: 80) {
-                                WatchedDateButton(key: show.mediaKey, watchedDate: store.dateWatched(for: show), tint: tint)
-                            }
-                            divider
-                        }
-                        .transition(.opacity.combined(with: .move(edge: .leading)))
-                    }
                     cell(header: "RATING", minWidth: 60) { certBadge }
                     divider
                     cell(header: "SEASONS") { valueText("\(show.seasonCount)") }
@@ -43,7 +26,6 @@ struct ShowMetadataStrip: View {
                     divider
                     cell(header: "GENRE", minWidth: 90) { valueText(show.genresString) }
                 }
-                .animation(.snappy, value: isWatched)
             }
             .scrollBounceBehavior(.always, axes: .horizontal)
             hairline

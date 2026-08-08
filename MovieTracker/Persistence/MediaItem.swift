@@ -23,6 +23,10 @@ final class MediaItem {
     var watchedAt: Date?
     var lastViewedAt: Date?
     var addedAt: Date = Date()
+    /// Cached "every aired season is watched" for a `.tv` item, so the show detail's
+    /// checkmark is correct on entry without recomputing from episodes. Kept in sync by
+    /// `reconcileMembership`/`unwatchSeason`; nil for movies and not-fully-watched shows.
+    var showWatched: Bool?
 
     init(tmdbID: Int, mediaType: MediaType = .movie, title: String) {
         self.tmdbID = tmdbID
@@ -60,7 +64,7 @@ final class MediaItem {
     }
 
     func pruneIfEmpty() {
-        guard userRating == nil, watchedAt == nil, lastViewedAt == nil else { return }
+        guard userRating == nil, watchedAt == nil, lastViewedAt == nil, showWatched != true else { return }
         modelContext?.delete(self)
     }
 }
@@ -213,6 +217,7 @@ extension MediaItem {
                 keep.watchedAt = keep.watchedAt ?? drop.watchedAt
                 keep.lastViewedAt = keep.lastViewedAt ?? drop.lastViewedAt
                 keep.sortDate = keep.sortDate ?? drop.sortDate
+                keep.showWatched = keep.showWatched ?? drop.showWatched
                 context.delete(drop)
             }
             changed = true

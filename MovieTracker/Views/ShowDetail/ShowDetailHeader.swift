@@ -16,6 +16,9 @@ struct ShowDetailHeader: View {
     let headerHeight: CGFloat
     let width: CGFloat
     let navBarBottom: CGFloat
+    /// Poster path for the selected season (falls back to the show poster when nil), so the
+    /// header art follows the episodes picker.
+    var seasonPosterPath: String? = nil
     @Binding var showNavTitle: Bool
     @Binding var isSeen: Bool
     var onChange: () -> Void = {}
@@ -29,9 +32,17 @@ struct ShowDetailHeader: View {
     var body: some View {
         parallax
             .fullScreenCover(isPresented: $showPoster) {
-                PosterDetailView(imageURL: show.posterURL(.orig), tint: tint,
+                PosterDetailView(imageURL: posterURL(.orig), tint: tint,
                                  zoomSourceID: show.id, zoomNamespace: zoomNamespace)
             }
+    }
+
+    /// The selected season's poster at `size`, falling back to the show poster.
+    private func posterURL(_ size: Movie.PosterSize) -> URL? {
+        if let seasonPosterPath {
+            return TMDBWrapper.imageURL(path: seasonPosterPath, size: size.rawValue)
+        }
+        return show.posterURL(size)
     }
 
     private var parallax: some View {
@@ -73,13 +84,16 @@ struct ShowDetailHeader: View {
 
     private var overlay: some View {
         HStack(alignment: .bottom, spacing: 12) {
-            PosterImage(url: show.posterURL(.w342))
+            PosterImage(url: posterURL(.w342))
                 .frame(width: 100, height: Self.posterHeight)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .overlay {
                     RoundedRectangle(cornerRadius: 6)
                         .strokeBorder(.white.opacity(0.2), lineWidth: 0.5)
                 }
+                // New identity per season so the poster crossfades when the picker changes.
+                .id(seasonPosterPath)
+                .transition(.opacity)
                 .matchedTransitionSource(id: show.id, in: zoomNamespace)
                 .onTapGesture { showPoster = true }
 

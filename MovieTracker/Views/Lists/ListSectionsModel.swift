@@ -19,6 +19,7 @@ final class ListSectionsModel {
         var count: Int
         var ascending: Bool
         var filter: String
+        var mediaFilter: MediaTypeFilter
         var version: Int
     }
 
@@ -28,7 +29,8 @@ final class ListSectionsModel {
             loadedInput = input
             return
         }
-        let result = await store.sections(for: source, ascending: input.ascending, filter: input.filter)
+        let result = await store.sections(for: source, ascending: input.ascending,
+                                           filter: input.filter, mediaFilter: input.mediaFilter)
         guard !Task.isCancelled else { return }
         // Animate only when the same list's contents changed; a selection switch replaces rows outright.
         if loadedInput?.source == source {

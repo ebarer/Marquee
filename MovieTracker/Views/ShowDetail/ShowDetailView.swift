@@ -26,6 +26,9 @@ struct ShowDetailView: View {
     @State private var model = ShowDetailModel()
     @State private var showNavTitle = false
     @State private var isSeen = false
+    /// The season chosen in the episodes picker, lifted here so the header poster can
+    /// swap to match. Nil until the user picks one (falls back to `initialSeason`/first).
+    @State private var selectedSeason: Int?
 
     var body: some View {
         Group {
@@ -49,6 +52,9 @@ struct ShowDetailView: View {
             }
         }
         .task {
+            // Seed from the persisted flag first (showID only) so the checkmark is correct
+            // before the payload loads, rather than flipping once it's computed.
+            isSeen = store?.isShowWatchedCached(showID: showID) ?? false
             await model.load(id: showID)
             if let show = model.show {
                 store?.recordView(show)
@@ -77,6 +83,29 @@ struct ShowDetailView: View {
         }
     }
 
+    /// The season the detail is currently showing (picker selection, else the opened
+    /// season, else the first) — drives both the header poster and the cast list.
+    private func resolvedSeason(for show: Show) -> Int? {
+        selectedSeason ?? initialSeason ?? show.regularSeasons.first?.seasonNumber
+    }
+
+    /// The poster path for the current season (falls back to the show poster), so the
+    /// header art matches the season chosen in the episodes picker.
+    private func seasonPosterPath(for show: Show) -> String? {
+        let resolved = resolvedSeason(for: show)
+        return show.regularSeasons.first { $0.seasonNumber == resolved }?.poster ?? show.poster
+    }
+
+    /// The current season's cast once loaded; falls back to the show's recurring cast
+    /// until the season fetch lands.
+    private func seasonCast(for show: Show) -> [Person] {
+        guard let resolved = resolvedSeason(for: show),
+              let cast = model.seasonCast[resolved], !cast.isEmpty else {
+            return show.recurringCast
+        }
+        return cast
+    }
+
     private var loadingView: some View {
         VStack(spacing: 16) {
             ProgressView()
@@ -100,19 +129,22 @@ struct ShowDetailView: View {
                     ShowDetailHeader(show: show, tint: model.tint, lists: lists,
                                      imageHeight: imageHeight, headerHeight: headerHeight,
                                      width: width, navBarBottom: navBarBottom,
+                                     seasonPosterPath: seasonPosterPath(for: show),
                                      showNavTitle: $showNavTitle, isSeen: $isSeen,
                                      onChange: reconcileMembership)
-                    ShowMetadataStrip(show: show, tint: model.tint, isWatched: isSeen)
+                    ShowMetadataStrip(show: show)
                         .padding(.vertical, 8)
                     MovieOverviewSection(overview: show.overview ?? "No show description available.")
                     WhereToWatchSection(availabilityByRegion: show.watchByRegion,
                                         releaseDate: show.firstAirDate, tint: model.tint)
                     EpisodesBySeasonSection(show: show, model: model, tint: model.tint,
-                                            initialSeason: initialSeason)
-                    RelatedShowsSection(shows: model.recommendations, tint: model.tint)
-                    MovieCastSection(cast: show.creators + show.recurringCast, tint: model.tint,
+                                            initialSeason: initialSeason,
+                                            selectedSeason: $selectedSeason)
+                    MovieCastSection(cast: show.creators + seasonCast(for: show), tint: model.tint,
                                      leadRole: "Creator",
-                                     leadTitleSingular: "Creator", leadTitlePlural: "Creators")
+                                     leadTitleSingular: "Creator", leadTitlePlural: "Creators",
+                                     castTitle: "Cast", castLimit: 5)
+                    RelatedShowsSection(shows: model.recommendations, tint: model.tint)
                 }
                 .padding(.bottom, 24)
             }

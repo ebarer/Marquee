@@ -9,7 +9,7 @@ import SwiftData
 /// What a section build reads.
 enum SectionSource: Sendable, Equatable {
     case list(UUID, byDateAdded: Bool, foldOlder: Bool)
-    case watched(byWatchedDate: Bool)
+    case watched(sort: WatchedSortKey)
     case viewed
 }
 
@@ -40,6 +40,18 @@ struct SectionSnapshot: Identifiable, Sendable, Equatable {
     let entries: [MediaSnapshot]
     /// True for the "Older" archive bucket, which the list renders collapsed.
     let isCollapsible: Bool
+    /// When set (rating-sorted sections), the header renders this many filled stars
+    /// instead of `title`. Nil for month/older/unrated sections, which show `title`.
+    let ratingStars: Double?
+
+    init(id: DateComponents, title: String, entries: [MediaSnapshot],
+         isCollapsible: Bool, ratingStars: Double? = nil) {
+        self.id = id
+        self.title = title
+        self.entries = entries
+        self.isCollapsible = isCollapsible
+        self.ratingStars = ratingStars
+    }
 
     /// Sentinel id for the "Older" section; the negative year never collides with a
     /// real `[.year, .month]` key.
@@ -49,14 +61,29 @@ struct SectionSnapshot: Identifiable, Sendable, Equatable {
 /// Builds a source's month/year sections on a background context.
 @ModelActor
 actor SectionBuilder {
-    func build(source: SectionSource, ascending: Bool, filter: String) -> [SectionSnapshot] {
+    func build(source: SectionSource, ascending: Bool, filter: String,
+               mediaFilter: MediaTypeFilter = .all) -> [SectionSnapshot] {
+        let sections: [SectionSnapshot]
         switch source {
         case .list(let listID, let byDateAdded, let foldOlder):
-            return buildList(listID, byDateAdded: byDateAdded, foldOlder: foldOlder, ascending: ascending, filter: filter)
-        case .watched(let byWatchedDate):
-            return buildWatched(byWatchedDate: byWatchedDate, ascending: ascending, filter: filter)
+            sections = buildList(listID, byDateAdded: byDateAdded, foldOlder: foldOlder, ascending: ascending, filter: filter)
+        case .watched(let sort):
+            sections = buildWatched(sort: sort, ascending: ascending, filter: filter)
         case .viewed:
-            return buildViewed(ascending: ascending, filter: filter)
+            sections = buildViewed(ascending: ascending, filter: filter)
+        }
+        return applyMediaFilter(sections, mediaFilter)
+    }
+
+    /// Drop entries that don't match the media-type filter, then any section left empty.
+    private func applyMediaFilter(_ sections: [SectionSnapshot],
+                                  _ mediaFilter: MediaTypeFilter) -> [SectionSnapshot] {
+        guard mediaFilter != .all else { return sections }
+        return sections.compactMap { section in
+            let entries = section.entries.filter { mediaFilter.matches($0.mediaType) }
+            guard !entries.isEmpty else { return nil }
+            return SectionSnapshot(id: section.id, title: section.title,
+                                   entries: entries, isCollapsible: section.isCollapsible)
         }
     }
 
@@ -68,6 +95,10 @@ actor SectionBuilder {
         )
         guard let entries = try? modelContext.fetch(descriptor) else { return [] }
 
+        // Only the Watch List represents a show by its tracked season; custom lists show
+        // the whole show (seasons belong to the Watch List / Watched).
+        let isWatchList = entries.first?.list?.isWatchList ?? false
+
         let items = (try? modelContext.fetch(FetchDescriptor<MediaItem>())) ?? []
         // Key facts by (tmdbID, mediaType) so a movie and show sharing a tmdbID don't collide.
         var factsByKey: [String: (rating: Double?, watched: Date?)] = [:]
@@ -77,11 +108,13 @@ actor SectionBuilder {
             ? entries
             : entries.filter { $0.title.localizedCaseInsensitiveContains(filter) }
 
-        // A show in any list except Watched is represented by its tracked (next-incomplete)
-        // season, keyed by show id. Last write wins if sync momentarily duplicates.
+        // The Watch List represents a show by its tracked (next-incomplete) season, keyed by
+        // show id. Last write wins if sync momentarily duplicates. Empty for custom lists.
         var trackedByShow: [Int: TrackedSeason] = [:]
-        for tracked in (try? modelContext.fetch(FetchDescriptor<TrackedSeason>())) ?? [] {
-            trackedByShow[tracked.showTmdbID] = tracked
+        if isWatchList {
+            for tracked in (try? modelContext.fetch(FetchDescriptor<TrackedSeason>())) ?? [] {
+                trackedByShow[tracked.showTmdbID] = tracked
+            }
         }
         let watchedBySeason = watchedEpisodeCounts()
 
@@ -117,14 +150,14 @@ actor SectionBuilder {
         if byDateAdded { return flat(dated, ascending: ascending) }
         // Only the Watch List folds stale titles into an "Older" bucket, and only
         // when the user leaves the toggle on; custom lists keep every month live.
-        let isWatchList = entries.first?.list?.isWatchList ?? false
         let cutoff = (isWatchList && foldOlder) ? olderCutoff() : nil
         return group(dated, ascending: ascending, foldOlderThan: cutoff)
     }
 
     // MARK: Derived Watched (MediaItem, grouped by month)
 
-    private func buildWatched(byWatchedDate: Bool, ascending: Bool, filter: String) -> [SectionSnapshot] {
+    private func buildWatched(sort: WatchedSortKey, ascending: Bool, filter: String) -> [SectionSnapshot] {
+        let byWatchedDate = sort == .dateWatched
         var dated: [(date: Date, snapshot: MediaSnapshot)] = []
 
         // Movies track watched at the item level; TV tracks at the season level, so pull
@@ -150,7 +183,39 @@ actor SectionBuilder {
             dated.append((date, snapshot(from: season, watched: watched)))
         }
 
+        // Rating sort groups by star count instead of month; unrated titles (including
+        // watched seasons, which carry no rating) fall into their own bucket.
+        if sort == .rating { return groupByRating(dated, ascending: ascending) }
         return group(dated, ascending: ascending)
+    }
+
+    /// Buckets rows by half-star steps (0…10). Each distinct rating is one section,
+    /// ordered by stars; within a bucket the newest anchor date leads.
+    private func groupByRating(_ dated: [(date: Date, snapshot: MediaSnapshot)],
+                               ascending: Bool) -> [SectionSnapshot] {
+        var buckets: [Int: [(date: Date, snapshot: MediaSnapshot)]] = [:]
+        for item in dated {
+            let rating = item.snapshot.userRating ?? 0
+            let steps = rating > 0 ? Int((rating * 2).rounded()) : 0
+            buckets[steps, default: []].append(item)
+        }
+        let keys = buckets.keys.sorted()
+        let ordered = ascending ? keys : keys.reversed().map { $0 }
+        return ordered.map { steps in
+            let entries = buckets[steps]!.sorted { $0.date > $1.date }.map(\.snapshot)
+            // Rating-derived section id; the +9000 offset can't collide with month keys.
+            // Rated sections carry a star value for the header; "Unrated" (0) shows text.
+            return SectionSnapshot(id: DateComponents(year: 9000 + steps),
+                                   title: ratingTitle(steps), entries: entries, isCollapsible: false,
+                                   ratingStars: steps > 0 ? Double(steps) / 2 : nil)
+        }
+    }
+
+    private func ratingTitle(_ halfSteps: Int) -> String {
+        guard halfSteps > 0 else { return "Unrated" }
+        let stars = Double(halfSteps) / 2
+        let text = stars == stars.rounded() ? String(format: "%.0f", stars) : String(format: "%.1f", stars)
+        return "\(text) \(halfSteps == 2 ? "Star" : "Stars")"
     }
 
     // MARK: Derived Viewed (MediaItem, flat recency — no grouping)
@@ -194,7 +259,7 @@ actor SectionBuilder {
                       posterPath: season.posterPath, releaseDate: season.airDate,
                       sortDate: season.airDate, seasonNumber: season.seasonNumber,
                       seasonWatched: watched, seasonTotal: season.episodeCount,
-                      runtime: nil, dateWatched: season.watchedAt, userRating: nil)
+                      runtime: nil, dateWatched: season.watchedAt, userRating: season.userRating)
     }
 
     // MARK: Grouping

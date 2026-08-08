@@ -56,8 +56,10 @@ extension PersistenceCoordinator {
 
     // MARK: - Grouped sections (Lists screen)
 
-    func sections(for source: SectionSource, ascending: Bool, filter: String) async -> [SectionSnapshot] {
+    func sections(for source: SectionSource, ascending: Bool, filter: String,
+                  mediaFilter: MediaTypeFilter = .all) async -> [SectionSnapshot] {
         let builder = SectionBuilder(modelContainer: context.container)
-        return await builder.build(source: source, ascending: ascending, filter: filter)
+        return await builder.build(source: source, ascending: ascending, filter: filter,
+                                   mediaFilter: mediaFilter)
     }
 }

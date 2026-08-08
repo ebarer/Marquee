@@ -13,6 +13,8 @@ struct ShowRow: View {
     var role: String? = nil
     /// Credits pass `false` to skip the lazy per-row season-count fetch.
     var showsSeasonCount: Bool = true
+    /// When set (a person's TV credits), shows "N Episodes" in place of the year range.
+    var episodeCount: Int? = nil
 
     /// Search/list stubs carry only a premiere date, so the year range shows a single year.
     /// Resolve the fuller show lazily to upgrade it to a real range (e.g. "2022–2025").
@@ -39,7 +41,11 @@ struct ShowRow: View {
                         .lineLimit(1)
                 }
 
-                if yearRange != "N/A" {
+                if let episodeCount, episodeCount > 0 {
+                    Text("^[\(episodeCount) Episode](inflect: true)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else if yearRange != "N/A" {
                     Text(yearRange)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -54,8 +60,10 @@ struct ShowRow: View {
             Spacer()
         }
         .task(id: show.id) {
-            // A stub (no seasons loaded) lacks last-air/status, so upgrade the year range.
-            guard showsSeasonCount, show.seasonCount == 0,
+            // A stub (no seasons loaded) lacks last-air/status, so upgrade the year range —
+            // independent of the season-count text, so list rows show "2021–Present" correctly.
+            // Skipped when showing an episode count (credits) instead of the year range.
+            guard episodeCount == nil, show.seasonCount == 0,
                   let full = await ShowSeasonCountStore.shared.show(for: show.id) else { return }
             resolvedYearRange = full.yearRange
         }

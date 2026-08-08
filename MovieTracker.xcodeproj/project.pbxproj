@@ -460,8 +460,8 @@
 		CE569780301C873600DF9142 /* MovieDetail */ = {
 			isa = PBXGroup;
 			children = (
-				CEEAFCFC3019DEBF00D06E0E /* MovieDetailView.swift */,
 				CE569755301C19F300DF9142 /* MovieDetailModel.swift */,
+				CEEAFCFC3019DEBF00D06E0E /* MovieDetailView.swift */,
 				CEEAFD003019DEEA00D06E0E /* PosterDetailView.swift */,
 				CE569757301C1A1000DF9142 /* MovieMetadataStrip.swift */,
 				CEB8A472301F1891002FBF31 /* MovieOverviewSection.swift */,
@@ -1236,7 +1236,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.8.1;
+				CURRENT_PROJECT_VERSION = 2026.8.8.2;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1259,7 +1259,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.8.1;
+				CURRENT_PROJECT_VERSION = 2026.8.8.2;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (

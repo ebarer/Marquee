@@ -27,6 +27,9 @@ struct ShowActionBar: View {
     @State private var selectedTrailer: MovieTrailer?
     /// Non-nil while a mark-all-watched (true) / unmark-all (false) confirmation is pending.
     @State private var pendingWatched: Bool?
+    /// Gate the watched animation so the first sync (entry) settles instantly; only
+    /// user-driven changes after appearance animate the bookmark↔checkmark transition.
+    @State private var didAppear = false
 
     private static let size: CGFloat = 52
     private static let spacing: CGFloat = 12
@@ -46,8 +49,11 @@ struct ShowActionBar: View {
                 trailerButton
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isSeen)
-        .onAppear(perform: refresh)
+        .animation(didAppear ? .spring(response: 0.4, dampingFraction: 0.8) : nil, value: isSeen)
+        .onAppear {
+            refresh()
+            didAppear = true
+        }
         .fullScreenCover(item: $selectedTrailer) { trailer in
             NavigationStack {
                 TrailerPlayerView(trailer: trailer) { selectedTrailer = nil }

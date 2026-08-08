@@ -36,6 +36,13 @@ extension PersistenceCoordinator {
         return aired.allSatisfy { isSeasonWatched($0, showID: show.id) }
     }
 
+    /// The persisted fully-watched flag, readable from `showID` alone (no loaded show).
+    /// Lets the detail screen seed its checkmark correctly on entry, before the show
+    /// payload arrives, instead of computing — and animating — after the fact.
+    func isShowWatchedCached(showID: Int) -> Bool {
+        MediaItem.find(tmdbID: showID, mediaType: .tv, in: context)?.showWatched ?? false
+    }
+
     /// The stored completion date for a watched season (nil if the season isn't complete).
     func seasonWatchedDate(showID: Int, season: Int) -> Date? {
         WatchedSeason.find(showTmdbID: showID, seasonNumber: season, in: context)?.watchedAt
@@ -45,6 +52,19 @@ extension PersistenceCoordinator {
     func setSeasonWatchedDate(_ date: Date, showID: Int, season: Int) {
         guard let watched = WatchedSeason.find(showTmdbID: showID, seasonNumber: season, in: context) else { return }
         watched.watchedAt = date
+        save()
+    }
+
+    /// The user's star rating for a completed season (nil when unrated or not complete).
+    func seasonRating(showID: Int, season: Int) -> Double? {
+        WatchedSeason.find(showTmdbID: showID, seasonNumber: season, in: context)?.userRating
+    }
+
+    /// Set (or clear) a completed season's star rating; snaps to half-star steps to match
+    /// `StarRating`. A season only carries a rating once complete (its `WatchedSeason` exists).
+    func setSeasonRating(_ stars: Double?, showID: Int, season: Int) {
+        guard let watched = WatchedSeason.find(showTmdbID: showID, seasonNumber: season, in: context) else { return }
+        watched.userRating = stars.flatMap { $0 > 0 ? ($0 * 2).rounded() / 2 : nil }
         save()
     }
 
@@ -141,6 +161,11 @@ extension PersistenceCoordinator {
         if let snapshot = WatchedSeason.find(showTmdbID: showID, seasonNumber: seasonNumber, in: context) {
             context.delete(snapshot)
         }
+        // Clearing a season can only break "fully watched"; drop the cached flag.
+        if let item = MediaItem.find(tmdbID: showID, mediaType: .tv, in: context) {
+            item.showWatched = nil
+            item.pruneIfEmpty()
+        }
         save()
     }
 
@@ -163,6 +188,10 @@ extension PersistenceCoordinator {
         let existing = TrackedSeason.find(showTmdbID: show.id, in: context)
         let incomplete = firstIncompleteSeason(show)
         let hasCompletable = show.regularSeasons.contains { $0.episodeCount > 0 }
+
+        // Persist the fully-watched flag on every reconcile — this is the single choke
+        // point after any episode/season/show mutation, so the cache never drifts.
+        setShowWatchedCache(incomplete == nil && hasCompletable, show: show)
 
         // Truly finished — watched and to-watch are mutually exclusive.
         if incomplete == nil && hasCompletable {
@@ -205,6 +234,17 @@ extension PersistenceCoordinator {
     }
 
     // MARK: - Internals
+
+    /// Upsert or clear the show's cached fully-watched flag. Storing `true` keeps a
+    /// `MediaItem` alive; clearing prunes it if no other fact remains. No save — callers batch.
+    private func setShowWatchedCache(_ watched: Bool, show: Show) {
+        if watched {
+            MediaItem.upsert(key: show.mediaKey, in: context).showWatched = true
+        } else if let item = MediaItem.find(key: show.mediaKey, in: context) {
+            item.showWatched = nil
+            item.pruneIfEmpty()
+        }
+    }
 
     /// Air date of the lowest-numbered unwatched episode — the show's list sort/bucket
     /// anchor. Nil when episodes aren't loaded (caller falls back to the season start).

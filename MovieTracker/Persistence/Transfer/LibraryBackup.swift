@@ -121,7 +121,7 @@ struct ImportSummary {
         if listsCreated > 0 {
             parts.append("\(listsCreated) new \(listsCreated == 1 ? "list" : "lists")")
         }
-        parts.append("\(entriesAdded) \(entriesAdded == 1 ? "movie" : "movies") added")
+        parts.append("\(entriesAdded) \(entriesAdded == 1 ? "title" : "titles") added")
         if entriesSkipped > 0 {
             parts.append("\(entriesSkipped) already present")
         }

@@ -35,20 +35,20 @@ struct ListDestination {
                 color: list?.color ?? .appAccent,
                 symbol: list?.symbol ?? "list.bullet",
                 emptyDescription: list.map {
-                    $0.isWatchList ? "Movies you want to watch will appear here."
-                                   : "Movies you add to “\($0.name)” will appear here."
+                    $0.isWatchList ? "Movies & TV you want to watch will appear here."
+                                   : "Movies & TV you add to “\($0.name)” will appear here."
                 } ?? "",
                 list: list)
         case .watched:
             return ListDestination(
                 selection: selection, name: "Watched", color: watchedColor,
                 symbol: "checkmark.rectangle.stack",
-                emptyDescription: "Movies you mark watched will appear here.", list: nil)
+                emptyDescription: "Movies & TV you mark watched will appear here.", list: nil)
         case .viewed:
             return ListDestination(
                 selection: selection, name: "Viewed", color: viewedColor,
                 symbol: "clock.arrow.circlepath",
-                emptyDescription: "Movies you browse will appear here.", list: nil)
+                emptyDescription: "Movies & TV you browse will appear here.", list: nil)
         }
     }
 
@@ -61,10 +61,10 @@ struct ListDestination {
         }
     }
 
-    func sectionSource(watchedByDate: Bool, listByDateAdded: Bool, listFoldOlder: Bool) -> SectionSource? {
+    func sectionSource(watchedSort: WatchedSortKey, listByDateAdded: Bool, listFoldOlder: Bool) -> SectionSource? {
         switch selection {
         case .list(let uuid): return list != nil ? .list(uuid, byDateAdded: listByDateAdded, foldOlder: listFoldOlder) : nil
-        case .watched: return .watched(byWatchedDate: watchedByDate)
+        case .watched: return .watched(sort: watchedSort)
         case .viewed: return .viewed
         }
     }
@@ -166,35 +166,81 @@ struct ListSortMenu: View {
     var watchedSortKey: Binding<WatchedSortKey>?
     var listSortKey: Binding<ListSortKey>?
     var foldOlder: Binding<Bool>?
+    var mediaFilter: Binding<MediaTypeFilter>?
 
     var body: some View {
         Menu {
+            // Sort key — the primary choices, each with its own symbol.
             if let watchedSortKey {
-                Picker("Sort By", selection: watchedSortKey) {
-                    Text(WatchedSortKey.releaseDate.title).tag(WatchedSortKey.releaseDate)
-                    Text(WatchedSortKey.dateWatched.title).tag(WatchedSortKey.dateWatched)
+                Picker("Sort", selection: watchedSortKey) {
+                    label(WatchedSortKey.dateWatched).tag(WatchedSortKey.dateWatched)
+                    label(WatchedSortKey.releaseDate).tag(WatchedSortKey.releaseDate)
+                    label(WatchedSortKey.rating).tag(WatchedSortKey.rating)
                 }
+                .labelsHidden()
             }
 
             if let listSortKey {
-                Picker("Sort By", selection: listSortKey) {
-                    Text(ListSortKey.releaseDate.title).tag(ListSortKey.releaseDate)
-                    Text(ListSortKey.dateAdded.title).tag(ListSortKey.dateAdded)
+                Picker("Sort", selection: listSortKey) {
+                    label(ListSortKey.releaseDate).tag(ListSortKey.releaseDate)
+                    label(ListSortKey.dateAdded).tag(ListSortKey.dateAdded)
                 }
+                .labelsHidden()
             }
 
-            Picker("Order", selection: $ascending) {
-                Text("Ascending").tag(true)
-                Text("Descending").tag(false)
+            // Order — nested so it reads as a single row with the current value as subtitle.
+            Menu {
+                Picker("Order", selection: $ascending) {
+                    Text("Ascending").tag(true)
+                    Text("Descending").tag(false)
+                }
+                .labelsHidden()
+            } label: {
+                Text("Order")
+                Text(ascending ? "Ascending" : "Descending")
+            }
+            .menuActionDismissBehavior(.disabled)
+
+            // View — Movies / TV / Both; the row's subtitle reflects the current choice.
+            if let mediaFilter {
+                Menu {
+                    viewButton(.all, filter: mediaFilter, subtitle: "Movies & TV Shows")
+                    viewButton(.movies, filter: mediaFilter)
+                    viewButton(.tv, filter: mediaFilter)
+                } label: {
+                    Text("View")
+                    Text(mediaFilter.wrappedValue.title)
+                }
+                .menuActionDismissBehavior(.disabled)
             }
 
             if let foldOlder {
                 Section {
-                    Toggle("Hide Old Movies", isOn: foldOlder)
+                    Toggle("Hide Old Titles", isOn: foldOlder)
                 }
             }
         } label: {
-            Label("Sort", systemImage: "arrow.up.arrow.down")
+            Label("List Options", systemImage: "line.3.horizontal.decrease")
+        }
+        .menuActionDismissBehavior(.disabled)
+    }
+
+    private func label(_ key: WatchedSortKey) -> some View { Label(key.title, systemImage: key.symbol) }
+    private func label(_ key: ListSortKey) -> some View { Label(key.title, systemImage: key.symbol) }
+    private func label(_ filter: MediaTypeFilter) -> some View { Label(filter.title, systemImage: filter.symbol) }
+
+    /// A View-menu option as a Button (Pickers don't render option subtitles): title,
+    /// optional subtitle, and a leading symbol that becomes a checkmark when selected.
+    @ViewBuilder
+    private func viewButton(_ option: MediaTypeFilter, filter: Binding<MediaTypeFilter>,
+                            subtitle: String? = nil) -> some View {
+        let selected = filter.wrappedValue == option
+        Button {
+            filter.wrappedValue = option
+        } label: {
+            Text(option.title)
+            if let subtitle { Text(subtitle) }
+            Image(systemName: selected ? "checkmark" : option.symbol)
         }
     }
 }
@@ -212,8 +258,9 @@ struct ListSortMenu: View {
 
 #Preview("Sort menu — Watched") {
     @Previewable @State var ascending = false
-    @Previewable @State var key: WatchedSortKey = .dateWatched
-    ListSortMenu(ascending: $ascending, watchedSortKey: $key)
+    @Previewable @State var key: WatchedSortKey = .rating
+    @Previewable @State var mediaFilter: MediaTypeFilter = .all
+    ListSortMenu(ascending: $ascending, watchedSortKey: $key, mediaFilter: $mediaFilter)
         .tint(.appAccent)
         .padding()
         .background(Color.appBackground)

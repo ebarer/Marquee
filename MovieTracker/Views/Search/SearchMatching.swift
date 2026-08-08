@@ -154,6 +154,35 @@ enum SearchMatching {
         return Array(top.cast.prefix(leadFallbackCount))
     }
 
+    /// How well a title matches the query, lower = stronger: 0 exact, 1 title starts with
+    /// the query, 2 a word in the title starts with it, 3 contains it anywhere, 4 not at all.
+    /// Both sides are article-stripped + normalized so "The Office"/"house" compare cleanly.
+    static func titleRelevance(_ title: String, normalizedQuery needle: String) -> Int {
+        guard !needle.isEmpty else { return 1 }
+        let full = normalized(articleStripped(title))
+        if full == needle { return 0 }
+        if full.hasPrefix(needle) { return 1 }
+        let wordStart = articleStripped(title).lowercased()
+            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            .contains { normalized(String($0)).hasPrefix(needle) }
+        if wordStart { return 2 }
+        if full.contains(needle) { return 3 }
+        return 4
+    }
+
+    /// Trims TV search noise: keeps US-aired shows that are established (`voteCount` ≥
+    /// `voteFloor`) or trending (`popularity` ≥ `popularityFloor`), plus any exact title
+    /// match — so a directly-searched foreign show (e.g. "Squid Game") still appears, while
+    /// incidental foreign/low-signal junk ("Andro Melos", promo featurettes) drops out.
+    static func relevantShows(_ shows: [Show], normalizedQuery needle: String,
+                              voteFloor: Int, popularityFloor: Double) -> [Show] {
+        shows.filter { show in
+            if titleMatches(show.name, normalizedQuery: needle) { return true }
+            guard show.originCountry?.contains("US") ?? false else { return false }
+            return (show.voteCount ?? 0) >= voteFloor || (show.popularity ?? 0) >= popularityFloor
+        }
+    }
+
     /// Ranks for display: notable films (`voteCount` ≥ `minVotes`) first by current
     /// `popularity`, low-vote tail sunk below. Votes decide IN/OUT (a stable floor
     /// junk can't spike past), popularity decides ORDER (trending beats older-but-voted).

@@ -6,9 +6,9 @@
 import SwiftUI
 
 /// One episode row: still (with a corner watched-toggle), title, "SX, EY • air date"
-/// in the show accent, duration + star rating, and a 2-line synopsis. The whole row
-/// pushes the episode detail (trailing chevron); the still's badge toggles watched in
-/// place. Toggle state is owned by the parent.
+/// in the show accent, and duration + star rating. The whole row pushes the episode
+/// detail (trailing chevron, where the synopsis lives); the still's badge toggles
+/// watched in place. Toggle state is owned by the parent.
 struct EpisodeRow: View {
     let episode: Episode
     var isWatched: Bool
@@ -74,13 +74,6 @@ struct EpisodeRow: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            }
-
-            if let overview = episode.overview, !overview.isEmpty {
-                Text(overview)
-                    .font(.footnote)
-                    .foregroundStyle(.white.opacity(0.8))
-                    .lineLimit(2)
             }
         }
     }

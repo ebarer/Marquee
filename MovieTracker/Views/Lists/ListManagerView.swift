@@ -271,7 +271,7 @@ struct ListManagerView: View {
     }
 
     private func countText(_ count: Int) -> String {
-        "\(count) \(count == 1 ? "movie" : "movies")"
+        "\(count) \(count == 1 ? "title" : "titles")"
     }
 
     private var appInfo: String {

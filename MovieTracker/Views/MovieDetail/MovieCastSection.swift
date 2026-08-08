@@ -8,23 +8,28 @@ import SwiftUI
 /// Cast & crew on the movie detail screen, with directors surfaced at the top.
 struct MovieCastSection: View {
     let cast: [Person]
+    /// Episode guest stars, surfaced as a separate "Guests" tab (empty elsewhere).
+    var guests: [Person] = []
     var tint: Color = .appAccent
     /// The crew role surfaced above the cast/crew tabs (Director for films,
     /// Creator for shows), matched exactly against a person's joined roles.
     var leadRole: String = "Director"
     var leadTitleSingular: String = "Director"
     var leadTitlePlural: String = "Directors"
+    /// The heading for the cast tab ("Cast" for films, "Recurring Cast" for shows).
+    var castTitle: String = "Cast"
+    /// How many cast members show before the "Show More" expander.
+    var castLimit: Int = 10
 
     @State private var selection: Category?
     @State private var castExpanded = false
 
-    private let castLimit = 10
-
     enum Category: CaseIterable {
-        case cast, crew
+        case cast, guests, crew
         var title: String {
             switch self {
             case .cast: return "Cast"
+            case .guests: return "Guests"
             case .crew: return "Crew"
             }
         }
@@ -46,9 +51,15 @@ struct MovieCastSection: View {
         (person.role ?? "").components(separatedBy: ", ").contains(leadRole)
     }
 
+    /// The displayed heading for a category — the cast tab honors `castTitle`.
+    private func title(for category: Category) -> String {
+        category == .cast ? castTitle : category.title
+    }
+
     private func members(for category: Category) -> [Person] {
         switch category {
         case .cast: return castMembers
+        case .guests: return guests
         case .crew: return crewMembers
         }
     }
@@ -90,15 +101,15 @@ struct MovieCastSection: View {
                         withAnimation(.easeInOut) { selection = option }
                     } label: {
                         if option == category {
-                            Label(option.title, systemImage: "checkmark")
+                            Label(title(for: option), systemImage: "checkmark")
                         } else {
-                            Text(option.title)
+                            Text(title(for: option))
                         }
                     }
                 }
             } label: {
                 HStack(spacing: 4) {
-                    Text(category.title)
+                    Text(title(for: category))
                         .font(.headline)
                         .foregroundStyle(.white)
                     Image(systemName: "chevron.down")
@@ -113,20 +124,21 @@ struct MovieCastSection: View {
             }
             .buttonStyle(.plain)
         } else {
-            SectionHeader(title: category.title)
+            SectionHeader(title: title(for: category))
         }
     }
 
     @ViewBuilder
     private func categoryList(_ category: Category) -> some View {
         let all = members(for: category)
-        let collapsed = category == .cast && !castExpanded && all.count > castLimit
+        let expandable = category == .cast && all.count > castLimit
+        let collapsed = expandable && !castExpanded
         let shown = collapsed ? Array(all.prefix(castLimit)) : all
         VStack(spacing: 0) {
             personList(shown)
-            if collapsed {
+            if expandable {
                 rowSeparator
-                showMoreRow(remaining: all.count - castLimit)
+                expandToggleRow(collapsed: collapsed, remaining: all.count - castLimit)
             }
         }
     }
@@ -154,15 +166,16 @@ struct MovieCastSection: View {
         }
     }
 
-    private func showMoreRow(remaining: Int) -> some View {
+    private func expandToggleRow(collapsed: Bool, remaining: Int) -> some View {
         Button {
-            withAnimation(.easeInOut) { castExpanded = true }
+            withAnimation(.easeInOut) { castExpanded.toggle() }
         } label: {
             HStack(spacing: 6) {
-                Text("Show \(remaining) More")
+                Text(collapsed ? "Show \(remaining) More" : "Show Less")
                     .font(.subheadline.weight(.semibold))
                 Image(systemName: "chevron.down")
                     .font(.footnote.weight(.semibold))
+                    .rotationEffect(.degrees(collapsed ? 0 : 180))
                 Spacer(minLength: 0)
             }
             .foregroundStyle(tint)

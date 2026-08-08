@@ -82,8 +82,12 @@ struct ListRows: View {
                     Section {
                         rows(for: section.entries, hasHeader: true)
                     } header: {
-                        Text(section.title)
-                            .foregroundStyle(listColor)
+                        if let stars = section.ratingStars {
+                            RatingStars(rating: stars, starSize: 15, tint: listColor)
+                        } else {
+                            Text(section.title)
+                                .foregroundStyle(listColor)
+                        }
                     }
                 }
             }
@@ -153,6 +157,7 @@ struct ListRows: View {
         DetailLink(value: show(entry)) {
             ShowRow(show: show(entry), showsSeasonCount: false)
         }
+        .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             if isWatched {
@@ -168,8 +173,11 @@ struct ListRows: View {
     /// trailing swipe un-watches the whole season.
     private func watchedSeasonRow(_ entry: MediaSnapshot) -> some View {
         DetailLink(value: show(entry, openingSeason: entry.seasonNumber)) {
-            SeasonRowContent(entry: entry)
+            SeasonRowContent(entry: entry, tint: listColor)
         }
+        // Multiple seasons of one show push equal `Show` values; opt out of selection so
+        // tapping one doesn't stray-highlight another row that shares that value.
+        .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
@@ -179,8 +187,9 @@ struct ListRows: View {
     /// on that season, a trailing swipe removes it from the list.
     private func trackedSeasonRow(_ entry: MediaSnapshot) -> some View {
         DetailLink(value: show(entry, openingSeason: entry.seasonNumber)) {
-            SeasonRowContent(entry: entry)
+            SeasonRowContent(entry: entry, tint: listColor)
         }
+        .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
@@ -266,6 +275,7 @@ struct ListRows: View {
 /// half-filled corner badge over the app's standard poster gradient.
 private struct SeasonRowContent: View {
     let entry: MediaSnapshot
+    var tint: Color = .appAccent
 
     var body: some View {
         HStack(spacing: 12) {
@@ -287,6 +297,10 @@ private struct SeasonRowContent: View {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if let rating = entry.userRating, rating > 0 {
+                    RatingStars(rating: rating, tint: tint)
+                        .padding(.top, 1)
+                }
             }
             Spacer()
         }
@@ -299,7 +313,7 @@ private struct SeasonRowContent: View {
         }
         let remaining = total - watched
         guard remaining > 0 else { return "Season \(season)" }
-        return "Season \(season)  •  \(remaining) ep. left"
+        return "Season \(season)  •  Ep. \(watched + 1) of \(total)"
     }
 
     private var isPartial: Bool {
@@ -337,6 +351,44 @@ private struct SeasonRowContent: View {
     ]
     return NavigationStack {
         ListRows(sections: sections, selection: .list(UUID()), lists: [], listColor: .appAccent)
+            .listStyle(.plain)
+    }
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Watched — grouped by stars") {
+    // Mirrors SectionBuilder.groupByRating output: one section per star count, unrated last.
+    let sections: [SectionSnapshot] = {
+        let context = previewModelContainer.mainContext
+        // Real MediaItem ids so the snapshots are valid; contents are throwaway.
+        func snap(_ id: Int, _ title: String, rating: Double?) -> MediaSnapshot {
+            let item = MediaItem(tmdbID: id, mediaType: .movie, title: title)
+            item.userRating = rating
+            item.watchedAt = .now
+            context.insert(item)
+            return MediaSnapshot(persistentID: item.persistentModelID, tmdbID: id, mediaType: .movie,
+                                 title: title, posterPath: nil, releaseDate: nil, sortDate: nil,
+                                 seasonNumber: nil, seasonWatched: nil, seasonTotal: nil,
+                                 runtime: 120, dateWatched: .now, userRating: rating)
+        }
+        return [
+            SectionSnapshot(id: DateComponents(year: 9010), title: "5 Stars",
+                            entries: [snap(1, "Masterpiece", rating: 5)], isCollapsible: false,
+                            ratingStars: 5),
+            SectionSnapshot(id: DateComponents(year: 9009), title: "4.5 Stars",
+                            entries: [snap(2, "Nearly Perfect", rating: 4.5)], isCollapsible: false,
+                            ratingStars: 4.5),
+            SectionSnapshot(id: DateComponents(year: 9002), title: "1 Star",
+                            entries: [snap(3, "A Misfire", rating: 1)], isCollapsible: false,
+                            ratingStars: 1),
+            SectionSnapshot(id: DateComponents(year: 9000), title: "Unrated",
+                            entries: [snap(4, "Not Yet Rated", rating: nil)], isCollapsible: false),
+        ]
+    }()
+    NavigationStack {
+        ListRows(sections: sections, selection: .watched, lists: [], listColor: ListDestination.watchedColor)
             .listStyle(.plain)
     }
     .modelContainer(previewModelContainer)

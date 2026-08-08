@@ -26,6 +26,8 @@ final class WatchedSeason {
     var episodeCount: Int = 0
     var watchedAt: Date = Date()
     var addedAt: Date = Date()
+    /// The user's star rating for this season (0–5, half-star steps); nil when unrated.
+    var userRating: Double?
 
     init(showTmdbID: Int, seasonNumber: Int, showName: String, seasonName: String,
          posterPath: String?, airDate: Date?, episodeCount: Int = 0, watchedAt: Date = Date()) {
@@ -59,7 +61,10 @@ extension WatchedSeason {
         let groups = Dictionary(grouping: all) { "\($0.showTmdbID)-\($0.seasonNumber)" }
         var changed = false
         for (_, items) in groups where items.count > 1 {
-            for drop in items.sorted(by: { $0.addedAt < $1.addedAt }).dropFirst() {
+            let ordered = items.sorted { $0.addedAt < $1.addedAt }
+            let keep = ordered[0]
+            for drop in ordered.dropFirst() {
+                keep.userRating = keep.userRating ?? drop.userRating
                 context.delete(drop)
             }
             changed = true

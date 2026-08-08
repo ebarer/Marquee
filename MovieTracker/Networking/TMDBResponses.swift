@@ -396,6 +396,7 @@ extension TMDBWrapper {
                     credit.creditRole = item.role
                     credit.popularity = item.popularity
                     credit.voteCount = item.voteCount
+                    credit.episodeCount = item.episodeCount
                     if let airDateString = item.firstAirDateString, !airDateString.isEmpty {
                         credit.firstAirDate = airDateString.toDate(format: .iso8601DAw)
                     }
@@ -434,6 +435,7 @@ extension TMDBWrapper {
                 var job: String?
                 var popularity: Double?
                 var voteCount: Int?
+                var episodeCount: Int?
 
                 var role: String? { character ?? job }
 
@@ -442,6 +444,7 @@ extension TMDBWrapper {
                     case voteCount = "vote_count"
                     case firstAirDateString = "first_air_date"
                     case poster = "poster_path"
+                    case episodeCount = "episode_count"
                 }
             }
         }
