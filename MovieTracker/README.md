@@ -19,8 +19,7 @@ Description:
 
 ---
 Next:
-1. when adding a show to the custom list, the subtitle says the initial date, but it's sorted into the final date, it should sort into final date and show the date range
-2. there's a bug where, if the show has multiple watched seasons, tapping on season 1 (as an example) highlights season 3 when pushing into the details. this is because all 3 will push to the same view, but it should highlight the correct row
-3. when sorting by rating, use star symbols instead of the text "4 stars"
-4. you didn't remove the rating for the entire show in the horizontal metadata, there's no point in having that since that value isn't surfaced anywhere
-5. the rating for seasons isn't shown in the watched list cell, it should be 
+1. we've once again violated my 3 most important policies:
+  1. files shouldn't exceed 100 lines unless absolutely necessary
+  2. all view files should have a preview, and every view should have its own file to make it easy to debug. the preview should simulate all possible states/conditions.
+  3. comments shouldn't exceed 2 lines, and should only be used when the code is non-obvious

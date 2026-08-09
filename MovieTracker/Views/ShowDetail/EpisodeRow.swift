@@ -43,6 +43,10 @@ struct EpisodeRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            // Text line boxes carry leading above the cap, so at .top the visible title sits
+            // a hair below the still's top. Nudge up so the title top and bottom label align
+            // with the still's top and bottom edges.
+            .offset(y: -1.5)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

@@ -153,4 +153,5 @@ struct PersonBioHeader: View {
     PersonBioHeader(person: .preview, photoNamespace: namespace)
         .padding()
         .background(Color.appBackground)
+        .colorScheme(.dark)
 }

@@ -20,8 +20,11 @@ struct MovieDetailView: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
     @State private var model = MovieDetailModel()
-    @State private var showNavTitle = false
+    @State private var headerPinned = false
     @State private var isSeen = false
+    /// Top over-scroll (rubber-band) distance, from the scroll geometry — drives the
+    /// backdrop's elastic stretch. `frame(in:)` doesn't report top bounce reliably.
+    @State private var overscroll: CGFloat = 0
 
     var body: some View {
         Group {
@@ -33,17 +36,11 @@ struct MovieDetailView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .tint(model.tint)
-        .navigationTitle(model.movie?.title ?? movieTitle)
+        // The pinned header carries the title, so the nav bar stays chromeless and the
+        // backdrop reads through it.
+        .navigationTitle("")
         .toolbarTitleDisplayMode(.inline)
-        .toolbarBackgroundVisibility(showNavTitle ? .visible : .hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(model.movie?.title ?? movieTitle)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .opacity(showNavTitle ? 1 : 0)
-            }
-        }
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .task {
             isSeen = store?.isWatched(Movie(id: movieID, title: movieTitle)) ?? false
             await model.load(id: movieID)
@@ -71,17 +68,20 @@ struct MovieDetailView: View {
             let navBarBottom = container.frame(in: .global).minY
             let fullHeight = container.size.height + navBarBottom
             let imageHeight = fullHeight * 0.45
-            let headerHeight = fullHeight * 0.54
-            let width = container.size.width
+            let headerRest = fullHeight * 0.54
 
             ScrollView {
+                // The header is the first child (in-flow, so its rest layout and pull-down
+                // stretch match the original exactly) with a high zIndex so it draws over
+                // the sections and the page scrolls underneath it once pinned.
                 VStack(spacing: 0) {
                     MovieDetailHeader(movie: movie, tint: model.tint, lists: lists,
-                                      imageHeight: imageHeight, headerHeight: headerHeight,
-                                      width: width, navBarBottom: navBarBottom,
-                                      showNavTitle: $showNavTitle, isSeen: $isSeen)
+                                      navBarBottom: navBarBottom, imageHeight: imageHeight,
+                                      headerRest: headerRest, overscroll: overscroll,
+                                      headerPinned: $headerPinned, isSeen: $isSeen)
+                        .zIndex(1)
                     MovieMetadataStrip(movie: movie, tint: model.tint, isWatched: isSeen)
-                        .padding(.vertical, 8)
+                        .padding(.bottom, 8)
                     MovieOverviewSection(overview: movie.overview ?? "No movie description available.")
                     WhereToWatchSection(availabilityByRegion: movie.watchByRegion,
                                         releaseDate: movie.releaseDate, tint: model.tint)
@@ -93,8 +93,15 @@ struct MovieDetailView: View {
                 .padding(.bottom, 24)
             }
             .coordinateSpace(name: "scroll")
-            .scrollEdgeEffectHidden(!showNavTitle, for: .top)
-            .ignoresSafeArea(edges: .top)
+            .scrollEdgeEffectHidden(!headerPinned, for: .top)
+            // Also ignore horizontal safe area — otherwise the content sits in a slightly
+            // inset region (leading-aligned) and the background shows as a trailing gutter.
+            .ignoresSafeArea(edges: [.top, .horizontal])
+            .onScrollGeometryChange(for: CGFloat.self) { geo in
+                max(0, -(geo.contentOffset.y + geo.contentInsets.top))
+            } action: { _, newValue in
+                overscroll = newValue
+            }
         }
     }
 }

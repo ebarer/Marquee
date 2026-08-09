@@ -24,8 +24,11 @@ struct ShowDetailView: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
     @State private var model = ShowDetailModel()
-    @State private var showNavTitle = false
+    @State private var headerPinned = false
     @State private var isSeen = false
+    /// Top over-scroll (rubber-band) distance, from the scroll geometry — drives the
+    /// backdrop's elastic stretch. `frame(in:)` doesn't report top bounce reliably.
+    @State private var overscroll: CGFloat = 0
     /// The season chosen in the episodes picker, lifted here so the header poster can
     /// swap to match. Nil until the user picks one (falls back to `initialSeason`/first).
     @State private var selectedSeason: Int?
@@ -40,17 +43,11 @@ struct ShowDetailView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .tint(model.tint)
-        .navigationTitle(model.show?.name ?? showTitle)
+        // The pinned header carries the title, so the nav bar stays chromeless and the
+        // backdrop reads through it.
+        .navigationTitle("")
         .toolbarTitleDisplayMode(.inline)
-        .toolbarBackgroundVisibility(showNavTitle ? .visible : .hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(model.show?.name ?? showTitle)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .opacity(showNavTitle ? 1 : 0)
-            }
-        }
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .task {
             // Seed from the persisted flag first (showID only) so the checkmark is correct
             // before the payload loads, rather than flipping once it's computed.
@@ -121,19 +118,19 @@ struct ShowDetailView: View {
             let navBarBottom = container.frame(in: .global).minY
             let fullHeight = container.size.height + navBarBottom
             let imageHeight = fullHeight * 0.45
-            let headerHeight = fullHeight * 0.54
-            let width = container.size.width
+            let headerRest = fullHeight * 0.54
 
             ScrollView {
                 VStack(spacing: 0) {
                     ShowDetailHeader(show: show, tint: model.tint, lists: lists,
-                                     imageHeight: imageHeight, headerHeight: headerHeight,
-                                     width: width, navBarBottom: navBarBottom,
+                                     navBarBottom: navBarBottom, imageHeight: imageHeight,
+                                     headerRest: headerRest, overscroll: overscroll,
                                      seasonPosterPath: seasonPosterPath(for: show),
-                                     showNavTitle: $showNavTitle, isSeen: $isSeen,
+                                     headerPinned: $headerPinned, isSeen: $isSeen,
                                      onChange: reconcileMembership)
+                        .zIndex(1)
                     ShowMetadataStrip(show: show)
-                        .padding(.vertical, 8)
+                        .padding(.bottom, 8)
                     MovieOverviewSection(overview: show.overview ?? "No show description available.")
                     WhereToWatchSection(availabilityByRegion: show.watchByRegion,
                                         releaseDate: show.firstAirDate, tint: model.tint)
@@ -149,8 +146,13 @@ struct ShowDetailView: View {
                 .padding(.bottom, 24)
             }
             .coordinateSpace(name: "scroll")
-            .scrollEdgeEffectHidden(!showNavTitle, for: .top)
-            .ignoresSafeArea(edges: .top)
+            .scrollEdgeEffectHidden(!headerPinned, for: .top)
+            .ignoresSafeArea(edges: [.top, .horizontal])
+            .onScrollGeometryChange(for: CGFloat.self) { geo in
+                max(0, -(geo.contentOffset.y + geo.contentInsets.top))
+            } action: { _, newValue in
+                overscroll = newValue
+            }
         }
     }
 }
