@@ -45,17 +45,6 @@ struct CollapsingBackdropHeader<Bar: View>: View {
         ], startPoint: .top, endPoint: .bottom)
     }
 
-    /// A gentler fade for the behind-glass tint: it only softens the very bottom edge, so the
-    /// backdrop color carries across the compact bar (which sits low in the header) instead of
-    /// fading out right where the bar is.
-    private var tintFade: LinearGradient {
-        LinearGradient(stops: [
-            .init(color: .white, location: 0),
-            .init(color: .white, location: 0.85),
-            .init(color: .clear, location: 1.0)
-        ], startPoint: .top, endPoint: .bottom)
-    }
-
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
@@ -77,33 +66,9 @@ struct CollapsingBackdropHeader<Bar: View>: View {
             // backdrop zoom reads crisply on the way up and only crossfades to glass as it
             // sticks. 0 until p passes 0.7, then ramps to 1 at the pin.
             let glassReveal = min(1, max(0, (p - 0.7) / 0.3))
-            // Pinned-glass tuning knobs.
-            let glassDim = 0.35     // black scrim strength → overall darkness
-            let glassTint = 0.9     // backdrop image placed BEHIND the material, so the material
-                                    // blurs the image tint and the live page together — colors
-                                    // come through without a static overlay masking the movement.
+            let glassColor = 0.25    // how strongly the backdrop copy beneath the glass shows (inverted)
 
             ZStack(alignment: .bottomLeading) {
-                // Backdrop tint BEHIND the glass: the material blurs this together with the live
-                // page scrolling behind the header, so the bar picks up the image's colors while
-                // the page still reads through. Faded in only as it pins.
-                Color.clear
-                    .frame(maxWidth: .infinity, minHeight: currentHeaderHeight, maxHeight: currentHeaderHeight)
-                    .overlay { PosterImage(url: backgroundURL) }
-                    .clipped()
-                    .mask { tintFade }
-                    .opacity(Double(glassReveal) * glassTint)
-                    .allowsHitTesting(false)
-
-                // Thin glass base — hidden at rest behind the opaque backdrop, it takes over as
-                // that backdrop fades so the page reads through the pinned bar (like the nav bar).
-                // Pin the dark colorScheme: like PosterDetailView, the material otherwise falls
-                // back to its light (pale) variant in this context.
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .environment(\.colorScheme, .dark)
-                    .frame(maxWidth: .infinity, minHeight: currentHeaderHeight, maxHeight: currentHeaderHeight)
-
                 // The opaque backdrop (image + gradient over the app background). Fades out
                 // over the last of the collapse so the glass base shows through when pinned.
                 ZStack {
@@ -117,6 +82,7 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                         .frame(maxWidth: .infinity, minHeight: currentImageHeight, maxHeight: currentImageHeight)
                         .overlay { PosterImage(url: backgroundURL) }
                         .clipped()
+                        .blur(radius: 5 * glassReveal)
                         // The fade is a mask on the image itself: its bottom eases to clear,
                         // revealing the app-background base below (which keeps the title legible
                         // over a bright backdrop) with no hard image edge at any point in scroll.
@@ -126,13 +92,15 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                 }
                 .frame(maxWidth: .infinity, minHeight: currentHeaderHeight,
                        maxHeight: currentHeaderHeight, alignment: .top)
-                .opacity(1 - glassReveal)
+                .opacity(1 - Double(glassReveal * glassColor))
 
-                // Dimming layer beneath the tint (per Apple's guidance for glass) so the bar
-                // defaults to the deep tone of a dark-mode toolbar rather than a pale frost.
-                Color.black.opacity(Double(glassReveal) * glassDim)
+                // Liquid Glass base — the real refractive nav-bar glass, NOT a frosted grey
+                // `Material` (which only ever thins to grey, never to clear). It refracts the
+                // backdrop copy above and the live page scrolling under the pinned bar.
+                Color.clear
                     .frame(maxWidth: .infinity, minHeight: currentHeaderHeight, maxHeight: currentHeaderHeight)
-                    .allowsHitTesting(false)
+                    .glassEffect(.regular.tint(.black.opacity(0.35)), in: Rectangle())
+                    .opacity(glassReveal*0.80) /// TODO:EAB: Work this 75% multiple into the glassReveal calculation directly.
 
                 // Bottom gradient — grounds the header's lower edge into the app background at
                 // rest and through the transition (hiding the seam while the image is present),
@@ -148,10 +116,6 @@ struct CollapsingBackdropHeader<Bar: View>: View {
             }
             .frame(maxWidth: .infinity, minHeight: currentHeaderHeight, maxHeight: currentHeaderHeight)
             .clipped()
-            .overlay(alignment: .bottom) {
-                // Nav-bar-style hairline, revealed once the bar is stuck.
-                Divider().opacity(Double(p))
-            }
             // Pull-down shifts up so the grown image fills the exposed top; on scroll-up shift
             // DOWN by `shrink` so the shrinking header's bar stays flush with the page (the
             // sliver this opens at the top sits under the nav bar).

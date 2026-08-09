@@ -59,15 +59,15 @@ struct DetailHeaderBar<Actions: View>: View {
                         .fixedSize()
                         .scaleEffect(1 - 0.25 * p, anchor: .topLeading)
                         .frame(height: subtitleHeight * (1 - p), alignment: .topLeading)
-                        .opacity(Double(max(0, 1 - p * 1.6)))
-                        .padding(.top, 8)
+                        .opacity(Double(max(0, 1 - p * 3)))
+                        .padding(.top, 8 * (1 - p))
                 }
 
                 actions()
                     // Top anchor keeps the buttons' top edge where layout puts it (8pt below
                     // the title), so the compact title→buttons gap matches the title→label gap.
                     .scaleEffect(1 - 0.2 * p, anchor: .topLeading)
-                    .padding(.top, 8 * (1 - p))
+                    .padding(.top, 8)
             }
             .frame(width: columnWidth, alignment: .leading)
 

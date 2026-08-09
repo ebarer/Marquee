@@ -21,7 +21,7 @@ struct WhereToWatchSection: View {
 
     private var inTheatres: Bool {
         guard let releaseDate, releaseDate <= .now,
-              let cutoff = Calendar.current.date(byAdding: .day, value: -120, to: .now)
+              let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: .now)
         else { return false }
         return releaseDate > cutoff
     }
@@ -63,20 +63,28 @@ struct WhereToWatchSection: View {
     }
 
     private func header(available: Bool) -> some View {
-        HStack(spacing: 8) {
-            titleView(available: available)
-            infoButton
-            if available {
-                Button(action: toggleExpanded) {
-                    Image(systemName: "chevron.down")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(tint)
-                        .rotationEffect(.degrees(expanded ? 0 : -90))
-                        .contentShape(Rectangle())
+        VStack(alignment: .leading) {
+            HStack(spacing: 8) {
+                titleView(available: available)
+                infoButton
+                if available {
+                    Button(action: toggleExpanded) {
+                        Image(systemName: "chevron.down")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(tint)
+                            .rotationEffect(.degrees(expanded ? 0 : -90))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                Spacer()
             }
-            Spacer()
+
+            if inTheatres {
+                Text("Watch in Theaters")
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)
@@ -94,7 +102,7 @@ struct WhereToWatchSection: View {
             }
             .buttonStyle(.plain)
         } else {
-            Text(inTheatres ? "Watch in Theaters" : "Unavailable to Stream")
+            Text("Unavailable to Stream")
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }
