@@ -10,7 +10,6 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
     case nowPlaying
     case comingSoon
     case showsPopular
-    case showsAiringToday
     case showsOnTheAir
 
     var id: Int { rawValue }
@@ -18,7 +17,7 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
     /// Whether this shelf lists TV shows rather than movies.
     var isShow: Bool {
         switch self {
-        case .showsPopular, .showsAiringToday, .showsOnTheAir: return true
+        case .showsPopular, .showsOnTheAir: return true
         default: return false
         }
     }
@@ -29,7 +28,6 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
         case .nowPlaying: return "Now Playing"
         case .comingSoon: return "Coming Soon"
         case .showsPopular: return "Popular Shows"
-        case .showsAiringToday: return "Airing Today"
         case .showsOnTheAir: return "On The Air"
         }
     }
@@ -40,7 +38,6 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
         case .nowPlaying: return "popcorn.fill"
         case .comingSoon: return "calendar"
         case .showsPopular: return "tv.fill"
-        case .showsAiringToday: return "dot.radiowaves.up.forward"
         case .showsOnTheAir: return "antenna.radiowaves.left.and.right"
         }
     }

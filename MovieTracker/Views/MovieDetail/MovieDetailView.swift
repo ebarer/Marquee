@@ -38,9 +38,14 @@ struct MovieDetailView: View {
         .tint(model.tint)
         // The pinned header carries the title, so the nav bar stays chromeless and the
         // backdrop reads through it.
-        .navigationTitle("")
+        .navigationTitle(model.movie?.title ?? movieTitle)
         .toolbarTitleDisplayMode(.inline)
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("") // Visually overrides the center title space
+            }
+        }
         .task {
             isSeen = store?.isWatched(Movie(id: movieID, title: movieTitle)) ?? false
             await model.load(id: movieID)

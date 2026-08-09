@@ -27,7 +27,8 @@ struct SidebarRootView: View {
             // Injected on the stack so every pushed screen (cast → person, related
             // → movie) inherits it and keeps its own Close button.
             .environment(\.closeModal) { presented = nil }
-            .presentationSizing(.page)
+            .presentationSizing(.fitted)
+            .frame(minWidth: 500, idealWidth: 600, maxWidth: 800, minHeight: 600, idealHeight: 800)
         }
     }
 

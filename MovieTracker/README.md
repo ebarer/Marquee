@@ -1,8 +1,11 @@
 # README
 
 Important:
+- [ ] Save most recent changes (and version bump) to Xcode project
 - [ ] Clean up comments
 - [ ] Organize project
+- [ ] Fix search ("batman" doesn't yield the dark knight, etc.)
+- [ ] Unify movie/episode/person bio, it's the same mechanic
 
 Ideas:
 - [ ] Filter watch list by what's streamable

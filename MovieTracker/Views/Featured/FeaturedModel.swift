@@ -74,7 +74,6 @@ final class FeaturedModel {
 
     private func fetchShows(page: Int) async throws -> PagedResult<Show> {
         switch collection {
-        case .showsAiringToday: return try await TMDBWrapper.showsAiringToday(page: page)
         case .showsOnTheAir: return try await TMDBWrapper.showsOnTheAir(page: page)
         default: return try await TMDBWrapper.showsPopular(page: page)
         }

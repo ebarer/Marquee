@@ -49,10 +49,6 @@ extension TMDBWrapper {
                                   queryItems: [URLQueryItem(name: "query", value: query)])
     }
 
-    static func showsAiringToday(page: Int) async throws -> PagedResult<Show> {
-        try await showPage("/tv/airing_today", page: page)
-    }
-
     static func showsPopular(page: Int) async throws -> PagedResult<Show> {
         // `vote_count.gte` filters thin records the same way `moviesPopular` does.
         try await discoverShows(page: page, extra: [
