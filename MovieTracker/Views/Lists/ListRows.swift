@@ -280,7 +280,7 @@ private struct SeasonRowContent: View {
     var body: some View {
         HStack(spacing: 12) {
             PosterImage(url: TMDBWrapper.imageURL(path: entry.posterPath,
-                                                  size: Movie.PosterSize.w185.rawValue))
+                                                  size: PosterSize.w185.rawValue))
                 .frame(width: 51, height: 76)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .overlay {

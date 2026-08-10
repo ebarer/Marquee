@@ -1,18 +1,21 @@
 # README
 
+Oraganization:
+- [ ] Clean up comments + organize project
+- [ ] Get rid of single-letter variables/arguments, always use proper names
+
 Important:
-- [ ] Save most recent changes (and version bump) to Xcode project
-- [ ] Clean up comments
-- [ ] Organize project
 - [ ] Fix search ("batman" doesn't yield the dark knight, etc.)
-- [ ] Unify movie/episode/person bio, it's the same mechanic
+
+Polish
 - [ ] Marking an entire show as watched should default each season to its last aired date
+- [ ] Season header (number, date, episode count) should all be tappable for picker
 
 Ideas:
 - [ ] Filter watch list by what's streamable
+  - [ ] Add support for togglign between what you subscribe to, and whether it's streamable at all
 - [ ] Share lists
 - [ ] Support landscape?
-- [ ] Add TV shows
 
 Description:
 - Discover – curated list of popular, now playing, and upcoming movies

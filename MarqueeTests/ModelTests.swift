@@ -63,8 +63,8 @@ import Foundation
     }
 
     @Test func primaryTrailerPrefersOfficialTrailerOnYouTube() {
-        func t(_ id: String, _ type: String, official: Bool, at date: String) -> MovieTrailer {
-            MovieTrailer(id: id, title: id, key: "k\(id)", type: type, site: "YouTube",
+        func t(_ id: String, _ type: String, official: Bool, at date: String) -> MediaTrailer {
+            MediaTrailer(id: id, title: id, key: "k\(id)", type: type, site: "YouTube",
                          official: official, publishedAt: date)
         }
         var m = Movie(id: 1, title: "A")
@@ -80,17 +80,17 @@ import Foundation
     @Test func primaryTrailerIgnoresNonYouTubeAndClips() {
         var m = Movie(id: 1, title: "A")
         m.trailers = [
-            MovieTrailer(id: "vimeo", title: "V", key: "k", type: "Trailer", site: "Vimeo",
+            MediaTrailer(id: "vimeo", title: "V", key: "k", type: "Trailer", site: "Vimeo",
                          official: true, publishedAt: "2021-01-01"),
-            MovieTrailer(id: "clip", title: "C", key: "k", type: "Clip", site: "YouTube",
+            MediaTrailer(id: "clip", title: "C", key: "k", type: "Clip", site: "YouTube",
                          official: true, publishedAt: "2021-01-01"),
         ]
         #expect(m.primaryTrailer == nil)
     }
 
     @Test func primaryTrailerBreaksTiesByPublishDate() {
-        func t(_ id: String, at date: String) -> MovieTrailer {
-            MovieTrailer(id: id, title: id, key: "k", type: "Trailer", site: "YouTube",
+        func t(_ id: String, at date: String) -> MediaTrailer {
+            MediaTrailer(id: id, title: id, key: "k", type: "Trailer", site: "YouTube",
                          official: true, publishedAt: date)
         }
         var m = Movie(id: 1, title: "A")
@@ -108,17 +108,17 @@ import Foundation
     }
 }
 
-@Suite struct MovieTrailerTests {
+@Suite struct MediaTrailerTests {
     @Test func typeMapsUnknownToOther() {
-        let t = MovieTrailer(id: "1", title: "t", key: "k", type: "Bloopers",
+        let t = MediaTrailer(id: "1", title: "t", key: "k", type: "Bloopers",
                              site: "YouTube", official: false, publishedAt: "2020")
         #expect(t.type == .other)
         #expect(t.isTrailer == false)
     }
 
     @Test func isTrailerForTrailerAndTeaser() {
-        func t(_ type: String) -> MovieTrailer {
-            MovieTrailer(id: "1", title: "t", key: "k", type: type, site: "YouTube",
+        func t(_ type: String) -> MediaTrailer {
+            MediaTrailer(id: "1", title: "t", key: "k", type: type, site: "YouTube",
                          official: false, publishedAt: "2020")
         }
         #expect(t("Trailer").isTrailer)
@@ -128,7 +128,7 @@ import Foundation
 
     @Test func primaryScoreRanksTrailerTeaserOfficial() {
         func score(_ type: String, _ official: Bool) -> Int {
-            MovieTrailer(id: "1", title: "t", key: "k", type: type, site: "YouTube",
+            MediaTrailer(id: "1", title: "t", key: "k", type: type, site: "YouTube",
                          official: official, publishedAt: "2020").primaryScore
         }
         #expect(score("Trailer", true) == 45)
@@ -138,7 +138,7 @@ import Foundation
     }
 
     @Test func urlsBuildFromKey() {
-        let t = MovieTrailer(id: "1", title: "t", key: "abc123", type: "Trailer",
+        let t = MediaTrailer(id: "1", title: "t", key: "abc123", type: "Trailer",
                              site: "YouTube", official: true, publishedAt: "2020")
         #expect(t.url?.absoluteString == "https://www.youtube.com/embed/abc123")
         #expect(t.watchURL?.absoluteString == "https://www.youtube.com/watch?v=abc123")

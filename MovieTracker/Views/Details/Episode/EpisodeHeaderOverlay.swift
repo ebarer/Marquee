@@ -1,0 +1,108 @@
+//
+//  EpisodeHeaderOverlay.swift
+//  MovieTracker
+//
+
+import SwiftUI
+
+/// The title, watched checkmark, and code/date/duration/rating line laid over the episode
+/// still. Reveals the nav-bar title once the on-page title scrolls behind the bar.
+struct EpisodeHeaderOverlay: View {
+    let episode: Episode
+    let tint: Color
+    let navBarBottom: CGFloat
+    @Binding var showNavTitle: Bool
+
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(episode.name)
+                .font(.title2.bold())
+                .foregroundStyle(.white)
+                .lineLimit(2)
+                .onGeometryChange(for: Bool.self) { proxy in
+                    proxy.frame(in: .global).maxY <= navBarBottom
+                } action: { crossed in
+                    withAnimation(.easeInOut(duration: 0.2)) { showNavTitle = crossed }
+                }
+
+            HStack(alignment: .center, spacing: 12) {
+                watchedButton
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(codeAndDate)
+                        .foregroundStyle(tint)
+                    if episode.duration != nil || (episode.rating ?? 0) > 0 {
+                        durationRating
+                    }
+                }
+                .font(.subheadline)
+            }
+        }
+    }
+
+    private var watchedButton: some View {
+        Button { toggleWatched() } label: {
+            Image(systemName: "checkmark")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(isWatched ? .appBackground : tint)
+                .frame(width: 52, height: 52)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(isWatched ? .regular.tint(tint).interactive() : .regular.interactive(), in: Circle())
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isWatched)
+        .accessibilityLabel(isWatched ? "Mark episode unwatched" : "Mark episode watched")
+    }
+
+    private var durationRating: some View {
+        HStack(spacing: 5) {
+            if let duration = episode.duration {
+                Text(duration)
+            }
+            if let rating = episode.rating, rating > 0 {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 9))
+                Text(String(format: "%.1f", rating / 2))
+            }
+        }
+        .foregroundStyle(.white.opacity(0.75))
+    }
+
+    private var codeAndDate: String {
+        var text = "S\(episode.seasonNumber), E\(episode.episodeNumber)"
+        if let date = episode.airDate?.toString() { text += "  •  \(date)" }
+        return text
+    }
+
+    private var isWatched: Bool {
+        guard let store else { return false }
+        _ = store.revision
+        return store.isEpisodeWatched(showID: episode.showTmdbID,
+                                      season: episode.seasonNumber, episode: episode.episodeNumber)
+    }
+
+    private func toggleWatched() {
+        guard let store else { return }
+        store.setEpisodeWatched(!isWatched, showID: episode.showTmdbID,
+                                season: episode.seasonNumber, episode: episode.episodeNumber)
+        // The episode page only knows the show id, so reconcile the season snapshot + list
+        // membership from the warm show cache. Watching an episode adds the show to the Watch List.
+        Task { @MainActor in
+            guard let show = await MediaCacheStore.shared.loadShow(id: episode.showTmdbID)?.show else { return }
+            store.reconcileSeasons(for: show)
+            store.reconcileMembership(show)
+        }
+    }
+}
+
+#Preview {
+    @Previewable @State var showNavTitle = false
+    EpisodeHeaderOverlay(episode: Episode.previewEpisodes[0], tint: .appAccent,
+                         navBarBottom: 100, showNavTitle: $showNavTitle)
+        .padding()
+        .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+        .preferredColorScheme(.dark)
+}

@@ -156,9 +156,9 @@ import Testing
     @Test func primaryTrailerPrefersOfficialYouTubeTrailer() {
         var s = Show(id: 1, name: "T")
         s.trailers = [
-            MovieTrailer(id: "a", title: "Clip", key: "k1", type: "Clip", site: "YouTube",
+            MediaTrailer(id: "a", title: "Clip", key: "k1", type: "Clip", site: "YouTube",
                          official: true, publishedAt: "2021-01-01"),
-            MovieTrailer(id: "b", title: "Trailer", key: "k2", type: "Trailer", site: "YouTube",
+            MediaTrailer(id: "b", title: "Trailer", key: "k2", type: "Trailer", site: "YouTube",
                          official: true, publishedAt: "2021-02-01"),
         ]
         #expect(s.primaryTrailer?.key == "k2")
