@@ -28,6 +28,16 @@ extension TMDBWrapper {
         }
     }
 
+    /// A light movie detail for search augmentation: base fields + credits in one call,
+    /// so a single fetch yields both the collection (for franchise expansion, since
+    /// `/search/*` omits `belongs_to_collection`) and the cast (for the People strip) —
+    /// instead of two per-movie round-trips.
+    static func movieSearchDetail(id: Int) async throws -> Movie {
+        let data = try await fetch("/movie/\(id)",
+                                   queryItems: [URLQueryItem(name: "append_to_response", value: "credits")])
+        return translate(movie: try decode(MovieRaw.self, from: data))
+    }
+
     static func moviesNowPlaying(page: Int) async throws -> PagedResult<Movie> {
         // Region release date (not `primary_release_date`) so a film that premiered
         // abroad earlier but is in US theatres now still shows — re-releases belong.

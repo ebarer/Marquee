@@ -1,14 +1,17 @@
 # README
 
-Oraganization:
+Important:
+- [ ] Checkmark on episode cell doesn't work
+- [ ] Checkmark on episode details should animate in the date watched label
+
+Project:
 - [ ] Clean up comments + organize project
 - [ ] Get rid of single-letter variables/arguments, always use proper names
 
-Important:
-- [ ] Fix search ("batman" doesn't yield the dark knight, etc.)
-
-Polish
-- [ ] 
+Polish:
+- [ ] Search: Noah Wyle is known for ER and The Pitt, neither show up in that section (movies only?)
+- [ ] Search: Seth Rogen is known for The Studio, Superbad and Knocked Up, (the 1st doesn't show up at all, the other 2 aren't rated highly enough?
+- [ ] Search: searching for Seth Rogen should return his discography
 
 Ideas:
 - [ ] Filter watch list by what's streamable

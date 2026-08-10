@@ -231,4 +231,50 @@ enum SearchMatching {
         let inline = prominent > 0 ? prominent : minInline
         return min(inline, previewLimit, featured.count)
     }
+
+    /// Movies and shows in one ranked list. Ordering, in order of precedence:
+    ///  1. **Match tier**: strong (exact/prefix title, or a `relatedMovieIDs` franchise
+    ///     match), then weak (a title word starts with / contains the query), then no match.
+    ///     Exact and prefix share the strong tier so notability — not the exact-vs-prefix
+    ///     distinction — decides between them. A prefix query like "sili" keeps *Silicon
+    ///     Valley* (strong) above the fuzzy TMDB noise ("Send Help") that has more votes
+    ///     but no title match.
+    ///  2. **Obscure sink**: within its tier, an item below both `voteFloor` *and*
+    ///     `popularityFloor` drops behind the tier's notable items.
+    ///  3. **Enduring notability**: `voteCount`, then `popularity`. So within the strong tier
+    ///     the most-watched title leads even when its name doesn't contain the query — a
+    ///     "batman" search tops out with *The Dark Knight* (a `relatedMovieIDs` franchise
+    ///     sibling), ahead of the lower-voted "Batman …" titles.
+    ///  4. Original order (movies precede shows) as the final tie-break.
+    ///
+    /// `relatedMovieIDs` are movie ids surfaced as related (e.g. franchise-collection
+    /// siblings) that don't literally match the title but should rank as strong matches.
+    static func interlaced(movies: [Movie], shows: [Show], query: String = "",
+                           voteFloor: Int = 0, popularityFloor: Double = 0,
+                           relatedMovieIDs: Set<Int> = []) -> [MediaRef] {
+        let needle = normalized(articleStripped(query))
+        let refs = movies.map(MediaRef.movie) + shows.map(MediaRef.show)
+        // Tier 0 strong (exact/prefix or related), 1 weak (word-start/contains), 2 none;
+        // an obscure result adds 3 so it trails its tier's notable items.
+        func rank(_ ref: MediaRef) -> Int {
+            let related = { if case .movie(let m) = ref { return relatedMovieIDs.contains(m.id) }; return false }()
+            let relevance = related ? 0 : titleRelevance(ref.title, normalizedQuery: needle)
+            let cls = relevance <= 1 ? 0 : (relevance <= 3 ? 1 : 2)
+            let obscure = ref.voteCount < voteFloor && ref.popularity < popularityFloor
+            return obscure ? cls + 3 : cls
+        }
+        return refs.enumerated()
+            .sorted { lhs, rhs in
+                let (lr, rr) = (rank(lhs.element), rank(rhs.element))
+                if lr != rr { return lr < rr }
+                if lhs.element.voteCount != rhs.element.voteCount {
+                    return lhs.element.voteCount > rhs.element.voteCount
+                }
+                if lhs.element.popularity != rhs.element.popularity {
+                    return lhs.element.popularity > rhs.element.popularity
+                }
+                return lhs.offset < rhs.offset
+            }
+            .map(\.element)
+    }
 }
