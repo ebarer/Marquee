@@ -29,11 +29,13 @@ final class ShowDetailModel {
         if let cached = await MediaCacheStore.shared.loadShow(id: id) {
             show = cached.show
             if let color = cached.color { tint = color }
+            hydrateEpisodes(from: cached.show)
         }
 
         do {
             let full = try await TMDBWrapper.getShow(id: id)
             show = full
+            invalidateGrownSeasons(against: full)
             var freshTint = tint
             if let url = full.posterURL(.w342),
                let data = try? await TMDBWrapper.imageData(from: url) {
@@ -73,8 +75,29 @@ final class ShowDetailModel {
             let season = try await TMDBWrapper.getSeason(showID: showID, seasonNumber: seasonNumber)
             seasonEpisodes[seasonNumber] = season.episodes
             if !season.cast.isEmpty { seasonCast[seasonNumber] = season.cast }
+            await MediaCacheStore.shared.cacheSeason(showID: showID, season)
         } catch {
             print("Season load error: \(error)")
+        }
+    }
+
+    /// Seed the per-season episode/cast dictionaries from a cached show whose seasons already
+    /// carry episodes, so the episodes section renders instantly (and offline) without a fetch.
+    private func hydrateEpisodes(from show: Show) {
+        for season in show.seasons where !season.episodes.isEmpty {
+            seasonEpisodes[season.seasonNumber] = season.episodes
+            if !season.cast.isEmpty { seasonCast[season.seasonNumber] = season.cast }
+        }
+    }
+
+    /// Drop hydrated episodes for any season that has since grown (a new episode aired), so
+    /// `loadSeason` re-fetches it. The fresh show payload carries the up-to-date episode count.
+    private func invalidateGrownSeasons(against show: Show) {
+        for season in show.seasons {
+            if let have = seasonEpisodes[season.seasonNumber], have.count < season.episodeCount {
+                seasonEpisodes[season.seasonNumber] = nil
+                seasonCast[season.seasonNumber] = nil
+            }
         }
     }
 }

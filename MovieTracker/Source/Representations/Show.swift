@@ -78,9 +78,9 @@ extension Show {
         return "\(start)–\(end)"
     }
 
-    /// Seasons excluding "Specials" (season 0), ordered — the default browsing set.
+    /// Seasons excluding "Specials" (season 0) and unaired placeholders (0 episodes), ordered — the default browsing set.
     var regularSeasons: [Season] {
-        seasons.filter { !$0.isSpecials }.sorted { $0.seasonNumber < $1.seasonNumber }
+        seasons.filter { !$0.isSpecials && $0.episodeCount > 0 }.sorted { $0.seasonNumber < $1.seasonNumber }
     }
 }
 

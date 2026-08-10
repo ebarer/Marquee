@@ -1,5 +1,5 @@
 //
-//  SectionBuilderTests.swift
+//  ListSectionsTests.swift
 //  MarqueeTests
 //
 
@@ -8,12 +8,17 @@ import Foundation
 import SwiftData
 @testable import Marquee
 
+/// Exercises the list pipeline end to end: `ListCoordinator` (fetch + dates + layout) piped
+/// through `SectionFormatter` (grouping / "Older" fold / rating buckets).
 @MainActor
-@Suite struct SectionBuilderTests {
+@Suite struct ListSectionsTests {
     let store = makeInMemoryStore()
 
-    private func builder() -> SectionBuilder {
-        SectionBuilder(modelContainer: store.context.container)
+    private func sections(_ request: ListRequest, ascending: Bool, filter: String = "",
+                          mediaFilter: MediaTypeFilter = .all) async -> [SectionSnapshot] {
+        let coordinator = ListCoordinator(modelContainer: store.context.container)
+        let list = await coordinator.load(request: request, filter: filter, mediaFilter: mediaFilter)
+        return SectionFormatter.sections(from: list, ascending: ascending)
     }
 
     /// Seeds a custom list with entries carrying explicit release/added dates.
@@ -39,11 +44,10 @@ import SwiftData
             (2, "Mar", .utc(2020, 3, 15), .utc(2022, 1, 2)),
             (3, "Jan2", .utc(2020, 1, 20), .utc(2022, 1, 3)),
         ])
-        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
-                                             ascending: true, filter: "")
-        #expect(sections.count == 2)
-        #expect(sections.first?.entries.count == 2)   // two January titles
-        #expect(sections.last?.entries.map(\.tmdbID) == [2])
+        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: true)
+        #expect(result.count == 2)
+        #expect(result.first?.entries.count == 2)   // two January titles
+        #expect(result.last?.entries.map(\.tmdbID) == [2])
     }
 
     @Test func listDescendingReversesSectionOrder() async {
@@ -51,9 +55,8 @@ import SwiftData
             (1, "Jan", .utc(2020, 1, 15), .utc(2022, 1, 1)),
             (2, "Mar", .utc(2020, 3, 15), .utc(2022, 1, 2)),
         ])
-        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
-                                             ascending: false, filter: "")
-        #expect(sections.first?.entries.map(\.tmdbID) == [2])  // March first
+        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        #expect(result.first?.entries.map(\.tmdbID) == [2])  // March first
     }
 
     @Test func listByDateAddedIsFlatHeaderless() async {
@@ -62,11 +65,10 @@ import SwiftData
             (2, "B", nil, .utc(2022, 6, 1)),
             (3, "C", nil, .utc(2022, 3, 1)),
         ])
-        let sections = await builder().build(source: .list(id, byDateAdded: true, foldOlder: true),
-                                             ascending: true, filter: "")
-        #expect(sections.count == 1)
-        #expect(sections[0].title.isEmpty)
-        #expect(sections[0].entries.map(\.tmdbID) == [1, 3, 2])  // by addedAt asc
+        let result = await sections(.list(id, byDateAdded: true, foldOlder: true), ascending: true)
+        #expect(result.count == 1)
+        #expect(result[0].title.isEmpty)
+        #expect(result[0].entries.map(\.tmdbID) == [1, 3, 2])  // by addedAt asc
     }
 
     @Test func listFilterMatchesTitleCaseInsensitively() async {
@@ -74,16 +76,14 @@ import SwiftData
             (1, "The Matrix", .utc(2020, 1, 15), .utc(2022, 1, 1)),
             (2, "Inception", .utc(2020, 2, 15), .utc(2022, 1, 2)),
         ])
-        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
-                                             ascending: true, filter: "matrix")
-        #expect(sections.flatMap(\.entries).map(\.tmdbID) == [1])
+        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: true, filter: "matrix")
+        #expect(result.flatMap(\.entries).map(\.tmdbID) == [1])
     }
 
     @Test func emptyListYieldsNoSections() async {
         let id = seedList([])
-        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
-                                             ascending: true, filter: "")
-        #expect(sections.isEmpty)
+        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: true)
+        #expect(result.isEmpty)
     }
 
     /// Watch List rows: `recent` upcoming (distantFuture) titles + `old` archived
@@ -102,49 +102,44 @@ import SwiftData
 
     @Test func watchListFoldsOlderWhenBothCountsClearThreshold() async {
         let id = seedWatchList(recent: 2, old: 3)
-        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
-                                             ascending: false, filter: "")
-        #expect(sections.contains { $0.isCollapsible })
-        #expect(sections.last?.title == "Older")
-        #expect(Set(sections.last?.entries.map(\.tmdbID) ?? []) == [200, 201, 202])
+        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        #expect(result.contains { $0.isCollapsible })
+        #expect(result.last?.title == "Older")
+        #expect(Set(result.last?.entries.map(\.tmdbID) ?? []) == [200, 201, 202])
     }
 
     @Test func watchListStaysExpandedWhenEverythingIsOld() async {
         // No recent releases at all, so folding would hide the whole list behind a
         // collapsed "Older" bucket. Keep every title visible in its month section.
         let id = seedWatchList(recent: 0, old: 5)
-        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
-                                             ascending: false, filter: "")
-        #expect(!sections.contains { $0.isCollapsible })
-        #expect(sections.flatMap(\.entries).count == 5)
+        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        #expect(!result.contains { $0.isCollapsible })
+        #expect(result.flatMap(\.entries).count == 5)
     }
 
     @Test func watchListStaysExpandedWithTooFewRecent() async {
         // Only one upcoming title — not a big enough new-releases block to justify
         // tucking the backlog away; keep it all inline.
         let id = seedWatchList(recent: 1, old: 6)
-        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
-                                             ascending: false, filter: "")
-        #expect(!sections.contains { $0.isCollapsible })
-        #expect(sections.flatMap(\.entries).count == 7)
+        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        #expect(!result.contains { $0.isCollapsible })
+        #expect(result.flatMap(\.entries).count == 7)
     }
 
     @Test func watchListStaysExpandedWithTooSmallBacklog() async {
         // Plenty of upcoming titles but only two old ones — folding two rows into a
         // bucket saves nothing, so leave them visible.
         let id = seedWatchList(recent: 5, old: 2)
-        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: true),
-                                             ascending: false, filter: "")
-        #expect(!sections.contains { $0.isCollapsible })
-        #expect(sections.flatMap(\.entries).count == 7)
+        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        #expect(!result.contains { $0.isCollapsible })
+        #expect(result.flatMap(\.entries).count == 7)
     }
 
     @Test func watchListKeepsAllMonthsWhenFoldDisabled() async {
         // Counts clear the thresholds, so only the toggle keeps it expanded.
         let id = seedWatchList(recent: 3, old: 3)
-        let sections = await builder().build(source: .list(id, byDateAdded: false, foldOlder: false),
-                                             ascending: false, filter: "")
-        #expect(!sections.contains { $0.isCollapsible })
+        let result = await sections(.list(id, byDateAdded: false, foldOlder: false), ascending: false)
+        #expect(!result.contains { $0.isCollapsible })
     }
 
     @Test func watchedGroupsByWatchedDateAndCarriesFacts() async {
@@ -156,10 +151,9 @@ import SwiftData
         store.setDateWatched(.utc(2021, 5, 10), for: a)
         store.setDateWatched(.utc(2021, 8, 10), for: b)
 
-        let sections = await builder().build(source: .watched(sort: .dateWatched),
-                                             ascending: true, filter: "")
-        #expect(sections.count == 2)
-        let first = sections.first?.entries.first
+        let result = await sections(.watched(sort: .dateWatched), ascending: true)
+        #expect(result.count == 2)
+        let first = result.first?.entries.first
         #expect(first?.tmdbID == 1)
         #expect(first?.dateWatched == .utc(2021, 5, 10))
         #expect(first?.userRating == 4)
@@ -174,18 +168,17 @@ import SwiftData
         store.setRating(4.5, for: b)
         // c left unrated
 
-        let sections = await builder().build(source: .watched(sort: .rating),
-                                             ascending: false, filter: "")
-        #expect(sections.map(\.title) == ["5 Stars", "4.5 Stars", "Unrated"])
-        #expect(sections.first?.entries.map(\.tmdbID) == [1])
-        #expect(sections.last?.entries.map(\.tmdbID) == [3])
+        let result = await sections(.watched(sort: .rating), ascending: false)
+        #expect(result.map(\.title) == ["5 Stars", "4.5 Stars", "Unrated"])
+        #expect(result.first?.entries.map(\.tmdbID) == [1])
+        #expect(result.last?.entries.map(\.tmdbID) == [3])
     }
 
     @Test func viewedIsFlatByRecency() async {
         for id in 1...3 { store.recordView(makeMovie(id: id, title: "M\(id)")) }
-        let sections = await builder().build(source: .viewed, ascending: false, filter: "")
-        #expect(sections.count == 1)
-        #expect(sections[0].entries.count == 3)
-        #expect(sections[0].entries.first?.tmdbID == 3)  // most recent first
+        let result = await sections(.viewed, ascending: false)
+        #expect(result.count == 1)
+        #expect(result[0].entries.count == 3)
+        #expect(result[0].entries.first?.tmdbID == 3)  // most recent first
     }
 }

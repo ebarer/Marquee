@@ -41,9 +41,10 @@ final class PerformanceTests: XCTestCase {
         measure {
             let expectation = expectation(description: "build")
             Task {
-                let builder = SectionBuilder(modelContainer: container)
-                _ = await builder.build(source: .list(uuid, byDateAdded: false, foldOlder: true),
-                                        ascending: false, filter: "")
+                let coordinator = ListCoordinator(modelContainer: container)
+                let list = await coordinator.load(request: .list(uuid, byDateAdded: false, foldOlder: true),
+                                                  filter: "")
+                _ = SectionFormatter.sections(from: list, ascending: false)
                 expectation.fulfill()
             }
             wait(for: [expectation], timeout: 30)

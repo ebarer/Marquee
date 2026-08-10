@@ -8,8 +8,7 @@ Important:
 - [ ] Fix search ("batman" doesn't yield the dark knight, etc.)
 
 Polish
-- [ ] Marking an entire show as watched should default each season to its last aired date
-- [ ] Season header (number, date, episode count) should all be tappable for picker
+- [ ] 
 
 Ideas:
 - [ ] Filter watch list by what's streamable

@@ -54,12 +54,13 @@ extension PersistenceCoordinator {
         if let entry = context.model(for: id) as? ListEntry { delete(entry) }
     }
 
-    // MARK: - Grouped sections (Lists screen)
+    // MARK: - Lists screen
 
-    func sections(for source: SectionSource, ascending: Bool, filter: String,
-                  mediaFilter: MediaTypeFilter = .all) async -> [SectionSnapshot] {
-        let builder = SectionBuilder(modelContainer: context.container)
-        return await builder.build(source: source, ascending: ascending, filter: filter,
-                                   mediaFilter: mediaFilter)
+    /// Load a list's raw rows + layout off the main context via `ListCoordinator`. Grouping into
+    /// display sections is `SectionFormatter`'s job — see the `sections(for:…)` convenience.
+    func list(for request: ListRequest, filter: String,
+              mediaFilter: MediaTypeFilter = .all) async -> ListResult {
+        let coordinator = ListCoordinator(modelContainer: context.container)
+        return await coordinator.load(request: request, filter: filter, mediaFilter: mediaFilter)
     }
 }

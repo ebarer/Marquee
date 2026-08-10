@@ -88,6 +88,7 @@ struct ShowDetailView: View {
                                      navBarBottom: navBarBottom, imageHeight: imageHeight,
                                      headerRest: headerRest, overscroll: overscroll,
                                      seasonPosterPath: seasonPosterPath(for: show),
+                                     episodesBySeason: model.seasonEpisodes,
                                      headerPinned: $headerPinned, isSeen: $isSeen,
                                      onChange: reconcileMembership)
                         .zIndex(1)

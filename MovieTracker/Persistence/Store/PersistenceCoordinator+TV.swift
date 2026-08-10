@@ -21,6 +21,19 @@ extension PersistenceCoordinator {
         WatchedEpisode.find(showTmdbID: showID, seasonNumber: season, episodeNumber: episode, in: context) != nil
     }
 
+    /// The date a single episode was marked watched (nil when unwatched).
+    func episodeWatchedDate(showID: Int, season: Int, episode: Int) -> Date? {
+        WatchedEpisode.find(showTmdbID: showID, seasonNumber: season, episodeNumber: episode, in: context)?.watchedAt
+    }
+
+    /// Edit a watched episode's date.
+    func setEpisodeWatchedDate(_ date: Date, showID: Int, season: Int, episode: Int) {
+        guard let watched = WatchedEpisode.find(showTmdbID: showID, seasonNumber: season,
+                                                episodeNumber: episode, in: context) else { return }
+        watched.watchedAt = date
+        save()
+    }
+
     func isSeasonWatched(_ season: Season, showID: Int) -> Bool {
         guard season.episodeCount > 0 else { return false }
         return watchedEpisodeNumbers(showID: showID, season: season.seasonNumber).count >= season.episodeCount
@@ -41,6 +54,33 @@ extension PersistenceCoordinator {
     /// payload arrives, instead of computing — and animating — after the fact.
     func isShowWatchedCached(showID: Int) -> Bool {
         MediaItem.find(tmdbID: showID, mediaType: .tv, in: context)?.showWatched ?? false
+    }
+
+    /// Whether the show has any watched episodes — the show is "in progress" and the
+    /// bookmark's manual Watch List opt-out applies.
+    func hasWatchedEpisodes(_ show: Show) -> Bool {
+        !WatchedEpisode.all(showTmdbID: show.id, in: context).isEmpty
+    }
+
+    /// Whether the user has manually dismissed this show from the auto-managed Watch List.
+    func isWatchListDismissed(_ show: Show) -> Bool {
+        MediaItem.find(key: show.mediaKey, in: context)?.watchListOptOut == true
+    }
+
+    /// Manually remove an in-progress show from the Watch List and remember it, so watched
+    /// progress no longer bounces it back on. Reconcile then drops its tracked-season row
+    /// (unless it's on another list). Undo via `restoreToWatchList`.
+    func dismissFromWatchList(_ show: Show) {
+        MediaItem.upsert(key: show.mediaKey, in: context).watchListOptOut = true
+        MediaList.watchList(in: context)?.remove(key: show.mediaKey)
+        reconcileMembership(show)
+    }
+
+    /// Undo `dismissFromWatchList`: clear the opt-out and let reconcile re-add the show and
+    /// re-establish tracking of its next-episode (active) season.
+    func restoreToWatchList(_ show: Show) {
+        MediaItem.find(key: show.mediaKey, in: context)?.watchListOptOut = nil
+        reconcileMembership(show)
     }
 
     /// The stored completion date for a watched season (nil if the season isn't complete).
@@ -140,16 +180,23 @@ extension PersistenceCoordinator {
 
     /// Mark (or clear) an entire show across its regular seasons, then reconcile membership
     /// (marking removes it from the Watch List; clearing lets it return as in-progress).
-    func setShowWatched(_ watched: Bool, show: Show) {
-        for season in show.regularSeasons {
+    /// Marking dates each newly-completed season to its finale (last aired) date rather than
+    /// today; `episodesBySeason` supplies loaded episodes so that date is accurate.
+    func setShowWatched(_ watched: Bool, show: Show, episodesBySeason: [Int: [Episode]] = [:]) {
+        for var season in show.regularSeasons {
+            if let episodes = episodesBySeason[season.seasonNumber], !episodes.isEmpty {
+                season.episodes = episodes
+            }
             for number in episodeNumbers(for: season) {
                 applyEpisode(watched, showID: show.id, season: season.seasonNumber, episode: number)
             }
-            reconcileSeason(show: show, season: season)
+            reconcileSeason(show: show, season: season,
+                            completedAt: watched ? seasonFinaleDate(season) : nil)
         }
-        let episodesBySeason = Dictionary(uniqueKeysWithValues:
-            show.regularSeasons.map { ($0.seasonNumber, $0.episodes) })
-        reconcileMembership(show, episodesBySeason: episodesBySeason)
+        let merged = Dictionary(uniqueKeysWithValues: show.regularSeasons.map {
+            ($0.seasonNumber, episodesBySeason[$0.seasonNumber] ?? $0.episodes)
+        })
+        reconcileMembership(show, episodesBySeason: merged)
     }
 
     /// Clear a whole season (its episodes + snapshot) — the Watched list's un-watch swipe.
@@ -201,8 +248,10 @@ extension PersistenceCoordinator {
             return
         }
 
-        // Any watched episode makes the show "to watch" → ensure it's on the Watch List.
-        if !WatchedEpisode.all(showTmdbID: show.id, in: context).isEmpty {
+        // Any watched episode makes the show "to watch" → ensure it's on the Watch List,
+        // unless the user manually dismissed it (opt-out sticks until they add it back).
+        let optedOut = MediaItem.find(key: key, in: context)?.watchListOptOut == true
+        if !optedOut, !WatchedEpisode.all(showTmdbID: show.id, in: context).isEmpty {
             MediaList.ensureWatchList(in: context).add(key: key)
         }
 
@@ -284,7 +333,10 @@ extension PersistenceCoordinator {
     /// *completed* seasons — a season appears once every episode is watched and is removed
     /// the moment it drops below complete (in-progress seasons live on the Watch List
     /// instead). No save — callers batch and save once.
-    private func reconcileSeason(show: Show, season: Season) {
+    /// `completedAt` seeds a *new* snapshot's watched date (used when batch-marking a show so
+    /// each season dates to its finale); an existing snapshot keeps its date, so a user's edit
+    /// (or an earlier completion) is never clobbered. Nil falls back to now.
+    private func reconcileSeason(show: Show, season: Season, completedAt: Date? = nil) {
         let watchedCount = watchedEpisodeNumbers(showID: show.id, season: season.seasonNumber).count
         let existing = WatchedSeason.find(showTmdbID: show.id, seasonNumber: season.seasonNumber, in: context)
 
@@ -306,7 +358,8 @@ extension PersistenceCoordinator {
             context.insert(WatchedSeason(
                 showTmdbID: show.id, seasonNumber: season.seasonNumber,
                 showName: show.name, seasonName: season.name,
-                posterPath: poster, airDate: anchor, episodeCount: season.episodeCount))
+                posterPath: poster, airDate: anchor, episodeCount: season.episodeCount,
+                watchedAt: completedAt ?? Date()))
         }
     }
 

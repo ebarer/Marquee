@@ -359,7 +359,7 @@ private struct SeasonRowContent: View {
 }
 
 #Preview("Watched — grouped by stars") {
-    // Mirrors SectionBuilder.groupByRating output: one section per star count, unrated last.
+    // Mirrors SectionFormatter.byRating output: one section per star count, unrated last.
     let sections: [SectionSnapshot] = {
         let context = previewModelContainer.mainContext
         // Real MediaItem ids so the snapshots are valid; contents are throwaway.

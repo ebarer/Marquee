@@ -1,5 +1,5 @@
 //
-//  ProviderTile.swift
+//  StreamingProviderTile.swift
 //  MovieTracker
 //
 
@@ -7,7 +7,7 @@ import SwiftUI
 
 /// A streaming-provider logo tile that opens the provider's app/page (or the JustWatch
 /// fallback link). Used in ``WhereToWatchSection``.
-struct ProviderTile: View {
+struct StreamingProviderTile: View {
     let group: ProviderGroup
     let fallback: URL?
     var size: CGFloat = 56
@@ -45,7 +45,7 @@ struct ProviderTile: View {
     let groups = ProviderCatalog.grouped(Movie.preview.watchByRegion?.values.first?.providers ?? [])
     return HStack(spacing: 12) {
         ForEach(groups.prefix(3)) { group in
-            ProviderTile(group: group, fallback: nil)
+            StreamingProviderTile(group: group, fallback: nil)
         }
     }
     .padding()

@@ -93,11 +93,45 @@ actor MediaCacheStore {
     }
 
     func save(_ show: Show, tint: Color?) {
-        let entry = CachedShow(show: show, tint: tint.flatMap(Self.rgba(from:)),
-                               cachedAt: Date())
+        // The /tv/{id} payload behind `show` carries only the season list, not episodes —
+        // preserve any per-season episodes already cached so a refresh doesn't wipe them.
+        let entry = CachedShow(show: mergingCachedEpisodes(into: show),
+                               tint: tint.flatMap(Self.rgba(from:)), cachedAt: Date())
         guard let data = try? encoder.encode(entry) else { return }
         try? data.write(to: showFileURL(id: show.id), options: .atomic)
         evictIfNeeded()
+    }
+
+    /// Patch one season's fetched episodes + cast into the cached show so they render
+    /// offline and needn't be re-fetched. No-op until the show itself is cached.
+    func cacheSeason(showID: Int, _ season: Season) {
+        guard var cached = loadShow(id: showID),
+              let index = cached.show.seasons.firstIndex(where: {
+                  $0.seasonNumber == season.seasonNumber
+              }) else { return }
+        cached.show.seasons[index].episodes = season.episodes
+        if !season.cast.isEmpty { cached.show.seasons[index].cast = season.cast }
+        guard let data = try? encoder.encode(cached) else { return }
+        try? data.write(to: showFileURL(id: showID), options: .atomic)
+    }
+
+    /// Carry cached episodes/cast forward onto a freshly-fetched show, per season, whenever
+    /// the incoming season lacks them (the show payload never includes episodes).
+    private func mergingCachedEpisodes(into show: Show) -> Show {
+        guard let existing = loadShow(id: show.id)?.show else { return show }
+        let bySeason = Dictionary(existing.seasons.map { ($0.seasonNumber, $0) },
+                                  uniquingKeysWith: { first, _ in first })
+        var show = show
+        show.seasons = show.seasons.map { season in
+            guard season.episodes.isEmpty,
+                  let cached = bySeason[season.seasonNumber], !cached.episodes.isEmpty
+            else { return season }
+            var merged = season
+            merged.episodes = cached.episodes
+            if merged.cast.isEmpty { merged.cast = cached.cast }
+            return merged
+        }
+        return show
     }
 
     struct Usage: Sendable {

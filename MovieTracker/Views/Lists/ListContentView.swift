@@ -100,10 +100,10 @@ struct ListContentView: View {
     private var title: String { destination.name }
     private var activeColor: Color { destination.color }
     private var movieCount: Int { destination.movieCount(using: store) }
-    private var sectionSource: SectionSource? {
-        destination.sectionSource(watchedSort: watchedSortKey,
-                                  listByDateAdded: currentListSortKey == .dateAdded,
-                                  listFoldOlder: watchListFoldOlder)
+    private var listRequest: ListRequest? {
+        destination.listRequest(watchedSort: watchedSortKey,
+                                listByDateAdded: currentListSortKey == .dateAdded,
+                                listFoldOlder: watchListFoldOlder)
     }
 
     private var isRealList: Bool {
@@ -160,7 +160,7 @@ struct ListContentView: View {
 
     // `version` (store revision) forces a rebuild after a silent edit that leaves the count unchanged.
     private var sectionsInput: ListSectionsModel.Input {
-        ListSectionsModel.Input(source: sectionSource, count: movieCount,
+        ListSectionsModel.Input(request: listRequest, count: movieCount,
                                 ascending: currentAscending, filter: filterText,
                                 mediaFilter: mediaFilter, version: store?.revision ?? 0)
     }

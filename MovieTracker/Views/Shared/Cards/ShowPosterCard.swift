@@ -14,6 +14,16 @@ struct ShowPosterCard: View {
     var reservesTitleSpace: Bool = true
     var posterWidth: CGFloat? = nil
 
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+
+    private var status: PosterStatus? {
+        guard let store else { return nil }
+        _ = store.revision   // observe persisted changes so the badge refreshes live
+        if store.isShowWatchedCached(showID: show.id) { return .watched }
+        if store.isInWatchList(show) { return .watchList }
+        return nil
+    }
+
     var body: some View {
         VStack(spacing: 6) {
             poster
@@ -38,10 +48,20 @@ struct ShowPosterCard: View {
             PosterImage(url: show.posterURL(.w342))
                 .frame(width: posterWidth, height: posterWidth * 3.0 / 2.0)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay { badge }
         } else {
             PosterImage(url: show.posterURL(.w342))
                 .aspectRatio(2.0 / 3.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay { badge }
+        }
+    }
+
+    @ViewBuilder
+    private var badge: some View {
+        if let status {
+            PosterStatusBadge(status: status)
+                .transition(.opacity)
         }
     }
 }
@@ -50,6 +70,22 @@ struct ShowPosterCard: View {
     HStack(alignment: .top, spacing: 16) {
         ShowPosterCard(show: .preview, posterWidth: 110)
         ShowPosterCard(show: Show.previewList[1], posterWidth: 110)
+    }
+    .padding()
+    .background(Color.appBackground)
+    .preferredColorScheme(.dark)
+}
+
+// Badges rendered directly (like MoviePosterCard's preview) — seeding a live store in a
+// preview trips CloudKit's "No eligible connection".
+#Preview("Status badges") {
+    HStack(spacing: 16) {
+        ForEach([PosterStatus.watched, .watchList], id: \.symbol) { status in
+            PosterImage(url: Show.preview.posterURL(.w342))
+                .frame(width: 110, height: 110 * 3.0 / 2.0)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay { PosterStatusBadge(status: status) }
+        }
     }
     .padding()
     .background(Color.appBackground)

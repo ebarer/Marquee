@@ -1,12 +1,12 @@
 //
-//  SectionSource.swift
+//  ListRequest.swift
 //  MovieTracker
 //
 
 import Foundation
 
-/// What a section build reads.
-enum SectionSource: Sendable, Equatable {
+/// Which list the Lists screen loads.
+enum ListRequest: Sendable, Equatable {
     case list(UUID, byDateAdded: Bool, foldOlder: Bool)
     case watched(sort: WatchedSortKey)
     case viewed

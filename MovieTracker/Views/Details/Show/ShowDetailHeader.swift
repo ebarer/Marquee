@@ -19,6 +19,9 @@ struct ShowDetailHeader: View {
     var overscroll: CGFloat = 0
     /// Poster path for the selected season (falls back to the show poster when nil).
     var seasonPosterPath: String? = nil
+    /// Loaded episodes per season, forwarded to the action bar so "mark whole show watched"
+    /// can date each season to its finale.
+    var episodesBySeason: [Int: [Episode]] = [:]
     @Binding var headerPinned: Bool
     @Binding var isSeen: Bool
     var onChange: () -> Void = {}
@@ -38,7 +41,8 @@ struct ShowDetailHeader: View {
                 title: show.name, subtitle: subtitle,
                 progress: progress, width: width
             ) {
-                ShowActionBar(show: show, lists: lists, tint: tint, isSeen: $isSeen, onChange: onChange)
+                ShowActionBar(show: show, lists: lists, tint: tint,
+                              episodesBySeason: episodesBySeason, isSeen: $isSeen, onChange: onChange)
             }
         }
     }

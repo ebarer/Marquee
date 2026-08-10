@@ -15,7 +15,7 @@ final class ListSectionsModel {
 
     /// Bumping `version` forces a rebuild after a silent edit that doesn't alter `count`.
     struct Input: Equatable {
-        var source: SectionSource?
+        var request: ListRequest?
         var count: Int
         var ascending: Bool
         var filter: String
@@ -24,16 +24,16 @@ final class ListSectionsModel {
     }
 
     func rebuild(for input: Input, store: PersistenceCoordinator?) async {
-        guard let source = input.source, let store else {
+        guard let request = input.request, let store else {
             sections = []
             loadedInput = input
             return
         }
-        let result = await store.sections(for: source, ascending: input.ascending,
+        let result = await store.sections(for: request, ascending: input.ascending,
                                            filter: input.filter, mediaFilter: input.mediaFilter)
         guard !Task.isCancelled else { return }
         // Animate only when the same list's contents changed; a selection switch replaces rows outright.
-        if loadedInput?.source == source {
+        if loadedInput?.request == request {
             withAnimation { sections = result }
         } else {
             sections = result

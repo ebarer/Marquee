@@ -35,6 +35,9 @@ struct EpisodeHeaderOverlay: View {
                     if episode.duration != nil || (episode.rating ?? 0) > 0 {
                         durationRating
                     }
+                    if isWatched {
+                        watchedDateRow
+                    }
                 }
                 .font(.subheadline)
             }
@@ -53,6 +56,20 @@ struct EpisodeHeaderOverlay: View {
         .glassEffect(isWatched ? .regular.tint(tint).interactive() : .regular.interactive(), in: Circle())
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isWatched)
         .accessibilityLabel(isWatched ? "Mark episode unwatched" : "Mark episode watched")
+    }
+
+    private var watchedDateRow: some View {
+        HStack(spacing: 4) {
+            Text("Watched")
+                .foregroundStyle(.white.opacity(0.75))
+            WatchedDateButton(
+                showID: episode.showTmdbID, seasonNumber: episode.seasonNumber,
+                episodeNumber: episode.episodeNumber,
+                watchedDate: store?.episodeWatchedDate(showID: episode.showTmdbID,
+                                                       season: episode.seasonNumber,
+                                                       episode: episode.episodeNumber),
+                airDate: episode.airDate, tint: tint)
+        }
     }
 
     private var durationRating: some View {

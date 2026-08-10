@@ -14,6 +14,9 @@ struct ShowActionBar: View {
     let show: Show
     let lists: [MediaList]
     let tint: Color
+    /// Loaded episodes per season number, so marking the whole show watched can date each
+    /// season to its finale rather than today.
+    var episodesBySeason: [Int: [Episode]] = [:]
     @Binding var isSeen: Bool
     /// Refine list membership after a mutation (advance the tracked season, precise
     /// next-episode date) — supplied by the detail screen, which can load episodes.
@@ -22,8 +25,10 @@ struct ShowActionBar: View {
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Namespace private var glassNamespace
     @State private var tracked = false
+    @State private var hasProgress = false
     @State private var wasOnWatchList = false
     @State private var showListPicker = false
+    @State private var showRemoveConfirm = false
     // Gate the watched animation so the first sync (entry) settles instantly; only
     // user-driven changes after appearance animate the bookmark↔checkmark transition.
     @State private var didAppear = false
@@ -49,23 +54,58 @@ struct ShowActionBar: View {
             refresh()
             didAppear = true
         }
+        // Re-sync when episodes are toggled elsewhere (e.g. the episodes section): unwatching
+        // an episode pulls a finished show back onto the Watch List, so the bookmark that
+        // reappears must read as on, not stale-off.
+        .onChange(of: store?.revision) { refresh() }
     }
 
     private var bookmarkButton: some View {
         GlassActionButton(systemName: tracked ? "bookmark.fill" : "bookmark", isOn: tracked,
                           shape: Circle(), tint: tint) {
-            store?.toggleWatchList(show)
-            refresh()
-            onChange()
+            handleBookmarkTap()
         }
         .glassEffectID("bookmark", in: glassNamespace)
         .glassEffectTransition(.matchedGeometry)
+        .confirmationDialog("Remove from Watch List?", isPresented: $showRemoveConfirm,
+                            titleVisibility: .visible) {
+            Button("Remove", role: .destructive) {
+                store?.dismissFromWatchList(show)
+                refresh()
+                onChange()
+            }
+        } message: {
+            Text("You've watched some episodes, so it stays on your Watch List automatically. Removing keeps it off until you add it back.")
+        }
+    }
+
+    // An in-progress show is auto-kept on the Watch List — removing it takes a confirmation
+    // (and sticks). Adding it back is a plain tap that re-tracks the next-episode season.
+    private func handleBookmarkTap() {
+        guard let store else { return }
+        if tracked {
+            if hasProgress {
+                showRemoveConfirm = true
+            } else {
+                store.toggleWatchList(show)
+                refresh()
+                onChange()
+            }
+        } else {
+            if hasProgress {
+                store.restoreToWatchList(show)
+            } else {
+                store.addToWatchList(show)
+            }
+            refresh()
+            onChange()
+        }
     }
 
     private func applyWatched(_ watched: Bool) {
         if watched {
             wasOnWatchList = tracked
-            store?.setShowWatched(true, show: show)
+            store?.setShowWatched(true, show: show, episodesBySeason: episodesBySeason)
         } else {
             store?.setShowWatched(false, show: show)
             if wasOnWatchList { store?.addToWatchList(show) }
@@ -103,6 +143,7 @@ struct ShowActionBar: View {
 
     private func refresh() {
         tracked = watchList?.contains(show.id, .tv) ?? false
+        hasProgress = store?.hasWatchedEpisodes(show) ?? false
         isSeen = store?.isShowFullyWatched(show) ?? false
     }
 }

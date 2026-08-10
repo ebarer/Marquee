@@ -41,7 +41,7 @@ struct WhereToWatchSection: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(groups) { group in
-                            ProviderTile(group: group, fallback: availability?.justWatchLink)
+                            StreamingProviderTile(group: group, fallback: availability?.justWatchLink)
                         }
                     }
                     .padding(.horizontal, 16)

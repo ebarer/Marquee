@@ -61,7 +61,7 @@ struct ListDestination {
         }
     }
 
-    func sectionSource(watchedSort: WatchedSortKey, listByDateAdded: Bool, listFoldOlder: Bool) -> SectionSource? {
+    func listRequest(watchedSort: WatchedSortKey, listByDateAdded: Bool, listFoldOlder: Bool) -> ListRequest? {
         switch selection {
         case .list(let uuid): return list != nil ? .list(uuid, byDateAdded: listByDateAdded, foldOlder: listFoldOlder) : nil
         case .watched: return .watched(sort: watchedSort)

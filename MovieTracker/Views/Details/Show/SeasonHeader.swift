@@ -27,18 +27,13 @@ struct SeasonHeader: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                seasonPicker
-                Text(yearAndEpisodeText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            seasonPicker
             Spacer(minLength: 0)
             if allWatched, let current = currentSeason {
                 VStack(alignment: .trailing, spacing: 4) {
-                    SeasonWatchedDateButton(showID: showID, seasonNumber: current,
-                                            watchedDate: seasonWatchedDate,
-                                            lastEpisodeDate: lastEpisodeDate, tint: tint)
+                    WatchedDateButton(showID: showID, seasonNumber: current,
+                                      watchedDate: seasonWatchedDate,
+                                      lastEpisodeDate: lastEpisodeDate, tint: tint)
                     StarRating(rating: seasonRating, tint: tint, onCommit: onRate)
                 }
                 .id(current)
@@ -62,13 +57,18 @@ struct SeasonHeader: View {
                 }
             }
         } label: {
-            HStack(spacing: 4) {
-                Text(seasonName)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                Image(systemName: "chevron.down")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(tint)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text(seasonName)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    Image(systemName: "chevron.down")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(tint)
+                }
+                Text(yearAndEpisodeText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
             .contentShape(Rectangle())
         }

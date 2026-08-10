@@ -9,16 +9,16 @@ import Foundation
 
 @MainActor
 @Suite struct ListSectionsModelTests {
-    private func input(source: SectionSource?, count: Int = 0, ascending: Bool = true,
+    private func input(request: ListRequest?, count: Int = 0, ascending: Bool = true,
                        filter: String = "", mediaFilter: MediaTypeFilter = .all,
                        version: Int = 0) -> ListSectionsModel.Input {
-        .init(source: source, count: count, ascending: ascending, filter: filter,
+        .init(request: request, count: count, ascending: ascending, filter: filter,
               mediaFilter: mediaFilter, version: version)
     }
 
     @Test func nilSourceClearsSections() async {
         let model = ListSectionsModel()
-        await model.rebuild(for: input(source: nil), store: makeInMemoryStore())
+        await model.rebuild(for: input(request:nil), store: makeInMemoryStore())
         #expect(model.sections.isEmpty)
         #expect(model.loadedInput != nil)
     }
@@ -28,7 +28,7 @@ import Foundation
         store.setWatched(true, for: makeMovie(id: 1, title: "A"))
         store.setDateWatched(.utc(2021, 1, 1), for: makeMovie(id: 1))
         let model = ListSectionsModel()
-        await model.rebuild(for: input(source: .watched(sort: .dateWatched), count: 1), store: store)
+        await model.rebuild(for: input(request:.watched(sort: .dateWatched), count: 1), store: store)
         #expect(model.sections.flatMap(\.entries).map(\.tmdbID) == [1])
     }
 
@@ -36,21 +36,21 @@ import Foundation
         let store = makeInMemoryStore()
         store.recordView(makeMovie(id: 1))
         let model = ListSectionsModel()
-        await model.rebuild(for: input(source: .viewed, count: 1), store: store)
+        await model.rebuild(for: input(request:.viewed, count: 1), store: store)
         #expect(model.sections.isEmpty == false)
         model.clear()
         #expect(model.sections.isEmpty)
     }
 
     @Test func inputEqualityTracksEveryField() {
-        let base = input(source: .viewed, count: 1, ascending: true, filter: "a", version: 1)
-        #expect(base == input(source: .viewed, count: 1, ascending: true, filter: "a", version: 1))
-        #expect(base != input(source: .viewed, count: 2, ascending: true, filter: "a", version: 1))
-        #expect(base != input(source: .viewed, count: 1, ascending: false, filter: "a", version: 1))
-        #expect(base != input(source: .viewed, count: 1, ascending: true, filter: "b", version: 1))
-        #expect(base != input(source: .viewed, count: 1, ascending: true, filter: "a", version: 2))
-        #expect(base != input(source: .watched(sort: .dateWatched), count: 1, ascending: true, filter: "a", version: 1))
-        #expect(base != input(source: .viewed, count: 1, ascending: true, filter: "a", mediaFilter: .movies, version: 1))
+        let base = input(request:.viewed, count: 1, ascending: true, filter: "a", version: 1)
+        #expect(base == input(request:.viewed, count: 1, ascending: true, filter: "a", version: 1))
+        #expect(base != input(request:.viewed, count: 2, ascending: true, filter: "a", version: 1))
+        #expect(base != input(request:.viewed, count: 1, ascending: false, filter: "a", version: 1))
+        #expect(base != input(request:.viewed, count: 1, ascending: true, filter: "b", version: 1))
+        #expect(base != input(request:.viewed, count: 1, ascending: true, filter: "a", version: 2))
+        #expect(base != input(request:.watched(sort: .dateWatched), count: 1, ascending: true, filter: "a", version: 1))
+        #expect(base != input(request:.viewed, count: 1, ascending: true, filter: "a", mediaFilter: .movies, version: 1))
     }
 }
 
