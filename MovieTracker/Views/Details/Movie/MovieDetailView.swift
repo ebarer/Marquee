@@ -79,16 +79,23 @@ struct MovieDetailView: View {
                                       headerRest: headerRest, overscroll: overscroll,
                                       headerPinned: $headerPinned, isSeen: $isSeen)
                         .zIndex(1)
+
                     MovieMetadataStrip(movie: movie, tint: model.tint, isWatched: isSeen)
                         .padding(.bottom, 8)
+
                     ExpandableText(text: movie.overview ?? "No movie description available.")
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                    WhereToWatchSection(availabilityByRegion: movie.watchByRegion,
-                                        releaseDate: movie.releaseDate, tint: model.tint)
+
+                    if let releaseDate = movie.releaseDate, !releaseDate.inTheFuture {
+                        WhereToWatchSection(availabilityByRegion: movie.watchByRegion,
+                                            releaseDate: releaseDate, tint: model.tint)
+                    }
+
                     RelatedMoviesSection(collection: model.collection,
                                          recommendations: model.recommendations,
                                          lists: lists, tint: model.tint)
+
                     CastSection(cast: movie.team, tint: model.tint)
                 }
                 .padding(.bottom, 24)

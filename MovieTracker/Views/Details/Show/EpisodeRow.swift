@@ -18,20 +18,16 @@ struct EpisodeRow: View {
     private static let stillWidth: CGFloat = 90
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            // The still navigates; the badge (a sibling on top) toggles watched.
-            ZStack(alignment: .topTrailing) {
-                DetailLink(value: episode) {
+        DetailLink(value: episode) {
+            HStack(alignment: .top, spacing: 12) {
+                Button(action: onToggleWatched) {
                     PosterImage(url: episode.stillURL())
                         .frame(width: Self.stillWidth, height: Self.stillWidth * 9.0 / 16.0)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay { watchedBadge }
                 }
-                .buttonStyle(.plain)
+                .accessibilityLabel(isWatched ? "Mark episode unwatched" : "Mark episode watched")
 
-                watchedBadge
-            }
-
-            DetailLink(value: episode) {
                 HStack(alignment: .center, spacing: 8) {
                     EpisodeRowText(episode: episode, tint: tint)
                     Spacer(minLength: 0)
@@ -39,28 +35,25 @@ struct EpisodeRow: View {
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(.tertiary)
                 }
-                .contentShape(Rectangle())
+                .offset(y: -1.5)
             }
-            .buttonStyle(.plain)
-            // Nudge up so the title top and bottom label align with the still's edges.
-            .offset(y: -1.5)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-    }
-
-    /// A corner toggle styled like the movie "watched" badge when on.
-    private var watchedBadge: some View {
-        Button(action: onToggleWatched) {
-            Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(isWatched ? .white : .white.opacity(0.85))
-                .shadow(color: .black.opacity(0.5), radius: 2, y: 0.5)
-                .padding(5)
-                .contentShape(Rectangle())
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isWatched ? "Mark episode unwatched" : "Mark episode watched")
+    }
+
+    /// Shares the poster status badges' gradient scrim (``PosterSymbolBadge``); the corner
+    /// button above toggles it. Reuses the watched badge verbatim, showing a dimmed empty
+    /// ring until the episode is watched.
+    @ViewBuilder
+    private var watchedBadge: some View {
+        if isWatched {
+            PosterStatusBadge(status: .watched, cornerRadius: 6)
+        } else {
+            PosterSymbolBadge(symbol: "circle", cornerRadius: 6)
+                .opacity(0.85)
+        }
     }
 }
 

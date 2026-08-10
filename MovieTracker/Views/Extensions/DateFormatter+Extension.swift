@@ -19,6 +19,10 @@ extension Date {
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         return calendar.component(.year, from: self)
     }
+
+    var inTheFuture: Bool {
+        return self > Date()
+    }
 }
 
 extension DateFormatter {

@@ -98,7 +98,7 @@ struct ShowDetailView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                     WhereToWatchSection(availabilityByRegion: show.watchByRegion,
-                                        releaseDate: show.firstAirDate, tint: model.tint)
+                                        releaseDate: show.firstAirDate, isShow: true, tint: model.tint)
                     EpisodesBySeasonSection(show: show, model: model, tint: model.tint,
                                             initialSeason: initialSeason,
                                             selectedSeason: $selectedSeason)

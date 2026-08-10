@@ -1,14 +1,27 @@
 # README
 
-Oraganization:
+Important:
+- [ ] Checkmark on episode details should animate in the date watched label
+- [ ] Deleting a tv show from the "to watch" list causes it to reappear, needs to mark the override (with warning)
+- [ ] We've lost the swipe to mark as watched action?
+  - [ ] Except in custom lists, even for shows thst are already watched
+
+Project:
 - [ ] Clean up comments + organize project
 - [ ] Get rid of single-letter variables/arguments, always use proper names
 
-Important:
-- [ ] Fix search ("batman" doesn't yield the dark knight, etc.)
-
-Polish
-- [ ] 
+Polish:
+- [ ] Search: Brand New Day isn't #1 for Spiderman
+- [ ] Search: Noah Wyle is known for ER and The Pitt, neither show up in that section (movies only?)
+- [ ] Search: Seth Rogen is known for The Studio, Superbad and Knocked Up, (the 1st doesn't show up at all, the other 2 aren't rated highly enough?
+- [ ] Search: searching for Seth Rogen should return his discography
+- [ ] Search: presenting TV show is unanimated, and missing status badges on poster
+- [ ] Episode row: background should highlight when clicked, not the text
+- [ ] Episode row: tapping image should mark as watched/unwatched
+- [ ] Tint tab bar to match view color
+- [ ] Movies/TV show filter should have checkmark in gutter, not replacing the icon, and label for the first option should be "Both"
+- [ ] Alphabetical sort for lists
+- [ ] List popover should present downwards when at top of the screen (always presents up)
 
 Ideas:
 - [ ] Filter watch list by what's streamable

@@ -10,6 +10,7 @@ import SwiftUI
 struct WhereToWatchSection: View {
     let availabilityByRegion: [String: WatchAvailability]?
     var releaseDate: Date?
+    var isShow: Bool = false
     var tint: Color = .appAccent
 
     private let store = StreamingServicesStore.shared
@@ -19,8 +20,9 @@ struct WhereToWatchSection: View {
     private var availability: WatchAvailability? { availabilityByRegion?[store.region] }
 
     private var inTheatres: Bool {
-        guard let releaseDate, releaseDate <= .now,
-              let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: .now)
+        guard !isShow,
+              let releaseDate, releaseDate <= .now,
+              let cutoff = Calendar.current.date(byAdding: .day, value: -60, to: .now)
         else { return false }
         return releaseDate > cutoff
     }
