@@ -19,6 +19,9 @@ struct ListRows: View {
     @State private var tappedMovie: Movie?
     /// The "Older" archive bucket starts collapsed each visit.
     @State private var olderExpanded = false
+    /// A pending Watch List removal awaiting confirmation — an in-progress show whose
+    /// watched episodes would otherwise re-add it (see `requestDelete`).
+    @State private var pendingDismiss: MediaSnapshot?
 
     private var isWatchList: Bool {
         if case .list(let uuid) = selection { return lists.first { $0.uuid == uuid }?.isWatchList == true }
@@ -43,6 +46,15 @@ struct ListRows: View {
                 .onChange(of: olderExpanded) { _, expanded in
                     guard expanded else { return }
                     withAnimation { proxy.scrollTo(Self.olderAnchor, anchor: .top) }
+                }
+                .alert("Remove from Watch List?", isPresented: Binding(
+                    get: { pendingDismiss != nil },
+                    set: { if !$0 { pendingDismiss = nil } }
+                ), presenting: pendingDismiss) { entry in
+                    Button("Remove", role: .destructive) { dismiss(entry) }
+                    Button("Cancel", role: .cancel) {}
+                } message: { _ in
+                    Text("You've watched some episodes, so it stays on your Watch List automatically. Removing keeps it off until you add it back.")
                 }
         }
     }
@@ -159,18 +171,18 @@ struct ListRows: View {
         }
         .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+        // TV watched-state is episode-based, so toggle through the show model (not the
+        // movie `watchedAt` flag) — this is the case that was broken on custom lists.
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            if isWatched {
-                WatchListSwipeButton(key: key(entry))
-            } else {
-                WatchedSwipeButton(key: key(entry))
-            }
+            ShowWatchedSwipeButton(showID: entry.tmdbID)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
 
     /// A completed season in the Watched list: tapping opens the show on that season, a
-    /// trailing swipe un-watches the whole season.
+    /// trailing swipe un-watches the whole season. No leading swipe — "add back to Watch
+    /// List" was confusing on a completed season (and re-added the show when another season
+    /// was still tracked).
     private func watchedSeasonRow(_ entry: MediaSnapshot) -> some View {
         DetailLink(value: show(entry, openingSeason: entry.seasonNumber)) {
             SeasonRowContent(entry: entry, tint: listColor)
@@ -184,19 +196,23 @@ struct ListRows: View {
 
     /// A Watch List / custom-list show, represented by its next-incomplete season: same look
     /// as a Watched row (poster, "Season N • x of y", partial badge), tapping opens the show
-    /// on that season, a trailing swipe removes it from the list.
+    /// on that season, a leading swipe completes that season, a trailing swipe removes it
+    /// from the list.
     private func trackedSeasonRow(_ entry: MediaSnapshot) -> some View {
         DetailLink(value: show(entry, openingSeason: entry.seasonNumber)) {
             SeasonRowContent(entry: entry, tint: listColor)
         }
         .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            SeasonWatchedSwipeButton(showID: entry.tmdbID, seasonNumber: entry.seasonNumber ?? 0)
+        }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
 
     private func deleteButton(_ entry: MediaSnapshot) -> some View {
         Button(role: .destructive) {
-            delete(entry)
+            requestDelete(entry)
         } label: {
             Image(systemName: "trash")
                 .tint(.red)
@@ -255,18 +271,52 @@ struct ListRows: View {
                  runtime: entry.runtime, sortDate: entry.sortDate)
     }
 
+    /// Route a delete: removing an in-progress show from the Watch List can't just drop its
+    /// `ListEntry` — watched episodes re-add it on the next reconcile. Confirm, then persist
+    /// the opt-out via `dismiss`. Everything else deletes straight away.
+    private func requestDelete(_ entry: MediaSnapshot) {
+        if isWatchList, entry.mediaType == .tv, store?.hasWatchedEpisodes(show(entry)) == true {
+            pendingDismiss = entry
+        } else {
+            delete(entry)
+        }
+    }
+
+    /// Persist the manual Watch List removal (opt-out) so watched progress no longer bounces
+    /// the show back on. Resolve the show so reconcile keeps an accurate tracked season for
+    /// any other list; fall back to the snapshot's minimal show (carrying its display key) if
+    /// it's cold, so the removal still sticks offline.
+    private func dismiss(_ entry: MediaSnapshot) {
+        pendingDismiss = nil
+        guard let store else { return }
+        let fallback = show(entry)
+        Task { @MainActor in
+            let show = await store.resolveShow(id: entry.tmdbID) ?? fallback
+            store.dismissFromWatchList(show)
+        }
+    }
+
     private func delete(_ entry: MediaSnapshot) {
         switch selection {
         case .watched:
             // A watched-season row clears that whole season; a movie clears its watched fact.
             if let season = entry.seasonNumber {
-                store?.unwatchSeason(showID: entry.tmdbID, seasonNumber: season)
+                unwatchSeason(entry, season: season)
             } else {
                 store?.unwatch(entry.persistentID)
             }
         case .list: store?.deleteEntry(entry.persistentID)
         case .viewed: store?.removeFromViewed(entry.persistentID)
         }
+    }
+
+    /// Clear a completed season, then reconcile through the shared path: un-watching an
+    /// earlier season makes the show in-progress again, so it should return to the Watch List
+    /// (tracking that season) now — not only after the show is next opened.
+    private func unwatchSeason(_ entry: MediaSnapshot, season: Int) {
+        guard let store else { return }
+        store.unwatchSeason(showID: entry.tmdbID, seasonNumber: season)
+        Task { @MainActor in await store.reconcile(showID: entry.tmdbID) }
     }
 }
 

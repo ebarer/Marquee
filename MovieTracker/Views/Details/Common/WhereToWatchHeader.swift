@@ -47,7 +47,7 @@ struct WhereToWatchHeader: View {
     private var titleView: some View {
         if available {
             Button(action: toggle) {
-                Text("Where to Stream")
+                Text("Available to Stream")
                     .font(.headline)
                     .foregroundStyle(.white)
                     .contentShape(Rectangle())

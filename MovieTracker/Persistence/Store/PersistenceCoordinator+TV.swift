@@ -216,6 +216,41 @@ extension PersistenceCoordinator {
         save()
     }
 
+    // MARK: - Id-only entry points
+
+    /// The one place a show is resolved from its id for a write: prefer the warm on-disk
+    /// cache, else fetch from TMDB. Every id-only surface (list rows, episode detail) loads
+    /// through here, so they all reach the same reconcile the detail screens do.
+    func resolveShow(id: Int) async -> Show? {
+        if let cached = await MediaCacheStore.shared.loadShow(id: id)?.show { return cached }
+        return try? await TMDBWrapper.getShow(id: id)
+    }
+
+    /// Re-sync a show's season snapshots + list membership after an id-only mutation that
+    /// couldn't reconcile itself (e.g. a single episode toggle, or a season un-watch). No-op
+    /// when the show can't be resolved (offline, cold cache) — it self-heals on next open.
+    func reconcile(showID: Int) async {
+        guard let show = await resolveShow(id: showID) else { return }
+        reconcileSeasons(for: show)
+        reconcileMembership(show)
+    }
+
+    /// Mark (or clear) a season from an id-only context (a list swipe): resolves the show,
+    /// then funnels into `setSeasonWatched(_:show:season:)`.
+    func setSeasonWatched(_ watched: Bool, showID: Int, seasonNumber: Int) async {
+        guard let show = await resolveShow(id: showID),
+              let season = show.regularSeasons.first(where: { $0.seasonNumber == seasonNumber })
+        else { return }
+        setSeasonWatched(watched, show: show, season: season)
+    }
+
+    /// Mark (or clear) a whole show from an id-only context (a list swipe): resolves the
+    /// show, then funnels into `setShowWatched(_:show:episodesBySeason:)`.
+    func setShowWatched(_ watched: Bool, showID: Int) async {
+        guard let show = await resolveShow(id: showID) else { return }
+        setShowWatched(watched, show: show)
+    }
+
     /// Recompute every regular season's snapshot from the current episode records — used
     /// when the show reappears (episodes may have been toggled from the episode detail).
     func reconcileSeasons(for show: Show) {

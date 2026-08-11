@@ -32,8 +32,12 @@ final class ListSectionsModel {
         let result = await store.sections(for: request, ascending: input.ascending,
                                            filter: input.filter, mediaFilter: input.mediaFilter)
         guard !Task.isCancelled else { return }
-        // Animate only when the same list's contents changed; a selection switch replaces rows outright.
-        if loadedInput?.request == request {
+        // A selection switch replaces rows outright (no animation). Within the same list,
+        // animate only *structural* changes (rows added/removed/reordered) so they slide. A
+        // pure in-place content change — e.g. a tracked season advancing after a swipe —
+        // must NOT animate, or it crossfades over the row instead of letting the swipe spring
+        // back first and then swap the content.
+        if loadedInput?.request == request, structure(of: result) != structure(of: sections) {
             withAnimation { sections = result }
         } else {
             sections = result
@@ -42,4 +46,12 @@ final class ListSectionsModel {
     }
 
     func clear() { sections = [] }
+
+    /// The row layout signature (section ids + their entry ids, in order). Unchanged when only
+    /// a row's contents change; differs when rows are added, removed, or reordered.
+    private func structure(of sections: [SectionSnapshot]) -> [AnyHashable] {
+        sections.flatMap { section in
+            [AnyHashable(section.id)] + section.entries.map { AnyHashable($0.id) }
+        }
+    }
 }

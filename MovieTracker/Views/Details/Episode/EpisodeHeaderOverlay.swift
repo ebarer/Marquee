@@ -37,19 +37,26 @@ struct EpisodeHeaderOverlay: View {
                     }
                     if isWatched {
                         watchedDateRow
+                            .transition(.opacity)
                     }
                 }
                 .font(.subheadline)
             }
+            // Pin the row to the checkmark's height: the metadata stays vertically centered
+            // on the checkmark and grows symmetrically, so the title above never moves.
+            .frame(height: Self.checkmarkSize, alignment: .center)
+            .animation(.easeInOut(duration: 0.25), value: isWatched)
         }
     }
+
+    private static let checkmarkSize: CGFloat = 52
 
     private var watchedButton: some View {
         Button { toggleWatched() } label: {
             Image(systemName: "checkmark")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(isWatched ? .appBackground : tint)
-                .frame(width: 52, height: 52)
+                .frame(width: Self.checkmarkSize, height: Self.checkmarkSize)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -103,13 +110,9 @@ struct EpisodeHeaderOverlay: View {
         guard let store else { return }
         store.setEpisodeWatched(!isWatched, showID: episode.showTmdbID,
                                 season: episode.seasonNumber, episode: episode.episodeNumber)
-        // The episode page only knows the show id, so reconcile the season snapshot + list
-        // membership from the warm show cache. Watching an episode adds the show to the Watch List.
-        Task { @MainActor in
-            guard let show = await MediaCacheStore.shared.loadShow(id: episode.showTmdbID)?.show else { return }
-            store.reconcileSeasons(for: show)
-            store.reconcileMembership(show)
-        }
+        // The episode page only knows the show id; reconcile through the shared path so the
+        // season snapshot + Watch List membership end up where the season-detail toggle would.
+        Task { @MainActor in await store.reconcile(showID: episode.showTmdbID) }
     }
 }
 
