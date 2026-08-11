@@ -46,6 +46,7 @@
 		CE569766301C1ABF00DF9142 /* SearchModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE569765301C1ABF00DF9142 /* SearchModel.swift */; };
 		CE569768301C71FF00DF9142 /* MovieListActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE569767301C71FF00DF9142 /* MovieListActions.swift */; };
 		CE56977C301C824D00DF9142 /* MovieListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE56977B301C824D00DF9142 /* MovieListRow.swift */; };
+		CE72A0B2302B025F00AB2597 /* TODO.md in Resources */ = {isa = PBXBuildFile; fileRef = CE72A0B1302B025D00AB2597 /* TODO.md */; };
 		CE73B02A3020290200FA5FD6 /* ImportExportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE73B0293020290200FA5FD6 /* ImportExportCoordinator.swift */; };
 		CE7718C0766DE705D3D89CA9 /* PerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C756C1997955FF9C6C26D2 /* PerformanceTests.swift */; };
 		CE8041A7301D441300F5D6F2 /* EmojiField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8041A6301D441300F5D6F2 /* EmojiField.swift */; };
@@ -276,6 +277,7 @@
 		CE569765301C1ABF00DF9142 /* SearchModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchModel.swift; sourceTree = "<group>"; };
 		CE569767301C71FF00DF9142 /* MovieListActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieListActions.swift; sourceTree = "<group>"; };
 		CE56977B301C824D00DF9142 /* MovieListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieListRow.swift; sourceTree = "<group>"; };
+		CE72A0B1302B025D00AB2597 /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
 		CE73B0293020290200FA5FD6 /* ImportExportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportCoordinator.swift; sourceTree = "<group>"; };
 		CE78BD4F20C087F2001E6DB6 /* Marquee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marquee.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE8041A6301D441300F5D6F2 /* EmojiField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiField.swift; sourceTree = "<group>"; };
@@ -636,6 +638,7 @@
 			isa = PBXGroup;
 			children = (
 				CEEE5B6521AE3B35008C8EAE /* README.md */,
+				CE72A0B1302B025D00AB2597 /* TODO.md */,
 				CEEAFCEC3019D1F800D06E0E /* Views */,
 				CE73B026301F41F900FA5FD6 /* Source */,
 				CE73B027301F41FE00FA5FD6 /* Persistence */,
@@ -1139,6 +1142,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE72A0B2302B025F00AB2597 /* TODO.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1604,7 +1608,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.10.3;
+				CURRENT_PROJECT_VERSION = 2026.8.11.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1615,8 +1619,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ebarer.Marquee;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,6";
 			};
 			name = Debug;
 		};
@@ -1627,7 +1634,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.10.3;
+				CURRENT_PROJECT_VERSION = 2026.8.11.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1638,8 +1645,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ebarer.Marquee;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,6";
 			};
 			name = Release;
 		};
