@@ -1,8 +1,5 @@
 
 Important:
-- [ ] We've lost the swipe to mark as watched action?
-  - [ ] Except in custom lists, even for shows thst are already watched
-- [ ] Leading swipe action on custom list is stale (mark watched show as unwatched, button remains unwatch)
 - [ ] 
 
 Project:
@@ -12,6 +9,7 @@ Project:
 Polish:
 - [ ] Movie Details: should always be able to see the full title
 - [ ] Movie Details: title and actions should be vertically centered on poster when collapsed
+- [ ] Movie Details: indicate if streaming is available on a service you don't have
 - [ ] Search: Brand New Day isn't #1 for Spiderman
 - [ ] Search: Noah Wyle is known for ER and The Pitt, neither show up in that section (movies only?)
 - [ ] Search: Seth Rogen is known for The Studio, Superbad and Knocked Up, (the 1st doesn't show up at all, the other 2 aren't rated highly enough?

@@ -22,7 +22,7 @@ enum WatchedSortKey: String {
         switch self {
         case .releaseDate: return "popcorn.fill"
         case .dateWatched: return "calendar.badge.checkmark"
-        case .rating: return "star"
+        case .rating: return "star.fill"
         }
     }
 }
@@ -54,7 +54,7 @@ enum MediaTypeFilter: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .all: return "Movies & TV Shows"
+        case .all: return "All"
         case .movies: return "Movies"
         case .tv: return "TV Shows"
         }
@@ -62,7 +62,7 @@ enum MediaTypeFilter: String, CaseIterable {
 
     var symbol: String {
         switch self {
-        case .all: return "rectangle.stack"
+        case .all: return "rectangle.stack.badge.play"
         case .movies: return "film"
         case .tv: return "tv"
         }

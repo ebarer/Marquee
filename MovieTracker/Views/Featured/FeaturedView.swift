@@ -4,69 +4,8 @@
 //
 
 import SwiftUI
-import SwiftData
 
-/// The poster grid for one `FeaturedCollection`; the host chooses the collection.
-struct FeaturedGridView: View {
-    let collection: FeaturedCollection
-
-    @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
-    private var lists: [MediaList]
-    @State private var model = FeaturedModel()
-
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
-    private var isRegularWidth: Bool { horizontalSizeClass == .regular }
-
-    private var columns: [GridItem] {
-        if isRegularWidth {
-            return [GridItem(.adaptive(minimum: 120, maximum: 150), spacing: 16)]
-        } else {
-            return [GridItem(.adaptive(minimum: 110), spacing: 10)]
-        }
-    }
-
-    var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: isRegularWidth ? 24 : 16) {
-                if collection.isShow {
-                    ForEach(model.shows, id: \.id) { show in
-                        DetailLink(value: show) {
-                            ShowPosterCard(show: show)
-                        }
-                        .buttonStyle(.plain)
-                        .task {
-                            await model.loadMoreIfNeeded(currentShow: show)
-                        }
-                    }
-                } else {
-                    ForEach(model.movies, id: \.id) { movie in
-                        DetailLink(value: movie) {
-                            MoviePosterCard(movie: movie)
-                        }
-                        .buttonStyle(.plain)
-                        .movieContextMenu(for: movie, lists: lists)
-                        .task {
-                            await model.loadMoreIfNeeded(currentItem: movie)
-                        }
-                    }
-                }
-            }
-            .padding(isRegularWidth ? 20 : 10)
-        }
-        .navigationTitle(collection.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .overlay {
-            if model.isLoading && (collection.isShow ? model.shows.isEmpty : model.movies.isEmpty) {
-                ProgressView()
-            }
-        }
-        // Idempotent for an unchanged collection, so a push → pop reappear keeps the
-        // loaded movies (and scroll position) instead of reloading.
-        .task(id: collection) { await model.load(collection) }
-    }
-}
-
+/// The Browse tab: a `FeaturedGridView` whose collection is chosen from the title menu.
 struct FeaturedView: View {
     @State private var collection: FeaturedCollection = .popular
 

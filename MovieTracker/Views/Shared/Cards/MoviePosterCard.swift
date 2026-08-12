@@ -59,91 +59,15 @@ struct MoviePosterCard: View {
     }
 }
 
-enum PosterStatus {
-    case watched
-    /// A series with some — but not all — episodes watched.
-    case partial
-    case watchList
-
-    var symbol: String {
-        switch self {
-        case .watched: return "checkmark.circle.fill"
-        case .partial: return "circle.tophalf.filled"
-        case .watchList: return "bookmark.fill"
-        }
-    }
-
-    var pointSize: CGFloat {
-        switch self {
-        case .watched: return 18
-        case .partial: return 17
-        case .watchList: return 15
-        }
-    }
-
-    var verticalNudge: CGFloat {
-        switch self {
-        case .watched: return -1
-        case .partial, .watchList: return 0
-        }
-    }
-}
-
-struct PosterStatusBadge: View {
-    let status: PosterStatus
-    var cornerRadius: CGFloat = 8
-    var scale: CGFloat = 1
-
-    var body: some View {
-        PosterSymbolBadge(symbol: status.symbol, cornerRadius: cornerRadius,
-                          pointSize: status.pointSize * scale, padding: 7 * scale,
-                          verticalNudge: status.verticalNudge * scale)
-    }
-}
-
-/// A dark top-trailing corner gradient behind an SF Symbol, so any symbol laid over
-/// poster art stays legible. Shared by the browse status badges and the Watched-list
-/// partial-season mark.
-struct PosterSymbolBadge: View {
-    let symbol: String
-    var cornerRadius: CGFloat = 8
-    var pointSize: CGFloat = 18
-    var padding: CGFloat = 7
-    var verticalNudge: CGFloat = 0
-
-    var body: some View {
-        GeometryReader { geo in
-            RadialGradient(
-                gradient: Gradient(colors: [.black.opacity(0.55), .clear]),
-                center: .topTrailing,
-                startRadius: 0,
-                endRadius: max(geo.size.width, geo.size.height) * 0.6
-            )
-        }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .overlay(alignment: .topTrailing) {
-            Image(systemName: symbol)
-                .font(.system(size: pointSize, weight: .semibold))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
-                .padding(padding)
-                .offset(y: verticalNudge)
-        }
-        .allowsHitTesting(false)
-    }
-}
-
 #Preview {
     HStack(spacing: 16) {
-        ForEach([PosterStatus.watched, .watchList], id: \.symbol) { status in
-            PosterImage(url: Movie.preview.posterURL(.w342))
-                .aspectRatio(2.0 / 3.0, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay { PosterStatusBadge(status: status) }
-        }
+        MoviePosterCard(movie: .preview)
+        MoviePosterCard(movie: Movie.previewList[1])
     }
     .frame(width: 260)
     .padding()
     .background(Color.appBackground)
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }

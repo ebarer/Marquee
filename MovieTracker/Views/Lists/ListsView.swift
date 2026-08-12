@@ -32,7 +32,6 @@ struct ListsView: View {
                     } label: {
                         ListTitleLabel(name: title, color: activeColor, count: movieCount)
                     }
-                    .tint(.primary)
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Button {

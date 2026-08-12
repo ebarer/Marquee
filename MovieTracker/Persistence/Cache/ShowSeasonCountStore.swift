@@ -1,9 +1,9 @@
 //
-//  ShowSeasonCountText.swift
+//  ShowSeasonCountStore.swift
 //  MovieTracker
 //
 
-import SwiftUI
+import Foundation
 
 /// Session memo for lazily-resolved show details. TMDB omits season counts, last-air
 /// dates and status from list/search results, so cards resolve a fuller `Show` on demand —
@@ -32,35 +32,5 @@ final class ShowSeasonCountStore {
         tasks[id] = nil
         if let result { resolved[id] = result }
         return result
-    }
-}
-
-/// Displays "N Seasons" for a show, resolving the count lazily and showing an
-/// optional placeholder (typically the air year) until it arrives.
-struct ShowSeasonCountText: View {
-    let show: Show
-    var placeholder: String? = nil
-    var font: Font = .subheadline
-
-    @State private var resolved: Int?
-
-    private var count: Int? {
-        show.seasonCount > 0 ? show.seasonCount : resolved
-    }
-
-    var body: some View {
-        Group {
-            if let count {
-                Text(count == 1 ? "1 Season" : "\(count) Seasons")
-            } else if let placeholder {
-                Text(placeholder)
-            }
-        }
-        .font(font)
-        .foregroundStyle(.secondary)
-        .task(id: show.id) {
-            guard show.seasonCount == 0 else { return }
-            resolved = await ShowSeasonCountStore.shared.show(for: show.id)?.seasonCount
-        }
     }
 }
