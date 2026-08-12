@@ -67,9 +67,8 @@ struct ShowRow: View {
             Spacer()
         }
         .task(id: show.id) {
-            // A stub (no seasons loaded) lacks last-air/status, so upgrade the year range —
-            // independent of the season-count text, so list rows show "2021–Present" correctly.
-            // Skipped when showing an episode count (credits) instead of the year range.
+            // A stub (no seasons loaded) lacks last-air/status, so upgrade the year range
+            // independently of the season-count text — otherwise "2021–Present" never shows.
             guard episodeCount == nil, show.seasonCount == 0,
                   let full = await ShowSeasonCountStore.shared.show(for: show.id) else { return }
             resolvedYearRange = full.yearRange

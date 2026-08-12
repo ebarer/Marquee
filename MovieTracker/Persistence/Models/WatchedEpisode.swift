@@ -6,9 +6,8 @@
 import Foundation
 import SwiftData
 
-/// A single watched episode — the source of truth for TV progress. Season and show
-/// "watched" states derive from these. CloudKit-friendly: flat, all-defaulted, no
-/// relationships, no unique constraint (duplicates converge via `deduplicate`).
+/// A single watched episode — the source of truth for TV progress; season and show
+/// watched states derive from these. CloudKit duplicates converge via `deduplicate`.
 @Model
 final class WatchedEpisode {
     var showTmdbID: Int = 0

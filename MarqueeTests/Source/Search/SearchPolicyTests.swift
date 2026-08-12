@@ -56,9 +56,8 @@ import Foundation
     // MARK: - Franchise collection expansion
 
     @Test func batmanSurfacesDarkKnightViaCollection() async {
-        // "batman" title-matches "Batman Begins", which belongs to the Dark Knight
-        // Collection — so its siblings (The Dark Knight[, Rises]) surface, even though
-        // their titles don't contain "batman". No hardcoded franchise map.
+        // "batman" title-matches "Batman Begins", so its Dark Knight Collection siblings
+        // surface even without "batman" in their titles. No hardcoded franchise map.
         var stub = StubProvider()
         stub.movieResults["batman"] = [
             movie(272, "Batman Begins", votes: 22_000, pop: 55),
@@ -110,9 +109,8 @@ import Foundation
     // MARK: - Movies over TV
 
     @Test func spidermanPrioritisesMoviesOverShows() async {
-        // The Spider-Man films dominate votes, so they lead — even an exactly-named
-        // animated series can't leapfrog the far more notable movies (both films sort
-        // above every show).
+        // The Spider-Man films dominate votes, so they lead — even an exactly-named animated
+        // series can't leapfrog the far more notable movies.
         var stub = StubProvider()
         stub.movieResults["spiderman"] = [
             movie(557, "Spider-Man", votes: 18_000, pop: 60),

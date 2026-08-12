@@ -5,9 +5,8 @@
 
 import SwiftUI
 
-/// The shared graphical date-picker sheet behind the watched-date buttons. The tappable
-/// label shows the current date; the sheet offers "Today" plus one optional quick-set
-/// (release date / last episode date). Persistence is delegated via `onChange`.
+/// The shared date-picker sheet behind the watched-date buttons: "Today" plus one optional
+/// quick-set (release / last episode date). Persistence is delegated via `onChange`.
 struct WatchedDatePicker: View {
     let tint: Color
     var font: Font? = nil

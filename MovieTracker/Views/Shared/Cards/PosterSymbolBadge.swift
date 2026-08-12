@@ -5,9 +5,8 @@
 
 import SwiftUI
 
-/// A dark top-trailing corner gradient behind an SF Symbol, so any symbol laid over
-/// poster art stays legible. Shared by the browse status badges and the Watched-list
-/// partial-season mark.
+/// A dark top-trailing corner gradient behind an SF Symbol, so a symbol laid over poster art
+/// stays legible. Shared by the browse status badges and the partial-season mark.
 struct PosterSymbolBadge: View {
     let symbol: String
     var cornerRadius: CGFloat = 8

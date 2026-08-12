@@ -5,9 +5,8 @@
 
 import SwiftUI
 
-/// A sidebar list row: icon + title that turns white when selected, with a trailing count
-/// badge. `.tag` is applied last so `List(selection:)` sees it — a trailing `.badge` would
-/// otherwise shadow it (this is why the Watch List row once appeared unselectable).
+/// A sidebar list row: icon, title, and a trailing count badge. `.tag` is applied last so
+/// `List(selection:)` sees it — a trailing `.badge` shadows it and kills selection.
 struct SidebarRow<Icon: View>: View {
     let title: String
     let tag: SidebarItem

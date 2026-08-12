@@ -1,5 +1,5 @@
 //
-//  TMDBWrapper+People.swift
+//  TMDBWrapper+Person.swift
 //  MovieTracker
 //
 

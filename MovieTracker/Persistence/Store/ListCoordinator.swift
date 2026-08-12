@@ -6,10 +6,8 @@
 import Foundation
 import SwiftData
 
-/// Loads a list's rows on a background context: fetches the source `@Model`s, resolves each
-/// row's section-anchor date, and picks the `SectionLayout`. Arranging rows into titled, sorted
-/// sections is `SectionFormatter`'s job (presentation). Distinct from `PersistenceCoordinator`,
-/// the main-actor writer — this is the off-main reader the Lists screen awaits.
+/// Off-main reader for the Lists screen: fetches a list's rows, their section-anchor dates,
+/// and the `SectionLayout`. Arranging them into titled sections is `SectionFormatter`'s job.
 @ModelActor
 actor ListCoordinator {
     func load(request: ListRequest, filter: String, mediaFilter: MediaTypeFilter = .all) -> ListResult {

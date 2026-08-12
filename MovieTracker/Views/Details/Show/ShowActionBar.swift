@@ -6,10 +6,8 @@
 import SwiftUI
 import SwiftData
 
-/// The Liquid Glass controls beside the show poster — bookmark (Watch List), checkmark
-/// (Watched, confirm-first via `ShowWatchedButton`), a custom-lists control, and a trailer
-/// button. Mirrors `MovieActionBar`, writing through the `PersistenceCoordinator` Show
-/// overloads (list membership and watched/rating reuse `MediaItem`/`ListEntry` with `.tv`).
+/// The Liquid Glass controls beside the show poster: bookmark, checkmark (confirm-first),
+/// custom lists, trailer. Mirrors ``MovieActionBar`` over the coordinator's Show overloads.
 struct ShowActionBar: View {
     let show: Show
     let lists: [MediaList]
@@ -57,9 +55,8 @@ struct ShowActionBar: View {
         }
         // Caught-up needs the season's episodes to date-check, and they arrive lazily.
         .onChange(of: episodesBySeason.count) { refresh() }
-        // Re-sync when episodes are toggled elsewhere (e.g. the episodes section): unwatching
-        // an episode pulls a finished show back onto the Watch List, so the bookmark that
-        // reappears must read as on, not stale-off.
+        // Re-sync when episodes are toggled elsewhere: unwatching one pulls a finished show
+        // back onto the Watch List, so the bookmark that reappears must read as on.
         .onChange(of: store?.revision) { refresh() }
     }
 

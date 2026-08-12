@@ -85,11 +85,8 @@ final class SearchModel {
             var result = await policy.run(query: query, using: provider)
             guard !Task.isCancelled else { return }
 
-            // Recall recovery: TMDB's incremental search is erratic, so mid-typing a
-            // multi-word title the real match can drop out. If this weak keystroke
-            // relates to a previously-strong query, re-run that anchor and keep its
-            // results — but only while the query still leads to the anchor's top film,
-            // so typing toward a different title self-corrects to its real results.
+            // Recall recovery: TMDB's incremental search is erratic, so the real match can
+            // drop mid-type. Re-run the last strong anchor while the query still leads to it.
             let originalStrong = isStrong(result)
             if !originalStrong,
                SearchMatching.shouldTryAnchorRecovery(query: query,

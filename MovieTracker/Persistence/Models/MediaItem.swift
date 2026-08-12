@@ -23,13 +23,11 @@ final class MediaItem {
     var watchedAt: Date?
     var lastViewedAt: Date?
     var addedAt: Date = Date()
-    /// Cached "every aired season is watched" for a `.tv` item, so the show detail's
-    /// checkmark is correct on entry without recomputing from episodes. Kept in sync by
-    /// `reconcileMembership`/`unwatchSeason`; nil for movies and not-fully-watched shows.
+    /// Cached "every aired season is watched" for `.tv`, so show detail is right on entry.
+    /// Kept in sync by `reconcileMembership`/`unwatchSeason`; nil for movies.
     var showWatched: Bool?
-    /// The user manually removed this show from the auto-managed Watch List; persists the
-    /// choice so watched progress doesn't bounce it back on (see `reconcileMembership`).
-    /// nil/false = tracked normally. Cleared by `restoreToWatchList`.
+    /// The user removed this show from the auto-managed Watch List; persisted so watched
+    /// progress can't bounce it back on. Cleared by `restoreToWatchList`.
     var watchListOptOut: Bool?
 
     init(tmdbID: Int, mediaType: MediaType = .movie, title: String) {

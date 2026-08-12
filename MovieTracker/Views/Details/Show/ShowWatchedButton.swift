@@ -5,14 +5,8 @@
 
 import SwiftUI
 
-/// The show's Watched checkmark with a confirm-first dialog (marking a show watched or
-/// unwatched touches every season). Shares the action bar's glass namespace so it can
-/// absorb the bookmark into a pill via matched geometry.
-///
-/// Marking only ever covers *aired* episodes, so a show still on air lands in a third
-/// state: caught up. That reads as a filled, non-tappable half-circle — confirmation that
-/// the mark took, without claiming the show is finished. It reverts to a live checkmark
-/// once an episode is un-watched or a new one airs.
+/// The show's Watched checkmark, confirm-first since a mark touches every season. Marking
+/// covers only *aired* episodes, so a show still on air reads as caught up, not finished.
 struct ShowWatchedButton: View {
     let isSeen: Bool
     /// Every aired episode watched, but unaired ones remain.

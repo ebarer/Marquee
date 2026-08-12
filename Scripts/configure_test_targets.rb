@@ -4,6 +4,7 @@
 # test files. Requires the `xcodeproj` gem.
 
 require 'xcodeproj'
+require 'pathname'
 require 'json'
 require 'securerandom'
 require 'rexml/document'
@@ -43,11 +44,18 @@ def swift_files(project, dir)
   Dir.glob(File.join(abs, '**', '*.swift')).sort
 end
 
+# Mirrors the on-disk folders as nested groups, so the Xcode navigator matches the
+# directory layout instead of showing one flat list.
 def add_group_files(project, target, dir)
-  group = project.main_group.new_group(dir, dir)
+  root = project.main_group.new_group(dir, dir)
+  base = Pathname.new(File.join(project.project_dir, dir))
   swift_files(project, dir).each do |path|
-    ref = group.new_file(path)
-    target.add_file_references([ref])
+    relative = Pathname.new(path).relative_path_from(base).dirname.to_s
+    group = relative == '.' ? root : relative.split('/').reduce(root) do |parent, name|
+      parent.children.find { |c| c.is_a?(Xcodeproj::Project::Object::PBXGroup) && c.display_name == name } ||
+        parent.new_group(name, name)
+    end
+    target.add_file_references([group.new_file(path)])
   end
 end
 

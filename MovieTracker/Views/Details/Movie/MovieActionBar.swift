@@ -6,9 +6,8 @@
 import SwiftUI
 import SwiftData
 
-/// The Liquid Glass controls beside the poster: bookmark (Watch List), checkmark
-/// (Watched), a custom-lists control, and a trailer play button. Marking Watched
-/// absorbs the bookmark into a pill spanning both slots.
+/// The Liquid Glass controls beside the poster: bookmark, checkmark, custom lists, trailer.
+/// Marking Watched absorbs the bookmark into a pill spanning both slots.
 struct MovieActionBar: View {
     let movie: Movie
     let lists: [MediaList]

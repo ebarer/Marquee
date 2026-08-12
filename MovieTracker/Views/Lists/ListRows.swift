@@ -19,9 +19,8 @@ struct ListRows: View {
     @State private var tappedMovie: Movie?
     /// The "Older" archive bucket starts collapsed each visit.
     @State private var olderExpanded = false
-    /// The confirmation a swipe is waiting on, and the row that raised it. ONE piece of state
-    /// for both questions: the dialog hangs off the row so it points at the title in hand, and
-    /// a row can only carry a single presentation of a kind — two would cancel each other out.
+    /// The confirmation a swipe is waiting on, and the row that raised it. ONE piece of state:
+    /// a row carries only a single presentation of a kind — two would cancel each other out.
     @State private var pending: PendingConfirmation?
 
     private enum PendingConfirmation: Identifiable {
@@ -132,9 +131,8 @@ struct ListRows: View {
         }
     }
 
-    /// Tappable header for the collapsible "Older" bucket — a chevron that rotates
-    /// with the expanded state plus the archived count. Stays a section header so it
-    /// pins like the month headers.
+    /// Tappable header for the collapsible "Older" bucket. Stays a section header so it pins
+    /// like the month headers.
     private func olderHeader(count: Int) -> some View {
         Button {
             withAnimation { olderExpanded.toggle() }
@@ -232,10 +230,8 @@ struct ListRows: View {
         }
         .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-        // TV watched-state is episode-based, so toggle through the show model (not the
-        // movie `watchedAt` flag) — this is the case that was broken on custom lists.
-        // Confirm first: it sweeps every episode of every season. A full swipe raises that
-        // confirmation; it doesn't perform the change.
+        // TV watched-state is episode-based, so toggle through the show model, not the movie
+        // `watchedAt` flag. A full swipe raises the confirmation; it doesn't apply the change.
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             ShowWatchedSwipeButton(showID: entry.tmdbID) { watched in
                 pending = .showWatched(entry, watched: watched)
@@ -244,10 +240,8 @@ struct ListRows: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
 
-    /// A completed season in the Watched list: tapping opens the show on that season, a
-    /// trailing swipe un-watches the whole season. No leading swipe — "add back to Watch
-    /// List" was confusing on a completed season (and re-added the show when another season
-    /// was still tracked).
+    /// A completed season in the Watched list: tapping opens the show there, a trailing swipe
+    /// un-watches it. No leading swipe — "add back" reads as confusing on a finished season.
     private func watchedSeasonRow(_ entry: MediaSnapshot) -> some View {
         DetailLink(value: show(entry, openingSeason: entry.seasonNumber)) {
             SeasonRowContent(entry: entry, tint: listColor)
@@ -259,10 +253,8 @@ struct ListRows: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
 
-    /// A Watch List / custom-list show, represented by its next-incomplete season: same look
-    /// as a Watched row (poster, "Season N • x of y", partial badge), tapping opens the show
-    /// on that season, a leading swipe completes that season, a trailing swipe removes it
-    /// from the list.
+    /// A Watch List / custom-list show shown as its next-incomplete season: tapping opens the
+    /// show there, a leading swipe completes the season, a trailing swipe removes the show.
     private func trackedSeasonRow(_ entry: MediaSnapshot) -> some View {
         DetailLink(value: show(entry, openingSeason: entry.seasonNumber)) {
             SeasonRowContent(entry: entry, tint: listColor)
@@ -275,10 +267,8 @@ struct ListRows: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
 
-    // Deliberately NOT `role: .destructive`: that promises SwiftUI the row is going, so it
-    // clears the cell the moment the button is tapped — the row blinks out and springs back
-    // when the confirmation is declined, and the row's own dialog is torn down with it before
-    // it can present. The red tint gives the same appearance without the promise.
+    // Deliberately NOT `role: .destructive`: that promises the row is going, so the cell
+    // clears on tap and tears down its own dialog. The red tint looks the same, no promise.
     private func deleteButton(_ entry: MediaSnapshot) -> some View {
         Button {
             requestDelete(entry)
@@ -340,9 +330,8 @@ struct ListRows: View {
                  runtime: entry.runtime, sortDate: entry.sortDate)
     }
 
-    /// Route a delete: removing an in-progress show from the Watch List can't just drop its
-    /// `ListEntry` — watched episodes re-add it on the next reconcile. Confirm, then persist
-    /// the opt-out via `dismiss`. Everything else deletes straight away.
+    /// Removing an in-progress show from the Watch List can't just drop its `ListEntry` —
+    /// watched episodes re-add it on the next reconcile — so confirm, then opt out.
     private func requestDelete(_ entry: MediaSnapshot) {
         if isWatchList, entry.mediaType == .tv, store?.hasWatchedEpisodes(show(entry)) == true {
             pending = .removeFromWatchList(entry)
@@ -351,10 +340,8 @@ struct ListRows: View {
         }
     }
 
-    /// Persist the manual Watch List removal (opt-out) so watched progress no longer bounces
-    /// the show back on. Resolve the show so reconcile keeps an accurate tracked season for
-    /// any other list; fall back to the snapshot's minimal show (carrying its display key) if
-    /// it's cold, so the removal still sticks offline.
+    /// Persist the manual Watch List opt-out. Resolve the show so reconcile keeps an accurate
+    /// tracked season; fall back to the snapshot's show so the removal sticks offline.
     private func dismiss(_ entry: MediaSnapshot) {
         pending = nil
         guard let store else { return }
@@ -386,9 +373,8 @@ struct ListRows: View {
         Task { @MainActor in await store.setShowWatched(watched, showID: entry.tmdbID) }
     }
 
-    /// Clear a completed season, then reconcile through the shared path: un-watching an
-    /// earlier season makes the show in-progress again, so it should return to the Watch List
-    /// (tracking that season) now — not only after the show is next opened.
+    /// Clear a completed season, then reconcile: un-watching an earlier season makes the show
+    /// in-progress again, so it returns to the Watch List now, not on next open.
     private func unwatchSeason(_ entry: MediaSnapshot, season: Int) {
         guard let store else { return }
         store.unwatchSeason(showID: entry.tmdbID, seasonNumber: season)

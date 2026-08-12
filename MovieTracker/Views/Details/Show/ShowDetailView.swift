@@ -6,9 +6,8 @@
 import SwiftUI
 import SwiftData
 
-/// The show detail screen composed over an async-loaded show. Show-level tracking
-/// (watch list / watched / rating / custom lists) persists via `PersistenceCoordinator`;
-/// per-episode watched state lives in `WatchedEpisode`.
+/// The show detail screen over an async-loaded show. Show-level tracking persists via
+/// `PersistenceCoordinator`; per-episode watched state lives in `WatchedEpisode`.
 struct ShowDetailView: View {
     private let showID: Int
     private let showTitle: String
@@ -170,9 +169,8 @@ struct ShowDetailView: View {
     }
 }
 
-// Season 1 fully watched (3/3) — the season reads complete, with rating/date controls.
-// Its watched episodes are seeded in `detailPreviewContainer`; the view's .task reconciles
-// them into the WatchedSeason snapshot once the container is attached.
+// Season 1 fully watched (3/3). Its episodes are seeded in `detailPreviewContainer`; the
+// view's .task reconciles them into the WatchedSeason snapshot.
 #Preview("Season watched") {
     NavigationStack {
         ShowDetailView(preview: .previewWatched, model: .preview(.previewWatched))

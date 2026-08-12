@@ -44,10 +44,8 @@ struct SearchPolicy: Sendable {
                              namedPeople: context.namedPeople, castPeople: context.castPeople)
     }
 
-    /// The default pipeline. Order matters: spelling variants augment the movie set,
-    /// then rank it, then hydrate the top movies ONCE (collection + cast in a single
-    /// fan-out) so the franchise and cast tools reuse that data instead of each making
-    /// their own round-trip. Shows are filtered independently; interlacing ranks last.
+    /// The default pipeline. Order matters: variants augment the movie set, then rank it, then
+    /// hydrate the top movies ONCE so the franchise and cast tools reuse that single fan-out.
     static let standard = SearchPolicy(
         tools: [
             SpellingVariantTool(),

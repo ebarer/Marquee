@@ -6,13 +6,8 @@
 import Foundation
 import SwiftData
 
-/// The season a show currently *represents* in every list except Watched — its first
-/// incomplete (next-to-watch) season. One row per show. Lets a membership row render as a
-/// season (poster, "Season N • x of y") and, crucially, sort by the next unwatched episode's
-/// air date so an in-progress show buckets near "now" instead of its premiere. Advanced as
-/// seasons complete; removed once the show is fully watched or off every list. The *watched*
-/// count is derived from `WatchedEpisode` (source of truth), never cached. CloudKit-friendly:
-/// flat, all-defaulted, no relationships, no unique constraint.
+/// A show's first incomplete season — what it renders and sorts as in every list except
+/// Watched, so an in-progress show buckets near "now" instead of its premiere.
 @Model
 final class TrackedSeason {
     var showTmdbID: Int = 0

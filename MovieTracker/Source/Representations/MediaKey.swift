@@ -5,10 +5,8 @@
 
 import Foundation
 
-/// A media-type-tagged key plus display snapshot that both `Movie` and `Show` produce,
-/// letting the persistence layer (MediaItem / ListEntry / MediaList) store and dedupe
-/// either kind with no schema change — both models already carry `mediaTypeRaw`, and the
-/// composite (tmdbID, mediaType) is the dedup key.
+/// A type-tagged key plus display snapshot that both `Movie` and `Show` produce, letting the
+/// persistence layer store and dedupe either kind on the (tmdbID, mediaType) composite.
 struct MediaKey {
     let tmdbID: Int
     let mediaType: MediaType

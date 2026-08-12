@@ -5,9 +5,8 @@
 
 import SwiftUI
 
-/// The header above a season's episodes: the season picker, a "year • N episodes" line, an
-/// optional watched-date + rating column (once complete), and a ``SeasonWatchedToggle``.
-/// Presentational — values and actions come from the parent.
+/// The header above a season's episodes: the picker, a "year • N episodes" line, an optional
+/// watched-date + rating column (once complete), and a ``SeasonWatchedToggle``.
 struct SeasonHeader: View {
     let seasons: [Season]
     let currentSeason: Int?

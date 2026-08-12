@@ -1,5 +1,5 @@
 //
-//  ListSectionsTests.swift
+//  SectionFormatterTests.swift
 //  MarqueeTests
 //
 
@@ -11,7 +11,7 @@ import SwiftData
 /// Exercises the list pipeline end to end: `ListCoordinator` (fetch + dates + layout) piped
 /// through `SectionFormatter` (grouping / "Older" fold / rating buckets).
 @MainActor
-@Suite struct ListSectionsTests {
+@Suite struct SectionFormatterTests {
     let store = makeInMemoryStore()
 
     private func sections(_ request: ListRequest, ascending: Bool, filter: String = "",
@@ -86,9 +86,8 @@ import SwiftData
         #expect(result.isEmpty)
     }
 
-    /// Watch List rows: `recent` upcoming (distantFuture) titles + `old` archived
-    /// (early-2000s) titles. Folds into "Older" only when both counts clear the
-    /// thresholds (recent >= 3 && older >= 3).
+    /// Watch List rows: `recent` upcoming titles + `old` archived ones. Folds into "Older"
+    /// only when both clear their thresholds (recent >= 3 && older >= 3).
     private func seedWatchList(recent: Int, old: Int) -> UUID {
         var rows: [(id: Int, title: String, release: Date?, added: Date)] = []
         for i in 0..<recent {

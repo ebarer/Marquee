@@ -5,9 +5,8 @@
 
 import SwiftUI
 
-/// The poster + "Season N • x of y Episodes" body shared by the Watched-list season rows
-/// and the membership (Watch List / custom) tracked-season rows. Partial seasons get the
-/// half-filled corner badge over the app's standard poster gradient.
+/// The poster + "Season N • x of y Episodes" body shared by the Watched-list season rows and
+/// the tracked-season rows. Partial seasons get the half-filled corner badge.
 struct SeasonRowContent: View {
     let entry: MediaSnapshot
     var tint: Color = .appAccent

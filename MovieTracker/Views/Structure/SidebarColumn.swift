@@ -116,9 +116,8 @@ struct SidebarColumn: View {
     }
 }
 
-// A `.constant` binding (not `@Previewable @State`): under Xcode Previews the `@Previewable`
-// local runs the view's `@Query` before `.modelContainer` attaches the in-memory store,
-// which crashes with "No eligible connection available". A constant binding sidesteps that.
+// A `.constant` binding, not `@Previewable @State`: the latter runs the view's `@Query` before
+// `.modelContainer` attaches, crashing with "No eligible connection available".
 #Preview {
     NavigationStack {
         SidebarColumn(selection: .constant(.collection(.popular)))

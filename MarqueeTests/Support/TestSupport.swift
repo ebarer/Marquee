@@ -9,11 +9,8 @@ import Foundation
 import SwiftData
 @testable import Marquee
 
-/// A fresh, isolated store per test. Two deliberate choices for this toolchain:
-///  - a unique on-disk temp file, not `isStoredInMemoryOnly` (`#Predicate` fetches
-///    crash against the in-memory store, and the app leans on them everywhere);
-///  - a plain `ModelContext(container)` rather than `container.mainContext`, whose
-///    main-actor assertion traps under Swift Testing's executor.
+/// A fresh store per test, on a temp file because `#Predicate` fetches crash in-memory, and
+/// on a plain `ModelContext` because `mainContext` traps under Swift Testing's executor.
 @MainActor
 func makeInMemoryStore() -> PersistenceCoordinator {
     let url = URL.temporaryDirectory.appending(path: "MarqueeTests-\(UUID().uuidString).store")

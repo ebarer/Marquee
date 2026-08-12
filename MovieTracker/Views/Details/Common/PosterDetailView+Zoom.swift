@@ -53,9 +53,8 @@ extension PosterDetailView {
             } else {
                 scale = doubleTapScale
                 lastScale = doubleTapScale
-                // Offset so the tapped point stays fixed while the content scales around it:
-                // a point at distance d from center renders at d*s + offset, so keeping it
-                // stationary requires offset = d * (1 - s).
+                // Keep the tapped point fixed while scaling: a point at distance d from
+                // center renders at d*s + offset, so it stays put when offset = d * (1 - s).
                 let center = CGPoint(x: posterSize.width / 2, y: posterSize.height / 2)
                 let proposed = CGSize(
                     width: (location.x - center.x) * (1 - doubleTapScale),
@@ -67,9 +66,8 @@ extension PosterDetailView {
         }
     }
 
-    /// Clamps a pan offset so the scaled image's edges lock to the container: panning is
-    /// allowed only by the amount the image overflows the screen in each axis (0 when it's
-    /// smaller than the screen), so an edge can never be pulled inward from the screen edge.
+    /// Clamps a pan so the scaled image's edges lock to the container — panning is allowed
+    /// only by the amount it overflows, so an edge can't be pulled in from the screen edge.
     func clampedOffset(_ proposed: CGSize) -> CGSize {
         guard posterSize != .zero, containerSize != .zero else { return proposed }
         // The image sits inside the padded element, so its scaled extent excludes

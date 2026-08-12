@@ -33,10 +33,8 @@ struct PosterDetailView: View {
     let posterPadding: CGFloat = 16
 
     var body: some View {
-        // The reader sits inside the safe area so it can report the real insets. From
-        // those we build the full physical-screen size and center the poster on it (so
-        // pans reach the device's top/bottom edges), while placing the close button back
-        // at the safe-area top-trailing corner where a nav bar's close button would sit.
+        // The reader sits inside the safe area to report the real insets; from those we
+        // build the full screen size so pans reach the device's top/bottom edges.
         GeometryReader { proxy in
             let insets = proxy.safeAreaInsets
             let fullSize = CGSize(
@@ -88,9 +86,8 @@ struct PosterDetailView: View {
         .environment(\.colorScheme, .dark)
     }
 
-    /// 0 at rest, ramping to 1 once zoomed in a little; drives the rounded corners
-    /// and border away so, when the image is locked to the screen edges, it reads as
-    /// the bare image rather than a framed card.
+    /// 0 at rest, ramping to 1 once zoomed a little; drives the corners and border away so an
+    /// edge-locked image reads as bare artwork rather than a framed card.
     private var zoomProgress: CGFloat {
         min(1, max(0, (scale - 1) / 0.15))
     }

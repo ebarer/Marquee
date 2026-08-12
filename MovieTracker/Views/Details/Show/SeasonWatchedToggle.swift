@@ -5,17 +5,12 @@
 
 import SwiftUI
 
-/// A glass checkmark toggling a whole season's watched state, confirmed first (mirrors the
-/// show-level checkmark). Calls `onToggle` with the target state after confirmation.
-///
-/// Marking only covers *aired* episodes, so a season still airing lands in a third state:
-/// caught up. Like ``ShowWatchedButton`` that reads as a filled, non-tappable half-circle —
-/// confirmation the mark took without claiming the season is complete.
+/// A glass checkmark toggling a whole season's watched state, confirmed first. Marking covers
+/// only *aired* episodes, so a season still airing lands in a third state: caught up.
 struct SeasonWatchedToggle: View {
     let allWatched: Bool
-    /// Every aired episode watched. With unaired episodes left this is "caught up", not
-    /// complete: the toggle fills as a half-circle and stops responding until the season
-    /// grows or an episode is un-watched.
+    /// Every aired episode watched. With unaired ones left this is "caught up", not complete:
+    /// the toggle fills as a half-circle and stops responding.
     var allAiredWatched: Bool = false
     /// The season still has episodes dated in the future.
     var hasUnaired: Bool = false

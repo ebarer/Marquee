@@ -72,9 +72,8 @@ final class ShowDetailModel {
         return color
     }
 
-    /// Refresh the show's list membership (Watch List + tracked season) after a mutation.
-    /// Loads the first-incomplete season's episodes first so the tracked season can anchor
-    /// on the precise next-episode air date.
+    /// Refresh the show's list membership after a mutation. Loads the first-incomplete
+    /// season's episodes first so it can anchor on the precise next-episode air date.
     func reconcileMembership(using store: PersistenceCoordinator?) async {
         guard let store, let show else { return }
         if let season = store.firstIncompleteSeason(show) {

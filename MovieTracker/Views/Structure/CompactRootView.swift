@@ -13,9 +13,8 @@ struct CompactRootView: View {
     @State private var selectedTab: RootTab = .discover
     @State private var listsPath = NavigationPath()
     @State private var listsResetToken = 0
-    /// The tint published by each tab's frontmost page, so the tab bar can follow the one
-    /// on screen. Tracked per tab (not as a single value) because a tab the user left is
-    /// still alive and still publishing.
+    /// The tint published by each tab's frontmost page. Tracked per tab, not as one value,
+    /// because a tab the user left is still alive and still publishing.
     @State private var tabTints: [RootTab: Color] = [:]
 
     var body: some View {
@@ -41,10 +40,8 @@ struct CompactRootView: View {
                     SearchView(model: searchModel, onSelectMovie: openSearchResult,
                                onSelectShow: openSearchResult)
                         .detailDestinations()
-                        // Declare the search field on the content inside the stack
-                        // (Apple's recommended placement). On the NavigationStack
-                        // itself, a push while the field is focused skipped its
-                        // animation; inside, the push animates with the keyboard up.
+                        // Declared on the content inside the stack: on the NavigationStack
+                        // itself, a push with the field focused skipped its animation.
                         .searchable(text: $searchModel.query, prompt: SearchModel.placeholder)
                         .onChange(of: searchModel.query) { _, newValue in
                             searchModel.search(newValue)
@@ -65,9 +62,8 @@ struct CompactRootView: View {
         .tint(tabTints[selectedTab] ?? .appAccent)
     }
 
-    /// Opens a tapped search result: resign the search field's focus first so the
-    /// keyboard's collapse doesn't share the push transaction, then push on the next
-    /// runloop so the navigation animates even with the keyboard up.
+    /// Resign the search field's focus so the keyboard's collapse doesn't share the push
+    /// transaction, then push on the next runloop so the navigation still animates.
     private func openSearchResult(_ value: some Hashable) {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
                                         to: nil, from: nil, for: nil)

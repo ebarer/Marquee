@@ -1,69 +1,11 @@
 //
-//  SearchModelTests.swift
+//  SearchInterlaceTests.swift
 //  MarqueeTests
 //
 
 import Testing
 import Foundation
 @testable import Marquee
-
-@MainActor
-@Suite(.serialized) struct SearchModelTests {
-    init() { UserDefaults.standard.removeObject(forKey: "recentSearches") }
-
-    @Test func commitInsertsMostRecentFirstAndDedupesCaseInsensitively() {
-        let model = SearchModel()
-        model.query = "Matrix"; model.commit()
-        model.query = "Inception"; model.commit()
-        model.query = "matrix"; model.commit()  // dupe of "Matrix"
-        #expect(model.recentSearches == ["matrix", "Inception"])
-    }
-
-    @Test func commitIgnoresBlankQuery() {
-        let model = SearchModel()
-        model.query = "   "; model.commit()
-        #expect(model.recentSearches.isEmpty)
-    }
-
-    @Test func recentsAreCappedAtFifteen() {
-        let model = SearchModel()
-        for i in 1...20 { model.query = "q\(i)"; model.commit() }
-        #expect(model.recentSearches.count == 15)
-        #expect(model.recentSearches.first == "q20")
-    }
-
-    @Test func removeAndClearRecents() {
-        let model = SearchModel()
-        model.query = "A"; model.commit()
-        model.query = "B"; model.commit()
-        model.removeRecent("a")  // case-insensitive
-        #expect(model.recentSearches == ["B"])
-        model.clearRecents()
-        #expect(model.recentSearches.isEmpty)
-    }
-
-    @Test func recentsPersistAcrossInstances() {
-        let first = SearchModel()
-        first.query = "Persisted"; first.commit()
-        let second = SearchModel()
-        #expect(second.recentSearches == ["Persisted"])
-    }
-
-    @Test func emptyQueryClearsResults() {
-        let model = SearchModel()
-        model.search("")
-        #expect(model.movies.isEmpty)
-        #expect(model.results.isEmpty)
-        #expect(model.namedPeople.isEmpty)
-        #expect(model.castMatchedPeople.isEmpty)
-        #expect(model.featuredPeople.isEmpty)
-        #expect(model.isLoading == false)
-    }
-
-    @Test func placeholderText() {
-        #expect(SearchModel.placeholder == "Movies, TV, People, etc.")
-    }
-}
 
 @Suite struct SearchInterlaceTests {
     private func movie(_ id: Int, _ pop: Double) -> Movie {
@@ -109,9 +51,8 @@ import Foundation
     }
 
     @Test func strongTitleMatchTierLeadsThenNotabilityWithin() {
-        // "house": strong matches (exact/prefix) lead over the weak "Road House" (a title
-        // word merely starts with it), even though Road House has more votes. Within the
-        // strong tier, notability orders: *House* (exact, 9k) then "House of Wax" (prefix).
+        // "house": strong matches (exact/prefix) lead the weak "Road House" despite its
+        // votes, and notability orders within that tier — *House* then "House of Wax".
         var series = Show(id: 9, name: "House"); series.popularity = 40; series.voteCount = 9_000
         var wax = Movie(id: 1, title: "House of Wax"); wax.popularity = 20; wax.voteCount = 800
         var road = Movie(id: 2, title: "Road House"); road.popularity = 95; road.voteCount = 5_000
@@ -147,9 +88,8 @@ import Foundation
     }
 
     @Test func franchiseSiblingRanksAsStrongMatchByNotability() {
-        // "batman": "The Dark Knight" has no literal match but is a franchise sibling
-        // (relatedMovieIDs), so it joins the strong tier and — being the most-voted —
-        // leads the exactly-titled "Batman". "Unrelated" (no match) trails.
+        // "batman": "The Dark Knight" has no literal match but is a franchise sibling, so it
+        // joins the strong tier and, being most-voted, leads the exactly-titled "Batman".
         var exact = Movie(id: 1, title: "Batman"); exact.voteCount = 8_000; exact.popularity = 40
         var dark = Movie(id: 2, title: "The Dark Knight"); dark.voteCount = 30_000; dark.popularity = 80
         var other = Movie(id: 3, title: "Unrelated"); other.voteCount = 50; other.popularity = 5

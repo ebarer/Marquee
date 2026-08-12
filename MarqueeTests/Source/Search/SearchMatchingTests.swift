@@ -171,10 +171,8 @@ import Foundation
     }
 
     @Test func obscureFilmCharacterMatchIsIgnoredForFallbackStar() {
-        // The real "Troy" bug: a no-name film credits its lead as a character
-        // named "Troy", which used to surface a random unknown ahead of the
-        // actual star. The notability floor drops that film's cast, so the
-        // fallback surfaces the famous lead of the query-named blockbuster.
+        // The "Troy" bug: a no-name film credits a character named "Troy", surfacing an
+        // unknown ahead of the star. The notability floor drops that cast, so the lead wins.
         let films = [
             film(652, "Troy", votes: 11_312, popularity: 64, cast: [
                 castMember(287, "Brad Pitt", "Achilles"),

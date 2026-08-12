@@ -5,10 +5,8 @@
 
 import SwiftUI
 
-/// The tint of the page currently on screen, published up out of the navigation stack so
-/// the shell around it (the tab bar) can share it. Detail screens publish their
-/// poster-derived colour, list screens their list colour; anything that publishes nothing
-/// leaves the app accent in place.
+/// The on-screen page's tint, published up out of the navigation stack so the shell around it
+/// can share it. A page that publishes nothing leaves the app accent in place.
 struct PageTintKey: PreferenceKey {
     static let defaultValue: Color? = nil
 
@@ -32,9 +30,8 @@ extension View {
     }
 }
 
-// The shell in miniature: the stack's root publishes green (a list) and the screen pushed
-// on top of it publishes red (a detail). The tab bar should read red — the frontmost page
-// wins, and its tint crosses both the NavigationStack and the Tab boundary.
+// The stack's root publishes green and the screen pushed on top publishes red. The tab bar
+// should read red: the frontmost page wins, across both the stack and the Tab boundary.
 #Preview("Tab bar follows the frontmost page") {
     @Previewable @State var tint: Color?
 

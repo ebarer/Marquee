@@ -6,9 +6,8 @@
 import SwiftUI
 import SwiftData
 
-/// Five stars showing a title's personal rating. Editable forms take a tap for whole
-/// stars and a sweep for half-star precision (tapping the current rating clears it);
-/// the `display` form is the same stars, smaller and inert, for rows and headers.
+/// Five stars showing a title's personal rating. Editable forms take a tap for whole stars
+/// and a sweep for halves; the `display` form is the same stars, inert, for rows and headers.
 struct StarRating: View {
     /// Where a committed rating goes; `nil` for the read-only display.
     private enum Commit {

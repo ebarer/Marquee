@@ -32,11 +32,8 @@ final class ListSectionsModel {
         let result = await store.sections(for: request, ascending: input.ascending,
                                            filter: input.filter, mediaFilter: input.mediaFilter)
         guard !Task.isCancelled else { return }
-        // A selection switch replaces rows outright (no animation). Within the same list,
-        // animate only *structural* changes (rows added/removed/reordered) so they slide. A
-        // pure in-place content change — e.g. a tracked season advancing after a swipe —
-        // must NOT animate, or it crossfades over the row instead of letting the swipe spring
-        // back first and then swap the content.
+        // Animate only *structural* changes (rows added/removed/reordered). A pure in-place
+        // change must not, or it crossfades before the swipe has sprung back.
         if loadedInput?.request == request, structure(of: result) != structure(of: sections) {
             withAnimation { sections = result }
         } else {

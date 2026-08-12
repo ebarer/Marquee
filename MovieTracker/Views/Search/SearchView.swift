@@ -90,10 +90,8 @@ struct SearchView: View {
         }
     }
 
-    /// Mirrors `MovieListRow`'s `onTap` path: with `onSelectShow` set (iPhone search) the
-    /// row is a plain button so the caller can resign the search field's focus and defer
-    /// the push — otherwise the keyboard's collapse swallows the push animation. A button
-    /// loses the link's full-row hit area and chevron, so both are recreated here.
+    /// With `onSelectShow` set (iPhone search) the row is a plain button so focus can resign
+    /// before the push; that loses the link's hit area and chevron, recreated here.
     @ViewBuilder
     private func showRow(_ show: Show) -> some View {
         if let onSelectShow {

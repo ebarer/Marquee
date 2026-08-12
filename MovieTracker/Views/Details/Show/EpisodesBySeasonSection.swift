@@ -5,9 +5,8 @@
 
 import SwiftUI
 
-/// Episodes grouped by season with a season picker (``SeasonHeader``) and a lazily-loaded
-/// episode list (``SeasonEpisodeList``). Watched marks persist per episode (`WatchedEpisode`)
-/// and a season completing writes its `WatchedSeason` snapshot.
+/// Episodes grouped by season, with a picker (``SeasonHeader``) above a lazily-loaded
+/// episode list (``SeasonEpisodeList``).
 struct EpisodesBySeasonSection: View {
     let show: Show
     let model: ShowDetailModel

@@ -174,10 +174,8 @@ extension Person {
 
 // MARK: - Sample SwiftData container
 
-/// Everything is inserted directly (never fetched) — a freshly created in-memory
-/// store has no connection until SwiftUI attaches it, so fetching here would crash
-/// with "No eligible connection available". `@Query` picks the objects up once the
-/// container is attached.
+/// Everything is inserted, never fetched — a fresh in-memory store has no connection until
+/// SwiftUI attaches it, so fetching here crashes with "No eligible connection available".
 @MainActor
 let previewModelContainer: ModelContainer = {
     let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
@@ -210,10 +208,8 @@ let previewModelContainer: ModelContainer = {
 
 // MARK: - Detail-screen preview store
 
-/// One shared in-memory store for the Movie/Show detail previews, built once (creating a fresh
-/// `ModelContainer` per preview is the slow part). Scenario state is keyed to distinct sample ids
-/// — `previewWatched` movie, shows 1010/1011 — so no scenario bleeds into another. Everything is
-/// inserted, never fetched, so the build can't race attachment (see the note on `previewModelContainer`).
+/// One shared in-memory store for the Movie/Show detail previews (a fresh `ModelContainer` per
+/// preview is the slow part). Scenario state is keyed to distinct sample ids, so none bleed.
 @MainActor
 let detailPreviewContainer: ModelContainer = {
     let configuration = ModelConfiguration(isStoredInMemoryOnly: true)

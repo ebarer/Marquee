@@ -28,10 +28,8 @@ extension TMDBWrapper {
         }
     }
 
-    /// A light movie detail for search augmentation: base fields + credits in one call,
-    /// so a single fetch yields both the collection (for franchise expansion, since
-    /// `/search/*` omits `belongs_to_collection`) and the cast (for the People strip) —
-    /// instead of two per-movie round-trips.
+    /// Base fields + credits in one call: `/search/*` omits `belongs_to_collection`, so this
+    /// yields both the collection and the cast without two per-movie round-trips.
     static func movieSearchDetail(id: Int) async throws -> Movie {
         let data = try await fetch("/movie/\(id)",
                                    queryItems: [URLQueryItem(name: "append_to_response", value: "credits")])

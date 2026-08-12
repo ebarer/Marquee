@@ -31,9 +31,8 @@ extension TMDBWrapper {
         return season
     }
 
-    /// A cheap `/tv/{id}` hit (no appends) translated to a `Show` — carries the season list,
-    /// last-air date and status that list/search payloads omit, so cards can lazily upgrade
-    /// their season count *and* year range from a single call.
+    /// A cheap `/tv/{id}` hit carrying the season list, last-air date and status that
+    /// list/search payloads omit, so cards can lazily upgrade from a single call.
     static func showSummary(id: Int) async throws -> Show {
         let data = try await fetch("/tv/\(id)")
         return translate(show: try decode(ShowRaw.self, from: data))

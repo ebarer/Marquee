@@ -18,8 +18,7 @@ struct HeaderTitle: View {
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
                 // `fixedSize` makes this candidate measure as its WIDEST line, so the colon
-                // break is only taken when both halves fit unwrapped. Without it a long
-                // second half would be forced onto one line and truncated.
+                // break is only taken when both halves fit unwrapped.
                 Text(broken)
                     .fixedSize(horizontal: true, vertical: false)
                 // Last resort: plain word wrapping across the caller's line limit.

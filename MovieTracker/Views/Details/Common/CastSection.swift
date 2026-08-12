@@ -5,9 +5,8 @@
 
 import SwiftUI
 
-/// Cast & crew for a detail screen, with the lead crew credit (Director / Creator) surfaced
-/// at the top and a category picker (Cast / Guests / Crew) below. Shared by movie, show,
-/// and episode detail via its role/title parameters.
+/// Cast & crew for a detail screen: lead crew credit on top, a Cast/Guests/Crew picker below.
+/// Shared by movie, show, and episode detail via its role/title parameters.
 struct CastSection: View {
     let cast: [Person]
     /// Episode guest stars, surfaced as a separate "Guests" tab (empty elsewhere).

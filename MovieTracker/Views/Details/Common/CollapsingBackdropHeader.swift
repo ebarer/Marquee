@@ -5,13 +5,8 @@
 
 import SwiftUI
 
-/// A collapsing, pinning backdrop header shared by the movie and show detail screens.
-///
-/// It owns all the scroll geometry — the backdrop fills from the top (into the safe area),
-/// its frame shrinks on scroll-up so `scaledToFill` eases the image out, it stretches on
-/// pull-down, and the bar rides up and then pins under the nav bar with the page scrolling
-/// underneath. The bar itself is supplied by the caller via `bar(progress, width)`, where
-/// `progress` (0 → 1) drives the compaction. See ``DetailHeaderBar``.
+/// A collapsing, pinning backdrop header shared by the movie and show detail screens. It owns
+/// all the scroll geometry; the caller supplies the bar via `bar(progress, width)`.
 struct CollapsingBackdropHeader<Bar: View>: View {
     let backgroundURL: URL?
     let navBarBottom: CGFloat
@@ -34,9 +29,8 @@ struct CollapsingBackdropHeader<Bar: View>: View {
     /// Scroll distance over which the header collapses from full to pinned.
     private var collapseDist: CGFloat { max(1, headerRest - minHeader) }
 
-    /// Fades the bottom of the backdrop into transparency. Applied as a mask so the fade
-    /// lives IN the image itself — its bottom edge is soft at any crossfade opacity, so no
-    /// hard image edge ever peeks through during the collapse.
+    /// Fades the backdrop's bottom to clear. Applied as a mask so the fade lives IN the image
+    /// — no hard image edge peeks through at any crossfade opacity.
     private var backdropFade: LinearGradient {
         LinearGradient(stops: [
             .init(color: .white, location: 0),
@@ -55,9 +49,8 @@ struct CollapsingBackdropHeader<Bar: View>: View {
             // Linear compaction: 100% at the top, transient through the collapse, clamped
             // (static) once complete.
             let p = min(1, scrolled / collapseDist)
-            // Backdrop zoom-down is a FRAME-HEIGHT shrink (not a scaleEffect, which gaps
-            // below fill): the frame shrinks imageHeight → minImageHeight so scaledToFill
-            // eases the image out. `overscroll` grows it on pull-down.
+            // Zoom-down is a FRAME-HEIGHT shrink, not a scaleEffect (which gaps below fill):
+            // scaledToFill eases the image out. `overscroll` grows it on pull-down.
             let minImageHeight = width * 1.25 * 9.0 / 16.0
             let collapseDistance = max(0, imageHeight - minImageHeight)
             let shrink = min(scrolled, collapseDistance)
@@ -65,9 +58,8 @@ struct CollapsingBackdropHeader<Bar: View>: View {
             // The header shrinks with the image (constant solid extension) so the bar rises
             // with it — no drift, and the image stays top-anchored (fills the safe area).
             let currentHeaderHeight = currentImageHeight + (headerRest - imageHeight)
-            // The glass reveal is held off until the final stretch of the collapse, so the
-            // backdrop zoom reads crisply on the way up and only crossfades to glass as it
-            // sticks. 0 until p passes 0.7, then ramps to 1 at the pin.
+            // Glass is held off until the last stretch of the collapse, so the backdrop zoom
+            // reads crisply on the way up and only crossfades to glass as it sticks.
             let glassReveal = min(1, max(0, (p - 0.7) / 0.3))
             let glassColor = 0.25    // how strongly the backdrop copy beneath the glass shows (inverted)
 
@@ -77,18 +69,15 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                 ZStack {
                     Color.appBackground
 
-                    // `Color.clear` pins a definite full-width frame (maxWidth: .infinity — NOT
-                    // proxy.size.width, which is the safe-area-inset width inside a ScrollView and
-                    // leaves a trailing gutter). The image fills it as a CENTERED overlay: a bare
-                    // scaledToFill image would size the frame to its own width and left-align it.
+                    // maxWidth: .infinity, NOT proxy.size.width — that's the safe-area-inset
+                    // width here. Overlay centers; a bare scaledToFill would left-align.
                     Color.clear
                         .frame(maxWidth: .infinity, minHeight: currentImageHeight, maxHeight: currentImageHeight)
                         .overlay { PosterImage(url: backgroundURL) }
                         .clipped()
                         .blur(radius: 5 * glassReveal)
-                        // The fade is a mask on the image itself: its bottom eases to clear,
-                        // revealing the app-background base below (which keeps the title legible
-                        // over a bright backdrop) with no hard image edge at any point in scroll.
+                        // Masking the image eases its bottom to clear, revealing the
+                        // app-background base that keeps the title legible over a bright shot.
                         .mask { backdropFade }
                         .frame(maxWidth: .infinity, minHeight: currentHeaderHeight,
                                maxHeight: currentHeaderHeight, alignment: .top)
@@ -98,17 +87,14 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                 .opacity(1 - Double(glassReveal * glassColor))
 
                 // Liquid Glass base — the real refractive nav-bar glass, NOT a frosted grey
-                // `Material` (which only ever thins to grey, never to clear). It refracts the
-                // backdrop copy above and the live page scrolling under the pinned bar.
+                // `Material`, which only ever thins to grey and never to clear.
                 Color.clear
                     .frame(maxWidth: .infinity, minHeight: currentHeaderHeight, maxHeight: currentHeaderHeight)
                     .glassEffect(.regular.tint(.black.opacity(0.35)), in: Rectangle())
                     .opacity(glassReveal*0.80) /// TODO:EAB: Work this 75% multiple into the glassReveal calculation directly.
 
-                // Bottom gradient — grounds the header's lower edge into the app background at
-                // rest and through the transition (hiding the seam while the image is present),
-                // then fades out as it finishes pinning so the compact bar becomes clean glass
-                // with the page reading through it (the hairline marks the edge when pinned).
+                // Bottom gradient grounds the header's lower edge into the app background,
+                // then fades out as it pins so the compact bar becomes clean glass.
                 LinearGradient(colors: [.clear, .appBackground], startPoint: .top, endPoint: .bottom)
                     .frame(maxWidth: .infinity)
                     .frame(height: min(220, currentHeaderHeight))
@@ -119,9 +105,8 @@ struct CollapsingBackdropHeader<Bar: View>: View {
             }
             .frame(maxWidth: .infinity, minHeight: currentHeaderHeight, maxHeight: currentHeaderHeight)
             .clipped()
-            // Pull-down shifts up so the grown image fills the exposed top; on scroll-up shift
-            // DOWN by `shrink` so the shrinking header's bar stays flush with the page (the
-            // sliver this opens at the top sits under the nav bar).
+            // Pull-down shifts up so the grown image fills the exposed top; scroll-up shifts
+            // DOWN by `shrink` so the shrinking header's bar stays flush with the page.
             .offset(y: shrink - overscroll)
             .onChange(of: scrolled >= collapseDist) { _, pinned in
                 withAnimation(.easeInOut(duration: 0.2)) { headerPinned = pinned }

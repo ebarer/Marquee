@@ -5,10 +5,8 @@
 
 import SwiftUI
 
-/// The rounded poster thumbnail in a detail header that taps to morph into the full-screen
-/// ``PosterDetailView``. It owns the zoom namespace and cover so callers just supply the
-/// artwork. `identity` gives the poster a new identity when it changes (the show header uses
-/// the season poster path) so swapping seasons crossfades the art.
+/// A detail header's poster thumbnail, tapping to morph into ``PosterDetailView``. Changing
+/// `identity` (the show header passes the season poster path) crossfades the art.
 struct HeaderPoster: View {
     let thumbnailURL: URL?
     let fullURL: URL?

@@ -5,9 +5,8 @@
 
 import SwiftUI
 
-/// A show poster card mirroring `MoviePosterCard`, with the season count (gray)
-/// beneath the name so a grid tile reads clearly as a series. The air year stands
-/// in until the lazily-fetched count arrives.
+/// A show poster card mirroring ``MoviePosterCard``, with the season count beneath the name
+/// so a tile reads as a series. The air year stands in until that count is fetched.
 struct ShowPosterCard: View {
     let show: Show
     var titleLineLimit: Int = 2

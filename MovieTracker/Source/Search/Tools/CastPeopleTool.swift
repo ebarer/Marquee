@@ -32,9 +32,8 @@ struct CastPeopleTool: SearchTool {
     private func moviePeople(_ context: SearchContext, using provider: SearchProvider) async -> [Person] {
         guard !context.movies.isEmpty else { return [] }
 
-        // Character-matching needs a non-generic query length; the lead fallback
-        // applies on an exact title (any length) or a qualifying title prefix. Skip
-        // when neither path could possibly apply.
+        // Character-matching needs a non-generic query length; the lead fallback needs an
+        // exact title or a qualifying prefix. Skip when neither path could apply.
         let canCharacterMatch = context.needle.count >= minRoleMatchLength
         let canLeadFallback = context.movies.first.map {
             SearchMatching.topFilmLeadsApply(topTitle: $0.title, normalizedQuery: context.needle,

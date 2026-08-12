@@ -74,9 +74,8 @@ extension PersistenceCoordinator {
         MediaItem.recordView(key: show.mediaKey, in: context); save()
     }
 
-    /// Refresh an already-tracked show's display snapshot (title/poster/dates, including the
-    /// timeline `sortDate`) once its detail loads — search-added shows start with only a
-    /// premiere date, so this corrects their list placement once last-air is known.
+    /// Refresh a tracked show's snapshot once its detail loads — search-added shows start with
+    /// only a premiere date, so this corrects their timeline placement.
     func refreshSnapshot(for show: Show) {
         let key = show.mediaKey
         let tmdbID = key.tmdbID

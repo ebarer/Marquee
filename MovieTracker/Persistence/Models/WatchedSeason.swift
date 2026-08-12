@@ -6,11 +6,8 @@
 import Foundation
 import SwiftData
 
-/// A completed season — the display snapshot that appears as a row in the Watched list
-/// (season poster, "Show — Season N", sorted to the season's finale). Written when every
-/// episode of a season is watched, removed when it's no longer complete. Derived from
-/// `WatchedEpisode`, but persisted so the list renders offline. CloudKit-friendly: flat,
-/// all-defaulted, no relationships, no unique constraint.
+/// A completed season's Watched-list row. Derived from `WatchedEpisode`, but persisted as a
+/// snapshot so the list renders offline; removed when the season is no longer complete.
 @Model
 final class WatchedSeason {
     var showTmdbID: Int = 0
@@ -20,9 +17,8 @@ final class WatchedSeason {
     var posterPath: String?
     /// Timeline anchor: the season's finale air date (or its start when episodes are unknown).
     var airDate: Date?
-    /// The season's total episode count (from the show detail; not otherwise persisted, so it
-    /// lives here to render "x of y" offline). The *watched* count is derived from
-    /// `WatchedEpisode` — the source of truth — rather than cached, to avoid drift.
+    /// Total episodes, stored so "x of y" renders offline; the *watched* count is always
+    /// derived from `WatchedEpisode` rather than cached.
     var episodeCount: Int = 0
     var watchedAt: Date = Date()
     var addedAt: Date = Date()

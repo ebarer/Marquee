@@ -20,9 +20,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     @ViewBuilder var leadingActions: () -> Leading
     @ViewBuilder var trailingActions: () -> Trailing
 
-    /// When set (iPhone search), the row is a button running this action instead of
-    /// a pushing link — the caller resigns the search field's focus and defers the
-    /// push so it isn't swallowed by the concurrent keyboard dismissal.
+    /// When set (iPhone search), the row is a button running this action instead of a pushing
+    /// link, so the caller can resign focus before a push the keyboard would otherwise eat.
     var onTap: ((Movie) -> Void)? = nil
 
     @Environment(\.openDetail) private var openDetail
@@ -32,9 +31,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
             // iPad: tagged (outermost) so `List(selection:)` routes the tap to a modal.
             decorated.tag(movie)
         } else {
-            // iPhone: a NavigationLink (or, with `onTap`, a button) in a plain List.
-            // No selection tag — a tagged link in a selectable List becomes a
-            // selection row and the tap toggles selection instead of pushing.
+            // iPhone: no selection tag — a tagged link in a selectable List becomes a
+            // selection row, and the tap toggles selection instead of pushing.
             decorated
         }
     }
@@ -50,10 +48,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
     @ViewBuilder
     private var rowContent: some View {
         if let onTap {
-            // iPhone search: resign focus + deferred push happens in the action, so
-            // the push animates rather than sharing the keyboard-dismissal transaction.
-            // A NavigationLink normally supplies the full-row hit area and the trailing
-            // chevron; recreate both since this is a plain button.
+            // iPhone search: the action resigns focus and defers the push. A plain button
+            // loses the link's full-row hit area and chevron, so recreate both.
             Button { onTap(movie) } label: {
                 HStack(spacing: 0) {
                     row
@@ -70,9 +66,8 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
             NavigationLink(value: movie) { row }
                 .selectionDisabled()
         } else {
-            // iPad: a selectable row. `List(selection:)` in the content column turns
-            // the tap into a modal — immune to the sync-time re-renders that were
-            // swallowing in-row button taps.
+            // iPad: `List(selection:)` in the content column turns the tap into a modal —
+            // immune to the sync-time re-renders that were swallowing in-row button taps.
             row
         }
     }

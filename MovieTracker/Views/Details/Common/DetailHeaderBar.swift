@@ -5,10 +5,8 @@
 
 import SwiftUI
 
-/// The bottom-anchored bar of a detail header: poster, title, subtitle, and an action bar.
-/// `progress` (0 → 1, from ``CollapsingBackdropHeader``) compacts it as the header pins —
-/// the poster/title shrink to 75%, the subtitle fades to nothing, and the actions tuck up.
-/// The `actions` slot is media-specific (movie vs. show action bar).
+/// The bottom-anchored bar of a detail header: poster, title, subtitle, actions. `progress`
+/// (0 → 1, from ``CollapsingBackdropHeader``) compacts it as the header pins.
 struct DetailHeaderBar<Actions: View>: View {
     let posterThumbURL: URL?
     let posterFullURL: URL?
@@ -39,8 +37,7 @@ struct DetailHeaderBar<Actions: View>: View {
         let actionsScale = 1 - 0.2 * p
         let posterHeight = Self.posterHeight - 37.5 * p
         // Each scaled slot gets a frame matching what it DRAWS (scaleEffect alone leaves the
-        // layout at full size), so the column's box is its visible bounds — which is what
-        // makes the collapsed centering below land exactly.
+        // layout full-size), so the column's box is its visible bounds and centering lands.
         let columnHeight = titleHeight * titleScale
             + (subtitle.isEmpty ? 0 : (subtitleHeight + 8) * (1 - p))
             + 8 + actionsHeight * actionsScale
@@ -71,9 +68,8 @@ struct DetailHeaderBar<Actions: View>: View {
                     .frame(height: titleHeight * titleScale, alignment: .bottom)
 
                 if !subtitle.isEmpty {
-                    // Scales with the rest of the header and fades out; its slot collapses to
-                    // 0 so the gap closes. Never clipped — opacity hits 0 before the shrinking
-                    // slot could reveal overflow.
+                    // Scales with the header and fades out, its slot collapsing to 0. Never
+                    // clipped — opacity hits 0 before the shrinking slot reveals overflow.
                     Text(subtitle)
                         .font(.subheadline)
                         .foregroundStyle(tint)

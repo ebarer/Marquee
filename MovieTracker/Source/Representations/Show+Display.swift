@@ -8,9 +8,8 @@
 import Foundation
 
 extension Show {
-    /// Genres formatted for the metadata strip. Like movies we show at most two, but a
-    /// single compound TMDB genre ("Sci-Fi & Fantasy", "Action & Adventure") already
-    /// reads as two, so it fills both slots and we don't append another.
+    /// Genres for the metadata strip: at most two, but a compound TMDB genre ("Sci-Fi &
+    /// Fantasy") already reads as two, so it fills both slots on its own.
     var genresString: String {
         let chosen = Self.displayGenres(genres ?? [])
         switch chosen.count {
@@ -44,10 +43,8 @@ extension Show {
         return seasonCount == 1 ? "1 Season" : "\(seasonCount) Seasons"
     }
 
-    /// The date that best places a show on a release timeline: its most recent air date
-    /// (what's currently airing) rather than the premiere, so an ongoing show sorts near
-    /// "now" instead of its debut year. Falls back to the premiere when last-air is unknown
-    /// (e.g. lightweight search results, which omit it).
+    /// Places a show on a release timeline by its most recent air date, not its premiere, so
+    /// an ongoing show sorts near "now". Falls back to the premiere when last-air is unknown.
     var timelineDate: Date? { lastAirDate ?? firstAirDate }
 
     /// Total episodes across regular seasons (specials excluded).

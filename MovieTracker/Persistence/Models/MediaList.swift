@@ -133,9 +133,8 @@ extension MediaList {
     /// Grace before a merged-away duplicate is deleted, so its entry re-parent syncs first.
     private static let deduplicationGracePeriod: TimeInterval = 30
 
-    /// Two-phase, CloudKit-safe: re-parent duplicates' entries onto the winner and mark
-    /// them, then delete only once empty and past the grace period — deleting sooner
-    /// could wipe entries on a device that applies the delete before the re-parent arrives.
+    /// Two-phase: re-parent duplicates' entries onto the winner, then delete only once empty
+    /// and past the grace period — a sooner delete could land before the re-parent syncs.
     @discardableResult
     static func deduplicateWatchList(in context: ModelContext) -> Bool {
         let watchLists = ((try? context.fetch(FetchDescriptor<MediaList>())) ?? [])

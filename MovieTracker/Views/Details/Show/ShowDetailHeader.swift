@@ -6,9 +6,8 @@
 import SwiftUI
 import SwiftData
 
-/// Show adapter over the shared ``CollapsingBackdropHeader``. Same header as the movie
-/// screen; the only differences are the show's data, the show action bar, and the poster,
-/// which follows the season chosen in the episodes picker (`seasonPosterPath`).
+/// Show adapter over the shared ``CollapsingBackdropHeader``; the only differences are the
+/// show action bar and a poster that follows the season chosen in the episodes picker.
 struct ShowDetailHeader: View {
     let show: Show
     let tint: Color

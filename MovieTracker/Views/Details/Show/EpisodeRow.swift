@@ -5,9 +5,8 @@
 
 import SwiftUI
 
-/// One episode row: still (with a corner watched-toggle), title/meta (``EpisodeRowText``),
-/// and a trailing chevron. The whole row pushes the episode detail; the still's badge
-/// toggles watched in place. Toggle state is owned by the parent.
+/// One episode row: still with a corner watched-toggle, title/meta, and a chevron. The row
+/// pushes the episode detail; the still's badge toggles watched in place.
 struct EpisodeRow: View {
     let episode: Episode
     var isWatched: Bool
@@ -44,10 +43,8 @@ struct EpisodeRow: View {
         .buttonStyle(.plain)
     }
 
-    /// Shares the poster status badges' gradient scrim (``PosterSymbolBadge``); the corner
-    /// button above toggles it. Reuses the watched badge verbatim, showing a dimmed empty
-    /// ring until the episode is watched — a dotted ring while it hasn't aired, where the
-    /// toggle is inert.
+    /// Reuses ``PosterStatusBadge`` and its scrim, dimming to an empty ring until watched —
+    /// a dotted ring while the episode hasn't aired, where the toggle is inert.
     @ViewBuilder
     private var watchedBadge: some View {
         if isWatched {

@@ -50,9 +50,8 @@ import SwiftData
     }
 
     @Test func handlesQuotedFieldsWithCommasAndNewlines() throws {
-        // Quoted commas and a newline embedded in a quoted field. LF line endings:
-        // the parser mishandles CRLF (Swift reads "\r\n" as one grapheme cluster),
-        // tracked as a separate app bug.
+        // Quoted commas and an embedded newline. LF endings only — the parser mishandles
+        // CRLF (Swift reads "\r\n" as one grapheme cluster), tracked as a separate bug.
         let csv = "\(header)\n\"Movie, The\",\"Drama\",1/1/20,1,4,url,7,,\"Line1\nLine2\"\n"
         let records = try CSVMovieRecord.parse(data: Data(csv.utf8))
         #expect(records.count == 1)

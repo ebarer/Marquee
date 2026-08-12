@@ -1,5 +1,5 @@
 //
-//  ModelTests.swift
+//  MovieTests.swift
 //  MarqueeTests
 //
 
@@ -105,86 +105,5 @@ import Foundation
         #expect(m.posterURL(.w342)?.absoluteString == "https://image.tmdb.org/t/p/w342//abc.jpg")
         m.background = "/bg.jpg"
         #expect(m.backgroundURL(.w780)?.absoluteString == "https://image.tmdb.org/t/p/w780//bg.jpg")
-    }
-}
-
-@Suite struct MediaTrailerTests {
-    @Test func typeMapsUnknownToOther() {
-        let t = MediaTrailer(id: "1", title: "t", key: "k", type: "Bloopers",
-                             site: "YouTube", official: false, publishedAt: "2020")
-        #expect(t.type == .other)
-        #expect(t.isTrailer == false)
-    }
-
-    @Test func isTrailerForTrailerAndTeaser() {
-        func t(_ type: String) -> MediaTrailer {
-            MediaTrailer(id: "1", title: "t", key: "k", type: type, site: "YouTube",
-                         official: false, publishedAt: "2020")
-        }
-        #expect(t("Trailer").isTrailer)
-        #expect(t("Teaser").isTrailer)
-        #expect(t("Featurette").isTrailer == false)
-    }
-
-    @Test func primaryScoreRanksTrailerTeaserOfficial() {
-        func score(_ type: String, _ official: Bool) -> Int {
-            MediaTrailer(id: "1", title: "t", key: "k", type: type, site: "YouTube",
-                         official: official, publishedAt: "2020").primaryScore
-        }
-        #expect(score("Trailer", true) == 45)
-        #expect(score("Trailer", false) == 40)
-        #expect(score("Teaser", true) == 35)
-        #expect(score("Clip", false) == 0)
-    }
-
-    @Test func urlsBuildFromKey() {
-        let t = MediaTrailer(id: "1", title: "t", key: "abc123", type: "Trailer",
-                             site: "YouTube", official: true, publishedAt: "2020")
-        #expect(t.url?.absoluteString == "https://www.youtube.com/embed/abc123")
-        #expect(t.watchURL?.absoluteString == "https://www.youtube.com/watch?v=abc123")
-    }
-}
-
-@Suite struct PersonTests {
-    @Test func identityIsTMDBID() {
-        let a = Person(id: 5, name: "A")
-        let b = Person(id: 5, name: "B")
-        #expect(a == b)
-    }
-
-    @Test func knownForExcludesExtraneousAndPosterlessSortedByPopularity() {
-        func credit(_ id: Int, poster: String?, pop: Double, role: String? = nil) -> Movie {
-            var m = Movie(id: id, title: "M\(id)")
-            m.poster = poster; m.popularity = pop; m.creditRole = role
-            return m
-        }
-        var p = Person(id: 1, name: "A")
-        p.credits = [
-            credit(1, poster: "/a.jpg", pop: 10),
-            credit(2, poster: nil, pop: 99),                 // no poster -> excluded
-            credit(3, poster: "/c.jpg", pop: 50, role: "Self"), // extraneous -> excluded
-            credit(4, poster: "/d.jpg", pop: 30),
-        ]
-        #expect(p.knownFor.map(\.id) == [4, 1])
-    }
-
-    @Test func knownForEmptyWhenNoCredits() {
-        #expect(Person(id: 1, name: "A").knownFor.isEmpty)
-    }
-
-    @Test func profileURL() {
-        var p = Person(id: 1, name: "A")
-        #expect(p.profileURL() == nil)
-        p.profilePicture = "/pic.jpg"
-        #expect(p.profileURL(.orig)?.absoluteString == "https://image.tmdb.org/t/p/original//pic.jpg")
-    }
-}
-
-@Suite struct MediaTypeTests {
-    @Test func rawValues() {
-        #expect(MediaType.movie.rawValue == 0)
-        #expect(MediaType.tv.rawValue == 1)
-        #expect(MediaType(rawValue: 0) == .movie)
-        #expect(MediaType(rawValue: 99) == nil)
     }
 }

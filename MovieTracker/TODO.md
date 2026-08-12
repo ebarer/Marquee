@@ -1,10 +1,9 @@
 
 Important:
 - [ ] indicate what day a show airs, and when next episode is coming out (relative to now)
+- [ ] tint flashes when loading a tv show (pre-fetch season color?)
 
 Project:
-- [ ] Clean up comments + organize project
-- [ ] Fix all project warnings
 - [ ] Get rid of single-letter variables/arguments, always use proper names
 
 Polish:

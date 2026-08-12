@@ -6,11 +6,8 @@
 import SwiftUI
 import SwiftData
 
-/// The date a title/season/episode was watched, tappable to open the shared
-/// ``WatchedDatePicker``. One control for all three: the initializer picks the quick-set
-/// (release/last-episode/air date) and the `Target` routes the edited day to the right
-/// `PersistenceCoordinator` write. Movies canonicalize to UTC-midnight (`MediaItem`
-/// floating day); seasons/episodes store the local start-of-day.
+/// A watched date for a title, season, or episode, tappable to open ``WatchedDatePicker``.
+/// `Target` routes the edited day to the right `PersistenceCoordinator` write.
 struct WatchedDateButton: View {
     enum Target {
         case movie(MediaKey)

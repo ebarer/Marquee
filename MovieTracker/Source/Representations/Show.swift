@@ -61,9 +61,8 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
 extension Show {
     private static let endedStatuses: Set<String> = ["ended", "canceled", "cancelled"]
 
-    /// True only when TMDB affirmatively reports the show still in production. List and
-    /// search payloads omit `status`, so an unknown status is treated as "not ongoing"
-    /// rather than falsely claiming "Present".
+    /// True only when TMDB affirmatively reports the show in production — list and search
+    /// payloads omit `status`, and an unknown status must not claim "Present".
     var isOngoing: Bool {
         guard let status = status?.lowercased() else { return false }
         return !Self.endedStatuses.contains(status)

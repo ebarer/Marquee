@@ -5,10 +5,7 @@
 
 import Foundation
 
-/// Session memo for lazily-resolved show details. TMDB omits season counts, last-air
-/// dates and status from list/search results, so cards resolve a fuller `Show` on demand —
-/// reusing a cached detail when present, else a single base `/tv/{id}` summary — and dedupe
-/// concurrent/repeat lookups by id.
+/// Session memo for lazily-resolved show details. Deduplicates concurrent/repeat lookups by id.
 @MainActor
 final class ShowSeasonCountStore {
     static let shared = ShowSeasonCountStore()
