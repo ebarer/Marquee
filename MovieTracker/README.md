@@ -48,7 +48,7 @@ they double as navigation values (`navigationDestination(for: Movie.self)`) and 
 payloads. Persisted types (`MediaItem`, `ListEntry`, …) hold only *the user's* state; TMDB
 metadata is re-fetched or read from the cache, never treated as the source of truth.
 
-### Key seams
+### Keys
 
 - **`PersistenceCoordinator`** (`Persistence/Store/`) is the single access point for reads and
   writes. It owns the main-actor `ModelContext`, saves eagerly, bumps a `revision` counter that
@@ -60,14 +60,17 @@ metadata is re-fetched or read from the cache, never treated as the source of tr
   of `SearchTool`s (spelling variants, ranking, franchise expansion, cast lookup). New search
   behaviour means adding or reordering a tool — not threading a special case through the model.
   Everything runs against the `SearchProvider` protocol, so tests use canned data.
-- **`MediaCacheStore`** is a bounded (300-entry) on-disk JSON cache, keyed by TMDB id, so
-  detail screens render offline. `MediaCachePrefetcher` warms it for saved titles at launch.
+- **`MediaCacheStore`** is a bounded (400-entry) on-disk JSON cache, keyed by TMDB id, so
+  detail screens render offline. Entries carry a `MediaCachePriority`, and eviction drops the
+  worst tier first (oldest within a tier) rather than plain LRU. `MediaCachePlan` buckets what
+  to keep — Watch List (shows pull their latest 3 seasons), Discovery, this year's watched,
+  custom lists, then the rest of Watched — and `MediaCachePrefetcher` works through it at launch.
 - **CloudKit** sync is automatic (`ModelConfiguration(cloudKitDatabase: .automatic)`).
   Because CloudKit requires optional/defaulted properties, imports can produce duplicates;
   `PersistenceCoordinator.deduplicate()` converges them at launch. `CloudSyncMonitor` exposes
   sync activity to the UI, and `SyncLog` traces it.
 
-### App shell
+### App
 
 `AppDelegate` (`@main`, UIKit lifecycle) configures `URLCache` and gates landscape to fullscreen
 trailer playback. `RootView` builds the shared `ModelContainer`, injects the coordinator and sync
@@ -85,7 +88,7 @@ current poster's colour.
 
 ---
 
-## Directory hierarchy
+## Directory Hierarchy
 
 ```
 MovieTracker/
@@ -115,7 +118,7 @@ MovieTracker/
 └── Resources/                  # Assets, Info.plist, entitlements, sample JSON/images
 ```
 
-### View-model placement
+### View-Model Placement
 
 Pure logic lives in `Source/`. A view-model that exists to drive one screen lives *next to that
 screen* (`Views/Details/Movie/MovieDetailModel.swift`, `Views/Featured/FeaturedModel.swift`,
@@ -137,7 +140,7 @@ without a network call.
 
 ---
 
-## Project policies
+## Project Policies
 
 1. **File size** – files should not exceed 100 lines unless absolutely necessary. Don't split
    just to hit the target, but do move distinct pieces into their own files.

@@ -37,15 +37,6 @@ extension PersistenceCoordinator {
             predicate: #Predicate { $0.lastViewedAt != nil }))) ?? 0
     }
 
-    func savedMovieIDs() -> [Int] {
-        let movieType = MediaType.movie.rawValue
-        let entries = (try? context.fetch(FetchDescriptor<ListEntry>())) ?? []
-        let items = (try? context.fetch(FetchDescriptor<MediaItem>())) ?? []
-        let ids = Set(entries.filter { $0.mediaTypeRaw == movieType }.map(\.tmdbID))
-            .union(items.filter { $0.mediaTypeRaw == movieType }.map(\.tmdbID))
-        return Array(ids)
-    }
-
     // MARK: - Fact writes
 
     func setWatched(_ watched: Bool, for movie: Movie) {

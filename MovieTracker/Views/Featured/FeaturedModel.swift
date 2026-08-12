@@ -47,13 +47,13 @@ final class FeaturedModel {
         let page = lastPageFetched + 1
         do {
             if collection.isShow {
-                let result = try await fetchShows(page: page)
+                let result = try await collection.shows(page: page)
                 lastPageFetched = page
                 totalPages = result.totalPages
                 let existingIDs = Set(shows.map(\.id))
                 shows.append(contentsOf: result.items.filter { !existingIDs.contains($0.id) })
             } else {
-                let result = try await fetchMovies(page: page)
+                let result = try await collection.movies(page: page)
                 lastPageFetched = page
                 totalPages = result.totalPages
                 let existingIDs = Set(movies.map(\.id))
@@ -61,21 +61,6 @@ final class FeaturedModel {
             }
         } catch {
             print("Featured load error: \(error)")
-        }
-    }
-
-    private func fetchMovies(page: Int) async throws -> PagedResult<Movie> {
-        switch collection {
-        case .nowPlaying: return try await TMDBWrapper.moviesNowPlaying(page: page)
-        case .comingSoon: return try await TMDBWrapper.moviesComingSoon(page: page)
-        default: return try await TMDBWrapper.moviesPopular(page: page)
-        }
-    }
-
-    private func fetchShows(page: Int) async throws -> PagedResult<Show> {
-        switch collection {
-        case .showsOnTheAir: return try await TMDBWrapper.showsOnTheAir(page: page)
-        default: return try await TMDBWrapper.showsPopular(page: page)
         }
     }
 }

@@ -44,9 +44,9 @@ extension PersistenceCoordinator {
         deduplicate()
         SyncLog.snapshot("after seed", in: context)
 
-        let ids = savedMovieIDs()
+        let targets = MediaCachePlan.local(in: context)
         Task.detached(priority: .utility) {
-            await MediaCachePrefetcher.prefetch(ids: ids)
+            await MediaCachePrefetcher.prefetch(targets)
         }
         // Poll in-progress shows for newly-aired seasons (reconciles on the main actor).
         Task { await self.refreshWatchedShows() }

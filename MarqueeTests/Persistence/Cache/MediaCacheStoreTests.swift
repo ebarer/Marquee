@@ -48,6 +48,63 @@ import SwiftUI
         #expect(await cache.usage().count == 0)
     }
 
+    // MARK: - Priority
+
+    /// Its own directory + cap, so eviction is testable without touching the app's cache.
+    private func makeBoundedStore(_ name: String, maxEntries: Int) -> MediaCacheStore {
+        MediaCacheStore(directoryName: "MediaCacheTests-\(name)", maxEntries: maxEntries)
+    }
+
+    @Test func evictionDropsTheWorstTierEvenWhenItIsNewest() async {
+        let store = makeBoundedStore("tier", maxEntries: 2)
+        await store.clear()
+        await store.save(makeMovie(id: 1), tint: nil, priority: .watchList)
+        await store.save(makeMovie(id: 2), tint: nil, priority: .discovery)
+        await store.save(makeMovie(id: 3), tint: nil, priority: .watched)
+
+        #expect(await store.load(id: 3) == nil)
+        #expect(await store.load(id: 1) != nil)
+        #expect(await store.load(id: 2) != nil)
+        await store.clear()
+    }
+
+    @Test func evictionBreaksTiesWithinATierOnAge() async {
+        let store = makeBoundedStore("age", maxEntries: 2)
+        await store.clear()
+        for id in 1...3 {
+            await store.save(makeMovie(id: id), tint: nil, priority: .discovery)
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(await store.load(id: 1) == nil)
+        #expect(await store.load(id: 3) != nil)
+        await store.clear()
+    }
+
+    @Test func savingAgainCannotDemoteATier() async {
+        let store = makeBoundedStore("demote", maxEntries: 10)
+        await store.clear()
+        await store.save(makeMovie(id: 1), tint: nil, priority: .watchList)
+        // An on-demand view of a Watch List title mustn't cost it its tier.
+        await store.save(makeMovie(id: 1), tint: nil)
+        #expect(await store.priority(id: 1) == .watchList)
+        await store.clear()
+    }
+
+    @Test func applyPrioritiesRetagsAgainstThePlan() async {
+        let store = makeBoundedStore("retag", maxEntries: 10)
+        await store.clear()
+        await store.save(makeMovie(id: 1), tint: nil, priority: .watchList)
+        await store.save(makeMovie(id: 2), tint: nil, priority: .watchList)
+
+        await store.applyPriorities([
+            MediaCacheTarget(tmdbID: 2, mediaType: .movie, priority: .customList)
+        ])
+        // Off the plan (left the Watch List) — no longer squatting on its old claim.
+        #expect(await store.priority(id: 1) == .browsed)
+        #expect(await store.priority(id: 2) == .customList)
+        await store.clear()
+    }
+
     @Test func cachedMediaColorRequiresFourComponents() {
         let ok = CachedMedia(movie: makeMovie(id: 1), tint: [0.1, 0.2, 0.3, 1.0], cachedAt: Date())
         #expect(ok.color != nil)

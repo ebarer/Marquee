@@ -78,13 +78,6 @@ import SwiftData
         #expect(MediaItem.find(movie, in: store.context) == nil)
     }
 
-    @Test func savedMovieIDsUnionsEntriesAndFacts() {
-        store.addToWatchList(makeMovie(id: 1))
-        store.setWatched(true, for: makeMovie(id: 2))
-        store.addToWatchList(makeMovie(id: 2))  // overlaps -> deduped in a Set
-        #expect(Set(store.savedMovieIDs()) == [1, 2])
-    }
-
     @Test func deleteListRemovesItAndCascadesEntries() {
         let list = MediaList(name: "Temp")
         store.insert(list)

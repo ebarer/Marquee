@@ -42,3 +42,22 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
         }
     }
 }
+
+// MARK: - Fetching
+
+extension FeaturedCollection {
+    func movies(page: Int) async throws -> PagedResult<Movie> {
+        switch self {
+        case .nowPlaying: return try await TMDBWrapper.moviesNowPlaying(page: page)
+        case .comingSoon: return try await TMDBWrapper.moviesComingSoon(page: page)
+        default: return try await TMDBWrapper.moviesPopular(page: page)
+        }
+    }
+
+    func shows(page: Int) async throws -> PagedResult<Show> {
+        switch self {
+        case .showsOnTheAir: return try await TMDBWrapper.showsOnTheAir(page: page)
+        default: return try await TMDBWrapper.showsPopular(page: page)
+        }
+    }
+}

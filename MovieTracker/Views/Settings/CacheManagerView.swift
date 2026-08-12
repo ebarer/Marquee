@@ -13,10 +13,10 @@ struct CacheManagerView: View {
 
     var body: some View {
         List {
-            Section("Movie Details") {
+            Section("Movies & TV") {
                 LabeledContent("Cached Titles", value: detail.map { "\($0.count)" } ?? "—")
                 LabeledContent("Size", value: sizeText(detail?.bytes))
-                Button("Clear Movie Details", role: .destructive) { clearDetails() }
+                Button("Clear Details", role: .destructive) { clearDetails() }
                     .disabled(clearing || (detail?.bytes ?? 0) == 0)
             }
 
