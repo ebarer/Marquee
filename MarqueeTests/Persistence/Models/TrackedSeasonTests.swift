@@ -264,4 +264,74 @@ import SwiftData
         e.airDate = airDate
         return e
     }
+
+    // MARK: - Next-to-watch season
+
+    /// What the detail screen opens on, and what the tracked-season row renders.
+    @Test func firstIncompleteSeasonIsTheNextToWatch() {
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 80, seasons: [makeSeason(1, episodes: 2), makeSeason(2, episodes: 2)])
+
+        #expect(store.firstIncompleteSeason(show)?.seasonNumber == 1)
+
+        store.setSeasonWatched(true, show: show, season: show.seasons[0])
+        #expect(store.firstIncompleteSeason(show)?.seasonNumber == 2)
+    }
+
+    @Test func firstIncompleteSeasonIsNilOnceEverySeasonIsWatched() async {
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 81, seasons: [makeSeason(1, episodes: 2)])
+
+        await store.setShowWatched(true, show: show)
+
+        #expect(store.firstIncompleteSeason(show) == nil)
+    }
+
+    @Test func firstIncompleteSeasonSkipsSeasonsWithNoEpisodes() {
+        let store = makeInMemoryStore()
+        let announced = Season(id: 200, seasonNumber: 2, name: "Season 2", episodeCount: 0)
+        let show = makeShow(id: 82, seasons: [makeSeason(1, episodes: 2), announced])
+
+        store.setSeasonWatched(true, show: show, season: show.seasons[0])
+
+        #expect(store.firstIncompleteSeason(show) == nil)
+    }
+
+    // MARK: - Episode watched dates
+
+    @Test func episodeWatchedDateIsNilUntilWatched() {
+        let store = makeInMemoryStore()
+        #expect(store.episodeWatchedDate(showID: 90, season: 1, episode: 1) == nil)
+    }
+
+    @Test func episodeWatchedDateIsEditable() {
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 90, seasons: [makeSeason(1, episodes: 2)])
+        store.toggleEpisodeWatched(show: show, season: show.seasons[0], episodeNumber: 1)
+        #expect(store.episodeWatchedDate(showID: 90, season: 1, episode: 1) != nil)
+
+        store.setEpisodeWatchedDate(.utc(2023, 4, 5), showID: 90, season: 1, episode: 1)
+
+        #expect(store.episodeWatchedDate(showID: 90, season: 1, episode: 1) == .utc(2023, 4, 5))
+    }
+
+    @Test func editingAnUnwatchedEpisodesDateIsANoOp() {
+        let store = makeInMemoryStore()
+
+        store.setEpisodeWatchedDate(.utc(2023, 4, 5), showID: 91, season: 1, episode: 1)
+
+        #expect(store.episodeWatchedDate(showID: 91, season: 1, episode: 1) == nil)
+        #expect(store.isEpisodeWatched(showID: 91, season: 1, episode: 1) == false)
+    }
+
+    @Test func unwatchingAnEpisodeDiscardsItsDate() {
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 92, seasons: [makeSeason(1, episodes: 2)])
+        store.toggleEpisodeWatched(show: show, season: show.seasons[0], episodeNumber: 1)
+        store.setEpisodeWatchedDate(.utc(2023, 4, 5), showID: 92, season: 1, episode: 1)
+
+        store.toggleEpisodeWatched(show: show, season: show.seasons[0], episodeNumber: 1)
+
+        #expect(store.episodeWatchedDate(showID: 92, season: 1, episode: 1) == nil)
+    }
 }

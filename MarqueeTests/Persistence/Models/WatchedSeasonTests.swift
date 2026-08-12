@@ -153,4 +153,85 @@ import SwiftData
         let rows = sections.flatMap(\.entries)
         #expect(rows.contains { $0.mediaType == .tv && $0.seasonNumber == 2 && $0.tmdbID == 10 })
     }
+
+    // MARK: - Season ratings
+
+    private func completedSeason(_ store: PersistenceCoordinator, showID: Int = 20) -> Season {
+        let season = makeSeason(1, episodes: 2, airStart: .utc(2022, 1, 1))
+        store.setSeasonWatched(true, show: makeShow(id: showID, seasons: [season]), season: season)
+        return season
+    }
+
+    @Test func seasonRatingRoundTrips() {
+        let store = makeInMemoryStore()
+        _ = completedSeason(store)
+
+        store.setSeasonRating(4, showID: 20, season: 1)
+
+        #expect(store.seasonRating(showID: 20, season: 1) == 4)
+    }
+
+    @Test func seasonRatingSnapsToHalfStars() {
+        let store = makeInMemoryStore()
+        _ = completedSeason(store)
+
+        store.setSeasonRating(3.7, showID: 20, season: 1)
+        #expect(store.seasonRating(showID: 20, season: 1) == 3.5)
+
+        store.setSeasonRating(4.24, showID: 20, season: 1)
+        #expect(store.seasonRating(showID: 20, season: 1) == 4)
+    }
+
+    @Test func zeroOrNilClearsTheSeasonRating() {
+        let store = makeInMemoryStore()
+        _ = completedSeason(store)
+        store.setSeasonRating(5, showID: 20, season: 1)
+
+        store.setSeasonRating(0, showID: 20, season: 1)
+        #expect(store.seasonRating(showID: 20, season: 1) == nil)
+
+        store.setSeasonRating(5, showID: 20, season: 1)
+        store.setSeasonRating(nil, showID: 20, season: 1)
+        #expect(store.seasonRating(showID: 20, season: 1) == nil)
+    }
+
+    // A rating hangs off the WatchedSeason snapshot, which only exists once complete.
+    @Test func ratingAnIncompleteSeasonIsANoOp() {
+        let store = makeInMemoryStore()
+        let season = makeSeason(1, episodes: 3, airStart: .utc(2022, 1, 1))
+        let show = makeShow(id: 21, seasons: [season])
+        store.toggleEpisodeWatched(show: show, season: season, episodeNumber: 1)
+
+        store.setSeasonRating(4, showID: 21, season: 1)
+
+        #expect(store.seasonRating(showID: 21, season: 1) == nil)
+    }
+
+    @Test func unwatchingASeasonDiscardsItsRating() {
+        let store = makeInMemoryStore()
+        _ = completedSeason(store)
+        store.setSeasonRating(5, showID: 20, season: 1)
+
+        store.unwatchSeason(showID: 20, seasonNumber: 1)
+
+        #expect(store.seasonRating(showID: 20, season: 1) == nil)
+    }
+
+    // Dedupe keeps the earliest record but must not lose a rating written on a later copy.
+    @Test func deduplicateKeepsARatingFromTheDiscardedCopy() {
+        let store = makeInMemoryStore()
+        let keep = WatchedSeason(showTmdbID: 30, seasonNumber: 1, showName: "S", seasonName: "S1",
+                                 posterPath: nil, airDate: nil, episodeCount: 2)
+        keep.addedAt = .utc(2024, 1, 1)
+        let drop = WatchedSeason(showTmdbID: 30, seasonNumber: 1, showName: "S", seasonName: "S1",
+                                 posterPath: nil, airDate: nil, episodeCount: 2)
+        drop.addedAt = .utc(2024, 6, 1)
+        drop.userRating = 4.5
+        store.context.insert(keep)
+        store.context.insert(drop)
+
+        WatchedSeason.deduplicate(in: store.context)
+
+        #expect(store.seasonRating(showID: 30, season: 1) == 4.5)
+    }
 }

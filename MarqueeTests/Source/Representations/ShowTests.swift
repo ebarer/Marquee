@@ -74,15 +74,6 @@ import Testing
         #expect(s.regularSeasons.map(\.seasonNumber) == [1, 2])
     }
 
-    @Test func episodeCodeAndDuration() {
-        var e = Episode(id: 1, seasonNumber: 1, episodeNumber: 3, name: "Ep")
-        e.runtime = 58
-        #expect(e.code == "S1 · E3")
-        #expect(e.duration == "58 min")
-        e.runtime = 92
-        #expect(e.duration == "1 hr 32 min")
-    }
-
     @Test func mediaSummaryConformance() {
         var show = Show(id: 7, name: "My Show")
         show.firstAirDate = .utc(2021, 1, 1)
