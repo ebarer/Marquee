@@ -26,6 +26,16 @@ LEGACY = %w[MovieTrackerTests MovieTrackerUITests]
 project = Xcodeproj::Project.open(PROJECT_PATH)
 app = project.targets.find { |t| t.name == APP_TARGET_NAME } or abort "App target not found"
 
+# Depth-first, because removing a group leaves its children in the objects table —
+# with nested groups that orphans every file ref, and the next run re-adds them as
+# duplicates.
+def remove_group(group)
+  group.children.to_a.each do |child|
+    child.is_a?(Xcodeproj::Project::Object::PBXGroup) ? remove_group(child) : child.remove_from_project
+  end
+  group.remove_from_project
+end
+
 def remove_target(project, name)
   project.targets.select { |t| t.name == name }.each do |t|
     t.build_configuration_list.build_configurations.each { |c| c.remove_from_project }
@@ -35,7 +45,7 @@ def remove_target(project, name)
   # Drop its product reference and group.
   project.products_group.files.select { |f| f.display_name == "#{name}.xctest" }.each(&:remove_from_project)
   if (g = project.main_group.children.find { |c| c.respond_to?(:display_name) && c.display_name == name })
-    g.remove_from_project
+    remove_group(g)
   end
 end
 
