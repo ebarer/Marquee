@@ -34,6 +34,9 @@ struct SeasonWatchedSwipeButton: View {
 /// progress rather than the movie `watchedAt` flag.
 struct ShowWatchedSwipeButton: View {
     let showID: Int
+    /// Receives the intended new watched value so the caller can confirm first. Nil applies
+    /// the change immediately.
+    var onRequest: ((Bool) -> Void)? = nil
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     private var isWatched: Bool {
@@ -46,8 +49,12 @@ struct ShowWatchedSwipeButton: View {
         Button {
             guard let store else { return }
             let watched = isWatched
-            Task { @MainActor in
-                await store.setShowWatched(!watched, showID: showID)
+            if let onRequest {
+                onRequest(!watched)
+            } else {
+                Task { @MainActor in
+                    await store.setShowWatched(!watched, showID: showID)
+                }
             }
         } label: {
             if isWatched {

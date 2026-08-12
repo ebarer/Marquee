@@ -61,11 +61,14 @@ struct MoviePosterCard: View {
 
 enum PosterStatus {
     case watched
+    /// A series with some — but not all — episodes watched.
+    case partial
     case watchList
 
     var symbol: String {
         switch self {
         case .watched: return "checkmark.circle.fill"
+        case .partial: return "circle.tophalf.filled"
         case .watchList: return "bookmark.fill"
         }
     }
@@ -73,6 +76,7 @@ enum PosterStatus {
     var pointSize: CGFloat {
         switch self {
         case .watched: return 18
+        case .partial: return 17
         case .watchList: return 15
         }
     }
@@ -80,7 +84,7 @@ enum PosterStatus {
     var verticalNudge: CGFloat {
         switch self {
         case .watched: return -1
-        case .watchList: return 0
+        case .partial, .watchList: return 0
         }
     }
 }

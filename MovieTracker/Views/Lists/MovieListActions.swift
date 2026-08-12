@@ -16,7 +16,11 @@ struct WatchedSwipeButton: View {
     init(movie: Movie) { self.key = movie.mediaKey }
     init(show: Show) { self.key = show.mediaKey }
 
-    private var isWatched: Bool { store?.isWatched(key: key) ?? false }
+    private var isWatched: Bool {
+        guard let store else { return false }
+        _ = store.revision   // observe persisted changes so the icon doesn't go stale
+        return store.isWatched(key: key)
+    }
 
     var body: some View {
         Button {

@@ -59,7 +59,18 @@ extension PersistenceCoordinator {
     /// Whether the show has any watched episodes — the show is "in progress" and the
     /// bookmark's manual Watch List opt-out applies.
     func hasWatchedEpisodes(_ show: Show) -> Bool {
-        !WatchedEpisode.all(showTmdbID: show.id, in: context).isEmpty
+        hasWatchedEpisodes(showID: show.id)
+    }
+
+    /// `hasWatchedEpisodes` from the show id alone — the row/card badge reads it without a
+    /// loaded show, so a partially-watched series can show its progress mark.
+    func hasWatchedEpisodes(showID: Int) -> Bool {
+        !WatchedEpisode.all(showTmdbID: showID, in: context).isEmpty
+    }
+
+    /// Watch List membership from the show id alone (never creates the list).
+    func isInWatchList(showID: Int) -> Bool {
+        MediaList.watchList(in: context)?.contains(showID, .tv) ?? false
     }
 
     /// Whether the user has manually dismissed this show from the auto-managed Watch List.

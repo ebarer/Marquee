@@ -22,6 +22,9 @@ struct ListRows: View {
     /// A pending Watch List removal awaiting confirmation — an in-progress show whose
     /// watched episodes would otherwise re-add it (see `requestDelete`).
     @State private var pendingDismiss: MediaSnapshot?
+    /// A pending whole-show watched change awaiting confirmation: marking sweeps every
+    /// episode of every season, so it's worth a warning before it lands.
+    @State private var pendingShowWatched: (entry: MediaSnapshot, watched: Bool)?
 
     private var isWatchList: Bool {
         if case .list(let uuid) = selection { return lists.first { $0.uuid == uuid }?.isWatchList == true }
@@ -55,6 +58,21 @@ struct ListRows: View {
                     Button("Cancel", role: .cancel) {}
                 } message: { _ in
                     Text("You've watched some episodes, so it stays on your Watch List automatically. Removing keeps it off until you add it back.")
+                }
+                .alert(pendingShowWatched?.watched == false ? "Mark Show Unwatched?" : "Mark Show Watched?",
+                       isPresented: Binding(
+                    get: { pendingShowWatched != nil },
+                    set: { if !$0 { pendingShowWatched = nil } }
+                ), presenting: pendingShowWatched) { pending in
+                    Button(pending.watched ? "Mark Watched" : "Mark Unwatched",
+                           role: pending.watched ? nil : .destructive) {
+                        applyShowWatched(pending.entry, watched: pending.watched)
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: { pending in
+                    Text(pending.watched
+                         ? "This marks every episode of every season of \(pending.entry.title) as watched."
+                         : "This clears the watched date for every episode of every season of \(pending.entry.title).")
                 }
         }
     }
@@ -167,14 +185,19 @@ struct ListRows: View {
 
     private func showRow(_ entry: MediaSnapshot) -> some View {
         DetailLink(value: show(entry)) {
-            ShowRow(show: show(entry), showsSeasonCount: false)
+            // Custom lists badge the poster (watched / partially watched / to-watch) the
+            // same way movie rows do.
+            ShowRow(show: show(entry), showsSeasonCount: false, derivesStatus: isCustomList)
         }
         .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
         // TV watched-state is episode-based, so toggle through the show model (not the
         // movie `watchedAt` flag) — this is the case that was broken on custom lists.
+        // Confirm first: it sweeps every episode of every season.
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            ShowWatchedSwipeButton(showID: entry.tmdbID)
+            ShowWatchedSwipeButton(showID: entry.tmdbID) { watched in
+                pendingShowWatched = (entry, watched)
+            }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
@@ -308,6 +331,13 @@ struct ListRows: View {
         case .list: store?.deleteEntry(entry.persistentID)
         case .viewed: store?.removeFromViewed(entry.persistentID)
         }
+    }
+
+    /// Apply a confirmed whole-show watched change through the shared id-only entry point.
+    private func applyShowWatched(_ entry: MediaSnapshot, watched: Bool) {
+        pendingShowWatched = nil
+        guard let store else { return }
+        Task { @MainActor in await store.setShowWatched(watched, showID: entry.tmdbID) }
     }
 
     /// Clear a completed season, then reconcile through the shared path: un-watching an

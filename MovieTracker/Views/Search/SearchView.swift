@@ -83,7 +83,7 @@ struct SearchView: View {
             .listRowSeparator(lastEdge, edges: .bottom)
         case .show(let show):
             DetailLink(value: show) {
-                ShowRow(show: show)
+                ShowRow(show: show, derivesStatus: true)
             }
             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             .listRowSeparator(firstEdge, edges: .top)
