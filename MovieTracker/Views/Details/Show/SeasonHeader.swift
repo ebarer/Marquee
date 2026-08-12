@@ -52,7 +52,9 @@ struct SeasonHeader: View {
     private var seasonPicker: some View {
         Menu {
             Picker("Season", selection: seasonSelection) {
-                ForEach(seasons, id: \.seasonNumber) { season in
+                // Newest first: on a long-running show the season you're most likely to be
+                // watching is at the top of the menu rather than twenty rows down it.
+                ForEach(seasons.reversed(), id: \.seasonNumber) { season in
                     Text(season.name).tag(season.seasonNumber)
                 }
             }

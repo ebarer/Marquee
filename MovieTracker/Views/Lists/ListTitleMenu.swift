@@ -20,6 +20,7 @@ struct ListTitleMenu: View {
                     titleText(watchList.name, watchList.entries?.count ?? 0)
                 } icon: {
                     Image(systemName: ListSymbol.outline(watchList.symbol))
+                        .tint(watchList.color)
                 }
                 .tag(ListSelection.list(watchList.uuid))
             }
@@ -57,18 +58,8 @@ struct ListTitleMenu: View {
             Label {
                 titleText("Viewed", store?.viewedCount ?? 0)
             } icon: {
-                if let watchList = watchList {
-                    if let image = ListSymbol.menuImage(watchList.symbol) {
-                        Image(uiImage: image)
-                            .foregroundStyle(.blue)
-                    } else {
-                        Image(systemName: ListSymbol.outline(watchList.symbol))
-                            .foregroundStyle(.red)
-                    }
-                } else {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .tint(ListDestination.viewedColor)
-                }
+                Image(systemName: "clock.arrow.circlepath")
+                    .tint(ListDestination.viewedColor)
             }
             .tag(ListSelection.viewed)
         }

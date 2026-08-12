@@ -43,6 +43,7 @@ struct MovieDetailView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .tint(model.tint)
+        .pageTint(model.tint)
         // The pinned header carries the title, so the nav bar stays chromeless.
         .navigationTitle(model.movie?.title ?? movieTitle)
         .toolbarTitleDisplayMode(.inline)

@@ -19,12 +19,44 @@ struct ListRows: View {
     @State private var tappedMovie: Movie?
     /// The "Older" archive bucket starts collapsed each visit.
     @State private var olderExpanded = false
-    /// A pending Watch List removal awaiting confirmation — an in-progress show whose
-    /// watched episodes would otherwise re-add it (see `requestDelete`).
-    @State private var pendingDismiss: MediaSnapshot?
-    /// A pending whole-show watched change awaiting confirmation: marking sweeps every
-    /// episode of every season, so it's worth a warning before it lands.
-    @State private var pendingShowWatched: (entry: MediaSnapshot, watched: Bool)?
+    /// The confirmation a swipe is waiting on, and the row that raised it. ONE piece of state
+    /// for both questions: the dialog hangs off the row so it points at the title in hand, and
+    /// a row can only carry a single presentation of a kind — two would cancel each other out.
+    @State private var pending: PendingConfirmation?
+
+    private enum PendingConfirmation: Identifiable {
+        /// Removing an in-progress show whose watched episodes would otherwise re-add it.
+        case removeFromWatchList(MediaSnapshot)
+        /// Marking a whole show, which sweeps every episode of every season.
+        case showWatched(MediaSnapshot, watched: Bool)
+
+        var entry: MediaSnapshot {
+            switch self {
+            case .removeFromWatchList(let entry): return entry
+            case .showWatched(let entry, _): return entry
+            }
+        }
+
+        var id: MediaSnapshot.ID { entry.id }
+
+        var title: String {
+            switch self {
+            case .removeFromWatchList: return "Remove from Watch List?"
+            case .showWatched(_, let watched): return watched ? "Mark Show Watched?" : "Mark Show Unwatched?"
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .removeFromWatchList:
+                return "You've watched some episodes, so it stays on your Watch List automatically. Removing keeps it off until you add it back."
+            case .showWatched(let entry, let watched):
+                return watched
+                    ? "This marks every episode of every season of \(entry.title) as watched."
+                    : "This clears the watched date for every episode of every season of \(entry.title)."
+            }
+        }
+    }
 
     private var isWatchList: Bool {
         if case .list(let uuid) = selection { return lists.first { $0.uuid == uuid }?.isWatchList == true }
@@ -49,30 +81,6 @@ struct ListRows: View {
                 .onChange(of: olderExpanded) { _, expanded in
                     guard expanded else { return }
                     withAnimation { proxy.scrollTo(Self.olderAnchor, anchor: .top) }
-                }
-                .alert("Remove from Watch List?", isPresented: Binding(
-                    get: { pendingDismiss != nil },
-                    set: { if !$0 { pendingDismiss = nil } }
-                ), presenting: pendingDismiss) { entry in
-                    Button("Remove", role: .destructive) { dismiss(entry) }
-                    Button("Cancel", role: .cancel) {}
-                } message: { _ in
-                    Text("You've watched some episodes, so it stays on your Watch List automatically. Removing keeps it off until you add it back.")
-                }
-                .alert(pendingShowWatched?.watched == false ? "Mark Show Unwatched?" : "Mark Show Watched?",
-                       isPresented: Binding(
-                    get: { pendingShowWatched != nil },
-                    set: { if !$0 { pendingShowWatched = nil } }
-                ), presenting: pendingShowWatched) { pending in
-                    Button(pending.watched ? "Mark Watched" : "Mark Unwatched",
-                           role: pending.watched ? nil : .destructive) {
-                        applyShowWatched(pending.entry, watched: pending.watched)
-                    }
-                    Button("Cancel", role: .cancel) {}
-                } message: { pending in
-                    Text(pending.watched
-                         ? "This marks every episode of every season of \(pending.entry.title) as watched."
-                         : "This clears the watched date for every episode of every season of \(pending.entry.title).")
                 }
         }
     }
@@ -165,6 +173,39 @@ struct ListRows: View {
             .listRowSeparator(lastEdge, edges: .bottom)
             // Hide the first row's top separator when it has no header above it.
             .listRowSeparator(firstEdge, edges: .top)
+            // Anchored to the row it's asking about. The item-based dialog holds the change:
+            // nothing is written until an action here runs.
+            .confirmationDialog(Text(confirmation(for: entry)?.title ?? ""),
+                                item: confirmationItem(for: entry),
+                                titleVisibility: .visible) { pending in
+                confirmationActions(pending)
+            } message: { pending in
+                Text(pending.message)
+            }
+        }
+    }
+
+    // MARK: - Swipe confirmation
+
+    /// Non-nil only for the row that raised the confirmation, so the dialog presents from it.
+    private func confirmationItem(for entry: MediaSnapshot) -> Binding<PendingConfirmation?> {
+        Binding(get: { confirmation(for: entry) }, set: { pending = $0 })
+    }
+
+    private func confirmation(for entry: MediaSnapshot) -> PendingConfirmation? {
+        pending?.entry.id == entry.id ? pending : nil
+    }
+
+    @ViewBuilder
+    private func confirmationActions(_ pending: PendingConfirmation) -> some View {
+        switch pending {
+        case .removeFromWatchList(let entry):
+            Button("Remove", role: .destructive) { dismiss(entry) }
+        case .showWatched(let entry, let watched):
+            Button(watched ? "Mark Watched" : "Mark Unwatched",
+                   role: watched ? nil : .destructive) {
+                applyShowWatched(entry, watched: watched)
+            }
         }
     }
 
@@ -193,10 +234,11 @@ struct ListRows: View {
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
         // TV watched-state is episode-based, so toggle through the show model (not the
         // movie `watchedAt` flag) — this is the case that was broken on custom lists.
-        // Confirm first: it sweeps every episode of every season.
+        // Confirm first: it sweeps every episode of every season. A full swipe raises that
+        // confirmation; it doesn't perform the change.
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             ShowWatchedSwipeButton(showID: entry.tmdbID) { watched in
-                pendingShowWatched = (entry, watched)
+                pending = .showWatched(entry, watched: watched)
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
@@ -233,13 +275,17 @@ struct ListRows: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
 
+    // Deliberately NOT `role: .destructive`: that promises SwiftUI the row is going, so it
+    // clears the cell the moment the button is tapped — the row blinks out and springs back
+    // when the confirmation is declined, and the row's own dialog is torn down with it before
+    // it can present. The red tint gives the same appearance without the promise.
     private func deleteButton(_ entry: MediaSnapshot) -> some View {
-        Button(role: .destructive) {
+        Button {
             requestDelete(entry)
         } label: {
             Image(systemName: "trash")
-                .tint(.red)
         }
+        .tint(.red)
     }
 
     @ViewBuilder
@@ -299,7 +345,7 @@ struct ListRows: View {
     /// the opt-out via `dismiss`. Everything else deletes straight away.
     private func requestDelete(_ entry: MediaSnapshot) {
         if isWatchList, entry.mediaType == .tv, store?.hasWatchedEpisodes(show(entry)) == true {
-            pendingDismiss = entry
+            pending = .removeFromWatchList(entry)
         } else {
             delete(entry)
         }
@@ -310,7 +356,7 @@ struct ListRows: View {
     /// any other list; fall back to the snapshot's minimal show (carrying its display key) if
     /// it's cold, so the removal still sticks offline.
     private func dismiss(_ entry: MediaSnapshot) {
-        pendingDismiss = nil
+        pending = nil
         guard let store else { return }
         let fallback = show(entry)
         Task { @MainActor in
@@ -335,7 +381,7 @@ struct ListRows: View {
 
     /// Apply a confirmed whole-show watched change through the shared id-only entry point.
     private func applyShowWatched(_ entry: MediaSnapshot, watched: Bool) {
-        pendingShowWatched = nil
+        pending = nil
         guard let store else { return }
         Task { @MainActor in await store.setShowWatched(watched, showID: entry.tmdbID) }
     }

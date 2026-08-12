@@ -13,6 +13,10 @@ struct CompactRootView: View {
     @State private var selectedTab: RootTab = .discover
     @State private var listsPath = NavigationPath()
     @State private var listsResetToken = 0
+    /// The tint published by each tab's frontmost page, so the tab bar can follow the one
+    /// on screen. Tracked per tab (not as a single value) because a tab the user left is
+    /// still alive and still publishing.
+    @State private var tabTints: [RootTab: Color] = [:]
 
     var body: some View {
         TabView(selection: tabSelection) {
@@ -21,6 +25,7 @@ struct CompactRootView: View {
                     FeaturedView()
                         .detailDestinations()
                 }
+                .onPageTintChange { tabTints[.discover] = $0 }
             }
 
             Tab("Lists", systemImage: "checklist", value: RootTab.lists) {
@@ -28,6 +33,7 @@ struct CompactRootView: View {
                     ListsView(resetToken: listsResetToken)
                         .detailDestinations()
                 }
+                .onPageTintChange { tabTints[.lists] = $0 }
             }
 
             Tab("Search", systemImage: "magnifyingglass", value: RootTab.search, role: .search) {
@@ -51,9 +57,11 @@ struct CompactRootView: View {
                         searchModel.commit()
                     }
                 }
+                .onPageTintChange { tabTints[.search] = $0 }
             }
         }
         .tabViewSearchActivation(.searchTabSelection)
+        .tint(tabTints[selectedTab] ?? .appAccent)
     }
 
     /// Opens a tapped search result: resign the search field's focus first so the

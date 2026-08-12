@@ -28,14 +28,46 @@ struct GlassActionButton<S: Shape>: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(isOn ? .appBackground : tint)
-                .frame(width: width, height: ActionBarMetrics.size)
-                .contentShape(Rectangle())
+            GlassActionLabel(systemName: systemName, isOn: isOn, width: width, tint: tint)
         }
         .buttonStyle(.plain)
         .glassEffect(isOn ? .regular.tint(tint).interactive() : .regular.interactive(), in: shape)
+    }
+}
+
+/// ``GlassActionButton`` that opens a menu instead of firing an action. Shares the button's
+/// styling exactly — the two sit side by side in an action bar and must be indistinguishable.
+struct GlassActionMenu<S: Shape, Content: View>: View {
+    let systemName: String
+    let isOn: Bool
+    var width: CGFloat = ActionBarMetrics.size
+    let shape: S
+    let tint: Color
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        Menu {
+            content()
+        } label: {
+            GlassActionLabel(systemName: systemName, isOn: isOn, width: width, tint: tint)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(isOn ? .regular.tint(tint).interactive() : .regular.interactive(), in: shape)
+    }
+}
+
+private struct GlassActionLabel: View {
+    let systemName: String
+    let isOn: Bool
+    let width: CGFloat
+    let tint: Color
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 20, weight: .semibold))
+            .foregroundStyle(isOn ? .appBackground : tint)
+            .frame(width: width, height: ActionBarMetrics.size)
+            .contentShape(Rectangle())
     }
 }
 

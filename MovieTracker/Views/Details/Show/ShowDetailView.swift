@@ -36,8 +36,11 @@ struct ShowDetailView: View {
     @State private var isSeen = false
     @State private var overscroll: CGFloat = 0
     /// The season chosen in the episodes picker, lifted here so the header poster can
-    /// swap to match. Nil until the user picks one (falls back to `initialSeason`/first).
+    /// swap to match. Nil until the user picks one (falls back to `openingSeason`/first).
     @State private var selectedSeason: Int?
+    /// Where the viewer is up to, resolved once the show loads — a part-watched show opens
+    /// on the season they're in rather than season 1. Nil until then, and for a finished show.
+    @State private var inProgressSeason: Int?
 
     var body: some View {
         Group {
@@ -49,6 +52,7 @@ struct ShowDetailView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .tint(model.tint)
+        .pageTint(model.tint)
         .navigationTitle("")
         .toolbarTitleDisplayMode(.inline)
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
@@ -65,10 +69,14 @@ struct ShowDetailView: View {
                 // Recompute season snapshots (episodes may have been toggled from the episode
                 // detail) and derive the show-level watched state.
                 store?.reconcileSeasons(for: show)
+                refreshInProgressSeason()
                 await model.reconcileMembership(using: store)
                 isSeen = store?.isShowFullyWatched(show) ?? false
             }
         }
+        // Resolve the opening season off the CACHED show, before the network payload lands —
+        // otherwise the screen sits on season 1 and jumps once loading finishes.
+        .onChange(of: model.show?.id) { refreshInProgressSeason() }
         // Keep the checkmark live when episodes are toggled in the episodes section.
         .onChange(of: store?.revision) {
             if let show = model.show { isSeen = store?.isShowFullyWatched(show) ?? false }
@@ -100,7 +108,7 @@ struct ShowDetailView: View {
                     WhereToWatchSection(availabilityByRegion: show.watchByRegion,
                                         releaseDate: show.firstAirDate, isShow: true, tint: model.tint)
                     EpisodesBySeasonSection(show: show, model: model, tint: model.tint,
-                                            initialSeason: initialSeason,
+                                            initialSeason: openingSeason,
                                             selectedSeason: $selectedSeason)
                     CastSection(cast: show.creators + seasonCast(for: show), tint: model.tint,
                                 leadRole: "Creator",
@@ -113,12 +121,21 @@ struct ShowDetailView: View {
             .coordinateSpace(name: "scroll")
             .scrollEdgeEffectHidden(!headerPinned, for: .top)
             .ignoresSafeArea(edges: [.top, .horizontal])
+            // The poster sets the tint, and the header's poster follows the selected season.
+            .task(id: seasonPosterPath(for: show)) {
+                await model.applyTint(forPoster: seasonPosterPath(for: show))
+            }
             .onScrollGeometryChange(for: CGFloat.self) { geo in
                 max(0, -(geo.contentOffset.y + geo.contentInsets.top))
             } action: { _, newValue in
                 overscroll = newValue
             }
         }
+    }
+
+    private func refreshInProgressSeason() {
+        guard let show = model.show else { return }
+        inProgressSeason = store?.firstIncompleteSeason(show)?.seasonNumber
     }
 
     /// Refresh list membership after an action-bar mutation (advance the tracked season,
@@ -130,10 +147,14 @@ struct ShowDetailView: View {
         }
     }
 
+    /// The season the screen opens on: the one the caller asked for (a Watched-list row names
+    /// its season), else the one the viewer is part-way through.
+    private var openingSeason: Int? { initialSeason ?? inProgressSeason }
+
     // The season the detail is showing (picker selection, else the opened season, else the
     // first) — drives both the header poster and the cast list.
     private func resolvedSeason(for show: Show) -> Int? {
-        selectedSeason ?? initialSeason ?? show.regularSeasons.first?.seasonNumber
+        selectedSeason ?? openingSeason ?? show.regularSeasons.first?.seasonNumber
     }
 
     private func seasonPosterPath(for show: Show) -> String? {

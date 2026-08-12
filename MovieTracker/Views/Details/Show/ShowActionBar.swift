@@ -27,7 +27,6 @@ struct ShowActionBar: View {
     @State private var tracked = false
     @State private var hasProgress = false
     @State private var wasOnWatchList = false
-    @State private var showListPicker = false
     @State private var showRemoveConfirm = false
     // Gate the watched animation so the first sync (entry) settles instantly; only
     // user-driven changes after appearance animate the bookmark↔checkmark transition.
@@ -127,17 +126,14 @@ struct ShowActionBar: View {
             .glassEffectID("plus", in: glassNamespace)
         } else if !customLists.isEmpty {
             let anyMember = customLists.contains { $0.contains(show.id, .tv) }
-            GlassActionButton(systemName: "plus", isOn: anyMember, shape: Circle(), tint: tint) {
-                showListPicker = true
+            GlassActionMenu(systemName: "plus", isOn: anyMember, shape: Circle(), tint: tint) {
+                ListMembershipToggles(lists: customLists,
+                                      isMember: { $0.contains(show.id, .tv) },
+                                      toggle: { store?.toggle(show, in: $0); refresh(); onChange() })
             }
+            // Stays open so several lists can be toggled in one go.
+            .menuActionDismissBehavior(.disabled)
             .glassEffectID("plus", in: glassNamespace)
-            .popover(isPresented: $showListPicker,
-                     attachmentAnchor: .rect(.rect(CGRect(
-                        x: 0, y: -8, width: ActionBarMetrics.size, height: ActionBarMetrics.size)))) {
-                ListPickerPopover(lists: customLists, tint: tint,
-                                  isMember: { $0.contains(show.id, .tv) },
-                                  toggle: { store?.toggle(show, in: $0); onChange() })
-            }
         }
     }
 

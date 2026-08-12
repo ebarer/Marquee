@@ -19,7 +19,6 @@ struct MovieActionBar: View {
     @Namespace private var glassNamespace
     @State private var tracked = false
     @State private var wasOnWatchList = false
-    @State private var showListPicker = false
 
     private var canonical: [MediaList] { store?.canonicalLists(lists) ?? lists }
     private var watchList: MediaList? { canonical.first { $0.isWatchList } }
@@ -80,18 +79,14 @@ struct MovieActionBar: View {
             .glassEffectID("plus", in: glassNamespace)
         } else if !customLists.isEmpty {
             let anyMember = customLists.contains { $0.contains(movie.id) }
-            GlassActionButton(systemName: "plus", isOn: anyMember, shape: Circle(), tint: tint) {
-                showListPicker = true
+            GlassActionMenu(systemName: "plus", isOn: anyMember, shape: Circle(), tint: tint) {
+                ListMembershipToggles(lists: customLists,
+                                      isMember: { $0.contains(movie.id) },
+                                      toggle: { store?.toggle(movie, in: $0); refresh() })
             }
+            // Stays open so several lists can be toggled in one go.
+            .menuActionDismissBehavior(.disabled)
             .glassEffectID("plus", in: glassNamespace)
-            // Anchor above the button so the cartouche beak doesn't crowd it.
-            .popover(isPresented: $showListPicker,
-                     attachmentAnchor: .rect(.rect(CGRect(
-                        x: 0, y: -8, width: ActionBarMetrics.size, height: ActionBarMetrics.size)))) {
-                ListPickerPopover(lists: customLists, tint: tint,
-                                  isMember: { $0.contains(movie.id) },
-                                  toggle: { store?.toggle(movie, in: $0) })
-            }
         }
     }
 

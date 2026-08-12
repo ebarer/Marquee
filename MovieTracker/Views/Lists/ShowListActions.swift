@@ -16,10 +16,20 @@ struct SeasonWatchedSwipeButton: View {
     let seasonNumber: Int
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
+    /// A full swipe fires this action and THEN springs the row back to its starting
+    /// position. The row keeps its identity across the change (it re-titles to the next
+    /// season), so the list cross-fades its contents in place — start that while the cell
+    /// is still travelling and the swipe reads as cut short. Hold the write until the row
+    /// is home. Tuned to the spring-back; the exact figure isn't API.
+    private static let rowSettleDelay: Duration = .milliseconds(450)
+
     var body: some View {
         Button {
             guard let store else { return }
+            // Detached from this row's lifetime on purpose — the write must land even if
+            // reconcile moves the row out from under us.
             Task { @MainActor in
+                try? await Task.sleep(for: Self.rowSettleDelay)
                 await store.setSeasonWatched(true, showID: showID, seasonNumber: seasonNumber)
             }
         } label: {

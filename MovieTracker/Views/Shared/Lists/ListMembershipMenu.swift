@@ -23,33 +23,13 @@ struct ListMembershipMenu: View {
                     Label("Watched", systemImage: "checkmark.rectangle.stack")
                 }
             }
-            Group {
-                if let watchList {
-                    toggle(for: watchList)
-                }
-                ForEach(customLists) { list in
-                    toggle(for: list)
-                }
-            }
+            ListMembershipToggles(
+                lists: [watchList].compactMap { $0 } + customLists,
+                isMember: { $0.contains(movie.id) },
+                toggle: { store?.toggle(movie, in: $0); onChange() }
+            )
         }
         .tint(.primary)
-    }
-
-    private func toggle(for list: MediaList) -> some View {
-        Toggle(isOn: Binding(
-            get: { list.contains(movie.id) },
-            set: { _ in store?.toggle(movie, in: list); onChange() }
-        )) {
-            Label {
-                Text(list.name)
-            } icon: {
-                if let image = ListSymbol.menuImage(list.symbol) {
-                    Image(uiImage: image)
-                } else {
-                    Image(systemName: ListSymbol.outline(list.symbol))
-                }
-            }
-        }
     }
 }
 

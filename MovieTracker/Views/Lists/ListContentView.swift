@@ -55,6 +55,7 @@ struct ListContentView: View {
     private var core: some View {
         entries
         .tint(activeColor)
+        .pageTint(activeColor)
         .navigationTitle(title)
         .toolbarTitleDisplayMode(.inline)
         .toolbar {

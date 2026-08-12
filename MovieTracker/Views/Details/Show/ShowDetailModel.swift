@@ -21,6 +21,8 @@ final class ShowDetailModel {
     private(set) var loadingSeasons: Set<Int> = []
 
     private var loaded = false
+    /// Tints already derived, keyed by poster path — flipping between seasons is then free.
+    private var tintByPoster: [String: Color] = [:]
 
     func load(id: Int) async {
         guard !loaded else { return }
@@ -36,13 +38,10 @@ final class ShowDetailModel {
             let full = try await TMDBWrapper.getShow(id: id)
             show = full
             invalidateGrownSeasons(against: full)
-            var freshTint = tint
-            if let url = full.posterURL(.w342),
-               let data = try? await TMDBWrapper.imageData(from: url) {
-                freshTint = Color.averageColor(from: data)
-            }
-            withAnimation(.easeInOut) { tint = freshTint }
-            await MediaCacheStore.shared.save(full, tint: freshTint)
+            // Cached for other surfaces only. The visible tint comes from `applyTint`, which
+            // follows the poster on screen — assigning it here too would race with that.
+            let showTint = await posterTint(path: full.poster) ?? tint
+            await MediaCacheStore.shared.save(full, tint: showTint)
         } catch {
             print("Show detail load error: \(error)")
         }
@@ -53,6 +52,24 @@ final class ShowDetailModel {
         } catch {
             print("Show recommendations load error: \(error)")
         }
+    }
+
+    /// Re-tint the page for the poster now on screen. Seasons carry their own artwork, so
+    /// picking a season re-colours the screen to match the poster the header just swapped in.
+    func applyTint(forPoster path: String?) async {
+        guard let color = await posterTint(path: path), color != tint else { return }
+        withAnimation(.easeInOut) { tint = color }
+    }
+
+    /// The average colour of a poster, fetched once per path.
+    private func posterTint(path: String?) async -> Color? {
+        guard let path else { return nil }
+        if let known = tintByPoster[path] { return known }
+        guard let url = TMDBWrapper.imageURL(path: path, size: PosterSize.w342.rawValue),
+              let data = try? await TMDBWrapper.imageData(from: url) else { return nil }
+        let color = Color.averageColor(from: data)
+        tintByPoster[path] = color
+        return color
     }
 
     /// Refresh the show's list membership (Watch List + tracked season) after a mutation.
