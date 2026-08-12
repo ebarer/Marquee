@@ -15,6 +15,9 @@ struct SeasonHeader: View {
     let startYear: Int?
     let episodeCount: Int
     let allWatched: Bool
+    /// Every aired episode watched — with `hasUnaired` set, the toggle reads as caught up.
+    var allAiredWatched: Bool = false
+    var hasUnaired: Bool = false
     let canToggle: Bool
     let showID: Int
     let seasonWatchedDate: Date?
@@ -38,7 +41,8 @@ struct SeasonHeader: View {
                 }
                 .id(current)
             }
-            SeasonWatchedToggle(allWatched: allWatched, canToggle: canToggle,
+            SeasonWatchedToggle(allWatched: allWatched, allAiredWatched: allAiredWatched,
+                                hasUnaired: hasUnaired, canToggle: canToggle,
                                 tint: tint, onToggle: onToggleAll)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

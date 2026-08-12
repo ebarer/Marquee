@@ -6,7 +6,7 @@
 import Foundation
 
 /// A single episode within a `Season`, hydrated from TMDB.
-struct Episode: Hashable, Identifiable, Codable {
+struct Episode: Hashable, Identifiable, Codable, Sendable {
     var id: Int
     /// The owning show's TMDB id, stamped when a season is fetched (episodes don't carry
     /// it from TMDB). Lets a standalone episode toggle its watched state.
@@ -34,6 +34,14 @@ struct Episode: Hashable, Identifiable, Codable {
 
     /// "S1 · E3"-style label for the episode row.
     var code: String { "S\(seasonNumber) · E\(episodeNumber)" }
+
+    /// Whether the episode has already aired — bulk "mark watched" skips the ones that
+    /// haven't. An unknown air date counts as aired: TMDB omits it for parts of some back
+    /// catalogues, and silently refusing to mark those would be the worse failure.
+    var hasAired: Bool {
+        guard let airDate else { return true }
+        return airDate <= Date()
+    }
 
     var duration: String? {
         guard let runtime else { return nil }

@@ -61,6 +61,15 @@ struct EpisodesBySeasonSection: View {
         !currentEpisodes.isEmpty && currentEpisodes.allSatisfy { watchedNumbers.contains($0.episodeNumber) }
     }
 
+    /// Marking stops at today, so a still-airing season settles here rather than at
+    /// `allWatched` — the toggle shows it as caught up instead of complete.
+    private var allAiredWatched: Bool {
+        let aired = currentEpisodes.filter(\.hasAired)
+        return !aired.isEmpty && aired.allSatisfy { watchedNumbers.contains($0.episodeNumber) }
+    }
+
+    private var hasUnaired: Bool { currentEpisodes.contains { !$0.hasAired } }
+
     private var episodeCount: Int {
         if let episodes { return episodes.count }
         return currentSeasonObject?.episodeCount ?? 0
@@ -85,7 +94,8 @@ struct EpisodesBySeasonSection: View {
                     seasons: seasons, currentSeason: currentSeason,
                     seasonName: currentSeasonObject?.name ?? "Season",
                     startYear: currentSeasonObject?.startYear, episodeCount: episodeCount,
-                    allWatched: allWatched, canToggle: !currentEpisodes.isEmpty, showID: show.id,
+                    allWatched: allWatched, allAiredWatched: allAiredWatched,
+                    hasUnaired: hasUnaired, canToggle: !currentEpisodes.isEmpty, showID: show.id,
                     seasonWatchedDate: seasonWatchedDate,
                     lastEpisodeDate: currentEpisodes.compactMap(\.airDate).max(),
                     seasonRating: seasonRating, tint: tint,

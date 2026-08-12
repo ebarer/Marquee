@@ -5,12 +5,12 @@
 
 import Foundation
 
-struct WatchAvailability: Codable, Hashable {
+struct WatchAvailability: Codable, Hashable, Sendable {
     var providers: [WatchProvider]
     var justWatchLink: URL?
 }
 
-struct WatchProvider: Codable, Hashable, Identifiable {
+struct WatchProvider: Codable, Hashable, Identifiable, Sendable {
     var id: Int
     var name: String
     var logoPath: String?

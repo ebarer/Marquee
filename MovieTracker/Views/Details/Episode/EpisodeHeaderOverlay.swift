@@ -51,6 +51,8 @@ struct EpisodeHeaderOverlay: View {
 
     private static let checkmarkSize: CGFloat = 52
 
+    /// Inert until the episode airs — there's nothing to have watched yet, and the dimmed
+    /// checkmark says so rather than letting a tap record a future viewing.
     private var watchedButton: some View {
         Button { toggleWatched() } label: {
             Image(systemName: "checkmark")
@@ -61,8 +63,15 @@ struct EpisodeHeaderOverlay: View {
         }
         .buttonStyle(.plain)
         .glassEffect(isWatched ? .regular.tint(tint).interactive() : .regular.interactive(), in: Circle())
+        .opacity(episode.hasAired ? 1 : 0.4)
+        .disabled(!episode.hasAired)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isWatched)
-        .accessibilityLabel(isWatched ? "Mark episode unwatched" : "Mark episode watched")
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var accessibilityLabel: String {
+        if !episode.hasAired { return "Episode hasn't aired yet" }
+        return isWatched ? "Mark episode unwatched" : "Mark episode watched"
     }
 
     private var watchedDateRow: some View {
@@ -120,6 +129,20 @@ struct EpisodeHeaderOverlay: View {
     @Previewable @State var showNavTitle = false
     EpisodeHeaderOverlay(episode: Episode.previewEpisodes[0], tint: .appAccent,
                          navBarBottom: 100, showNavTitle: $showNavTitle)
+        .padding()
+        .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Hasn't aired") {
+    @Previewable @State var showNavTitle = false
+    var upcoming = Episode.previewEpisodes[2]
+    upcoming.airDate = Date().addingTimeInterval(60 * 60 * 24 * 14)
+
+    return EpisodeHeaderOverlay(episode: upcoming, tint: .appAccent,
+                                navBarBottom: 100, showNavTitle: $showNavTitle)
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)

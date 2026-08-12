@@ -8,7 +8,7 @@ import Foundation
 /// A heterogeneous reference to a movie or show, for mixed collections (unified
 /// search results, a person's interlaced credits). Reads route through the shared
 /// facets below; writes stay type-specific at the call site.
-enum MediaRef: Hashable, Identifiable {
+enum MediaRef: Hashable, Identifiable, Sendable {
     case movie(Movie)
     case show(Show)
 

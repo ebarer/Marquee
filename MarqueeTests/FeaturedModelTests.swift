@@ -90,6 +90,7 @@ import Foundation
     @Test func showShelfPaginationAppendsAndDedupes() async {
         installShowStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
+        await model.load(.showsPopular)
         await model.loadMoreIfNeeded(currentShow: model.shows.last!)
         #expect(model.shows.map(\.id) == [1, 2, 3])  // id 2 not duplicated
     }

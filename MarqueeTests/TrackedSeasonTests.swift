@@ -69,23 +69,23 @@ import SwiftData
         #expect(store.isInWatchList(show))
     }
 
-    @Test func fullyWatchingRemovesFromWatchListAndDeletesTracked() {
+    @Test func fullyWatchingRemovesFromWatchListAndDeletesTracked() async {
         let store = makeInMemoryStore()
         let show = makeShow(id: 4, seasons: [makeSeason(1, episodes: 2), makeSeason(2, episodes: 2)])
         store.addToWatchList(show)
 
-        store.setShowWatched(true, show: show)
+        await store.setShowWatched(true, show: show)
 
         #expect(store.isShowFullyWatched(show))
         #expect(!store.isInWatchList(show))
         #expect(TrackedSeason.find(showTmdbID: 4, in: store.context) == nil)
     }
 
-    @Test func unwatchingBelowCompleteReturnsShowToTheWatchList() {
+    @Test func unwatchingBelowCompleteReturnsShowToTheWatchList() async {
         let store = makeInMemoryStore()
         let season = makeSeason(1, episodes: 2)
         let show = makeShow(id: 5, seasons: [season])
-        store.setShowWatched(true, show: show)
+        await store.setShowWatched(true, show: show)
         #expect(!store.isInWatchList(show))
 
         store.toggleEpisodeWatched(show: show, season: season, episodeNumber: 1)   // 1/2 — in progress again
@@ -200,6 +200,63 @@ import SwiftData
         store.toggleEpisodeWatched(show: b, season: b.seasons[0], episodeNumber: 1)
 
         #expect(Set(store.watchedShowIDs()) == [60, 61])
+    }
+
+    // MARK: - Marking stops at today
+
+    /// A season part-way through airing: E1/E2 out, E3 still to come.
+    private func airingSeason() -> Season {
+        var season = Season(id: 700, seasonNumber: 1, name: "Season 1", episodeCount: 3)
+        season.airDate = .utc(2024, 1, 1)
+        season.episodes = [episode(1, .utc(2024, 1, 1)),
+                           episode(2, .utc(2024, 1, 8)),
+                           episode(3, .utc(2999, 1, 1))]
+        return season
+    }
+
+    @Test func markingAShowWatchedSkipsEpisodesThatHaventAired() async {
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 70, seasons: [airingSeason()])
+
+        await store.setShowWatched(true, show: show)
+
+        #expect(store.watchedEpisodeNumbers(showID: 70, season: 1) == [1, 2])   // E3 is in the future
+        #expect(!store.isShowFullyWatched(show))                               // season isn't complete
+        #expect(store.isInWatchList(show))                                     // so it stays to-watch
+        #expect(TrackedSeason.find(showTmdbID: 70, in: store.context)?.nextEpisodeDate == .utc(2999, 1, 1))
+    }
+
+    @Test func markingASeasonWatchedSkipsEpisodesThatHaventAired() {
+        let season = airingSeason()
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 71, seasons: [season])
+
+        store.setSeasonWatched(true, show: show, season: season)
+
+        #expect(store.watchedEpisodeNumbers(showID: 71, season: 1) == [1, 2])
+        #expect(WatchedSeason.find(showTmdbID: 71, seasonNumber: 1, in: store.context) == nil)
+    }
+
+    @Test func caughtUpReadsAsCaughtUpUntilAnEpisodeIsUnwatched() async {
+        let season = airingSeason()
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 72, seasons: [season])
+
+        await store.setShowWatched(true, show: show)
+        #expect(store.isShowCaughtUp(show))
+
+        store.toggleEpisodeWatched(show: show, season: season, episodeNumber: 2)   // back to 1/2 aired
+        #expect(!store.isShowCaughtUp(show))
+    }
+
+    @Test func unmarkingAShowClearsEveryEpisodeRecord() async {
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 73, seasons: [airingSeason()])
+        await store.setShowWatched(true, show: show)
+
+        await store.setShowWatched(false, show: show)
+
+        #expect(store.watchedEpisodeNumbers(showID: 73, season: 1).isEmpty)
     }
 
     private func episode(_ number: Int, _ airDate: Date) -> Episode {

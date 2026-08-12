@@ -1,7 +1,6 @@
 
 Important:
-- [ ] Marking a show as watched shouldn't mark future episodes, mark up until today
-- [ ] Search: presenting TV show is unanimated
+- [ ] indicate what day a show airs, and when next episode is coming out (relative to now)
 
 Project:
 - [ ] Clean up comments + organize project

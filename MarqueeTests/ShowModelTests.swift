@@ -63,12 +63,13 @@ import Testing
         #expect(!Season(id: 2, seasonNumber: 1, name: "Season 1").isSpecials)
     }
 
-    @Test func regularSeasonsExcludeSpecialsAndSort() {
+    @Test func regularSeasonsExcludeSpecialsAndUnairedThenSort() {
         var s = Show(id: 1, name: "T")
         s.seasons = [
-            Season(id: 3, seasonNumber: 2, name: "S2"),
-            Season(id: 1, seasonNumber: 0, name: "Specials"),
-            Season(id: 2, seasonNumber: 1, name: "S1"),
+            Season(id: 3, seasonNumber: 2, name: "S2", episodeCount: 8),
+            Season(id: 1, seasonNumber: 0, name: "Specials", episodeCount: 4),
+            Season(id: 2, seasonNumber: 1, name: "S1", episodeCount: 10),
+            Season(id: 4, seasonNumber: 3, name: "S3"),   // announced, nothing aired yet
         ]
         #expect(s.regularSeasons.map(\.seasonNumber) == [1, 2])
     }

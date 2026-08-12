@@ -6,7 +6,7 @@
 import Foundation
 
 /// A movie franchise/collection (e.g. a trilogy) that a `Movie` may belong to.
-struct MovieCollection: Codable {
+struct MovieCollection: Codable, Sendable {
     var id: Int
     var name: String
     var poster: String?

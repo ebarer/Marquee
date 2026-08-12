@@ -26,7 +26,8 @@ struct EpisodeRow: View {
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                         .overlay { watchedBadge }
                 }
-                .accessibilityLabel(isWatched ? "Mark episode unwatched" : "Mark episode watched")
+                .disabled(!episode.hasAired)
+                .accessibilityLabel(accessibilityLabel)
 
                 HStack(alignment: .center, spacing: 8) {
                     EpisodeRowText(episode: episode, tint: tint)
@@ -45,23 +46,33 @@ struct EpisodeRow: View {
 
     /// Shares the poster status badges' gradient scrim (``PosterSymbolBadge``); the corner
     /// button above toggles it. Reuses the watched badge verbatim, showing a dimmed empty
-    /// ring until the episode is watched.
+    /// ring until the episode is watched — a dotted ring while it hasn't aired, where the
+    /// toggle is inert.
     @ViewBuilder
     private var watchedBadge: some View {
         if isWatched {
             PosterStatusBadge(status: .watched, cornerRadius: 6)
         } else {
-            PosterSymbolBadge(symbol: "circle", cornerRadius: 6)
+            PosterSymbolBadge(symbol: episode.hasAired ? "circle" : "circle.dotted", cornerRadius: 6)
                 .opacity(0.85)
         }
+    }
+
+    private var accessibilityLabel: String {
+        if !episode.hasAired { return "Episode hasn't aired yet" }
+        return isWatched ? "Mark episode unwatched" : "Mark episode watched"
     }
 }
 
 #Preview {
-    NavigationStack {
+    var upcoming = Episode.previewEpisodes[2]
+    upcoming.airDate = Date().addingTimeInterval(60 * 60 * 24 * 14)
+
+    return NavigationStack {
         VStack(spacing: 0) {
             EpisodeRow(episode: Episode.previewEpisodes[0], isWatched: true, onToggleWatched: {})
             EpisodeRow(episode: Episode.previewEpisodes[1], isWatched: false, onToggleWatched: {})
+            EpisodeRow(episode: upcoming, isWatched: false, onToggleWatched: {})
         }
         .detailDestinations()
     }

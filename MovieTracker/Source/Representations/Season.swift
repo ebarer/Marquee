@@ -6,7 +6,7 @@
 import Foundation
 
 /// A single season of a `Show`. Episodes are hydrated lazily per season from TMDB.
-struct Season: Hashable, Identifiable, Codable {
+struct Season: Hashable, Identifiable, Codable, Sendable {
     var id: Int
     var seasonNumber: Int
     var name: String

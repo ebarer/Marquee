@@ -70,10 +70,10 @@ import Foundation
 
 @Suite struct MediaTypeFilterTests {
     @Test func titlesAndSymbols() {
-        #expect(MediaTypeFilter.all.title == "Movies & TV Shows")
+        #expect(MediaTypeFilter.all.title == "All")
         #expect(MediaTypeFilter.movies.title == "Movies")
         #expect(MediaTypeFilter.tv.title == "TV Shows")
-        #expect(MediaTypeFilter.all.symbol == "rectangle.stack")
+        #expect(MediaTypeFilter.all.symbol == "rectangle.stack.badge.play")
         #expect(MediaTypeFilter.movies.symbol == "film")
         #expect(MediaTypeFilter.tv.symbol == "tv")
     }

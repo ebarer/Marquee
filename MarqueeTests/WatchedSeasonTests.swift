@@ -99,12 +99,12 @@ import SwiftData
         #expect(!store.isShowWatchedCached(showID: 42))          // dropped below complete → cleared
     }
 
-    @Test func markingShowWatchedMarksAllSeasonsAndLeavesWatchList() {
+    @Test func markingShowWatchedMarksAllSeasonsAndLeavesWatchList() async {
         let store = makeInMemoryStore()
         let show = makeShow(id: 7, seasons: [makeSeason(1, episodes: 2), makeSeason(2, episodes: 2)])
         store.addToWatchList(show)
 
-        store.setShowWatched(true, show: show)
+        await store.setShowWatched(true, show: show)
 
         #expect(store.isShowFullyWatched(show))
         #expect(!store.isInWatchList(show))

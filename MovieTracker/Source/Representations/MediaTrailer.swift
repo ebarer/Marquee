@@ -6,7 +6,7 @@
 import Foundation
 
 /// A trailer/teaser/clip for a movie or show, ranked by `primaryScore` to pick the best one.
-struct MediaTrailer: Identifiable, Codable {
+struct MediaTrailer: Identifiable, Codable, Sendable {
     var id: String
     var title: String
     var key: String
@@ -15,7 +15,7 @@ struct MediaTrailer: Identifiable, Codable {
     var official: Bool
     var publishedAt: String
 
-    enum TrailerType: String, Codable {
+    enum TrailerType: String, Codable, Sendable {
         case Teaser = "Teaser"
         case Trailer = "Trailer"
         case Clip = "Clip"

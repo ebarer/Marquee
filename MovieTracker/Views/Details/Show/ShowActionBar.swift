@@ -26,6 +26,7 @@ struct ShowActionBar: View {
     @Namespace private var glassNamespace
     @State private var tracked = false
     @State private var hasProgress = false
+    @State private var caughtUp = false
     @State private var wasOnWatchList = false
     @State private var showRemoveConfirm = false
     // Gate the watched animation so the first sync (entry) settles instantly; only
@@ -42,17 +43,20 @@ struct ShowActionBar: View {
                 if !isSeen {
                     bookmarkButton
                 }
-                ShowWatchedButton(isSeen: isSeen, tint: tint, glassNamespace: glassNamespace,
-                                  onApply: applyWatched)
+                ShowWatchedButton(isSeen: isSeen, isCaughtUp: caughtUp, isOngoing: show.isOngoing,
+                                  tint: tint, glassNamespace: glassNamespace, onApply: applyWatched)
                 customListsControl
                 TrailerButton(trailer: show.primaryTrailer, tint: tint)
             }
         }
         .animation(didAppear ? .spring(response: 0.4, dampingFraction: 0.8) : nil, value: isSeen)
+        .animation(didAppear ? .easeInOut : nil, value: caughtUp)
         .onAppear {
             refresh()
             didAppear = true
         }
+        // Caught-up needs the season's episodes to date-check, and they arrive lazily.
+        .onChange(of: episodesBySeason.count) { refresh() }
         // Re-sync when episodes are toggled elsewhere (e.g. the episodes section): unwatching
         // an episode pulls a finished show back onto the Watch List, so the bookmark that
         // reappears must read as on, not stale-off.
@@ -102,15 +106,17 @@ struct ShowActionBar: View {
     }
 
     private func applyWatched(_ watched: Bool) {
-        if watched {
-            wasOnWatchList = tracked
-            store?.setShowWatched(true, show: show, episodesBySeason: episodesBySeason)
-        } else {
-            store?.setShowWatched(false, show: show)
-            if wasOnWatchList { store?.addToWatchList(show) }
+        Task { @MainActor in
+            if watched {
+                wasOnWatchList = tracked
+                await store?.setShowWatched(true, show: show, episodesBySeason: episodesBySeason)
+            } else {
+                await store?.setShowWatched(false, show: show)
+                if wasOnWatchList { store?.addToWatchList(show) }
+            }
+            refresh()
+            onChange()
         }
-        refresh()
-        onChange()
     }
 
     @ViewBuilder
@@ -141,6 +147,7 @@ struct ShowActionBar: View {
         tracked = watchList?.contains(show.id, .tv) ?? false
         hasProgress = store?.hasWatchedEpisodes(show) ?? false
         isSeen = store?.isShowFullyWatched(show) ?? false
+        caughtUp = store?.isShowCaughtUp(show, episodesBySeason: episodesBySeason) ?? false
     }
 }
 

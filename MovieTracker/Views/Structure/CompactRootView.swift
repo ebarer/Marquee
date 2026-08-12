@@ -38,7 +38,8 @@ struct CompactRootView: View {
 
             Tab("Search", systemImage: "magnifyingglass", value: RootTab.search, role: .search) {
                 NavigationStack(path: $searchPath) {
-                    SearchView(model: searchModel, onSelectMovie: openSearchResult)
+                    SearchView(model: searchModel, onSelectMovie: openSearchResult,
+                               onSelectShow: openSearchResult)
                         .detailDestinations()
                         // Declare the search field on the content inside the stack
                         // (Apple's recommended placement). On the NavigationStack
@@ -67,10 +68,10 @@ struct CompactRootView: View {
     /// Opens a tapped search result: resign the search field's focus first so the
     /// keyboard's collapse doesn't share the push transaction, then push on the next
     /// runloop so the navigation animates even with the keyboard up.
-    private func openSearchResult(_ movie: Movie) {
+    private func openSearchResult(_ value: some Hashable) {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
                                         to: nil, from: nil, for: nil)
-        DispatchQueue.main.async { searchPath.append(movie) }
+        DispatchQueue.main.async { searchPath.append(value) }
     }
 
     private var tabSelection: Binding<RootTab> {

@@ -16,6 +16,7 @@ struct SearchView: View {
     @State private var tappedMovie: Movie?
 
     var onSelectMovie: ((Movie) -> Void)? = nil
+    var onSelectShow: ((Show) -> Void)? = nil
 
     var body: some View {
         searchList
@@ -82,12 +83,34 @@ struct SearchView: View {
             .listRowSeparator(firstEdge, edges: .top)
             .listRowSeparator(lastEdge, edges: .bottom)
         case .show(let show):
+            showRow(show)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .listRowSeparator(firstEdge, edges: .top)
+                .listRowSeparator(lastEdge, edges: .bottom)
+        }
+    }
+
+    /// Mirrors `MovieListRow`'s `onTap` path: with `onSelectShow` set (iPhone search) the
+    /// row is a plain button so the caller can resign the search field's focus and defer
+    /// the push — otherwise the keyboard's collapse swallows the push animation. A button
+    /// loses the link's full-row hit area and chevron, so both are recreated here.
+    @ViewBuilder
+    private func showRow(_ show: Show) -> some View {
+        if let onSelectShow {
+            Button { onSelectShow(show) } label: {
+                HStack(spacing: 0) {
+                    ShowRow(show: show, derivesStatus: true)
+                    Image(systemName: "chevron.forward")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
             DetailLink(value: show) {
                 ShowRow(show: show, derivesStatus: true)
             }
-            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-            .listRowSeparator(firstEdge, edges: .top)
-            .listRowSeparator(lastEdge, edges: .bottom)
         }
     }
 

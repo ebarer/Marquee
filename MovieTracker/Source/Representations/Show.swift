@@ -7,7 +7,7 @@ import Foundation
 
 /// A transient TV show hydrated from TMDB (not persisted). Identity is the TMDB id,
 /// so it works as a navigation value and de-duplicates in a Set.
-struct Show: Hashable, Identifiable, Codable {
+struct Show: Hashable, Identifiable, Codable, Sendable {
     var id: Int
     var name: String
     var firstAirDate: Date?

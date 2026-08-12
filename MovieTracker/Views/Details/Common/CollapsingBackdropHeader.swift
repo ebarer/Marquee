@@ -46,7 +46,10 @@ struct CollapsingBackdropHeader<Bar: View>: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
+        // `visualEffect`'s closure is `@Sendable`, so read the main-actor value up front.
+        let collapse = collapseDist
+
+        return GeometryReader { proxy in
             let width = proxy.size.width
             let scrolled = max(0, -proxy.frame(in: .named("scroll")).minY)
             // Linear compaction: 100% at the top, transient through the collapse, clamped
@@ -129,7 +132,7 @@ struct CollapsingBackdropHeader<Bar: View>: View {
         // late and the pinned bar vibrates against the page). Engages only past the collapse.
         .visualEffect { content, proxy in
             let scrolled = max(0, -proxy.frame(in: .named("scroll")).minY)
-            return content.offset(y: max(0, scrolled - collapseDist))
+            return content.offset(y: max(0, scrolled - collapse))
         }
     }
 }
