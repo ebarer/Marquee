@@ -1,0 +1,36 @@
+{
+  "configurations": [
+    {
+      "id": "A0495C90-C39C-4BF5-BF83-634FCEAAB528",
+      "name": "Configuration 1",
+      "options": {
+      }
+    }
+  ],
+  "defaultOptions": {
+    "targetForVariableExpansion": {
+      "containerPath": "container:MovieTracker.xcodeproj",
+      "identifier": "CE78BD4E20C087F2001E6DB6",
+      "name": "Marquee"
+    }
+  },
+  "testTargets": [
+    {
+      "parallelizable": false,
+      "target": {
+        "containerPath": "container:MovieTracker.xcodeproj",
+        "identifier": "BB17A1A42EA2706275A0446F",
+        "name": "MarqueeTests"
+      }
+    },
+    {
+      "parallelizable": false,
+      "target": {
+        "containerPath": "container:MovieTracker.xcodeproj",
+        "identifier": "C77A8831179299B3BBEF2833",
+        "name": "MarqueeUITests"
+      }
+    }
+  ],
+  "version": 1
+}
