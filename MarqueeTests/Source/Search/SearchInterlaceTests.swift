@@ -9,15 +9,15 @@ import Foundation
 
 @Suite struct SearchInterlaceTests {
     private func movie(_ id: Int, _ pop: Double) -> Movie {
-        var m = Movie(id: id, title: "M\(id)")
-        m.popularity = pop
-        return m
+        var movie = Movie(id: id, title: "M\(id)")
+        movie.popularity = pop
+        return movie
     }
 
     private func show(_ id: Int, _ pop: Double) -> Show {
-        var s = Show(id: id, name: "S\(id)")
-        s.popularity = pop
-        return s
+        var show = Show(id: id, name: "S\(id)")
+        show.popularity = pop
+        return show
     }
 
     @Test func rankedByPopularityWhenRelevanceEqual() {
@@ -85,6 +85,72 @@ import Foundation
         let result = SearchMatching.interlaced(movies: [stale, fresh], shows: [], query: "",
                                             voteFloor: 100, popularityFloor: 5)
         #expect(result.map(\.id) == ["movie-1", "movie-2"])
+    }
+
+    /// The bar a new release clears to lead — TMDB's popular-list median in production.
+    private let leadFloor: Double = 250
+
+    private func dated(_ id: Int, _ title: String, votes: Int, pop: Double,
+                       daysAgo: Int, now: Date) -> Movie {
+        var movie = Movie(id: id, title: title)
+        movie.voteCount = votes
+        movie.popularity = pop
+        movie.releaseDate = Calendar.current.date(byAdding: .day, value: -daysAgo, to: now)
+        return movie
+    }
+
+    @Test func phenomenonInReleaseNowLeadsTheOlderFranchiseEntries() {
+        let now = Date()
+        // A fraction of the catalogue's votes, but the most popular title anywhere —
+        // it's what the query means today.
+        let fresh = dated(1, "Spider-Man: Brand New Day", votes: 1_600, pop: 1_150, daysAgo: 14, now: now)
+        let classic = dated(2, "Spider-Man: No Way Home", votes: 22_000, pop: 640, daysAgo: 1_800, now: now)
+        let result = SearchMatching.interlaced(movies: [classic, fresh], shows: [], query: "spiderman",
+                                               voteFloor: 100, popularityFloor: 5, now: now,
+                                               leadPopularityFloor: leadFloor)
+        #expect(result.map(\.id) == ["movie-1", "movie-2"])
+    }
+
+    @Test func merelyPopularNewReleaseDoesNotDisplaceTheClassic() {
+        let now = Date()
+        // Tops its own franchise, but nowhere near the popular list — the original stands.
+        let fresh = dated(1, "Avatar Aang: The Last Airbender", votes: 820, pop: 151, daysAgo: 20, now: now)
+        let classic = dated(2, "Avatar", votes: 34_000, pop: 34, daysAgo: 6_000, now: now)
+        let result = SearchMatching.interlaced(movies: [fresh, classic], shows: [], query: "avatar",
+                                               voteFloor: 100, popularityFloor: 5, now: now,
+                                               leadPopularityFloor: leadFloor)
+        #expect(result.map(\.id) == ["movie-2", "movie-1"])
+    }
+
+    @Test func barelyRatedNewReleaseDoesNotLead() {
+        let now = Date()
+        // Popular for its size and over the lead floor, but under the vote floor.
+        let short = dated(1, "Star Wars: Visions", votes: 17, pop: 900, daysAgo: 8, now: now)
+        let classic = dated(2, "Star Wars", votes: 22_000, pop: 34, daysAgo: 14_600, now: now)
+        let result = SearchMatching.interlaced(movies: [short, classic], shows: [], query: "star wars",
+                                               voteFloor: 100, popularityFloor: 5, now: now,
+                                               leadPopularityFloor: leadFloor)
+        #expect(result.map(\.id) == ["movie-2", "movie-1"])
+    }
+
+    @Test func newReleaseThatIsNotTheMostPopularStaysRankedByVotes() {
+        let now = Date()
+        let fresh = dated(1, "Dune: Part Three", votes: 900, pop: 260, daysAgo: 10, now: now)
+        let classic = dated(2, "Dune", votes: 15_000, pop: 400, daysAgo: 1_800, now: now)
+        let result = SearchMatching.interlaced(movies: [fresh, classic], shows: [], query: "dune",
+                                               voteFloor: 100, popularityFloor: 5, now: now,
+                                               leadPopularityFloor: leadFloor)
+        #expect(result.map(\.id) == ["movie-2", "movie-1"])
+    }
+
+    @Test func withoutABenchmarkNothingIsPromoted() {
+        let now = Date()
+        let fresh = dated(1, "Spider-Man: Brand New Day", votes: 1_600, pop: 1_150, daysAgo: 14, now: now)
+        let classic = dated(2, "Spider-Man: No Way Home", votes: 22_000, pop: 640, daysAgo: 1_800, now: now)
+        // Offline, the benchmark is unavailable — ranking falls back to vote count.
+        let result = SearchMatching.interlaced(movies: [classic, fresh], shows: [], query: "spiderman",
+                                               voteFloor: 100, popularityFloor: 5, now: now)
+        #expect(result.map(\.id) == ["movie-2", "movie-1"])
     }
 
     @Test func franchiseSiblingRanksAsStrongMatchByNotability() {

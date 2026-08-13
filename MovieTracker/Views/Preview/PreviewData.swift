@@ -40,18 +40,18 @@ extension Movie {
         [
             Movie.preview,
             {
-                var m = Movie(id: 2, title: "Supergirl")
-                m.releaseDate = DateComponents(calendar: .current, year: 2026, month: 6, day: 26).date
-                m.certification = "PG-13"
-                m.poster = "preview-poster-alt"
-                return m
+                var movie = Movie(id: 2, title: "Supergirl")
+                movie.releaseDate = DateComponents(calendar: .current, year: 2026, month: 6, day: 26).date
+                movie.certification = "PG-13"
+                movie.poster = "preview-poster-alt"
+                return movie
             }(),
             {
-                var m = Movie(id: 3, title: "Spider-Man: Brand New Day")
-                m.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 31).date
-                m.certification = "PG-13"
-                m.poster = "preview-poster"
-                return m
+                var movie = Movie(id: 3, title: "Spider-Man: Brand New Day")
+                movie.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 31).date
+                movie.certification = "PG-13"
+                movie.poster = "preview-poster"
+                return movie
             }()
         ]
     }
@@ -78,10 +78,10 @@ extension Movie {
     static var previewSeriesCollection: [Movie] {
         [(4, "Spider-Man: Homecoming", 2017), (5, "Spider-Man: Far From Home", 2019),
          (6, "Spider-Man: No Way Home", 2021)].map { id, title, year in
-            var m = Movie(id: id, title: title)
-            m.releaseDate = DateComponents(calendar: .current, year: year, month: 7, day: 5).date
-            m.poster = id % 2 == 0 ? "preview-poster" : "preview-poster-alt"
-            return m
+            var movie = Movie(id: id, title: title)
+            movie.releaseDate = DateComponents(calendar: .current, year: year, month: 7, day: 5).date
+            movie.poster = id % 2 == 0 ? "preview-poster" : "preview-poster-alt"
+            return movie
         }
     }
 
@@ -108,28 +108,54 @@ extension Person {
             + "distinctive nonlinear storytelling and large-format cinematography."
         person.credits = [
             {
-                var m = Movie(id: 1, title: "The Odyssey")
-                m.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 17).date
-                m.creditRole = "Director"
-                m.poster = "preview-poster"
-                m.popularity = 120
-                return m
+                var movie = Movie(id: 1, title: "The Odyssey")
+                movie.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 17).date
+                movie.creditRole = "Director"
+                movie.poster = "preview-poster"
+                movie.popularity = 120
+                movie.voteCount = 1_400
+                return movie
             }(),
             {
-                var m = Movie(id: 20, title: "Oppenheimer")
-                m.releaseDate = DateComponents(calendar: .current, year: 2023, month: 7, day: 21).date
-                m.creditRole = "Director"
-                m.poster = "preview-poster-alt"
-                m.popularity = 98
-                return m
+                var movie = Movie(id: 20, title: "Oppenheimer")
+                movie.releaseDate = DateComponents(calendar: .current, year: 2023, month: 7, day: 21).date
+                movie.creditRole = "Director"
+                movie.poster = "preview-poster-alt"
+                movie.popularity = 98
+                movie.voteCount = 9_800
+                return movie
             }(),
             {
-                var m = Movie(id: 21, title: "Tenet")
-                m.releaseDate = DateComponents(calendar: .current, year: 2020, month: 9, day: 3).date
-                m.creditRole = "Writer"
-                m.poster = "preview-poster"
-                m.popularity = 76
-                return m
+                var movie = Movie(id: 21, title: "Tenet")
+                movie.releaseDate = DateComponents(calendar: .current, year: 2020, month: 9, day: 3).date
+                movie.creditRole = "Writer"
+                movie.poster = "preview-poster"
+                movie.popularity = 76
+                movie.voteCount = 7_600
+                return movie
+            }()
+        ]
+        person.tvCredits = [
+            {
+                var show = Show(id: 1001, name: "Nightfall")
+                show.firstAirDate = DateComponents(calendar: .current, year: 2021, month: 9, day: 12).date
+                show.creditRole = "Executive Producer"
+                show.poster = "preview-poster"
+                show.popularity = 64
+                show.voteCount = 2_900
+                show.episodeCount = 28
+                show.seasons = [Season(id: 1, seasonNumber: 1, name: "Season 1", episodeCount: 10)]
+                return show
+            }(),
+            {
+                var show = Show(id: 1002, name: "The Lighthouse Files")
+                show.firstAirDate = DateComponents(calendar: .current, year: 2018, month: 3, day: 4).date
+                show.creditRole = "Self"
+                show.poster = "preview-poster-alt"
+                show.popularity = 21
+                show.voteCount = 480
+                show.episodeCount = 1
+                return show
             }()
         ]
         return person

@@ -29,6 +29,7 @@ extension TMDBWrapper {
                     var credit = Movie(id: movie.id, title: movie.title)
                     credit.poster = movie.poster
                     credit.creditRole = movie.role
+                    credit.creditOrder = movie.order
                     credit.popularity = movie.popularity
                     credit.voteCount = movie.voteCount
                     if let releaseDateString = movie.releaseDateString, !releaseDateString.isEmpty {
@@ -123,12 +124,13 @@ extension TMDBWrapper {
                 var job: String?
                 var popularity: Double?
                 var voteCount: Int?
+                var order: Int?
 
                 /// Cast credits carry a `character`; crew credits carry a `job`.
                 var role: String? { character ?? job }
 
                 enum CodingKeys: String, CodingKey {
-                    case id, title, overview, character, job, popularity
+                    case id, title, overview, character, job, popularity, order
                     case voteCount = "vote_count"
                     case releaseDateString = "release_date"
                     case poster = "poster_path"

@@ -227,6 +227,8 @@
 		CEEAFCF93019DE0200D06E0E /* Color+AverageColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCF83019DE0200D06E0E /* Color+AverageColor.swift */; };
 		CEFAA1CF302D2EFC00221EB8 /* MediaCachePriority.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFAA1CE302D2EFC00221EB8 /* MediaCachePriority.swift */; };
 		CEFAA1D1302D2F3200221EB8 /* MediaCachePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFAA1D0302D2F3200221EB8 /* MediaCachePlan.swift */; };
+		CEFAA211302D47CA00221EB8 /* Person+KnownFor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFAA210302D47CA00221EB8 /* Person+KnownFor.swift */; };
+		CEFAA213302D482C00221EB8 /* Person+KnownForTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFAA212302D482C00221EB8 /* Person+KnownForTests.swift */; };
 		CEFDA6FA3021E09600EFAB14 /* StreamingServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA6F93021E09600EFAB14 /* StreamingServicesView.swift */; };
 		CEFDA6FD3021E46100EFAB14 /* WatchProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA6FC3021E46100EFAB14 /* WatchProvider.swift */; };
 		CEFDA6FF3021E47700EFAB14 /* ProviderLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFDA6FE3021E47700EFAB14 /* ProviderLinks.swift */; };
@@ -481,6 +483,8 @@
 		CEEE5B6521AE3B35008C8EAE /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		CEFAA1CE302D2EFC00221EB8 /* MediaCachePriority.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCachePriority.swift; sourceTree = "<group>"; };
 		CEFAA1D0302D2F3200221EB8 /* MediaCachePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCachePlan.swift; sourceTree = "<group>"; };
+		CEFAA210302D47CA00221EB8 /* Person+KnownFor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Person+KnownFor.swift"; sourceTree = "<group>"; };
+		CEFAA212302D482C00221EB8 /* Person+KnownForTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Person+KnownForTests.swift"; sourceTree = "<group>"; };
 		CEFDA6F93021E09600EFAB14 /* StreamingServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingServicesView.swift; sourceTree = "<group>"; };
 		CEFDA6FC3021E46100EFAB14 /* WatchProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchProvider.swift; sourceTree = "<group>"; };
 		CEFDA6FE3021E47700EFAB14 /* ProviderLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderLinks.swift; sourceTree = "<group>"; };
@@ -837,6 +841,8 @@
 		CE78BD4620C087F2001E6DB6 = {
 			isa = PBXGroup;
 			children = (
+				CEEE5B6521AE3B35008C8EAE /* README.md */,
+				CE72A0B1302B025D00AB2597 /* TODO.md */,
 				CE78BD5120C087F2001E6DB6 /* MovieTracker */,
 				C92AD17F85EF27C08382AB87 /* Frameworks */,
 				CE78BD5020C087F2001E6DB6 /* Products */,
@@ -858,8 +864,7 @@
 		CE78BD5120C087F2001E6DB6 /* MovieTracker */ = {
 			isa = PBXGroup;
 			children = (
-				CEEE5B6521AE3B35008C8EAE /* README.md */,
-				CE72A0B1302B025D00AB2597 /* TODO.md */,
+				CE8DD36430298614006213BD /* App */,
 				CEEAFCEC3019D1F800D06E0E /* Views */,
 				CE73B026301F41F900FA5FD6 /* Source */,
 				CE73B027301F41FE00FA5FD6 /* Persistence */,
@@ -1053,6 +1058,7 @@
 				CE8DD32D3029817C006213BD /* MediaRef.swift */,
 				CE8DD32F30298181006213BD /* MediaKey.swift */,
 				CE8DD34C302984A8006213BD /* ImageSize.swift */,
+				CEFAA210302D47CA00221EB8 /* Person+KnownFor.swift */,
 			);
 			path = Representations;
 			sourceTree = "<group>";
@@ -1205,7 +1211,6 @@
 		CEEAFCEC3019D1F800D06E0E /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				CE8DD36430298614006213BD /* App */,
 				CE8DD36530298614006213BD /* Structure */,
 				CE56977D301C873400DF9142 /* Featured */,
 				CE56977F301C873500DF9142 /* Lists */,
@@ -1251,6 +1256,7 @@
 				8B145C4938D51EB6D1D7A8AC /* PersonTests.swift */,
 				08209B44FB3A9EE2D72B2075 /* Show+DisplayTests.swift */,
 				8EAB0E3100E038530FB7C76C /* ShowTests.swift */,
+				CEFAA212302D482C00221EB8 /* Person+KnownForTests.swift */,
 			);
 			path = Representations;
 			sourceTree = "<group>";
@@ -1416,6 +1422,7 @@
 				AC431064B82992B321DF4613 /* Show+DisplayTests.swift in Sources */,
 				74B59490E8B2C65971D17FA3 /* ShowTests.swift in Sources */,
 				97644A4B1FD767F7BD31D497 /* TMDBNetworkTests.swift in Sources */,
+				CEFAA213302D482C00221EB8 /* Person+KnownForTests.swift in Sources */,
 				3445B7C6DF68512AFBEC1219 /* TMDBDecodingTests.swift in Sources */,
 				38375EA0241AA38B3227BE4B /* TMDBTVDecodingTests.swift in Sources */,
 				48D6940B6244A7E1BC3D23D3 /* SearchInterlaceTests.swift in Sources */,
@@ -1574,6 +1581,7 @@
 				CEFDA7033021E49000EFAB14 /* SelectedProviders.swift in Sources */,
 				CEB8A471301F17B9002FBF31 /* PosterStrip.swift in Sources */,
 				CE8DD32630298161006213BD /* Episode.swift in Sources */,
+				CEFAA211302D47CA00221EB8 /* Person+KnownFor.swift in Sources */,
 				CEE790133029DCCF0040DADB /* SearchTool.swift in Sources */,
 				CE56975E301C1A6100DF9142 /* FeaturedCollection.swift in Sources */,
 				CE3FE9F6302403F700FCC44B /* SearchPeopleListView.swift in Sources */,
@@ -1833,7 +1841,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.12.6;
+				CURRENT_PROJECT_VERSION = 2026.8.12.8;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1859,7 +1867,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.12.6;
+				CURRENT_PROJECT_VERSION = 2026.8.12.8;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (

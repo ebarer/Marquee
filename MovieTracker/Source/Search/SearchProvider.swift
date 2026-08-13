@@ -17,6 +17,13 @@ protocol SearchProvider: Sendable {
     /// collection (franchise expansion) and the cast (People strip).
     func movieDetail(id: Int) async -> Movie?
     func show(id: Int) async -> Show?
+    /// The popularity a new release must reach before it can lead a query. Nil leaves
+    /// ranking on vote count alone.
+    func popularityBenchmark() async -> Double?
+}
+
+extension SearchProvider {
+    func popularityBenchmark() async -> Double? { nil }
 }
 
 /// Live implementation backed by TMDBWrapper. Each call degrades to empty/nil on
@@ -44,5 +51,30 @@ struct TMDBSearchProvider: SearchProvider {
 
     func show(id: Int) async -> Show? {
         try? await TMDBWrapper.getShow(id: id)
+    }
+
+    func popularityBenchmark() async -> Double? {
+        await PopularityBenchmark.shared.current()
+    }
+}
+
+/// What a title clears to count as a phenomenon: the median of TMDB's popular list, ~the
+/// tenth most popular title anywhere. Derived so it survives a rescaling of `popularity`.
+private actor PopularityBenchmark {
+    static let shared = PopularityBenchmark()
+
+    private var value: Double?
+    private var fetchedAt: Date?
+    private let lifetime: TimeInterval = 6 * 60 * 60
+
+    func current() async -> Double? {
+        if let fetchedAt, Date.now.timeIntervalSince(fetchedAt) < lifetime { return value }
+        guard let popular = try? await TMDBWrapper.moviesPopular(page: 1).items else { return value }
+
+        let ranked = popular.compactMap(\.popularity).sorted()
+        guard !ranked.isEmpty else { return value }
+        value = ranked[ranked.count / 2]
+        fetchedAt = .now
+        return value
     }
 }

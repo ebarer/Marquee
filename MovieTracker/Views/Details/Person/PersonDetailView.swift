@@ -119,7 +119,7 @@ struct PersonDetailView: View {
         let knownFor = Array(current.knownFor.prefix(10))
         if !knownFor.isEmpty {
             SectionHeader(title: "Known For")
-            PosterStrip(movies: knownFor, lists: lists)
+            PosterStrip(media: knownFor, lists: lists)
         }
     }
 }

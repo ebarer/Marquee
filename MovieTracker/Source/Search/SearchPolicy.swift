@@ -29,6 +29,7 @@ struct SearchPolicy: Sendable {
         async let movies = provider.movies(matching: query)
         async let shows = provider.shows(matching: query)
         async let people = provider.people(matching: query)
+        async let benchmark = provider.popularityBenchmark()
 
         var context = SearchContext(query: query, movies: await movies,
                                     shows: await shows, namedPeople: await people)
@@ -39,7 +40,8 @@ struct SearchPolicy: Sendable {
         let results = SearchMatching.interlaced(movies: context.movies, shows: context.shows,
                                                 query: query, voteFloor: ranking.voteFloor,
                                                 popularityFloor: ranking.popularityFloor,
-                                                relatedMovieIDs: context.relatedMovieIDs)
+                                                relatedMovieIDs: context.relatedMovieIDs,
+                                                leadPopularityFloor: await benchmark ?? .infinity)
         return SearchResults(movies: context.movies, shows: context.shows, results: results,
                              namedPeople: context.namedPeople, castPeople: context.castPeople)
     }

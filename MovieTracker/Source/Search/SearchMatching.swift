@@ -17,13 +17,13 @@ enum SearchMatching {
     /// "The" — so a title-role credit reduces to a name a query can match exactly.
     static func heroSegments(of role: String) -> [String] {
         role.split(separator: "/").map { segment in
-            var s = segment.lowercased()
-            while let open = s.firstIndex(of: "("), let close = s[open...].firstIndex(of: ")") {
-                s.removeSubrange(open...close)
+            var name = segment.lowercased()
+            while let open = name.firstIndex(of: "("), let close = name[open...].firstIndex(of: ")") {
+                name.removeSubrange(open...close)
             }
-            s = s.trimmingCharacters(in: .whitespaces)
-            if s.hasPrefix("the ") { s = String(s.dropFirst(4)) }
-            return normalized(s)
+            name = name.trimmingCharacters(in: .whitespaces)
+            if name.hasPrefix("the ") { name = String(name.dropFirst(4)) }
+            return normalized(name)
         }
     }
 
@@ -56,12 +56,12 @@ enum SearchMatching {
     /// A single-token query split before a trailing hero suffix ("ironman" → "iron man"),
     /// working around TMDB's space-sensitive title search. Nil when there's no such split.
     static func spacedVariant(of query: String) -> String? {
-        let q = query.trimmingCharacters(in: .whitespaces)
-        guard !q.contains(" ") else { return nil }
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.contains(" ") else { return nil }
         // Longer suffixes first, since "woman" also ends in "man".
         let suffixes = ["woman", "women", "man", "men", "girl", "boy"]
-        for suffix in suffixes where q.hasSuffix(suffix) && q.count > suffix.count + 2 {
-            return String(q.dropLast(suffix.count)) + " " + suffix
+        for suffix in suffixes where trimmed.hasSuffix(suffix) && trimmed.count > suffix.count + 2 {
+            return String(trimmed.dropLast(suffix.count)) + " " + suffix
         }
         return nil
     }
@@ -69,11 +69,11 @@ enum SearchMatching {
     /// Lowercased text with a leading article removed. Queries must be stripped the same
     /// way so both sides agree (see `moviePeople`).
     static func articleStripped(_ text: String) -> String {
-        let t = text.lowercased()
-        for article in ["the ", "an ", "a "] where t.hasPrefix(article) {
-            return String(t.dropFirst(article.count))
+        let lowered = text.lowercased()
+        for article in ["the ", "an ", "a "] where lowered.hasPrefix(article) {
+            return String(lowered.dropFirst(article.count))
         }
-        return t
+        return lowered
     }
 
     /// Whether a title, article-stripped and normalized, exactly equals the (likewise
@@ -174,7 +174,9 @@ enum SearchMatching {
     /// Votes decide IN/OUT (a stable floor junk can't spike past), popularity decides ORDER
     /// (trending beats older-but-voted); the low-vote tail sinks below.
     static func rankedForDisplay(_ movies: [Movie], minVotes: Int) -> [Movie] {
-        func byPopularity(_ a: Movie, _ b: Movie) -> Bool { (a.popularity ?? 0) > (b.popularity ?? 0) }
+        func byPopularity(_ lhs: Movie, _ rhs: Movie) -> Bool {
+            (lhs.popularity ?? 0) > (rhs.popularity ?? 0)
+        }
         let notable = movies.filter { ($0.voteCount ?? 0) >= minVotes }.sorted(by: byPopularity)
         let noise = movies.filter { ($0.voteCount ?? 0) < minVotes }.sorted(by: byPopularity)
         return notable + noise
@@ -221,22 +223,31 @@ enum SearchMatching {
     /// (`voteCount`, then `popularity`). `relatedMovieIDs` rank as strong title matches.
     static func interlaced(movies: [Movie], shows: [Show], query: String = "",
                            voteFloor: Int = 0, popularityFloor: Double = 0,
-                           relatedMovieIDs: Set<Int> = []) -> [MediaRef] {
+                           relatedMovieIDs: Set<Int> = [], now: Date = .now,
+                           leadPopularityFloor: Double = .infinity) -> [MediaRef] {
         let needle = normalized(articleStripped(query))
         let refs = movies.map(MediaRef.movie) + shows.map(MediaRef.show)
         // Tier 0 strong (exact/prefix or related), 1 weak (word-start/contains), 2 none;
         // an obscure result adds 3 so it trails its tier's notable items.
         func rank(_ ref: MediaRef) -> Int {
-            let related = { if case .movie(let m) = ref { return relatedMovieIDs.contains(m.id) }; return false }()
+            let related = {
+                if case .movie(let movie) = ref { return relatedMovieIDs.contains(movie.id) }
+                return false
+            }()
             let relevance = related ? 0 : titleRelevance(ref.title, normalizedQuery: needle)
-            let cls = relevance <= 1 ? 0 : (relevance <= 3 ? 1 : 2)
+            let tier = relevance <= 1 ? 0 : (relevance <= 3 ? 1 : 2)
             let obscure = ref.voteCount < voteFloor && ref.popularity < popularityFloor
-            return obscure ? cls + 3 : cls
+            return obscure ? tier + 3 : tier
         }
+        let leaders = currentReleaseLeaders(refs, tier: rank, voteFloor: voteFloor,
+                                            popularityFloor: leadPopularityFloor, now: now)
         return refs.enumerated()
             .sorted { lhs, rhs in
-                let (lr, rr) = (rank(lhs.element), rank(rhs.element))
-                if lr != rr { return lr < rr }
+                let (leftRank, rightRank) = (rank(lhs.element), rank(rhs.element))
+                if leftRank != rightRank { return leftRank < rightRank }
+                let (leftLeads, rightLeads) = (leaders.contains(lhs.element.id),
+                                               leaders.contains(rhs.element.id))
+                if leftLeads != rightLeads { return leftLeads }
                 if lhs.element.voteCount != rhs.element.voteCount {
                     return lhs.element.voteCount > rhs.element.voteCount
                 }
@@ -247,4 +258,25 @@ enum SearchMatching {
             }
             .map(\.element)
     }
+
+    /// Per tier, the title in release now that leads it on popularity — what the query means
+    /// today, before its votes accrue. The floor stops any sequel displacing its classic.
+    private static func currentReleaseLeaders(_ refs: [MediaRef], tier: (MediaRef) -> Int,
+                                              voteFloor: Int, popularityFloor: Double,
+                                              now: Date) -> Set<String> {
+        guard let cutoff = Calendar.current.date(byAdding: .day, value: -inReleaseDays, to: now)
+        else { return [] }
+
+        var leaders = Set<String>()
+        for group in Dictionary(grouping: refs, by: tier).values {
+            guard let top = group.max(by: { $0.popularity < $1.popularity }),
+                  top.popularity >= popularityFloor, top.voteCount >= voteFloor,
+                  let date = top.date, date >= cutoff else { continue }
+            leaders.insert(top.id)
+        }
+        return leaders
+    }
+
+    /// Roughly a theatrical run — how long a title still counts as the current release.
+    private static let inReleaseDays = 90
 }

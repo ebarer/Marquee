@@ -28,6 +28,9 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
     var bonusCredits = Credits(during: false, after: false)
     var team: [Person] = []
     var creditRole: String?
+    /// Billing position in the cast (from a person's movie credits), where 0 is top-billed.
+    /// Nil for crew credits and outside that context.
+    var creditOrder: Int?
     var collection: MovieCollection?
     var watchByRegion: [String: WatchAvailability]?
 

@@ -45,19 +45,6 @@ struct Person: Hashable, Identifiable, Codable, Sendable {
     static func == (lhs: Person, rhs: Person) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 
-    /// Sorted by vote count (cumulative, so it reflects enduring notability) rather
-    /// than TMDB's `popularity`, a volatile daily trending score.
-    var knownFor: [Movie] {
-        (credits ?? [])
-            .filter { !$0.isExtraneousCredit && $0.poster != nil }
-            .sorted {
-                if ($0.voteCount ?? 0) != ($1.voteCount ?? 0) {
-                    return ($0.voteCount ?? 0) > ($1.voteCount ?? 0)
-                }
-                return ($0.popularity ?? 0) > ($1.popularity ?? 0)
-            }
-    }
-
     /// Movie and TV credits interlaced, newest first (undated last) — the "Credits" list.
     var allCredits: [MediaRef] {
         let refs = (credits ?? []).map(MediaRef.movie) + (tvCredits ?? []).map(MediaRef.show)
