@@ -13,8 +13,8 @@ final class PerformanceTests: XCTestCase {
 
     func testCSVParsePerformance() throws {
         var csv = "Title,Release Date,Watched,Your Rating,TMDB ID\n"
-        for i in 1...5000 {
-            csv += "\"Movie \(i), Part\",1/1/20,\(i % 2),\(i % 5 + 1),\(i)\n"
+        for row in 1...5000 {
+            csv += "\"Movie \(row), Part\",1/1/20,\(row % 2),\(row % 5 + 1),\(row)\n"
         }
         let data = Data(csv.utf8)
         measure { _ = try? CSVMovieRecord.parse(data: data) }
@@ -26,8 +26,8 @@ final class PerformanceTests: XCTestCase {
         let list = MediaList(name: "Big")
         store.context.insert(list)
         var day = Date.utc(2000, 1, 1)
-        for i in 1...2000 {
-            var movie = makeMovie(id: i, title: "Movie \(i)")
+        for index in 1...2000 {
+            var movie = makeMovie(id: index, title: "Movie \(index)")
             movie.releaseDate = day
             let entry = ListEntry(movie: movie)
             entry.list = list
@@ -55,13 +55,13 @@ final class PerformanceTests: XCTestCase {
     func testDeduplicatePerformance() {
         // One container reused across iterations — creating in-memory containers
         // inside measure() crashes SwiftData.
-        let ctx = makeInMemoryStore().context
+        let context = makeInMemoryStore().context
         measure {
-            for i in 1...1000 {
-                ctx.insert(MediaItem(tmdbID: i, title: "M\(i)"))
-                ctx.insert(MediaItem(tmdbID: i, title: "M\(i)"))  // duplicate
+            for index in 1...1000 {
+                context.insert(MediaItem(tmdbID: index, title: "M\(index)"))
+                context.insert(MediaItem(tmdbID: index, title: "M\(index)"))  // duplicate
             }
-            MediaItem.deduplicate(in: ctx)
+            MediaItem.deduplicate(in: context)
         }
     }
 }

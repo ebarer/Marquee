@@ -11,11 +11,11 @@ import Testing
 
 @Suite struct ShowTests {
     private func show(first: Date?, last: Date?, status: String?) -> Show {
-        var s = Show(id: 1, name: "Test")
-        s.firstAirDate = first
-        s.lastAirDate = last
-        s.status = status
-        return s
+        var result = Show(id: 1, name: "Test")
+        result.firstAirDate = first
+        result.lastAirDate = last
+        result.status = status
+        return result
     }
 
     @Test func yearRangeOngoingShowsPresent() {
@@ -64,14 +64,14 @@ import Testing
     }
 
     @Test func regularSeasonsExcludeSpecialsAndUnairedThenSort() {
-        var s = Show(id: 1, name: "T")
-        s.seasons = [
+        var sample = Show(id: 1, name: "T")
+        sample.seasons = [
             Season(id: 3, seasonNumber: 2, name: "S2", episodeCount: 8),
             Season(id: 1, seasonNumber: 0, name: "Specials", episodeCount: 4),
             Season(id: 2, seasonNumber: 1, name: "S1", episodeCount: 10),
             Season(id: 4, seasonNumber: 3, name: "S3"),   // announced, nothing aired yet
         ]
-        #expect(s.regularSeasons.map(\.seasonNumber) == [1, 2])
+        #expect(sample.regularSeasons.map(\.seasonNumber) == [1, 2])
     }
 
     @Test func mediaSummaryConformance() {

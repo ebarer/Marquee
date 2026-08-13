@@ -51,11 +51,11 @@ import SwiftUI
     }
 
     @Test func ensureWatchListIsCreatedOnceAndReused() {
-        let a = MediaList.ensureWatchList(in: ctx)
-        let b = MediaList.ensureWatchList(in: ctx)
-        #expect(a === b)
-        #expect(a.isWatchList)
-        #expect(a.isEditable == false)
+        let created = MediaList.ensureWatchList(in: ctx)
+        let reused = MediaList.ensureWatchList(in: ctx)
+        #expect(created === reused)
+        #expect(created.isWatchList)
+        #expect(created.isEditable == false)
     }
 
     @Test func watchListPicksOldestCanonicalCopy() {
@@ -87,13 +87,15 @@ import SwiftUI
     @Test func dedupeEntriesKeepsEarliest() {
         let list = MediaList(name: "Custom")
         ctx.insert(list)
-        let a = ListEntry(movie: makeMovie(id: 1)); a.addedAt = .utc(2020, 1, 1); a.list = list
-        let b = ListEntry(movie: makeMovie(id: 1)); b.addedAt = .utc(2021, 1, 1); b.list = list
-        ctx.insert(a); ctx.insert(b)
+        let earliest = ListEntry(movie: makeMovie(id: 1))
+        earliest.addedAt = .utc(2020, 1, 1); earliest.list = list
+        let duplicate = ListEntry(movie: makeMovie(id: 1))
+        duplicate.addedAt = .utc(2021, 1, 1); duplicate.list = list
+        ctx.insert(earliest); ctx.insert(duplicate)
         list.dedupeEntries()
         try? ctx.save()  // reflect the entry delete in the to-many relationship
         #expect((list.entries ?? []).count == 1)
-        #expect(list.entry(for: 1) === a)
+        #expect(list.entry(for: 1) === earliest)
     }
 
     @Test func deduplicateWatchListMergesEntriesAndMarksDuplicate() {

@@ -17,10 +17,11 @@ import SwiftData
         var season = Season(id: number * 100, seasonNumber: number, name: "Season \(number)",
                             episodeCount: episodes)
         season.airDate = airStart
-        season.episodes = (1...max(episodes, 1)).map { i in
-            var e = Episode(id: number * 1000 + i, seasonNumber: number, episodeNumber: i, name: "E\(i)")
-            e.airDate = airStart
-            return e
+        season.episodes = (1...max(episodes, 1)).map { episodeNumber in
+            var episode = Episode(id: number * 1000 + episodeNumber, seasonNumber: number,
+                                  episodeNumber: episodeNumber, name: "E\(episodeNumber)")
+            episode.airDate = airStart
+            return episode
         }
         return season
     }
@@ -61,7 +62,9 @@ import SwiftData
         let season = makeSeason(1, episodes: 3)
         let show = makeShow(id: 5, seasons: [season])
 
-        for i in 1...3 { store.toggleEpisodeWatched(show: show, season: season, episodeNumber: i) }
+        for number in 1...3 {
+            store.toggleEpisodeWatched(show: show, season: season, episodeNumber: number)
+        }
         #expect(store.isSeasonWatched(season, showID: 5))
         #expect(WatchedSeason.find(showTmdbID: 5, seasonNumber: 1, in: store.context) != nil)
 

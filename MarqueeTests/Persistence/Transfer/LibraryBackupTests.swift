@@ -52,12 +52,13 @@ import SwiftData
 
 @Suite struct ImportSummaryTests {
     @Test func pluralizesAndOmitsZeroes() {
-        var s = ImportSummary(); s.entriesAdded = 1
-        #expect(s.message == "1 title added.")
-        s = ImportSummary(); s.listsCreated = 2; s.entriesAdded = 3; s.entriesSkipped = 4
-        #expect(s.message == "2 new lists, 3 titles added, 4 already present.")
-        s = ImportSummary(); s.listsCreated = 1; s.entriesAdded = 0
-        #expect(s.message == "1 new list, 0 titles added.")
+        var summary = ImportSummary(); summary.entriesAdded = 1
+        #expect(summary.message == "1 title added.")
+        summary = ImportSummary()
+        summary.listsCreated = 2; summary.entriesAdded = 3; summary.entriesSkipped = 4
+        #expect(summary.message == "2 new lists, 3 titles added, 4 already present.")
+        summary = ImportSummary(); summary.listsCreated = 1; summary.entriesAdded = 0
+        #expect(summary.message == "1 new list, 0 titles added.")
     }
 }
 

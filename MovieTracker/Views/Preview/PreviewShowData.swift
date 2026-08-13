@@ -22,10 +22,10 @@ extension Show {
         show.poster = "preview-poster"
         show.background = "preview-backdrop"
         show.creators = [{
-            var p = Person(id: 500, name: "Dana Whitfield")
-            p.role = "Creator"
-            p.type = .Crew
-            return p
+            var creator = Person(id: 500, name: "Dana Whitfield")
+            creator.role = "Creator"
+            creator.type = .Crew
+            return creator
         }()]
         show.recurringCast = Person.previewTeam.filter { $0.type == .Cast }
         show.seasons = Season.previewSeasons
@@ -55,15 +55,15 @@ extension Show {
         [
             .preview,
             {
-                var s = Show(id: 1002, name: "The Lighthouse Files")
-                s.firstAirDate = DateComponents(calendar: .current, year: 2018, month: 3, day: 4).date
-                s.lastAirDate = DateComponents(calendar: .current, year: 2022, month: 5, day: 20).date
-                s.status = "Ended"
-                s.certification = "TV-14"
-                s.poster = "preview-poster-alt"
-                s.background = "preview-backdrop"
-                s.seasons = [Season(id: 1, seasonNumber: 1, name: "Season 1", episodeCount: 8)]
-                return s
+                var show = Show(id: 1002, name: "The Lighthouse Files")
+                show.firstAirDate = DateComponents(calendar: .current, year: 2018, month: 3, day: 4).date
+                show.lastAirDate = DateComponents(calendar: .current, year: 2022, month: 5, day: 20).date
+                show.status = "Ended"
+                show.certification = "TV-14"
+                show.poster = "preview-poster-alt"
+                show.background = "preview-backdrop"
+                show.seasons = [Season(id: 1, seasonNumber: 1, name: "Season 1", episodeCount: 8)]
+                return show
             }()
         ]
     }
@@ -73,23 +73,23 @@ extension Season {
     static var previewSeasons: [Season] {
         [
             {
-                var s = Season(id: 11, seasonNumber: 1, name: "Season 1", episodeCount: 3)
-                s.airDate = DateComponents(calendar: .current, year: 2021, month: 9, day: 12).date
-                s.poster = "preview-poster"
-                s.episodes = Episode.previewEpisodes
-                return s
+                var season = Season(id: 11, seasonNumber: 1, name: "Season 1", episodeCount: 3)
+                season.airDate = DateComponents(calendar: .current, year: 2021, month: 9, day: 12).date
+                season.poster = "preview-poster"
+                season.episodes = Episode.previewEpisodes
+                return season
             }(),
             {
-                var s = Season(id: 12, seasonNumber: 2, name: "Season 2", episodeCount: 10)
-                s.airDate = DateComponents(calendar: .current, year: 2022, month: 10, day: 2).date
-                s.poster = "preview-poster-alt"
-                return s
+                var season = Season(id: 12, seasonNumber: 2, name: "Season 2", episodeCount: 10)
+                season.airDate = DateComponents(calendar: .current, year: 2022, month: 10, day: 2).date
+                season.poster = "preview-poster-alt"
+                return season
             }(),
             {
-                var s = Season(id: 13, seasonNumber: 3, name: "Season 3", episodeCount: 8)
-                s.airDate = DateComponents(calendar: .current, year: 2024, month: 1, day: 14).date
-                s.poster = "preview-poster"
-                return s
+                var season = Season(id: 13, seasonNumber: 3, name: "Season 3", episodeCount: 8)
+                season.airDate = DateComponents(calendar: .current, year: 2024, month: 1, day: 14).date
+                season.poster = "preview-poster"
+                return season
             }()
         ]
     }
@@ -97,19 +97,22 @@ extension Season {
 
 extension Episode {
     static var previewEpisodes: [Episode] {
-        func ep(_ n: Int, _ title: String, _ overview: String, _ runtime: Int, _ rating: Double) -> Episode {
-            var e = Episode(id: 100 + n, seasonNumber: 1, episodeNumber: n, name: title)
-            e.overview = overview
-            e.still = "preview-still"
-            e.runtime = runtime
-            e.rating = rating
-            e.airDate = DateComponents(calendar: .current, year: 2021, month: 9, day: 12 + (n - 1) * 7).date
-            return e
+        func episode(_ number: Int, _ title: String, _ overview: String,
+                     _ runtime: Int, _ rating: Double) -> Episode {
+            var episode = Episode(id: 100 + number, seasonNumber: 1,
+                                  episodeNumber: number, name: title)
+            episode.overview = overview
+            episode.still = "preview-still"
+            episode.runtime = runtime
+            episode.rating = rating
+            episode.airDate = DateComponents(calendar: .current, year: 2021, month: 9,
+                                             day: 12 + (number - 1) * 7).date
+            return episode
         }
         return [
-            ep(1, "First Light", "The city wakes to a disappearance that shouldn't be possible.", 58, 8.1),
-            ep(2, "Long Shadows", "Mara follows a lead into the flooded lower districts.", 52, 8.3),
-            ep(3, "The Vigil", "An old friend returns with a warning Mara can't ignore.", 55, 8.7),
+            episode(1, "First Light", "The city wakes to a disappearance that shouldn't be possible.", 58, 8.1),
+            episode(2, "Long Shadows", "Mara follows a lead into the flooded lower districts.", 52, 8.3),
+            episode(3, "The Vigil", "An old friend returns with a warning Mara can't ignore.", 55, 8.7),
         ]
     }
 }

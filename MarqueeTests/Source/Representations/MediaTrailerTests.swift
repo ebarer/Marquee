@@ -9,25 +9,25 @@ import Foundation
 
 @Suite struct MediaTrailerTests {
     @Test func typeMapsUnknownToOther() {
-        let t = MediaTrailer(id: "1", title: "t", key: "k", type: "Bloopers",
-                             site: "YouTube", official: false, publishedAt: "2020")
-        #expect(t.type == .other)
-        #expect(t.isTrailer == false)
+        let trailer = MediaTrailer(id: "1", title: "Clip", key: "k", type: "Bloopers",
+                                   site: "YouTube", official: false, publishedAt: "2020")
+        #expect(trailer.type == .other)
+        #expect(trailer.isTrailer == false)
     }
 
     @Test func isTrailerForTrailerAndTeaser() {
-        func t(_ type: String) -> MediaTrailer {
-            MediaTrailer(id: "1", title: "t", key: "k", type: type, site: "YouTube",
+        func trailer(_ type: String) -> MediaTrailer {
+            MediaTrailer(id: "1", title: "Clip", key: "k", type: type, site: "YouTube",
                          official: false, publishedAt: "2020")
         }
-        #expect(t("Trailer").isTrailer)
-        #expect(t("Teaser").isTrailer)
-        #expect(t("Featurette").isTrailer == false)
+        #expect(trailer("Trailer").isTrailer)
+        #expect(trailer("Teaser").isTrailer)
+        #expect(trailer("Featurette").isTrailer == false)
     }
 
     @Test func primaryScoreRanksTrailerTeaserOfficial() {
         func score(_ type: String, _ official: Bool) -> Int {
-            MediaTrailer(id: "1", title: "t", key: "k", type: type, site: "YouTube",
+            MediaTrailer(id: "1", title: "Clip", key: "k", type: type, site: "YouTube",
                          official: official, publishedAt: "2020").primaryScore
         }
         #expect(score("Trailer", true) == 45)
@@ -37,9 +37,9 @@ import Foundation
     }
 
     @Test func urlsBuildFromKey() {
-        let t = MediaTrailer(id: "1", title: "t", key: "abc123", type: "Trailer",
-                             site: "YouTube", official: true, publishedAt: "2020")
-        #expect(t.url?.absoluteString == "https://www.youtube.com/embed/abc123")
-        #expect(t.watchURL?.absoluteString == "https://www.youtube.com/watch?v=abc123")
+        let trailer = MediaTrailer(id: "1", title: "Clip", key: "abc123", type: "Trailer",
+                                   site: "YouTube", official: true, publishedAt: "2020")
+        #expect(trailer.url?.absoluteString == "https://www.youtube.com/embed/abc123")
+        #expect(trailer.watchURL?.absoluteString == "https://www.youtube.com/watch?v=abc123")
     }
 }

@@ -73,10 +73,10 @@ struct EpisodeDetailView: View {
 #Preview {
     NavigationStack {
         EpisodeDetailView(episode: {
-            var e = Episode.previewEpisodes[0]
-            e.guestCast = Person.previewTeam.filter { $0.type == .Cast }
-            e.crew = [Person.preview]
-            return e
+            var episode = Episode.previewEpisodes[0]
+            episode.guestCast = Person.previewTeam.filter { $0.type == .Cast }
+            episode.crew = [Person.preview]
+            return episode
         }())
         .detailDestinations()
     }

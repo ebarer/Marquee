@@ -31,10 +31,10 @@ import UIKit
         }
     }
 
-    private func rgba(_ color: Color) -> (r: CGFloat, g: CGFloat, b: CGFloat) {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a)
-        return (r, g, b)
+    private func rgba(_ color: Color) -> (red: CGFloat, green: CGFloat, blue: CGFloat) {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return (red, green, blue)
     }
 
     @Test func refreshUpdatesDataAndPersistsToCache() async {
@@ -78,6 +78,6 @@ import UIKit
         await model.load(id: 42)
 
         let tint = rgba(model.tint)
-        #expect(tint.b > tint.r)   // tint followed the new (blue) poster
+        #expect(tint.blue > tint.red)   // tint followed the new (blue) poster
     }
 }

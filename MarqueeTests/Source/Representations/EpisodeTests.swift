@@ -9,18 +9,18 @@ import Foundation
 
 @Suite struct EpisodeTests {
     private func episode(air: Date?) -> Episode {
-        var e = Episode(id: 1, seasonNumber: 1, episodeNumber: 1, name: "Ep")
-        e.airDate = air
-        return e
+        var result = Episode(id: 1, seasonNumber: 1, episodeNumber: 1, name: "Ep")
+        result.airDate = air
+        return result
     }
 
     @Test func codeAndDuration() {
-        var e = Episode(id: 1, seasonNumber: 1, episodeNumber: 3, name: "Ep")
-        e.runtime = 58
-        #expect(e.code == "S1 · E3")
-        #expect(e.duration == "58 min")
-        e.runtime = 92
-        #expect(e.duration == "1 hr 32 min")
+        var sample = Episode(id: 1, seasonNumber: 1, episodeNumber: 3, name: "Ep")
+        sample.runtime = 58
+        #expect(sample.code == "S1 · E3")
+        #expect(sample.duration == "58 min")
+        sample.runtime = 92
+        #expect(sample.duration == "1 hr 32 min")
     }
 
     @Test func durationNilWithoutRuntime() {

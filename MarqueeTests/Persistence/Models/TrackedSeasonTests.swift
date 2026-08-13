@@ -18,10 +18,11 @@ import SwiftData
         var season = Season(id: number * 100, seasonNumber: number, name: "Season \(number)",
                             episodeCount: episodes)
         season.airDate = airStart
-        season.episodes = (1...max(episodes, 1)).map { i in
-            var e = Episode(id: number * 1000 + i, seasonNumber: number, episodeNumber: i, name: "E\(i)")
-            e.airDate = airStart
-            return e
+        season.episodes = (1...max(episodes, 1)).map { episodeNumber in
+            var episode = Episode(id: number * 1000 + episodeNumber, seasonNumber: number,
+                                  episodeNumber: episodeNumber, name: "E\(episodeNumber)")
+            episode.airDate = airStart
+            return episode
         }
         return season
     }
@@ -193,11 +194,11 @@ import SwiftData
 
     @Test func watchedShowIDsAreDistinctInProgressShows() {
         let store = makeInMemoryStore()
-        let a = makeShow(id: 60, seasons: [makeSeason(1, episodes: 3)])
-        let b = makeShow(id: 61, seasons: [makeSeason(1, episodes: 2)])
-        store.toggleEpisodeWatched(show: a, season: a.seasons[0], episodeNumber: 1)
-        store.toggleEpisodeWatched(show: a, season: a.seasons[0], episodeNumber: 2)  // same show twice
-        store.toggleEpisodeWatched(show: b, season: b.seasons[0], episodeNumber: 1)
+        let firstShow = makeShow(id: 60, seasons: [makeSeason(1, episodes: 3)])
+        let secondShow = makeShow(id: 61, seasons: [makeSeason(1, episodes: 2)])
+        store.toggleEpisodeWatched(show: firstShow, season: firstShow.seasons[0], episodeNumber: 1)
+        store.toggleEpisodeWatched(show: firstShow, season: firstShow.seasons[0], episodeNumber: 2)  // same show twice
+        store.toggleEpisodeWatched(show: secondShow, season: secondShow.seasons[0], episodeNumber: 1)
 
         #expect(Set(store.watchedShowIDs()) == [60, 61])
     }
@@ -260,9 +261,10 @@ import SwiftData
     }
 
     private func episode(_ number: Int, _ airDate: Date) -> Episode {
-        var e = Episode(id: 1000 + number, seasonNumber: 1, episodeNumber: number, name: "E\(number)")
-        e.airDate = airDate
-        return e
+        var result = Episode(id: 1000 + number, seasonNumber: 1,
+                             episodeNumber: number, name: "E\(number)")
+        result.airDate = airDate
+        return result
     }
 
     // MARK: - Next-to-watch season

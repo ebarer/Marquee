@@ -18,7 +18,8 @@ import SwiftUI
     }
 
     @Test func roundTripDayFormatter() {
-        let s = "1994-12-25"
-        #expect(DateFormatter.iso8601DAw.date(from: s).map { DateFormatter.iso8601DAw.string(from: $0) } == s)
+        let day = "1994-12-25"
+        #expect(DateFormatter.iso8601DAw.date(from: day)
+            .map { DateFormatter.iso8601DAw.string(from: $0) } == day)
     }
 }

@@ -50,18 +50,18 @@ struct LibraryBackup: Codable {
         }
 
         init(from decoder: Decoder) throws {
-            let c = try decoder.container(keyedBy: CodingKeys.self)
-            movieID = try c.decode(Int.self, forKey: .movieID)
-            title = try c.decode(String.self, forKey: .title)
-            posterPath = try c.decodeIfPresent(String.self, forKey: .posterPath)
-            releaseDate = try c.decodeIfPresent(Date.self, forKey: .releaseDate)
-            dateAdded = try c.decode(Date.self, forKey: .dateAdded)
-            dateWatched = try c.decodeIfPresent(Date.self, forKey: .dateWatched)
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            movieID = try container.decode(Int.self, forKey: .movieID)
+            title = try container.decode(String.self, forKey: .title)
+            posterPath = try container.decodeIfPresent(String.self, forKey: .posterPath)
+            releaseDate = try container.decodeIfPresent(Date.self, forKey: .releaseDate)
+            dateAdded = try container.decode(Date.self, forKey: .dateAdded)
+            dateWatched = try container.decodeIfPresent(Date.self, forKey: .dateWatched)
             // Legacy files store rating as a whole Int; accept either.
-            if let d = try? c.decode(Double.self, forKey: .userRating) {
-                userRating = d
-            } else if let i = try? c.decode(Int.self, forKey: .userRating) {
-                userRating = Double(i)
+            if let rating = try? container.decode(Double.self, forKey: .userRating) {
+                userRating = rating
+            } else if let wholeRating = try? container.decode(Int.self, forKey: .userRating) {
+                userRating = Double(wholeRating)
             } else {
                 userRating = nil
             }

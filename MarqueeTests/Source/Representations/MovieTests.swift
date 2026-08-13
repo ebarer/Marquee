@@ -9,49 +9,49 @@ import Foundation
 
 @Suite struct MovieTests {
     @Test func identityIsTMDBID() {
-        var a = Movie(id: 1, title: "A")
-        var b = Movie(id: 1, title: "Different Title")
-        a.rating = 9; b.rating = 1
-        #expect(a == b)
-        #expect(Set([a, b]).count == 1)
+        var first = Movie(id: 1, title: "A")
+        var second = Movie(id: 1, title: "Different Title")
+        first.rating = 9; second.rating = 1
+        #expect(first == second)
+        #expect(Set([first, second]).count == 1)
     }
 
     @Test func durationFormatsHoursAndMinutes() {
-        var m = Movie(id: 1, title: "A")
-        #expect(m.duration == nil)
-        m.runtime = 125
-        #expect(m.duration == "2 hr 5 min")
-        m.runtime = 45
-        #expect(m.duration == "0 hr 45 min")
-        m.runtime = 0                       // unknown (e.g. unreleased) — not "0 hr 0 min"
-        #expect(m.duration == nil)
+        var movie = Movie(id: 1, title: "A")
+        #expect(movie.duration == nil)
+        movie.runtime = 125
+        #expect(movie.duration == "2 hr 5 min")
+        movie.runtime = 45
+        #expect(movie.duration == "0 hr 45 min")
+        movie.runtime = 0                       // unknown (e.g. unreleased) — not "0 hr 0 min"
+        #expect(movie.duration == nil)
     }
 
     @Test func genresStringShortensAndJoins() {
-        var m = Movie(id: 1, title: "A")
-        #expect(m.genresString == "N/A")
-        m.genres = ["Science Fiction"]
-        #expect(m.genresString == "Sci-Fi")
-        m.genres = ["Action", "Documentary"]
-        #expect(m.genresString == "Action &\nDocu.")
-        m.genres = ["A", "B", "C"]
-        #expect(m.genresString == "N/A")
+        var movie = Movie(id: 1, title: "A")
+        #expect(movie.genresString == "N/A")
+        movie.genres = ["Science Fiction"]
+        #expect(movie.genresString == "Sci-Fi")
+        movie.genres = ["Action", "Documentary"]
+        #expect(movie.genresString == "Action &\nDocu.")
+        movie.genres = ["A", "B", "C"]
+        #expect(movie.genresString == "N/A")
     }
 
     @Test func bonusStringCoversAllCombinations() {
-        var m = Movie(id: 1, title: "A")
-        #expect(m.bonusString == "None")
-        m.bonusCredits = .init(during: false, after: true)
-        #expect(m.bonusString == "After")
-        m.bonusCredits = .init(during: true, after: false)
-        #expect(m.bonusString == "During")
-        m.bonusCredits = .init(during: true, after: true)
-        #expect(m.bonusString == "During + After")
+        var movie = Movie(id: 1, title: "A")
+        #expect(movie.bonusString == "None")
+        movie.bonusCredits = .init(during: false, after: true)
+        #expect(movie.bonusString == "After")
+        movie.bonusCredits = .init(during: true, after: false)
+        #expect(movie.bonusString == "During")
+        movie.bonusCredits = .init(during: true, after: true)
+        #expect(movie.bonusString == "During + After")
     }
 
     @Test func isExtraneousCreditFlagsSelfAndThanks() {
         func credit(_ role: String?) -> Movie {
-            var m = Movie(id: 1, title: "A"); m.creditRole = role; return m
+            var movie = Movie(id: 1, title: "A"); movie.creditRole = role; return movie
         }
         #expect(credit(nil).isExtraneousCredit == false)
         #expect(credit("Self").isExtraneousCredit)
@@ -63,47 +63,47 @@ import Foundation
     }
 
     @Test func primaryTrailerPrefersOfficialTrailerOnYouTube() {
-        func t(_ id: String, _ type: String, official: Bool, at date: String) -> MediaTrailer {
+        func trailer(_ id: String, _ type: String, official: Bool, at date: String) -> MediaTrailer {
             MediaTrailer(id: id, title: id, key: "k\(id)", type: type, site: "YouTube",
                          official: official, publishedAt: date)
         }
-        var m = Movie(id: 1, title: "A")
-        m.trailers = [
-            t("clip", "Clip", official: true, at: "2020-01-01"),
-            t("teaser", "Teaser", official: true, at: "2020-01-01"),
-            t("trailer", "Trailer", official: false, at: "2020-01-01"),
-            t("trailerOfficial", "Trailer", official: true, at: "2020-01-01"),
+        var movie = Movie(id: 1, title: "A")
+        movie.trailers = [
+            trailer("clip", "Clip", official: true, at: "2020-01-01"),
+            trailer("teaser", "Teaser", official: true, at: "2020-01-01"),
+            trailer("trailer", "Trailer", official: false, at: "2020-01-01"),
+            trailer("trailerOfficial", "Trailer", official: true, at: "2020-01-01"),
         ]
-        #expect(m.primaryTrailer?.id == "trailerOfficial")
+        #expect(movie.primaryTrailer?.id == "trailerOfficial")
     }
 
     @Test func primaryTrailerIgnoresNonYouTubeAndClips() {
-        var m = Movie(id: 1, title: "A")
-        m.trailers = [
+        var movie = Movie(id: 1, title: "A")
+        movie.trailers = [
             MediaTrailer(id: "vimeo", title: "V", key: "k", type: "Trailer", site: "Vimeo",
                          official: true, publishedAt: "2021-01-01"),
             MediaTrailer(id: "clip", title: "C", key: "k", type: "Clip", site: "YouTube",
                          official: true, publishedAt: "2021-01-01"),
         ]
-        #expect(m.primaryTrailer == nil)
+        #expect(movie.primaryTrailer == nil)
     }
 
     @Test func primaryTrailerBreaksTiesByPublishDate() {
-        func t(_ id: String, at date: String) -> MediaTrailer {
+        func trailer(_ id: String, at date: String) -> MediaTrailer {
             MediaTrailer(id: id, title: id, key: "k", type: "Trailer", site: "YouTube",
                          official: true, publishedAt: date)
         }
-        var m = Movie(id: 1, title: "A")
-        m.trailers = [t("old", at: "2019-01-01"), t("new", at: "2021-06-01")]
-        #expect(m.primaryTrailer?.id == "new")
+        var movie = Movie(id: 1, title: "A")
+        movie.trailers = [trailer("old", at: "2019-01-01"), trailer("new", at: "2021-06-01")]
+        #expect(movie.primaryTrailer?.id == "new")
     }
 
     @Test func posterAndBackgroundURLs() {
-        var m = Movie(id: 1, title: "A")
-        #expect(m.posterURL() == nil)
-        m.poster = "/abc.jpg"
-        #expect(m.posterURL(.w342)?.absoluteString == "https://image.tmdb.org/t/p/w342//abc.jpg")
-        m.background = "/bg.jpg"
-        #expect(m.backgroundURL(.w780)?.absoluteString == "https://image.tmdb.org/t/p/w780//bg.jpg")
+        var movie = Movie(id: 1, title: "A")
+        #expect(movie.posterURL() == nil)
+        movie.poster = "/abc.jpg"
+        #expect(movie.posterURL(.w342)?.absoluteString == "https://image.tmdb.org/t/p/w342//abc.jpg")
+        movie.background = "/bg.jpg"
+        #expect(movie.backgroundURL(.w780)?.absoluteString == "https://image.tmdb.org/t/p/w780//bg.jpg")
     }
 }

@@ -16,9 +16,9 @@ extension Color {
     }
 
     init?(hex: String) {
-        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        if s.hasPrefix("#") { s.removeFirst() }
-        guard s.count == 6, let value = UInt64(s, radix: 16) else { return nil }
+        var digits = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if digits.hasPrefix("#") { digits.removeFirst() }
+        guard digits.count == 6, let value = UInt64(digits, radix: 16) else { return nil }
         self.init(
             red255: Int((value >> 16) & 0xFF),
             green255: Int((value >> 8) & 0xFF),
@@ -27,19 +27,19 @@ extension Color {
     }
 
     var hexString: String? {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        guard UIColor(self).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
         return String(format: "#%02X%02X%02X",
-                      Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255)))
+                      Int(round(red * 255)), Int(round(green * 255)), Int(round(blue * 255)))
     }
 
     static let appBackground = Color(red255: 12, green255: 12, blue255: 12)
     static let appSeparator = Color(red255: 35, green255: 35, blue255: 35)
     static let appAccent = Color(red255: 200, green255: 180, blue255: 130)
 
-    static func whiteFaded(_ a: Double = 0.75) -> Color {
-        let c = (a < 0 || a > 1) ? 0.75 : a
-        return Color(red: c, green: c, blue: c)
+    static func whiteFaded(_ level: Double = 0.75) -> Color {
+        let clamped = (level < 0 || level > 1) ? 0.75 : level
+        return Color(red: clamped, green: clamped, blue: clamped)
     }
 
     static let listPalette: [Color] = [

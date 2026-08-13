@@ -29,27 +29,26 @@ struct DetailHeaderBar<Actions: View>: View {
     private static var padding: CGFloat { 16 }
 
     var body: some View {
-        let p = progress
         // The text column keeps a FIXED width (based on the full-size poster) so the title
         // never re-fits/re-wraps as the poster shrinks — that reflow caused visible vibration.
         let columnWidth = width - Self.padding * 2 - Self.posterWidth - 12
-        let titleScale = 1 - 0.25 * p
-        let actionsScale = 1 - 0.2 * p
-        let posterHeight = Self.posterHeight - 37.5 * p
+        let titleScale = 1 - 0.25 * progress
+        let actionsScale = 1 - 0.2 * progress
+        let posterHeight = Self.posterHeight - 37.5 * progress
         // Each scaled slot gets a frame matching what it DRAWS (scaleEffect alone leaves the
         // layout full-size), so the column's box is its visible bounds and centering lands.
         let columnHeight = titleHeight * titleScale
-            + (subtitle.isEmpty ? 0 : (subtitleHeight + 8) * (1 - p))
+            + (subtitle.isEmpty ? 0 : (subtitleHeight + 8) * (1 - progress))
             + 8 + actionsHeight * actionsScale
         // Bottom-aligned at rest; as the header pins, the poster and the title/actions column
         // slide onto a shared center line.
-        let columnLift = max(0, posterHeight - columnHeight) / 2 * p
-        let posterLift = max(0, columnHeight - posterHeight) / 2 * p
+        let columnLift = max(0, posterHeight - columnHeight) / 2 * progress
+        let posterLift = max(0, columnHeight - posterHeight) / 2 * progress
 
         HStack(alignment: .bottom, spacing: 12) {
             HeaderPoster(thumbnailURL: posterThumbURL, fullURL: posterFullURL, tint: tint,
                          zoomID: zoomID, identity: posterIdentity,
-                         width: Self.posterWidth - 25 * p,
+                         width: Self.posterWidth - 25 * progress,
                          height: posterHeight)
                 .offset(y: -posterLift)
 
@@ -75,9 +74,9 @@ struct DetailHeaderBar<Actions: View>: View {
                         .foregroundStyle(tint)
                         .fixedSize()
                         .scaleEffect(titleScale, anchor: .topLeading)
-                        .frame(height: subtitleHeight * (1 - p), alignment: .topLeading)
-                        .opacity(Double(max(0, 1 - p * 3)))
-                        .padding(.top, 8 * (1 - p))
+                        .frame(height: subtitleHeight * (1 - progress), alignment: .topLeading)
+                        .opacity(Double(max(0, 1 - progress * 3)))
+                        .padding(.top, 8 * (1 - progress))
                 }
 
                 actions()
@@ -101,14 +100,14 @@ struct DetailHeaderBar<Actions: View>: View {
 #Preview("Expanded / Collapsed") {
     GeometryReader { proxy in
         VStack(spacing: 24) {
-            ForEach([CGFloat(0), 1], id: \.self) { p in
+            ForEach([CGFloat(0), 1], id: \.self) { progress in
                 ForEach(["The Odyssey", "Anchorman: The Legend of Ron Burgundy"], id: \.self) { title in
                     DetailHeaderBar(
                         posterThumbURL: Movie.preview.posterURL(.w342),
                         posterFullURL: Movie.preview.posterURL(.orig),
                         tint: .appAccent, zoomID: Movie.preview.id,
                         title: title, subtitle: "2026  •  2 hr 25 min",
-                        progress: p, width: proxy.size.width
+                        progress: progress, width: proxy.size.width
                     ) {
                         Color.appAccent.frame(height: 44).clipShape(Capsule())
                     }

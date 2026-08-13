@@ -22,9 +22,9 @@ extension TMDBWrapper {
         let data = try await fetch("/collection/\(id)", certified: true)
         let collection = try decode(CollectionRaw.self, from: data)
         return collection.parts.map(translate(movie:)).sorted {
-            guard let a = $0.releaseDate else { return false }
-            guard let b = $1.releaseDate else { return true }
-            return a < b
+            guard let left = $0.releaseDate else { return false }
+            guard let right = $1.releaseDate else { return true }
+            return left < right
         }
     }
 

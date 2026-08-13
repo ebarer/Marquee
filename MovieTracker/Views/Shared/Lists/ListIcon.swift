@@ -78,10 +78,12 @@ struct ListIcon: View {
     }
 
     private var gradient: LinearGradient {
-        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        UIColor(color).getHue(&h, saturation: &s, brightness: &b, alpha: &a)
-        let top = Color(hue: h, saturation: max(s - 0.14, 0), brightness: min(b + 0.14, 1))
-        let bottom = Color(hue: h, saturation: min(s + 0.06, 1), brightness: max(b - 0.10, 0))
+        var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
+        UIColor(color).getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+        let top = Color(hue: hue, saturation: max(saturation - 0.14, 0),
+                        brightness: min(brightness + 0.14, 1))
+        let bottom = Color(hue: hue, saturation: min(saturation + 0.06, 1),
+                           brightness: max(brightness - 0.10, 0))
         return LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)
     }
 }

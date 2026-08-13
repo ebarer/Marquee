@@ -12,8 +12,9 @@ struct CachedMedia: Codable {
     var cachedAt: Date
 
     var color: Color? {
-        guard let c = tint, c.count == 4 else { return nil }
-        return Color(.sRGB, red: c[0], green: c[1], blue: c[2], opacity: c[3])
+        guard let components = tint, components.count == 4 else { return nil }
+        return Color(.sRGB, red: components[0], green: components[1],
+                     blue: components[2], opacity: components[3])
     }
 }
 
@@ -23,8 +24,9 @@ struct CachedShow: Codable {
     var cachedAt: Date
 
     var color: Color? {
-        guard let c = tint, c.count == 4 else { return nil }
-        return Color(.sRGB, red: c[0], green: c[1], blue: c[2], opacity: c[3])
+        guard let components = tint, components.count == 4 else { return nil }
+        return Color(.sRGB, red: components[0], green: components[1],
+                     blue: components[2], opacity: components[3])
     }
 }
 
@@ -242,8 +244,8 @@ actor MediaCacheStore {
     }
 
     private static func rgba(from color: Color) -> [Double]? {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
-        return [Double(r), Double(g), Double(b), Double(a)]
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        guard UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
+        return [Double(red), Double(green), Double(blue), Double(alpha)]
     }
 }

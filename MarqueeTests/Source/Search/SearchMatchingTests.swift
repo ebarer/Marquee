@@ -21,17 +21,17 @@ import Foundation
     }
 
     private func namedPerson(_ id: Int, _ name: String, popularity: Float) -> Person {
-        var p = Person(id: id, name: name)
-        p.popularity = popularity
-        return p
+        var person = Person(id: id, name: name)
+        person.popularity = popularity
+        return person
     }
 
     private func film(_ id: Int, _ title: String, votes: Int? = nil, popularity: Double? = nil,
                       cast: [Person]) -> (movie: Movie, cast: [Person]) {
-        var m = Movie(id: id, title: title)
-        m.voteCount = votes
-        m.popularity = popularity
-        return (m, cast)
+        var movie = Movie(id: id, title: title)
+        movie.voteCount = votes
+        movie.popularity = popularity
+        return (movie, cast)
     }
 
     // MARK: - normalized
@@ -316,7 +316,11 @@ import Foundation
     // MARK: - inlinePeopleCount
 
     private func inlineCount(movieMatched: [Person], named: [Person]) -> Int {
-        func withPhoto(_ p: Person) -> Person { var q = p; q.profilePicture = "/x.jpg"; return q }
+        func withPhoto(_ person: Person) -> Person {
+            var photographed = person
+            photographed.profilePicture = "/x.jpg"
+            return photographed
+        }
         let featured = SearchMatching.featuredPeople(
             movieMatched: movieMatched,
             named: named.map(withPhoto),  // photos so the noise filter keeps them
@@ -352,7 +356,11 @@ import Foundation
     @Test func inlineFoldsPhotolessNamesakeAbovePopularityFloor() {
         // The "300" case: a photoless junk entry ("AI-D*300", pop just over the
         // floor) folds under More, while the photographed real person stays inline.
-        func withPhoto(_ p: Person) -> Person { var q = p; q.profilePicture = "/x.jpg"; return q }
+        func withPhoto(_ person: Person) -> Person {
+            var photographed = person
+            photographed.profilePicture = "/x.jpg"
+            return photographed
+        }
         let leads = [castMember(1, "Gerard Butler", "Leonidas"), castMember(2, "Lena Headey", "Gorgo")]
         let andre = withPhoto(namedPerson(10, "André 3000", popularity: 1.44)) // photo → prominent
         let junk = namedPerson(11, "AI-D*300", popularity: 1.04)               // no photo → folds
@@ -371,7 +379,11 @@ import Foundation
     }
 
     @Test func featuredPeopleDropsNoiseEntriesWithoutPhotoOrPopularity() {
-        func withPhoto(_ p: Person) -> Person { var q = p; q.profilePicture = "/x.jpg"; return q }
+        func withPhoto(_ person: Person) -> Person {
+            var photographed = person
+            photographed.profilePicture = "/x.jpg"
+            return photographed
+        }
 
         let junk = namedPerson(60, "Toy Story Alien", popularity: 0.13)           // no photo, low pop
         let obscureReal = withPhoto(namedPerson(61, "Obscure Actor", popularity: 0.2)) // photo saves it

@@ -48,7 +48,7 @@ struct CollapsingBackdropHeader<Bar: View>: View {
             let scrolled = max(0, -proxy.frame(in: .named("scroll")).minY)
             // Linear compaction: 100% at the top, transient through the collapse, clamped
             // (static) once complete.
-            let p = min(1, scrolled / collapseDist)
+            let progress = min(1, scrolled / collapseDist)
             // Zoom-down is a FRAME-HEIGHT shrink, not a scaleEffect (which gaps below fill):
             // scaledToFill eases the image out. `overscroll` grows it on pull-down.
             let minImageHeight = width * 1.25 * 9.0 / 16.0
@@ -60,7 +60,7 @@ struct CollapsingBackdropHeader<Bar: View>: View {
             let currentHeaderHeight = currentImageHeight + (headerRest - imageHeight)
             // Glass is held off until the last stretch of the collapse, so the backdrop zoom
             // reads crisply on the way up and only crossfades to glass as it sticks.
-            let glassReveal = min(1, max(0, (p - 0.7) / 0.3))
+            let glassReveal = min(1, max(0, (progress - 0.7) / 0.3))
             let glassColor = 0.25    // how strongly the backdrop copy beneath the glass shows (inverted)
 
             ZStack(alignment: .bottomLeading) {
@@ -101,7 +101,7 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                     .opacity(Double(1 - glassReveal))
                     .allowsHitTesting(false)
 
-                bar(p, width)
+                bar(progress, width)
             }
             .frame(maxWidth: .infinity, minHeight: currentHeaderHeight, maxHeight: currentHeaderHeight)
             .clipped()
@@ -132,13 +132,13 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                     imageHeight: proxy.size.height * 0.41,
                     headerRest: proxy.size.height * 0.5,
                     headerPinned: .constant(false)
-                ) { p, width in
+                ) { progress, width in
                     DetailHeaderBar(
                         posterThumbURL: Movie.preview.posterURL(.w342),
                         posterFullURL: Movie.preview.posterURL(.orig),
                         tint: .appAccent, zoomID: Movie.preview.id,
                         title: Movie.preview.title, subtitle: "2026  •  2 hr 25 min",
-                        progress: p, width: width
+                        progress: progress, width: width
                     ) {
                         Color.appAccent.frame(height: 44).clipShape(Capsule())
                     }

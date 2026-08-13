@@ -14,9 +14,9 @@ import SwiftData
 @MainActor
 @Suite struct ShowPersistenceTests {
     private func makeShow(id: Int, name: String = "Show") -> Show {
-        var s = Show(id: id, name: name)
-        s.firstAirDate = .utc(2020, 1, 1)
-        return s
+        var show = Show(id: id, name: name)
+        show.firstAirDate = .utc(2020, 1, 1)
+        return show
     }
 
     @Test func setWatchedCreatesTVMediaItem() {

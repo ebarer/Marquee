@@ -18,10 +18,11 @@ import SwiftData
         show.seasons = (1...seasons).map { number in
             var season = Season(id: number * 100, seasonNumber: number, name: "Season \(number)",
                                 episodeCount: episodes)
-            season.episodes = (1...episodes).map { i in
-                var e = Episode(id: number * 1000 + i, seasonNumber: number, episodeNumber: i, name: "E\(i)")
-                e.airDate = .utc(2020, 1, 1)
-                return e
+            season.episodes = (1...episodes).map { episodeNumber in
+                var episode = Episode(id: number * 1000 + episodeNumber, seasonNumber: number,
+                                      episodeNumber: episodeNumber, name: "E\(episodeNumber)")
+                episode.airDate = .utc(2020, 1, 1)
+                return episode
             }
             return season
         }

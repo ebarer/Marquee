@@ -17,7 +17,7 @@ enum CSVParser {
         var pending: Character?
 
         func nextChar() -> Character? {
-            if let c = pending { pending = nil; return c }
+            if let queued = pending { pending = nil; return queued }
             return iterator.next()
         }
 

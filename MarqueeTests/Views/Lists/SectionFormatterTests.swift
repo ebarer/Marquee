@@ -90,11 +90,12 @@ import SwiftData
     /// only when both clear their thresholds (recent >= 3 && older >= 3).
     private func seedWatchList(recent: Int, old: Int) -> UUID {
         var rows: [(id: Int, title: String, release: Date?, added: Date)] = []
-        for i in 0..<recent {
-            rows.append((100 + i, "New\(i)", .distantFuture, .utc(2022, 1, i + 1)))
+        for offset in 0..<recent {
+            rows.append((100 + offset, "New\(offset)", .distantFuture, .utc(2022, 1, offset + 1)))
         }
-        for i in 0..<old {
-            rows.append((200 + i, "Old\(i)", .utc(2000 + i, 1, 15), .utc(2022, 2, i + 1)))
+        for offset in 0..<old {
+            rows.append((200 + offset, "Old\(offset)", .utc(2000 + offset, 1, 15),
+                         .utc(2022, 2, offset + 1)))
         }
         return seedList(rows, isWatchList: true)
     }
@@ -142,13 +143,13 @@ import SwiftData
     }
 
     @Test func watchedGroupsByWatchedDateAndCarriesFacts() async {
-        let a = makeMovie(id: 1, title: "A")
-        let b = makeMovie(id: 2, title: "B")
-        store.setWatched(true, for: a)
-        store.setWatched(true, for: b)
-        store.setRating(4, for: a)
-        store.setDateWatched(.utc(2021, 5, 10), for: a)
-        store.setDateWatched(.utc(2021, 8, 10), for: b)
+        let earlier = makeMovie(id: 1, title: "A")
+        let later = makeMovie(id: 2, title: "B")
+        store.setWatched(true, for: earlier)
+        store.setWatched(true, for: later)
+        store.setRating(4, for: earlier)
+        store.setDateWatched(.utc(2021, 5, 10), for: earlier)
+        store.setDateWatched(.utc(2021, 8, 10), for: later)
 
         let result = await sections(.watched(sort: .dateWatched), ascending: true)
         #expect(result.count == 2)
@@ -159,13 +160,13 @@ import SwiftData
     }
 
     @Test func watchedRatingSortGroupsByStars() async {
-        let a = makeMovie(id: 1, title: "A")
-        let b = makeMovie(id: 2, title: "B")
-        let c = makeMovie(id: 3, title: "C")
-        for m in [a, b, c] { store.setWatched(true, for: m) }
-        store.setRating(5, for: a)
-        store.setRating(4.5, for: b)
-        // c left unrated
+        let rated5 = makeMovie(id: 1, title: "A")
+        let rated45 = makeMovie(id: 2, title: "B")
+        let unrated = makeMovie(id: 3, title: "C")
+        for movie in [rated5, rated45, unrated] { store.setWatched(true, for: movie) }
+        store.setRating(5, for: rated5)
+        store.setRating(4.5, for: rated45)
+        // `unrated` left unrated
 
         let result = await sections(.watched(sort: .rating), ascending: false)
         #expect(result.map(\.title) == ["5 Stars", "4.5 Stars", "Unrated"])

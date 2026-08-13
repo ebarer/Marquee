@@ -27,7 +27,11 @@ extension TMDBWrapper {
         var season = try decode(SeasonRaw.self, from: data).season()
         // Stamp the show id onto each episode (TMDB omits it) so a standalone episode
         // can address its watched record.
-        season.episodes = season.episodes.map { var e = $0; e.showTmdbID = showID; return e }
+        season.episodes = season.episodes.map {
+            var episode = $0
+            episode.showTmdbID = showID
+            return episode
+        }
         return season
     }
 

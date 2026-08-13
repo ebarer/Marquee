@@ -34,23 +34,26 @@ import Foundation
 
     private func movie(_ id: Int, _ title: String, votes: Int, pop: Double,
                        collectionID: Int? = nil) -> Movie {
-        var m = Movie(id: id, title: title)
-        m.voteCount = votes; m.popularity = pop
+        var movie = Movie(id: id, title: title)
+        movie.voteCount = votes; movie.popularity = pop
         if let collectionID {
-            m.collection = MovieCollection(id: collectionID, name: "Collection", poster: nil, background: nil)
+            movie.collection = MovieCollection(id: collectionID, name: "Collection",
+                                               poster: nil, background: nil)
         }
-        return m
+        return movie
     }
 
     private func show(_ id: Int, _ name: String, votes: Int, pop: Double, us: Bool = true) -> Show {
-        var s = Show(id: id, name: name)
-        s.voteCount = votes; s.popularity = pop
-        s.originCountry = us ? ["US"] : ["JP"]
-        return s
+        var show = Show(id: id, name: name)
+        show.voteCount = votes; show.popularity = pop
+        show.originCountry = us ? ["US"] : ["JP"]
+        return show
     }
 
     private func movieTitles(_ results: [MediaRef]) -> [String] {
-        results.compactMap { if case .movie(let m) = $0 { return m.title } else { return nil } }
+        results.compactMap {
+            if case .movie(let movie) = $0 { return movie.title } else { return nil }
+        }
     }
 
     // MARK: - Franchise collection expansion

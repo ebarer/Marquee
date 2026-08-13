@@ -26,12 +26,12 @@ func makeInMemoryStore() -> PersistenceCoordinator {
 func makeMovie(id: Int, title: String = "Movie",
                poster: String? = nil, release: Date? = nil,
                popularity: Double? = nil, runtime: Int? = nil) -> Movie {
-    var m = Movie(id: id, title: title)
-    m.poster = poster
-    m.releaseDate = release
-    m.popularity = popularity
-    m.runtime = runtime
-    return m
+    var movie = Movie(id: id, title: title)
+    movie.poster = poster
+    movie.releaseDate = release
+    movie.popularity = popularity
+    movie.runtime = runtime
+    return movie
 }
 
 extension Date {

@@ -9,25 +9,25 @@ import Foundation
 
 @Suite struct ShowDisplayTests {
     private func show(seasons: [Season]) -> Show {
-        var s = Show(id: 1, name: "T")
-        s.seasons = seasons
-        return s
+        var result = Show(id: 1, name: "T")
+        result.seasons = seasons
+        return result
     }
 
     @Test func seasonCountAndLabelExcludeSpecials() {
-        let s = show(seasons: [
+        let sample = show(seasons: [
             Season(id: 0, seasonNumber: 0, name: "Specials", episodeCount: 5),
             Season(id: 1, seasonNumber: 1, name: "S1", episodeCount: 8),
             Season(id: 2, seasonNumber: 2, name: "S2", episodeCount: 10),
         ])
-        #expect(s.seasonCount == 2)
-        #expect(s.seasonCountLabel == "2 Seasons")
-        #expect(s.totalEpisodes == 18)   // specials excluded
+        #expect(sample.seasonCount == 2)
+        #expect(sample.seasonCountLabel == "2 Seasons")
+        #expect(sample.totalEpisodes == 18)   // specials excluded
     }
 
     @Test func singleSeasonLabelIsSingular() {
-        let s = show(seasons: [Season(id: 1, seasonNumber: 1, name: "S1", episodeCount: 6)])
-        #expect(s.seasonCountLabel == "1 Season")
+        let sample = show(seasons: [Season(id: 1, seasonNumber: 1, name: "S1", episodeCount: 6)])
+        #expect(sample.seasonCountLabel == "1 Season")
     }
 
     @Test func seasonCountLabelNilWhenNoRegularSeasons() {
@@ -35,41 +35,41 @@ import Foundation
     }
 
     @Test func genresStringFormatsUpToTwo() {
-        var s = Show(id: 1, name: "T")
-        s.genres = ["Drama", "Comedy"]
-        #expect(s.genresString == "Drama &\nComedy")
-        s.genres = ["Drama"]
-        #expect(s.genresString == "Drama")
-        s.genres = nil
-        #expect(s.genresString == "N/A")
+        var show = Show(id: 1, name: "T")
+        show.genres = ["Drama", "Comedy"]
+        #expect(show.genresString == "Drama &\nComedy")
+        show.genres = ["Drama"]
+        #expect(show.genresString == "Drama")
+        show.genres = nil
+        #expect(show.genresString == "N/A")
     }
 
     @Test func compoundGenreFillsBothSlots() {
-        var s = Show(id: 1, name: "T")
+        var show = Show(id: 1, name: "T")
         // A single "&" genre already reads as two, so no second genre is appended, and it
         // wraps at the ampersand onto a second line.
-        s.genres = ["Sci-Fi & Fantasy", "Drama"]
-        #expect(s.genresString == "Sci-Fi &\nFantasy")
+        show.genres = ["Sci-Fi & Fantasy", "Drama"]
+        #expect(show.genresString == "Sci-Fi &\nFantasy")
         #expect(Show.displayGenres(["Action & Adventure", "Sci-Fi & Fantasy"]) == ["Action & Adventure"])
         #expect(Show.displayGenres(["Drama", "Comedy"]) == ["Drama", "Comedy"])
     }
 
     @Test func timelineDatePrefersLastAirDate() {
-        var s = Show(id: 1, name: "T")
-        s.firstAirDate = .utc(2019, 1, 1)
-        #expect(s.timelineDate == .utc(2019, 1, 1))   // premiere when last-air unknown
-        s.lastAirDate = .utc(2026, 6, 1)
-        #expect(s.timelineDate == .utc(2026, 6, 1))   // ongoing → most recent air date
+        var show = Show(id: 1, name: "T")
+        show.firstAirDate = .utc(2019, 1, 1)
+        #expect(show.timelineDate == .utc(2019, 1, 1))   // premiere when last-air unknown
+        show.lastAirDate = .utc(2026, 6, 1)
+        #expect(show.timelineDate == .utc(2026, 6, 1))   // ongoing → most recent air date
     }
 
     @Test func primaryTrailerPrefersOfficialYouTubeTrailer() {
-        var s = Show(id: 1, name: "T")
-        s.trailers = [
+        var show = Show(id: 1, name: "T")
+        show.trailers = [
             MediaTrailer(id: "a", title: "Clip", key: "k1", type: "Clip", site: "YouTube",
                          official: true, publishedAt: "2021-01-01"),
             MediaTrailer(id: "b", title: "Trailer", key: "k2", type: "Trailer", site: "YouTube",
                          official: true, publishedAt: "2021-02-01"),
         ]
-        #expect(s.primaryTrailer?.key == "k2")
+        #expect(show.primaryTrailer?.key == "k2")
     }
 }

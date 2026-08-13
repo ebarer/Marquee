@@ -13,10 +13,10 @@ import SwiftData
     let store = makeInMemoryStore()
 
     @Test func watchListLazilyCreatedOnce() {
-        let a = store.watchList
-        let b = store.watchList
-        #expect(a === b)
-        #expect(store.lists.contains { $0 === a })
+        let created = store.watchList
+        let reused = store.watchList
+        #expect(created === reused)
+        #expect(store.lists.contains { $0 === created })
     }
 
     @Test func isInWatchListNeverCreatesTheList() {

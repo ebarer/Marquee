@@ -15,13 +15,13 @@ import SwiftData
 
     @Test func upsertInsertsThenReturnsSameAndRefreshes() {
         var movie = makeMovie(id: 1, title: "Old", poster: "/old.jpg")
-        let a = MediaItem.upsert(movie, in: ctx)
+        let inserted = MediaItem.upsert(movie, in: ctx)
         movie.title = "New"; movie.poster = "/new.jpg"
-        let b = MediaItem.upsert(movie, in: ctx)
-        #expect(a === b)
-        #expect(b.title == "New")
-        #expect(b.posterPath == "/new.jpg")
-        #expect(MediaItem.find(tmdbID: 1, in: ctx) === a)
+        let refreshed = MediaItem.upsert(movie, in: ctx)
+        #expect(inserted === refreshed)
+        #expect(refreshed.title == "New")
+        #expect(refreshed.posterPath == "/new.jpg")
+        #expect(MediaItem.find(tmdbID: 1, in: ctx) === inserted)
     }
 
     @Test func initFromMovieCopiesSnapshot() {

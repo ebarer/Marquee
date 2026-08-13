@@ -27,7 +27,7 @@ import Foundation
 
     @Test func recentsAreCappedAtFifteen() {
         let model = SearchModel()
-        for i in 1...20 { model.query = "q\(i)"; model.commit() }
+        for index in 1...20 { model.query = "q\(index)"; model.commit() }
         #expect(model.recentSearches.count == 15)
         #expect(model.recentSearches.first == "q20")
     }
