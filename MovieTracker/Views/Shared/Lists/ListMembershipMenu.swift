@@ -20,18 +20,7 @@ struct ListMembershipMenu: View {
             Section {
                 ListMembershipToggles(lists: [watchList].compactMap { $0 },
                                       isMember: isMember, toggle: toggle)
-                Toggle(isOn: Binding(
-                    get: { store?.isWatched(movie) ?? false },
-                    set: { store?.setWatched($0, for: movie); onChange() }
-                )) {
-                    Label {
-                        Text("Watched")
-                    } icon: {
-                        // Tinted like the rows around it; the menu's `.primary` would draw it white.
-                        Image(systemName: "checkmark.rectangle.stack")
-                            .tint(ListDestination.watchedColor)
-                    }
-                }
+                WatchedMenuToggle(movie: movie, onChange: onChange)
             }
             ListMembershipToggles(lists: customLists, isMember: isMember, toggle: toggle)
         }
@@ -44,6 +33,35 @@ struct ListMembershipMenu: View {
     private func toggle(_ list: MediaList) {
         store?.toggle(movie, in: list)
         onChange()
+    }
+}
+
+/// Its own view so the checkmark tracks the store: watched state comes from a fetch, which
+/// — unlike the list rows' `contains` — nothing observes on the caller's behalf.
+private struct WatchedMenuToggle: View {
+    let movie: Movie
+    let onChange: () -> Void
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+
+    private var isWatched: Bool {
+        guard let store else { return false }
+        _ = store.revision
+        return store.isWatched(movie)
+    }
+
+    var body: some View {
+        Toggle(isOn: Binding(
+            get: { isWatched },
+            set: { store?.setWatched($0, for: movie); onChange() }
+        )) {
+            Label {
+                Text("Watched")
+            } icon: {
+                // Tinted like the rows around it; the menu's `.primary` would draw it white.
+                Image(systemName: "checkmark.rectangle.stack")
+                    .tint(ListDestination.watchedColor)
+            }
+        }
     }
 }
 
