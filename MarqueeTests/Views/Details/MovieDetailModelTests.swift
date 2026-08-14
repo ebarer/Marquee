@@ -16,7 +16,7 @@ import UIKit
 @Suite(.serialized) struct MovieDetailModelTests {
     private let cache = MediaCacheStore.shared
 
-    /// A solid-color PNG, so `Color.averageColor` yields a predictable tint.
+    /// A solid-color PNG, so `Color.dominantColor` yields a predictable tint.
     private func png(_ color: UIColor) -> Data {
         UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).pngData { ctx in
             color.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 4, height: 4))

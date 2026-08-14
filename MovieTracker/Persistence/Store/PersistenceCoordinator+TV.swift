@@ -158,7 +158,7 @@ extension PersistenceCoordinator {
             var tint: Color?
             if let url = show.posterURL(.w342),
                let data = try? await TMDBWrapper.imageData(from: url) {
-                tint = Color.averageColor(from: data)
+                tint = Color.dominantColor(from: data)
             }
             await MediaCacheStore.shared.save(show, tint: tint)
 

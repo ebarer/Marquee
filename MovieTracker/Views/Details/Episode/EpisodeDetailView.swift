@@ -64,7 +64,7 @@ struct EpisodeDetailView: View {
             withAnimation(.easeInOut) { tint = color }
         } else if let url = cached.show.posterURL(.w342),
                   let data = try? await TMDBWrapper.imageData(from: url) {
-            withAnimation(.easeInOut) { tint = Color.averageColor(from: data) }
+            withAnimation(.easeInOut) { tint = Color.dominantColor(from: data) }
         }
     }
 }

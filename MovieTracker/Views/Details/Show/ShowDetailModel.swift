@@ -67,7 +67,7 @@ final class ShowDetailModel {
         if let known = tintByPoster[path] { return known }
         guard let url = TMDBWrapper.imageURL(path: path, size: PosterSize.w342.rawValue),
               let data = try? await TMDBWrapper.imageData(from: url) else { return nil }
-        let color = Color.averageColor(from: data)
+        let color = Color.dominantColor(from: data)
         tintByPoster[path] = color
         return color
     }

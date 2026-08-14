@@ -71,7 +71,7 @@ enum MediaCachePrefetcher {
 
     private static func tint(for url: URL?) async -> Color? {
         guard let url, let data = try? await TMDBWrapper.imageData(from: url) else { return nil }
-        return Color.averageColor(from: data)
+        return Color.dominantColor(from: data)
     }
 
     private static func cacheImage(_ url: URL?) async {

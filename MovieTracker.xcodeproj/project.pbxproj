@@ -67,6 +67,7 @@
 		CE70BC24302F24F30059F0F3 /* Error+Cancellation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE70BC23302F24F30059F0F3 /* Error+Cancellation.swift */; };
 		CE70BC26302F2AA20059F0F3 /* MediaMemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE70BC25302F2AA20059F0F3 /* MediaMemoryCache.swift */; };
 		CE70BC46302FA9190059F0F3 /* UITestHooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE70BC45302FA9190059F0F3 /* UITestHooks.swift */; };
+		CE70BC48302FB32D0059F0F3 /* Color+DominantColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE70BC47302FB32D0059F0F3 /* Color+DominantColor.swift */; };
 		CE72A0B2302B025F00AB2597 /* TODO.md in Resources */ = {isa = PBXBuildFile; fileRef = CE72A0B1302B025D00AB2597 /* TODO.md */; };
 		CE72A0E0302BDD3300AB2597 /* ListSortMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE72A0DF302BDD3300AB2597 /* ListSortMenu.swift */; };
 		CE72A0E4302C3E8800AB2597 /* ListDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE72A0E3302C3E8800AB2597 /* ListDestination.swift */; };
@@ -229,7 +230,6 @@
 		CEEAFCEE3019D1F800D06E0E /* FeaturedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCED3019D1F800D06E0E /* FeaturedView.swift */; };
 		CEEAFCF03019D1FA00D06E0E /* ListsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCEF3019D1FA00D06E0E /* ListsView.swift */; };
 		CEEAFCF23019D1FB00D06E0E /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCF13019D1FB00D06E0E /* SearchView.swift */; };
-		CEEAFCF93019DE0200D06E0E /* Color+AverageColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCF83019DE0200D06E0E /* Color+AverageColor.swift */; };
 		CEFAA1CF302D2EFC00221EB8 /* MediaCachePriority.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFAA1CE302D2EFC00221EB8 /* MediaCachePriority.swift */; };
 		CEFAA1D1302D2F3200221EB8 /* MediaCachePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFAA1D0302D2F3200221EB8 /* MediaCachePlan.swift */; };
 		CEFAA211302D47CA00221EB8 /* Person+KnownFor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFAA210302D47CA00221EB8 /* Person+KnownFor.swift */; };
@@ -332,6 +332,7 @@
 		CE70BC23302F24F30059F0F3 /* Error+Cancellation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Error+Cancellation.swift"; sourceTree = "<group>"; };
 		CE70BC25302F2AA20059F0F3 /* MediaMemoryCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaMemoryCache.swift; sourceTree = "<group>"; };
 		CE70BC45302FA9190059F0F3 /* UITestHooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestHooks.swift; sourceTree = "<group>"; };
+		CE70BC47302FB32D0059F0F3 /* Color+DominantColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+DominantColor.swift"; sourceTree = "<group>"; };
 		CE72A0B1302B025D00AB2597 /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
 		CE72A0DF302BDD3300AB2597 /* ListSortMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListSortMenu.swift; sourceTree = "<group>"; };
 		CE72A0E3302C3E8800AB2597 /* ListDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListDestination.swift; sourceTree = "<group>"; };
@@ -494,7 +495,6 @@
 		CEEAFCED3019D1F800D06E0E /* FeaturedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturedView.swift; sourceTree = "<group>"; };
 		CEEAFCEF3019D1FA00D06E0E /* ListsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListsView.swift; sourceTree = "<group>"; };
 		CEEAFCF13019D1FB00D06E0E /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
-		CEEAFCF83019DE0200D06E0E /* Color+AverageColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+AverageColor.swift"; sourceTree = "<group>"; };
 		CEEE5B6521AE3B35008C8EAE /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		CEFAA1CE302D2EFC00221EB8 /* MediaCachePriority.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCachePriority.swift; sourceTree = "<group>"; };
 		CEFAA1D0302D2F3200221EB8 /* MediaCachePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCachePlan.swift; sourceTree = "<group>"; };
@@ -1175,8 +1175,8 @@
 				CE1F628520CFC6A60075B686 /* DateFormatter+Extension.swift */,
 				CEDA8BC221997F71006BB3CD /* String+Extension.swift */,
 				CEEAFCE73019D1D100D06E0E /* Color+ProjectColors.swift */,
-				CEEAFCF83019DE0200D06E0E /* Color+AverageColor.swift */,
 				CEB9BA8830249FFC002C6ED4 /* View+DetailDestinations.swift */,
+				CE70BC47302FB32D0059F0F3 /* Color+DominantColor.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1603,7 +1603,6 @@
 				CEB9BAC43025F7AC002C6ED4 /* SimulatorTools.swift in Sources */,
 				CEE7901D3029DCE40040DADB /* ShowFilterTool.swift in Sources */,
 				CE8DD1DD302963B1006213BD /* PosterDetailView+Zoom.swift in Sources */,
-				CEEAFCF93019DE0200D06E0E /* Color+AverageColor.swift in Sources */,
 				CE8DD25230296DC5006213BD /* SeasonWatchedToggle.swift in Sources */,
 				CEB9BA7430249B8B002C6ED4 /* ListContentView.swift in Sources */,
 				CE8DD2FD30297AB6006213BD /* TMDBWrapper+Person.swift in Sources */,
@@ -1646,6 +1645,7 @@
 				CEFAA1D1302D2F3200221EB8 /* MediaCachePlan.swift in Sources */,
 				CE8C0C95301AFEDA00F08C6A /* ListEditorView.swift in Sources */,
 				CEEAFCF03019D1FA00D06E0E /* ListsView.swift in Sources */,
+				CE70BC48302FB32D0059F0F3 /* Color+DominantColor.swift in Sources */,
 				CE8DD24730296862006213BD /* EpisodeDetailView.swift in Sources */,
 				CE8DD2E2302979F0006213BD /* LibraryBackupDocument.swift in Sources */,
 				CEFDA7053021E65400EFAB14 /* StreamingServicesStore.swift in Sources */,
@@ -1916,7 +1916,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.14.2;
+				CURRENT_PROJECT_VERSION = 2026.8.14.4;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1942,7 +1942,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.14.2;
+				CURRENT_PROJECT_VERSION = 2026.8.14.4;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
