@@ -23,13 +23,13 @@ struct SearchContext: Sendable {
     /// Hydrated details (collection + cast) for the top movies, fetched once by
     /// HydrateTopMoviesTool so the franchise and cast tools don't each re-fetch.
     var movieDetails: [Int: Movie]
-    /// Movie ids surfaced as related (e.g. franchise-collection siblings) that don't
-    /// literally match the title but should rank as strong matches.
-    var relatedMovieIDs: Set<Int>
+    /// Movies surfaced as related (e.g. franchise-collection siblings) that don't literally
+    /// match the title, keyed by id to the title relevance of the match that surfaced them.
+    var relatedMovies: [Int: Int]
 
     init(query: String, movies: [Movie] = [], shows: [Show] = [],
          namedPeople: [Person] = [], castPeople: [Person] = [],
-         movieDetails: [Int: Movie] = [:], relatedMovieIDs: Set<Int> = []) {
+         movieDetails: [Int: Movie] = [:], relatedMovies: [Int: Int] = [:]) {
         self.query = query
         self.needle = SearchMatching.normalized(SearchMatching.articleStripped(query))
         self.movies = movies
@@ -37,6 +37,6 @@ struct SearchContext: Sendable {
         self.namedPeople = namedPeople
         self.castPeople = castPeople
         self.movieDetails = movieDetails
-        self.relatedMovieIDs = relatedMovieIDs
+        self.relatedMovies = relatedMovies
     }
 }

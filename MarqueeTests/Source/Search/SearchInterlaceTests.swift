@@ -50,9 +50,9 @@ import Foundation
         #expect(result.first?.id == "movie-1")
     }
 
-    @Test func strongTitleMatchTierLeadsThenNotabilityWithin() {
-        // "house": strong matches (exact/prefix) lead the weak "Road House" despite its
-        // votes, and notability orders within that tier — *House* then "House of Wax".
+    @Test func strongTitleMatchLeadsComparablyNotableWeakMatch() {
+        // "house": a title-leading match beats the weak "Road House" at a comparable level of
+        // notability (6× the votes isn't enough), and notability orders the strong matches.
         var series = Show(id: 9, name: "House"); series.popularity = 40; series.voteCount = 9_000
         var wax = Movie(id: 1, title: "House of Wax"); wax.popularity = 20; wax.voteCount = 800
         var road = Movie(id: 2, title: "Road House"); road.popularity = 95; road.voteCount = 5_000
@@ -60,12 +60,25 @@ import Foundation
         #expect(result.map(\.id) == ["show-9", "movie-1", "movie-2"])
     }
 
+    @Test func overwhelminglyNotableWeakMatchOutranksNicheStrongMatch() {
+        // "dragon": the phenomenon named late in its title leads the obscure films the query
+        // prefixes — the notability gap is orders of magnitude, not a few times over.
+        var hotd = Show(id: 9, name: "House of the Dragon"); hotd.voteCount = 6_951; hotd.popularity = 415
+        var striker = Show(id: 8, name: "Dragon Striker"); striker.voteCount = 20; striker.popularity = 8
+        var eyes = Movie(id: 1, title: "Dragon Eyes"); eyes.voteCount = 205; eyes.popularity = 2.8
+        var httyd = Movie(id: 2, title: "How to Train Your Dragon"); httyd.voteCount = 14_590; httyd.popularity = 19
+        let result = SearchMatching.interlaced(movies: [eyes, httyd], shows: [hotd, striker],
+                                               query: "dragon", voteFloor: 100,
+                                               popularityBenchmark: 250)
+        #expect(result.map(\.id) == ["show-9", "movie-2", "movie-1", "show-8"])
+    }
+
     @Test func obscureExactMatchSinksBelowNotableResults() {
         var popular = Movie(id: 1, title: "Star Wars"); popular.voteCount = 20_000; popular.popularity = 80
         var junk = Movie(id: 2, title: "Star Wars"); junk.voteCount = 3; junk.popularity = 0.5
-        // Both exact matches, but the obscure one drops beneath the notable pool.
+        // Both exact matches, so notability alone separates them.
         let result = SearchMatching.interlaced(movies: [junk, popular], shows: [], query: "star wars",
-                                            voteFloor: 100, popularityFloor: 5)
+                                            voteFloor: 100)
         #expect(result.map(\.id) == ["movie-1", "movie-2"])
     }
 
@@ -74,16 +87,16 @@ import Foundation
         var fan = Movie(id: 2, title: "Batman Fan Edit"); fan.voteCount = 4; fan.popularity = 0.3
         // Popular real result (no literal match) beats an obscure prefix match.
         let result = SearchMatching.interlaced(movies: [dark, fan], shows: [], query: "batman",
-                                            voteFloor: 100, popularityFloor: 5)
+                                            voteFloor: 100)
         #expect(result.map(\.id) == ["movie-1", "movie-2"])
     }
 
-    @Test func trendingLowVoteReleaseEscapesObscurePool() {
+    @Test func trendingTitleOutranksTheForgottenOne() {
         var fresh = Movie(id: 1, title: "Brand New"); fresh.voteCount = 10; fresh.popularity = 60
         var stale = Movie(id: 2, title: "Nobody Watched"); stale.voteCount = 2; stale.popularity = 0.2
-        // Few votes but real popularity → still notable; truly obscure item sinks.
+        // Few votes but real popularity → still the more notable of the two.
         let result = SearchMatching.interlaced(movies: [stale, fresh], shows: [], query: "",
-                                            voteFloor: 100, popularityFloor: 5)
+                                            voteFloor: 100, popularityBenchmark: 250)
         #expect(result.map(\.id) == ["movie-1", "movie-2"])
     }
 
@@ -106,8 +119,8 @@ import Foundation
         let fresh = dated(1, "Spider-Man: Brand New Day", votes: 1_600, pop: 1_150, daysAgo: 14, now: now)
         let classic = dated(2, "Spider-Man: No Way Home", votes: 22_000, pop: 640, daysAgo: 1_800, now: now)
         let result = SearchMatching.interlaced(movies: [classic, fresh], shows: [], query: "spiderman",
-                                               voteFloor: 100, popularityFloor: 5, now: now,
-                                               leadPopularityFloor: leadFloor)
+                                               voteFloor: 100, now: now,
+                                               popularityBenchmark: leadFloor)
         #expect(result.map(\.id) == ["movie-1", "movie-2"])
     }
 
@@ -117,8 +130,8 @@ import Foundation
         let fresh = dated(1, "Avatar Aang: The Last Airbender", votes: 820, pop: 151, daysAgo: 20, now: now)
         let classic = dated(2, "Avatar", votes: 34_000, pop: 34, daysAgo: 6_000, now: now)
         let result = SearchMatching.interlaced(movies: [fresh, classic], shows: [], query: "avatar",
-                                               voteFloor: 100, popularityFloor: 5, now: now,
-                                               leadPopularityFloor: leadFloor)
+                                               voteFloor: 100, now: now,
+                                               popularityBenchmark: leadFloor)
         #expect(result.map(\.id) == ["movie-2", "movie-1"])
     }
 
@@ -128,8 +141,8 @@ import Foundation
         let short = dated(1, "Star Wars: Visions", votes: 17, pop: 900, daysAgo: 8, now: now)
         let classic = dated(2, "Star Wars", votes: 22_000, pop: 34, daysAgo: 14_600, now: now)
         let result = SearchMatching.interlaced(movies: [short, classic], shows: [], query: "star wars",
-                                               voteFloor: 100, popularityFloor: 5, now: now,
-                                               leadPopularityFloor: leadFloor)
+                                               voteFloor: 100, now: now,
+                                               popularityBenchmark: leadFloor)
         #expect(result.map(\.id) == ["movie-2", "movie-1"])
     }
 
@@ -138,8 +151,8 @@ import Foundation
         let fresh = dated(1, "Dune: Part Three", votes: 900, pop: 260, daysAgo: 10, now: now)
         let classic = dated(2, "Dune", votes: 15_000, pop: 400, daysAgo: 1_800, now: now)
         let result = SearchMatching.interlaced(movies: [fresh, classic], shows: [], query: "dune",
-                                               voteFloor: 100, popularityFloor: 5, now: now,
-                                               leadPopularityFloor: leadFloor)
+                                               voteFloor: 100, now: now,
+                                               popularityBenchmark: leadFloor)
         #expect(result.map(\.id) == ["movie-2", "movie-1"])
     }
 
@@ -149,19 +162,29 @@ import Foundation
         let classic = dated(2, "Spider-Man: No Way Home", votes: 22_000, pop: 640, daysAgo: 1_800, now: now)
         // Offline, the benchmark is unavailable — ranking falls back to vote count.
         let result = SearchMatching.interlaced(movies: [classic, fresh], shows: [], query: "spiderman",
-                                               voteFloor: 100, popularityFloor: 5, now: now)
+                                               voteFloor: 100, now: now)
         #expect(result.map(\.id) == ["movie-2", "movie-1"])
     }
 
-    @Test func franchiseSiblingRanksAsStrongMatchByNotability() {
-        // "batman": "The Dark Knight" has no literal match but is a franchise sibling, so it
-        // joins the strong tier and, being most-voted, leads the exactly-titled "Batman".
+    @Test func franchiseSiblingOfAStrongSeedRanksByNotability() {
+        // "batman": "The Dark Knight" is a sibling of the title-leading "Batman Begins", so it
+        // inherits that footing and, being most-voted, leads the exactly-titled "Batman".
         var exact = Movie(id: 1, title: "Batman"); exact.voteCount = 8_000; exact.popularity = 40
         var dark = Movie(id: 2, title: "The Dark Knight"); dark.voteCount = 30_000; dark.popularity = 80
         var other = Movie(id: 3, title: "Unrelated"); other.voteCount = 50; other.popularity = 5
         let result = SearchMatching.interlaced(movies: [other, dark, exact], shows: [], query: "batman",
-                                               relatedMovieIDs: [2])
+                                               relatedMovies: [2: 1])
         #expect(result.map(\.id) == ["movie-2", "movie-1", "movie-3"])
+    }
+
+    @Test func franchiseSiblingOfAWeakSeedStaysBelowRealMatches() {
+        // "dragon" merely word-matches "The Girl with the Dragon Tattoo", so its Millennium
+        // sibling inherits that weaker footing instead of leading the dragon films outright.
+        var web = Movie(id: 1, title: "The Girl in the Spider's Web"); web.voteCount = 1_546; web.popularity = 6
+        var lee = Movie(id: 2, title: "Dragon: The Bruce Lee Story"); lee.voteCount = 812; lee.popularity = 5
+        let result = SearchMatching.interlaced(movies: [web, lee], shows: [], query: "dragon",
+                                               relatedMovies: [1: 2])
+        #expect(result.map(\.id) == ["movie-2", "movie-1"])
     }
 
     @Test func relevantShowsDropsForeignAndFeaturetteJunk() {

@@ -12,9 +12,8 @@ import Foundation
 
 struct SearchPolicy: Sendable {
     struct Ranking: Sendable {
-        /// An item below both floors is "obscure" and sinks beneath the notable pool.
+        /// Votes a new release needs before its popularity can carry it to the top.
         var voteFloor: Int = 100
-        var popularityFloor: Double = 5
     }
 
     var tools: [SearchTool]
@@ -39,9 +38,8 @@ struct SearchPolicy: Sendable {
 
         let results = SearchMatching.interlaced(movies: context.movies, shows: context.shows,
                                                 query: query, voteFloor: ranking.voteFloor,
-                                                popularityFloor: ranking.popularityFloor,
-                                                relatedMovieIDs: context.relatedMovieIDs,
-                                                leadPopularityFloor: await benchmark ?? .infinity)
+                                                relatedMovies: context.relatedMovies,
+                                                popularityBenchmark: await benchmark ?? .infinity)
         return SearchResults(movies: context.movies, shows: context.shows, results: results,
                              namedPeople: context.namedPeople, castPeople: context.castPeople)
     }

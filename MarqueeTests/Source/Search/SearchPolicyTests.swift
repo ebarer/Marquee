@@ -100,6 +100,27 @@ import Foundation
         #expect(movieTitles(result.results).contains("Man of Steel"))
     }
 
+    @Test func siblingOfAWordMatchedSeedDoesNotLeadTheRealMatches() async {
+        // "dragon" only word-matches "The Girl with the Dragon Tattoo", so its Millennium
+        // sibling inherits that footing instead of leading films that name a dragon.
+        var stub = StubProvider()
+        stub.movieResults["dragon"] = [
+            movie(2_501, "The Girl with the Dragon Tattoo", votes: 7_721, pop: 9),
+            movie(9_089, "Dragon: The Bruce Lee Story", votes: 812, pop: 5),
+        ]
+        stub.movieDetailByID[2_501] = movie(2_501, "The Girl with the Dragon Tattoo",
+                                           votes: 7_721, pop: 9, collectionID: 542_461)
+        stub.collectionParts[542_461] = [
+            movie(446_354, "The Girl in the Spider's Web", votes: 1_546, pop: 6),
+            movie(2_501, "The Girl with the Dragon Tattoo", votes: 7_721, pop: 9),
+        ]
+
+        let result = await SearchPolicy.standard.run(query: "dragon", using: stub)
+        #expect(movieTitles(result.results) == ["The Girl with the Dragon Tattoo",
+                                               "Dragon: The Bruce Lee Story",
+                                               "The Girl in the Spider's Web"])
+    }
+
     @Test func nonFranchiseQueryDoesNotExpand() async {
         // A notable title match with no collection adds nothing extra.
         var stub = StubProvider()

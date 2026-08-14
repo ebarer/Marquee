@@ -219,38 +219,58 @@ enum SearchMatching {
         return min(inline, previewLimit, featured.count)
     }
 
-    /// Movies and shows in one ranked list: match tier first, then enduring notability
-    /// (`voteCount`, then `popularity`). `relatedMovieIDs` rank as strong title matches.
+    /// What a weaker title match costs in notability: clearing one relevance step takes this
+    /// factor, so relevance decides between peers but can't bury a phenomenon.
+    private static let relevanceDiscount = 8.0
+
+    static func matchWeight(relevance: Int) -> Double {
+        pow(relevanceDiscount, -Double(max(0, relevance - 1)))
+    }
+
+    /// Accumulated attention (`voteCount`) scaled by how much of a phenomenon the title is
+    /// today, so a current hit isn't buried by a back catalogue's years of votes.
+    static func notability(_ ref: MediaRef, popularityBenchmark benchmark: Double) -> Double {
+        let trending = benchmark > 0 ? ref.popularity / benchmark : 0
+        return Double(ref.voteCount) * (1 + trending)
+    }
+
+    /// Movies and shows in one ranked list, by notability discounted for a weaker title match
+    /// — "House of the Dragon" for "dragon" beats an obscure film the query merely prefixes.
     static func interlaced(movies: [Movie], shows: [Show], query: String = "",
-                           voteFloor: Int = 0, popularityFloor: Double = 0,
-                           relatedMovieIDs: Set<Int> = [], now: Date = .now,
-                           leadPopularityFloor: Double = .infinity) -> [MediaRef] {
+                           voteFloor: Int = 0, relatedMovies: [Int: Int] = [:],
+                           now: Date = .now,
+                           popularityBenchmark: Double = .infinity) -> [MediaRef] {
         let needle = normalized(articleStripped(query))
         let refs = movies.map(MediaRef.movie) + shows.map(MediaRef.show)
-        // Tier 0 strong (exact/prefix or related), 1 weak (word-start/contains), 2 none;
-        // an obscure result adds 3 so it trails its tier's notable items.
-        func rank(_ ref: MediaRef) -> Int {
-            let related = {
-                if case .movie(let movie) = ref { return relatedMovieIDs.contains(movie.id) }
-                return false
-            }()
-            let relevance = related ? 0 : titleRelevance(ref.title, normalizedQuery: needle)
-            let tier = relevance <= 1 ? 0 : (relevance <= 3 ? 1 : 2)
-            let obscure = ref.voteCount < voteFloor && ref.popularity < popularityFloor
-            return obscure ? tier + 3 : tier
+
+        // A sibling is as relevant as the match that pulled it in — never on a stronger
+        // footing than its own seed.
+        func relevance(_ ref: MediaRef) -> Int {
+            let literal = titleRelevance(ref.title, normalizedQuery: needle)
+            guard case .movie(let movie) = ref, let seeded = relatedMovies[movie.id] else {
+                return literal
+            }
+            return min(seeded, literal)
         }
-        let leaders = currentReleaseLeaders(refs, tier: rank, voteFloor: voteFloor,
-                                            popularityFloor: leadPopularityFloor, now: now)
+        func score(_ ref: MediaRef) -> Double {
+            notability(ref, popularityBenchmark: popularityBenchmark)
+                * matchWeight(relevance: relevance(ref))
+        }
+
+        let tiers = Dictionary(grouping: refs, by: relevance)
+        let leaders = currentReleaseLeaders(tiers, voteFloor: voteFloor,
+                                            popularityFloor: popularityBenchmark, now: now)
+        // A leader tops its own tier: too new to have the votes, but what the query means now.
+        let ceilings = tiers.mapValues { group in group.map(score).max() ?? 0 }
+        func ranked(_ ref: MediaRef) -> Double {
+            guard leaders.contains(ref.id) else { return score(ref) }
+            return (ceilings[relevance(ref)] ?? 0) + 1
+        }
+
         return refs.enumerated()
             .sorted { lhs, rhs in
-                let (leftRank, rightRank) = (rank(lhs.element), rank(rhs.element))
-                if leftRank != rightRank { return leftRank < rightRank }
-                let (leftLeads, rightLeads) = (leaders.contains(lhs.element.id),
-                                               leaders.contains(rhs.element.id))
-                if leftLeads != rightLeads { return leftLeads }
-                if lhs.element.voteCount != rhs.element.voteCount {
-                    return lhs.element.voteCount > rhs.element.voteCount
-                }
+                let (left, right) = (ranked(lhs.element), ranked(rhs.element))
+                if left != right { return left > right }
                 if lhs.element.popularity != rhs.element.popularity {
                     return lhs.element.popularity > rhs.element.popularity
                 }
@@ -261,14 +281,14 @@ enum SearchMatching {
 
     /// Per tier, the title in release now that leads it on popularity — what the query means
     /// today, before its votes accrue. The floor stops any sequel displacing its classic.
-    private static func currentReleaseLeaders(_ refs: [MediaRef], tier: (MediaRef) -> Int,
-                                              voteFloor: Int, popularityFloor: Double,
+    private static func currentReleaseLeaders(_ tiers: [Int: [MediaRef]], voteFloor: Int,
+                                              popularityFloor: Double,
                                               now: Date) -> Set<String> {
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -inReleaseDays, to: now)
         else { return [] }
 
         var leaders = Set<String>()
-        for group in Dictionary(grouping: refs, by: tier).values {
+        for group in tiers.values {
             guard let top = group.max(by: { $0.popularity < $1.popularity }),
                   top.popularity >= popularityFloor, top.voteCount >= voteFloor,
                   let date = top.date, date >= cutoff else { continue }
