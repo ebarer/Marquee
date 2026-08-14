@@ -20,7 +20,13 @@ struct ListMembershipMenu: View {
                     get: { store?.isWatched(movie) ?? false },
                     set: { store?.setWatched($0, for: movie); onChange() }
                 )) {
-                    Label("Watched", systemImage: "checkmark.rectangle.stack")
+                    Label {
+                        Text("Watched")
+                    } icon: {
+                        // Tinted like the rows below it; the menu's `.primary` would draw it white.
+                        Image(systemName: "checkmark.rectangle.stack")
+                            .tint(.appAccent)
+                    }
                 }
             }
             ListMembershipToggles(
