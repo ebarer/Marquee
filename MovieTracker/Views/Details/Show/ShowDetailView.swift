@@ -51,7 +51,6 @@ struct ShowDetailView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .tint(model.tint)
-        .pageTint(model.tint)
         .navigationTitle("")
         .toolbarTitleDisplayMode(.inline)
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)

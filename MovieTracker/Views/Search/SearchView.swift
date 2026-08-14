@@ -15,9 +15,6 @@ struct SearchView: View {
     @Environment(\.openDetail) private var openDetail
     @State private var tappedMovie: Movie?
 
-    var onSelectMovie: ((Movie) -> Void)? = nil
-    var onSelectShow: ((Show) -> Void)? = nil
-
     var body: some View {
         searchList
         .listStyle(.plain)
@@ -77,8 +74,7 @@ struct SearchView: View {
                 derivesStatus: true,
                 lists: lists,
                 leadingActions: { WatchedSwipeButton(movie: movie) },
-                trailingActions: { WatchListSwipeButton(movie: movie) },
-                onTap: onSelectMovie
+                trailingActions: { WatchListSwipeButton(movie: movie) }
             )
             .listRowSeparator(firstEdge, edges: .top)
             .listRowSeparator(lastEdge, edges: .bottom)
@@ -90,25 +86,10 @@ struct SearchView: View {
         }
     }
 
-    /// With `onSelectShow` set (iPhone search) the row is a plain button so focus can resign
-    /// before the push; that loses the link's hit area and chevron, recreated here.
-    @ViewBuilder
+    /// A pushing link, so the row gets the system's press highlight and selection.
     private func showRow(_ show: Show) -> some View {
-        if let onSelectShow {
-            Button { onSelectShow(show) } label: {
-                HStack(spacing: 0) {
-                    ShowRow(show: show, derivesStatus: true)
-                    Image(systemName: "chevron.forward")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        } else {
-            DetailLink(value: show) {
-                ShowRow(show: show, derivesStatus: true)
-            }
+        DetailLink(value: show) {
+            ShowRow(show: show, derivesStatus: true)
         }
     }
 

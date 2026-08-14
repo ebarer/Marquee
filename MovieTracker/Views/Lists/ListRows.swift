@@ -7,9 +7,13 @@ import SwiftUI
 import SwiftData
 
 /// The month/year grouped list for the current selection, rendered from Sendable snapshots.
-struct ListRows: View {
+/// No SwiftData in `body`, and `Equatable`: a store tick mid-push would cost the row its selection.
+struct ListRows: View, Equatable {
     let sections: [SectionSnapshot]
     let selection: ListSelection
+    /// Passed as values: deriving these from `MediaList` here would re-render on every tick.
+    let isWatchList: Bool
+    let watchListIDs: Set<Int>
     let lists: [MediaList]
     let listColor: Color
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -57,15 +61,18 @@ struct ListRows: View {
         }
     }
 
-    private var isWatchList: Bool {
-        if case .list(let uuid) = selection { return lists.first { $0.uuid == uuid }?.isWatchList == true }
-        return false
-    }
     private var isViewed: Bool { selection == .viewed }
     private var isWatched: Bool { selection == .watched }
     private var isCustomList: Bool {
         if case .list = selection { return !isWatchList }
         return false
+    }
+
+    /// `lists` is excluded: comparing them would put a SwiftData read back in the render path.
+    static func == (lhs: ListRows, rhs: ListRows) -> Bool {
+        lhs.sections == rhs.sections && lhs.selection == rhs.selection
+            && lhs.isWatchList == rhs.isWatchList && lhs.watchListIDs == rhs.watchListIDs
+            && lhs.listColor == rhs.listColor
     }
 
     /// ScrollViewReader target for the collapsible "Older" section.
@@ -226,7 +233,7 @@ struct ListRows: View {
         DetailLink(value: show(entry)) {
             // Custom lists badge the poster (watched / partially watched / to-watch) the
             // same way movie rows do.
-            ShowRow(show: show(entry), showsSeasonCount: false, derivesStatus: isCustomList)
+            ShowRow(show: show(entry), showsSeasonCount: false, status: status(entry))
         }
         .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -304,8 +311,7 @@ struct ListRows: View {
     private func status(_ entry: MediaSnapshot) -> PosterStatus? {
         guard isCustomList else { return nil }
         if entry.dateWatched != nil { return .watched }
-        if store?.isInWatchList(movie(entry)) == true { return .watchList }
-        return nil
+        return watchListIDs.contains(entry.tmdbID) ? .watchList : nil
     }
 
     private func rating(_ entry: MediaSnapshot) -> Double? {
@@ -392,7 +398,7 @@ struct ListRows: View {
 }
 
 #Preview {
-    ListRows(sections: [], selection: .watched, lists: [], listColor: .appAccent)
+    ListRows(sections: [], selection: .watched, isWatchList: false, watchListIDs: [], lists: [], listColor: .appAccent)
         .listStyle(.plain)
         .modelContainer(previewModelContainer)
         .environment(PersistenceCoordinator(previewModelContainer.mainContext))
@@ -419,7 +425,7 @@ struct ListRows: View {
                         isCollapsible: true),
     ]
     return NavigationStack {
-        ListRows(sections: sections, selection: .list(UUID()), lists: [], listColor: .appAccent)
+        ListRows(sections: sections, selection: .list(UUID()), isWatchList: true, watchListIDs: [], lists: [], listColor: .appAccent)
             .listStyle(.plain)
     }
     .modelContainer(previewModelContainer)
@@ -457,7 +463,7 @@ struct ListRows: View {
         ]
     }()
     NavigationStack {
-        ListRows(sections: sections, selection: .watched, lists: [], listColor: ListDestination.watchedColor)
+        ListRows(sections: sections, selection: .watched, isWatchList: false, watchListIDs: [], lists: [], listColor: ListDestination.watchedColor)
             .listStyle(.plain)
     }
     .modelContainer(previewModelContainer)

@@ -41,7 +41,6 @@ struct EpisodeDetailView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .tint(tint)
-        .pageTint(tint)
         .navigationTitle(episode.name)
         .toolbarTitleDisplayMode(.inline)
         .toolbarBackgroundVisibility(showNavTitle ? .visible : .hidden, for: .navigationBar)

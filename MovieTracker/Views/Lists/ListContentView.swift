@@ -43,8 +43,10 @@ struct ListContentView: View {
     @ViewBuilder
     private var entries: some View {
         if externalFilter == nil {
-            ListRows(sections: sectionsModel.sections, selection: selection, lists: lists,
-                          listColor: activeColor)
+            ListRows(sections: sectionsModel.sections, selection: selection,
+                     isWatchList: destination.list?.isWatchList == true,
+                     watchListIDs: watchListIDs, lists: lists, listColor: activeColor)
+                .equatable()
                 .listStyle(.plain)
         } else {
             ListGrid(sections: sectionsModel.sections, selection: selection, lists: lists,
@@ -97,6 +99,18 @@ struct ListContentView: View {
     // MARK: - Derived per-selection
 
     private var destination: ListDestination { .resolve(selection, lists: lists) }
+
+    /// Resolved here so the rows get a value and never query the store themselves.
+    private var watchListIDs: Set<Int> {
+        guard isCustomList else { return [] }
+        let watchList = lists.first { $0.isWatchList }
+        return Set((watchList?.entries ?? []).map(\.tmdbID))
+    }
+
+    private var isCustomList: Bool {
+        if case .list = selection { return destination.list?.isWatchList == false }
+        return false
+    }
 
     private var title: String { destination.name }
     private var activeColor: Color { destination.color }

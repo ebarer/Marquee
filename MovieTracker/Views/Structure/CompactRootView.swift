@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 struct CompactRootView: View {
     @Bindable var searchModel: SearchModel
@@ -13,8 +12,8 @@ struct CompactRootView: View {
     @State private var selectedTab: RootTab = .discover
     @State private var listsPath = NavigationPath()
     @State private var listsResetToken = 0
-    /// The tint published by each tab's frontmost page. Tracked per tab, not as one value,
-    /// because a tab the user left is still alive and still publishing.
+    /// The tint published by each tab's list page. Detail screens deliberately publish
+    /// nothing: a tint arriving mid-push changes `.tint` here and costs the row its highlight.
     @State private var tabTints: [RootTab: Color] = [:]
 
     var body: some View {
@@ -37,8 +36,7 @@ struct CompactRootView: View {
 
             Tab("Search", systemImage: "magnifyingglass", value: RootTab.search, role: .search) {
                 NavigationStack(path: $searchPath) {
-                    SearchView(model: searchModel, onSelectMovie: openSearchResult,
-                               onSelectShow: openSearchResult)
+                    SearchView(model: searchModel)
                         .detailDestinations()
                         // Declared on the content inside the stack: on the NavigationStack
                         // itself, a push with the field focused skipped its animation.
@@ -60,14 +58,6 @@ struct CompactRootView: View {
         }
         .tabViewSearchActivation(.searchTabSelection)
         .tint(tabTints[selectedTab] ?? .appAccent)
-    }
-
-    /// Resign the search field's focus so the keyboard's collapse doesn't share the push
-    /// transaction, then push on the next runloop so the navigation still animates.
-    private func openSearchResult(_ value: some Hashable) {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
-                                        to: nil, from: nil, for: nil)
-        DispatchQueue.main.async { searchPath.append(value) }
     }
 
     private var tabSelection: Binding<RootTab> {
