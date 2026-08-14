@@ -40,7 +40,7 @@ struct EpisodeRow: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.rowPress)
     }
 
     /// Reuses ``PosterStatusBadge`` and its scrim, dimming to an empty ring until watched —

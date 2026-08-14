@@ -41,7 +41,7 @@ struct FilmographyRows: View {
             .padding(.vertical, 8)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.rowPress)
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             WatchedSwipeButton(movie: movie)
         }
@@ -62,7 +62,7 @@ struct FilmographyRows: View {
             .padding(.vertical, 8)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.rowPress)
     }
 
     private var chevron: some View {

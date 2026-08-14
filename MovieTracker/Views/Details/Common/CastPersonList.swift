@@ -23,7 +23,7 @@ struct CastPersonList: View {
                     .padding(.vertical, 8)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.rowPress)
 
                 if index < people.count - 1 {
                     CastRowSeparator()
