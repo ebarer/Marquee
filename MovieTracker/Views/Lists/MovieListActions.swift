@@ -66,7 +66,9 @@ struct MovieContextMenu: ViewModifier {
     private var customLists: [MediaList] { canonical.filter { !$0.isWatchList } }
 
     func body(content: Content) -> some View {
-        content.contextMenu {
+        // Observe persisted changes: a menu rebuilt from a stale snapshot shows stale checkmarks.
+        _ = store?.revision
+        return content.contextMenu {
             ListMembershipMenu(
                 movie: movie,
                 watchList: watchList,
