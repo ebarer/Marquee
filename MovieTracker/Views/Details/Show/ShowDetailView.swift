@@ -99,7 +99,7 @@ struct ShowDetailView: View {
                                      headerPinned: $headerPinned, isSeen: $isSeen,
                                      onChange: reconcileMembership)
                         .zIndex(1)
-                    ShowMetadataStrip(show: show)
+                    ShowMetadataStrip(show: show, tint: model.tint)
                         .padding(.bottom, 8)
                     ExpandableText(text: show.overview ?? "No show description available.")
                         .padding(.horizontal, 16)

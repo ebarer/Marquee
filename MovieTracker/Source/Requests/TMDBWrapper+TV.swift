@@ -96,6 +96,7 @@ extension TMDBWrapper {
         show.status = sh.status
         show.firstAirDate = sh.firstAirDateString?.toDate(format: .iso8601DAw)
         show.lastAirDate = sh.lastAirDateString?.toDate(format: .iso8601DAw)
+        show.nextAirDate = sh.nextEpisodeRaw?.airDateString?.toDate(format: .iso8601DAw)
         show.certification = sh.certification()
         show.genres = sh.genres()
         show.networks = sh.networks()

@@ -12,6 +12,8 @@ extension Show {
         var show = Show(id: 1001, name: "Nightfall")
         show.firstAirDate = DateComponents(calendar: .current, year: 2021, month: 9, day: 12).date
         show.status = "Returning Series"
+        // Relative so the "next episode" cell keeps reading as upcoming in previews.
+        show.nextAirDate = Calendar.current.date(byAdding: .day, value: 3, to: Date())
         show.overview = "In a coastal city where the sun never fully rises, detective Mara Voss "
             + "untangles disappearances that seem to bend the rules of time itself — while the "
             + "people closest to her keep vanishing from the record."

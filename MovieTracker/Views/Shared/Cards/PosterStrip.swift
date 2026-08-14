@@ -24,7 +24,9 @@ struct PosterStrip: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(alignment: .top, spacing: 12) {
+            // Deliberately not lazy (strips top out at ~20 cards): a LazyHStack sizes the
+            // strip from the cards on screen first, clipping taller ones that scroll in later.
+            HStack(alignment: .top, spacing: 12) {
                 ForEach(media) { ref in
                     VStack(spacing: 4) {
                         card(ref)
@@ -77,6 +79,18 @@ struct PosterStrip: View {
 
 #Preview("Movies & shows") {
     PosterStrip(media: Person.preview.knownFor, lists: [])
+        .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+        .preferredColorScheme(.dark)
+}
+
+// The show scrolls in after the movies: its season count must not be clipped by a height
+// the strip measured from the shorter cards on screen first.
+#Preview("Show behind movies") {
+    let media = (Movie.previewList + Movie.previewSeriesCollection).map(MediaRef.movie)
+        + [MediaRef.show(Show.previewList[1])]
+    return PosterStrip(media: media, lists: [])
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)
         .environment(PersistenceCoordinator(previewModelContainer.mainContext))

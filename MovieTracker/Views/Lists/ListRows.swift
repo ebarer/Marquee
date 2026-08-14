@@ -261,8 +261,12 @@ struct ListRows: View {
         }
         .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            SeasonWatchedSwipeButton(showID: entry.tmdbID, seasonNumber: entry.seasonNumber ?? 0)
+        // No leading swipe while the next episode is still to air — completing the season
+        // would skip it, so the action has nothing to mark.
+        .swipeActions(edge: .leading, allowsFullSwipe: !isAwaitingNextEpisode(entry)) {
+            if !isAwaitingNextEpisode(entry) {
+                SeasonWatchedSwipeButton(showID: entry.tmdbID, seasonNumber: entry.seasonNumber ?? 0)
+            }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) { deleteButton(entry) }
     }
@@ -285,6 +289,11 @@ struct ListRows: View {
         } else {
             WatchedSwipeButton(movie: movie(entry))
         }
+    }
+
+    /// The tracked season's next episode hasn't aired yet, so there's nothing to mark watched.
+    private func isAwaitingNextEpisode(_ entry: MediaSnapshot) -> Bool {
+        entry.nextEpisodeDate?.inTheFuture == true
     }
 
     private func subtitle(_ entry: MediaSnapshot) -> String? {
@@ -398,7 +407,7 @@ struct ListRows: View {
         return MediaSnapshot(persistentID: entry.persistentModelID, tmdbID: id, mediaType: .movie,
                              title: title, posterPath: nil, releaseDate: nil, sortDate: nil,
                              seasonNumber: nil, seasonWatched: nil, seasonTotal: nil,
-                             runtime: 120, dateWatched: nil, userRating: nil)
+                             nextEpisodeDate: nil, runtime: 120, dateWatched: nil, userRating: nil)
     }
     let sections = [
         SectionSnapshot(id: DateComponents(year: 2026, month: 8), title: "August 2026",
@@ -431,7 +440,7 @@ struct ListRows: View {
             return MediaSnapshot(persistentID: item.persistentModelID, tmdbID: id, mediaType: .movie,
                                  title: title, posterPath: nil, releaseDate: nil, sortDate: nil,
                                  seasonNumber: nil, seasonWatched: nil, seasonTotal: nil,
-                                 runtime: 120, dateWatched: .now, userRating: rating)
+                                 nextEpisodeDate: nil, runtime: 120, dateWatched: .now, userRating: rating)
         }
         return [
             SectionSnapshot(id: DateComponents(year: 9010), title: "5 Stars",

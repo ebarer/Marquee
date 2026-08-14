@@ -111,6 +111,59 @@ import SwiftData
         #expect(tracked?.nextEpisodeDate == .utc(2024, 1, 8))
     }
 
+    /// `refreshWatchedShows` reconciles against a `/tv/{id}` payload, whose seasons carry no
+    /// episodes — that must not reset the anchor to the season premiere and re-bucket the row.
+    @Test func reconcilingWithoutEpisodesKeepsTheKnownNextEpisodeDate() {
+        let store = makeInMemoryStore()
+        var season = Season(id: 100, seasonNumber: 1, name: "Season 1", episodeCount: 3)
+        season.airDate = .utc(2024, 1, 1)
+        season.episodes = [
+            episode(1, .utc(2024, 1, 1)),
+            episode(2, .utc(2024, 1, 8)),
+            episode(3, .utc(2024, 1, 15)),
+        ]
+        let show = makeShow(id: 7, seasons: [season])
+        store.toggleEpisodeWatched(show: show, season: season, episodeNumber: 1)
+        #expect(TrackedSeason.find(showTmdbID: 7, in: store.context)?.nextEpisodeDate == .utc(2024, 1, 8))
+
+        var bare = season
+        bare.episodes = []
+        store.reconcileMembership(makeShow(id: 7, seasons: [bare]))
+
+        #expect(TrackedSeason.find(showTmdbID: 7, in: store.context)?.nextEpisodeDate == .utc(2024, 1, 8))
+    }
+
+    /// A new tracked season has no date to keep, so the premiere is still the best guess.
+    @Test func reconcilingWithoutEpisodesFallsBackToThePremiere() {
+        let store = makeInMemoryStore()
+        var season = Season(id: 100, seasonNumber: 1, name: "Season 1", episodeCount: 3)
+        season.airDate = .utc(2024, 1, 1)
+        let show = makeShow(id: 8, seasons: [season])
+
+        store.addToWatchList(show)
+        store.reconcileMembership(show)
+
+        #expect(TrackedSeason.find(showTmdbID: 8, in: store.context)?.nextEpisodeDate == .utc(2024, 1, 1))
+    }
+
+    /// Advancing to a new season must take that season's date, not carry the old one over.
+    @Test func advancingTheTrackedSeasonWithoutEpisodesTakesTheNewPremiere() {
+        let store = makeInMemoryStore()
+        let first = makeSeason(1, episodes: 2, airStart: .utc(2024, 1, 1))
+        let second = makeSeason(2, episodes: 2, airStart: .utc(2025, 3, 1))
+        let show = makeShow(id: 10, seasons: [first, second])
+        store.setSeasonWatched(true, show: show, season: first)
+        #expect(TrackedSeason.find(showTmdbID: 10, in: store.context)?.seasonNumber == 2)
+
+        var bare = second
+        bare.episodes = []
+        store.reconcileMembership(makeShow(id: 10, seasons: [first, bare]))
+
+        let tracked = TrackedSeason.find(showTmdbID: 10, in: store.context)
+        #expect(tracked?.seasonNumber == 2)
+        #expect(tracked?.nextEpisodeDate == .utc(2025, 3, 1))
+    }
+
     @Test func deduplicateCollapsesTrackedSeasons() {
         let store = makeInMemoryStore()
         store.context.insert(TrackedSeason(showTmdbID: 9, seasonNumber: 1, showName: "X",

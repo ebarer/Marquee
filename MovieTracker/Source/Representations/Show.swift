@@ -12,6 +12,8 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     var name: String
     var firstAirDate: Date?
     var lastAirDate: Date?
+    /// Air date of the episode TMDB has scheduled next; nil unless the show is still airing.
+    var nextAirDate: Date?
     var status: String?
     var overview: String?
     var poster: String?

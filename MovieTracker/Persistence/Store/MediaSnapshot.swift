@@ -20,6 +20,8 @@ struct MediaSnapshot: Identifiable, Sendable, Equatable {
     /// Season progress for a watched-season row: watched vs. total episodes.
     let seasonWatched: Int?
     let seasonTotal: Int?
+    /// Air date of the season's first unwatched episode; set only for tracked-season rows.
+    let nextEpisodeDate: Date?
     let runtime: Int?
     let dateWatched: Date?
     let userRating: Double?

@@ -31,6 +31,11 @@ struct SeasonRowContent: View {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if let nextEpisodeDate = entry.nextEpisodeDate {
+                    Text(nextEpisodeDate.toString())
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 if let rating = entry.userRating, rating > 0 {
                     StarRating(display: rating, tint: tint)
                         .padding(.top, 1)
@@ -60,17 +65,22 @@ struct SeasonRowContent: View {
     let context = previewModelContainer.mainContext
     // Real MediaItem ids so the snapshots are valid; contents are throwaway.
     func snap(_ id: Int, _ title: String, season: Int, watched: Int, total: Int,
-              rating: Double? = nil) -> MediaSnapshot {
+              rating: Double? = nil, nextEpisode: Date? = nil) -> MediaSnapshot {
         let item = MediaItem(tmdbID: id, mediaType: .tv, title: title)
         context.insert(item)
         return MediaSnapshot(persistentID: item.persistentModelID, tmdbID: id, mediaType: .tv,
                              title: title, posterPath: nil, releaseDate: nil, sortDate: nil,
                              seasonNumber: season, seasonWatched: watched, seasonTotal: total,
-                             runtime: nil, dateWatched: nil, userRating: rating)
+                             nextEpisodeDate: nextEpisode, runtime: nil,
+                             dateWatched: nil, userRating: rating)
     }
     return List {
-        SeasonRowContent(entry: snap(1, "In Progress", season: 2, watched: 3, total: 10))
+        // A backlog episode that already aired, and one still to come.
+        SeasonRowContent(entry: snap(1, "In Progress", season: 2, watched: 3, total: 10,
+                                     nextEpisode: Calendar.current.date(byAdding: .day, value: -40, to: Date())))
         SeasonRowContent(entry: snap(2, "Completed", season: 1, watched: 8, total: 8, rating: 4.5))
+        SeasonRowContent(entry: snap(3, "Caught Up", season: 3, watched: 5, total: 8,
+                                     nextEpisode: Calendar.current.date(byAdding: .day, value: 5, to: Date())))
     }
     .listStyle(.plain)
     .modelContainer(previewModelContainer)

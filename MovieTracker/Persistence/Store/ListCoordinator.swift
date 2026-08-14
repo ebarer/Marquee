@@ -80,6 +80,7 @@ actor ListCoordinator {
                                                         sortDate: tracked.nextEpisodeDate ?? entry.sortDate,
                                                         seasonNumber: tracked.seasonNumber,
                                                         seasonWatched: watched, seasonTotal: tracked.episodeCount,
+                                                        nextEpisodeDate: tracked.nextEpisodeDate,
                                                         runtime: entry.runtime,
                                                         dateWatched: facts?.watched, userRating: facts?.rating))
             }
@@ -90,7 +91,8 @@ actor ListCoordinator {
                                                     tmdbID: entry.tmdbID, mediaType: entry.mediaType, title: entry.title,
                                                     posterPath: entry.posterPath, releaseDate: entry.releaseDate,
                                                     sortDate: entry.sortDate, seasonNumber: nil,
-                                                    seasonWatched: nil, seasonTotal: nil, runtime: entry.runtime,
+                                                    seasonWatched: nil, seasonTotal: nil,
+                                                    nextEpisodeDate: nil, runtime: entry.runtime,
                                                     dateWatched: facts?.watched, userRating: facts?.rating))
         }
         return ListResult(rows: rows, layout: byDateAdded ? .flat : .months(foldOlder: isWatchList && foldOlder))
@@ -157,7 +159,8 @@ actor ListCoordinator {
                       mediaType: item.mediaType, title: item.title,
                       posterPath: item.posterPath, releaseDate: item.releaseDate,
                       sortDate: item.sortDate, seasonNumber: nil,
-                      seasonWatched: nil, seasonTotal: nil, runtime: item.runtime,
+                      seasonWatched: nil, seasonTotal: nil,
+                      nextEpisodeDate: nil, runtime: item.runtime,
                       dateWatched: item.watchedAt, userRating: item.userRating)
     }
 
@@ -167,6 +170,7 @@ actor ListCoordinator {
                       posterPath: season.posterPath, releaseDate: season.airDate,
                       sortDate: season.airDate, seasonNumber: season.seasonNumber,
                       seasonWatched: watched, seasonTotal: season.episodeCount,
-                      runtime: nil, dateWatched: season.watchedAt, userRating: season.userRating)
+                      nextEpisodeDate: nil, runtime: nil,
+                      dateWatched: season.watchedAt, userRating: season.userRating)
     }
 }

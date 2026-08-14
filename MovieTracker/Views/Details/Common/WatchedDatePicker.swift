@@ -47,7 +47,7 @@ struct WatchedDatePicker: View {
                         }
                         ToolbarItemGroup(placement: .topBarLeading) {
                             Button("Today") { date = Date() }
-                            if let quickSetTitle, let quickSetDate, quickSetDate <= Date() {
+                            if let quickSetTitle, let quickSetDate, !quickSetDate.inTheFuture {
                                 Button(quickSetTitle) { date = quickSetDate }
                             }
                         }

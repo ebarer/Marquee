@@ -162,8 +162,11 @@ extension PersistenceCoordinator {
             }
             await MediaCacheStore.shared.save(show, tint: tint)
 
-            reconcileSeasons(for: show)
-            reconcileMembership(show)
+            // Re-read: the save merges cached episodes back in, and reconciling needs them to
+            // date the tracked season by its next unwatched episode (the payload carries none).
+            let merged = await MediaCacheStore.shared.loadShow(id: id)?.show ?? show
+            reconcileSeasons(for: merged)
+            reconcileMembership(merged)
             try? await Task.sleep(for: .milliseconds(300))
         }
     }
@@ -221,7 +224,7 @@ extension PersistenceCoordinator {
     private func hydrateAiringSeasons(_ show: Show,
                                       known: [Int: [Episode]]) async -> [Int: [Episode]] {
         let seasons = show.regularSeasons
-        guard let started = seasons.lastIndex(where: { ($0.airDate ?? .distantPast) <= Date() })
+        guard let started = seasons.lastIndex(where: { !($0.airDate ?? .distantPast).inTheFuture })
         else { return known }
 
         var hydrated = known
@@ -330,7 +333,8 @@ extension PersistenceCoordinator {
 
         let watched = watchedEpisodeNumbers(showID: show.id, season: season.seasonNumber)
         let episodes = episodesBySeason[season.seasonNumber] ?? season.episodes
-        let nextDate = nextUnwatchedEpisodeDate(episodes: episodes, watched: watched) ?? season.airDate
+        let nextDate = nextEpisodeDate(for: season, episodes: episodes, watched: watched,
+                                       existing: existing)
         let poster = season.poster ?? show.poster
 
         if let existing {
@@ -359,6 +363,16 @@ extension PersistenceCoordinator {
             item.showWatched = nil
             item.pruneIfEmpty()
         }
+    }
+
+    /// The tracked season's sort/bucket anchor. With no episodes to read, keep the date already
+    /// stored for this season — resetting to the premiere re-buckets a mid-season show.
+    private func nextEpisodeDate(for season: Season, episodes: [Episode], watched: Set<Int>,
+                                 existing: TrackedSeason?) -> Date? {
+        if let next = nextUnwatchedEpisodeDate(episodes: episodes, watched: watched) { return next }
+        if episodes.isEmpty, existing?.seasonNumber == season.seasonNumber,
+           let known = existing?.nextEpisodeDate { return known }
+        return season.airDate
     }
 
     /// Air date of the lowest-numbered unwatched episode — the show's list sort/bucket

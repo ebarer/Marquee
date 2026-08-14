@@ -136,6 +136,15 @@ import Foundation
         #expect(TMDBWrapper.translate(show: try decodeShow(json)).yearRange == "2021–Present")
     }
 
+    @Test func nextAirDateComesFromScheduledEpisode() throws {
+        let json = #"{"id":1,"name":"X","status":"Returning Series","next_episode_to_air":{"id":9,"air_date":"2026-09-04","episode_number":5,"season_number":3}}"#
+        #expect(TMDBWrapper.translate(show: try decodeShow(json)).nextAirDate == .utc(2026, 9, 4))
+    }
+
+    @Test func nextAirDateNilForEndedShow() throws {
+        #expect(TMDBWrapper.translate(show: try decodeShow(fullShowJSON())).nextAirDate == nil)
+    }
+
     // MARK: - Season detail
 
     private func seasonJSON() -> String {

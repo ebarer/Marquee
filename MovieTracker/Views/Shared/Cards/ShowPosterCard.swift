@@ -28,17 +28,21 @@ struct ShowPosterCard: View {
         VStack(spacing: 6) {
             poster
 
-            Text(show.name)
-                .font(.caption)
-                .fontWeight(.medium)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white)
-                .lineLimit(titleLineLimit, reservesSpace: reservesTitleSpace)
-                .frame(maxWidth: .infinity, alignment: .center)
+            // The name and season count read as one caption block, so they sit tighter
+            // together than either does to the poster.
+            VStack(spacing: 1) {
+                Text(show.name)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white)
+                    .lineLimit(titleLineLimit, reservesSpace: reservesTitleSpace)
+                    .frame(maxWidth: .infinity, alignment: .center)
 
-            ShowSeasonCountText(show: show,
-                                placeholder: show.year.map(String.init),
-                                font: .caption2)
+                ShowSeasonCountText(show: show,
+                                    placeholder: show.year.map(String.init),
+                                    font: .caption2)
+            }
         }
     }
 

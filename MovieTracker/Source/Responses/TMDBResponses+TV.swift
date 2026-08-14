@@ -15,6 +15,7 @@ extension TMDBWrapper {
         var overview: String?
         var firstAirDateString: String?
         var lastAirDateString: String?
+        var nextEpisodeRaw: ScheduledEpisodeRaw?
         var status: String?
         var poster: String?
         var background: String?
@@ -81,6 +82,7 @@ extension TMDBWrapper {
             case id, name, overview, status, popularity
             case firstAirDateString = "first_air_date"
             case lastAirDateString = "last_air_date"
+            case nextEpisodeRaw = "next_episode_to_air"
             case poster = "poster_path"
             case background = "backdrop_path"
             case rating = "vote_average"
@@ -99,6 +101,16 @@ extension TMDBWrapper {
         struct NetworkRaw: Codable {
             var id: Int
             var name: String
+        }
+
+        /// Just the air date of `next_episode_to_air` — the rest of that payload duplicates
+        /// what the season fetch already carries.
+        struct ScheduledEpisodeRaw: Codable {
+            var airDateString: String?
+
+            enum CodingKeys: String, CodingKey {
+                case airDateString = "air_date"
+            }
         }
 
         struct PersonStubRaw: Codable {

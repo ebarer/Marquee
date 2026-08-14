@@ -35,11 +35,14 @@ struct Episode: Hashable, Identifiable, Codable, Sendable {
     /// "S1 · E3"-style label for the episode row.
     var code: String { "S\(seasonNumber) · E\(episodeNumber)" }
 
-    /// Whether the episode has aired; bulk marks skip the ones that haven't. An unknown air
-    /// date counts as aired — TMDB omits it across parts of some back catalogues.
-    var hasAired: Bool {
+    /// Whether the air day has arrived in the device's timezone; bulk marks skip the ones that
+    /// haven't. An unknown air date counts as aired — TMDB omits it in some back catalogues.
+    var hasAired: Bool { hasAired(asOf: Date()) }
+
+    /// Takes the instant to judge against so the local-midnight boundary is testable.
+    func hasAired(asOf reference: Date) -> Bool {
         guard let airDate else { return true }
-        return airDate <= Date()
+        return !airDate.isInTheFuture(asOf: reference)
     }
 
     var duration: String? {

@@ -9,12 +9,22 @@ import SwiftUI
 /// Rating and watched dates are tracked per season, not at the show level.
 struct ShowMetadataStrip: View {
     let show: Show
+    var tint: Color = .appAccent
 
     var body: some View {
         VStack(spacing: 0) {
             MetadataHairline()
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 0) {
+                    if show.isOngoing, let nextAirDate = show.nextAirDate {
+                        MetadataCell(header: "NEXT EPISODE", minWidth: 80) {
+                            // Tinted while it's a named day, so an episode landing this week
+                            // stands out from the plain dates further off.
+                            Text(nextAirDate.toRelativeDayString())
+                                .foregroundStyle(nextAirDate.isWithinTheComingWeek ? tint : .white)
+                        }
+                        MetadataDivider()
+                    }
                     MetadataCell(header: "RATING", minWidth: 60) { certBadge }
                     MetadataDivider()
                     MetadataCell(header: "SEASONS") { Text("\(show.seasonCount)") }
@@ -50,6 +60,30 @@ struct ShowMetadataStrip: View {
 
 #Preview {
     ShowMetadataStrip(show: .preview)
+        .background(Color.appBackground)
+        .preferredColorScheme(.dark)
+}
+
+// Every step of the next-episode cell: named and tinted inside the week, plain past it.
+#Preview("Next episode timing") {
+    func show(inDays days: Int) -> Show {
+        // Built the way TMDB's air dates arrive: UTC midnight on a calendar day.
+        let today = MediaItem.floatingDay(from: Date())
+        var show = Show.preview
+        show.nextAirDate = DateFormatter.utcCalendar.date(byAdding: .day, value: days, to: today)
+        return show
+    }
+    return VStack(spacing: 24) {
+        ForEach([0, 1, 3, 30], id: \.self) { days in
+            ShowMetadataStrip(show: show(inDays: days))
+        }
+    }
+    .background(Color.appBackground)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Ended") {
+    ShowMetadataStrip(show: Show.previewList[1])
         .background(Color.appBackground)
         .preferredColorScheme(.dark)
 }
