@@ -1,5 +1,5 @@
 //
-//  WatchedSortKey.swift
+//  ListSortOptions.swift
 //  MovieTracker
 //
 

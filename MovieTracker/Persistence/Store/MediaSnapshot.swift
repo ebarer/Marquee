@@ -28,3 +28,25 @@ struct MediaSnapshot: Identifiable, Sendable, Equatable {
 
     var id: PersistentIdentifier { persistentID }
 }
+
+// MARK: - TMDB values
+
+/// The value a row navigates to and keys its store writes by. Only what the row and the
+/// detail header need is carried; the detail screen refetches the rest.
+extension MediaSnapshot {
+    var movie: Movie {
+        var movie = Movie(id: tmdbID, title: title)
+        movie.poster = posterPath
+        movie.releaseDate = releaseDate
+        movie.runtime = runtime
+        return movie
+    }
+
+    func show(openingSeason: Int? = nil) -> Show {
+        var show = Show(id: tmdbID, name: title)
+        show.poster = posterPath
+        show.firstAirDate = releaseDate
+        show.initialSeason = openingSeason
+        return show
+    }
+}

@@ -32,8 +32,11 @@ struct ListContentView: View {
 
     private var filterText: String { externalFilter ?? localFilter }
 
+    /// The host supplies the search field only in the grid layout, so this picks the presentation.
+    private var showsTable: Bool { externalFilter == nil }
+
     var body: some View {
-        if externalFilter == nil {
+        if showsTable {
             core.searchable(text: $localFilter, prompt: "Search \(title)")
         } else {
             core
@@ -42,15 +45,12 @@ struct ListContentView: View {
 
     @ViewBuilder
     private var entries: some View {
-        if externalFilter == nil {
-            ListRows(sections: sectionsModel.sections, selection: selection,
-                     isWatchList: destination.list?.isWatchList == true,
-                     watchListIDs: watchListIDs, lists: lists, listColor: activeColor)
+        if showsTable {
+            ListTable(sections: sectionsModel.sections, context: entryContext, lists: lists)
                 .equatable()
                 .listStyle(.plain)
         } else {
-            ListGrid(sections: sectionsModel.sections, selection: selection, lists: lists,
-                     listColor: activeColor)
+            ListGrid(sections: sectionsModel.sections, context: entryContext, lists: lists)
         }
     }
 
@@ -100,6 +100,12 @@ struct ListContentView: View {
 
     private var destination: ListDestination { .resolve(selection, lists: lists) }
 
+    /// The one place the per-selection facts are resolved: both presentations render from it.
+    private var entryContext: ListEntryContext {
+        ListEntryContext(selection: selection, isWatchList: destination.list?.isWatchList == true,
+                         watchListIDs: watchListIDs, listColor: activeColor)
+    }
+
     /// Resolved here so the rows get a value and never query the store themselves.
     private var watchListIDs: Set<Int> {
         guard isCustomList else { return [] }
@@ -118,8 +124,12 @@ struct ListContentView: View {
     private var listRequest: ListRequest? {
         destination.listRequest(watchedSort: watchedSortKey,
                                 listByDateAdded: currentListSortKey == .dateAdded,
-                                listFoldOlder: watchListFoldOlder)
+                                listFoldOlder: foldsOlder)
     }
+
+    // The grid renders every section expanded, so folding there would strand the "Older" bucket
+    // open under a heading the person can't collapse. Until it can, don't fold and don't offer to.
+    private var foldsOlder: Bool { watchListFoldOlder && showsTable }
 
     private var isRealList: Bool {
         if case .list = selection { return true }
@@ -131,7 +141,7 @@ struct ListContentView: View {
     // Folding only produces an "Older" bucket for the Watch List sorted by release
     // date; under date-added the list is flat, so the toggle would be a no-op.
     private var showsFoldToggle: Bool {
-        destination.list?.isWatchList == true && currentListSortKey == .releaseDate
+        showsTable && destination.list?.isWatchList == true && currentListSortKey == .releaseDate
     }
 
     private var listSortKeyBinding: Binding<ListSortKey> {
