@@ -33,7 +33,7 @@ struct ShowMetadataStrip: View {
                     MetadataDivider()
                     MetadataCell(header: "TMDB.org") { tmdbScoreText(show.rating) }
                     MetadataDivider()
-                    MetadataCell(header: "GENRE", minWidth: 90) { Text(show.genresString) }
+                    MetadataCell(header: "GENRE", minWidth: 90) { metadataText(show.genresString) }
                 }
             }
             .scrollBounceBehavior(.always, axes: .horizontal)
@@ -50,10 +50,11 @@ struct ShowMetadataStrip: View {
                 .scaledToFit()
                 .frame(width: 44, height: 24)
                 .foregroundStyle(.white)
+                .accessibilityLabel(cert)
         } else if let cert = show.certification, !cert.isEmpty {
             Text(cert)   // text fallback until the TV imageset lands
         } else {
-            Text("N/A")
+            metadataUnavailable
         }
     }
 }

@@ -9,8 +9,12 @@ import CoreImage
 
 extension Color {
     static func averageColor(from data: Data) -> Color {
-        guard let uiImage = UIImage(data: data),
-              let inputImage = CIImage(image: uiImage),
+        guard let uiImage = UIImage(data: data) else { return .appAccent }
+        return averageColor(from: uiImage)
+    }
+
+    static func averageColor(from uiImage: UIImage) -> Color {
+        guard let inputImage = CIImage(image: uiImage),
               let filter = CIFilter(name: "CIAreaAverage", parameters: [
                   kCIInputImageKey: inputImage,
                   kCIInputExtentKey: CIVector(cgRect: inputImage.extent)

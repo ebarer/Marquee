@@ -3,9 +3,6 @@ Important:
 - [ ] Break apart ListRows, it's way too long
 
 Polish:
-- [ ] split related and recommendations, always put recommendations at the bottom
-- [ ] All glass buttons should morph into their confirmations/menus (SwiftUI bug)
-- [ ] Swipe-to-delete confirmations should anchor on the cell (SwiftUI bug)
 - [ ] iPad: Sidebar selection should match list tint
 - [ ] iPad: Header should minimize further, huge veritcal gap
 - [ ] iPad: Person page is missing details
@@ -22,3 +19,7 @@ Ideas:
 - [ ] Share lists
 - [ ] Support landscape?
 - [ ] Add support for awards?
+
+Archive:
+- [ ] All glass buttons should morph into their confirmations/menus (SwiftUI bug)
+- [ ] Swipe-to-delete confirmations should anchor on the cell (SwiftUI bug)

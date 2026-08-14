@@ -73,9 +73,11 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                     // width here. Overlay centers; a bare scaledToFill would left-align.
                     Color.clear
                         .frame(maxWidth: .infinity, minHeight: currentImageHeight, maxHeight: currentImageHeight)
-                        .overlay { PosterImage(url: backgroundURL) }
+                        // Bare RemoteImage, not PosterImage: its film-glyph placeholder would
+                        // sit in the middle of the backdrop until the artwork lands.
+                        .overlay { RemoteImage(url: backgroundURL, fadesIn: true) { Color.clear } }
                         .clipped()
-                        .blur(radius: 5 * glassReveal)
+                        .blur(radius: 20 * glassReveal)
                         // Masking the image eases its bottom to clear, revealing the
                         // app-background base that keeps the title legible over a bright shot.
                         .mask { backdropFade }

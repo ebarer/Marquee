@@ -15,7 +15,10 @@ extension TMDBWrapper {
             ],
             certified: true
         )
-        return translate(movie: try decode(MovieRaw.self, from: data))
+        var movie = translate(movie: try decode(MovieRaw.self, from: data))
+        // The one response carrying every field, so the one place that can vouch for it.
+        movie.isFullDetail = true
+        return movie
     }
 
     static func getCollection(id: Int) async throws -> [Movie] {

@@ -17,6 +17,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         URLCache.shared = URLCache(memoryCapacity: 50 * 1024 * 1024,
                                    diskCapacity: 500 * 1024 * 1024)
+        if UITestHooks.resetsCaches {
+            URLCache.shared.removeAllCachedResponses()
+            RemoteImageCache.shared.removeAll()
+            Task { @MainActor in
+                MediaMemoryCache.removeAll()
+                await MediaCacheStore.shared.clear()
+            }
+        }
         return true
     }
 

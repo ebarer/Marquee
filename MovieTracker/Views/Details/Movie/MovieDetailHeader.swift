@@ -31,6 +31,7 @@ struct MovieDetailHeader: View {
                 posterFullURL: movie.posterURL(.orig),
                 tint: tint, zoomID: movie.id,
                 title: movie.title, subtitle: subtitle,
+                pendingDuration: pendingDuration,
                 progress: progress, width: width
             ) {
                 MovieActionBar(movie: movie, lists: lists, tint: tint, isSeen: $isSeen)
@@ -44,6 +45,9 @@ struct MovieDetailHeader: View {
         if let duration = movie.duration { parts.append(duration) }
         return parts.joined(separator: "  •  ")
     }
+
+    /// Runtime rides in on the detail payload, so a list or search record doesn't have it yet.
+    private var pendingDuration: Bool { movie.duration == nil && !movie.isDetailPayload }
 }
 
 #Preview {

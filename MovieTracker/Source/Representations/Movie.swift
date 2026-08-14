@@ -33,8 +33,15 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
     var creditOrder: Int?
     var collection: MovieCollection?
     var watchByRegion: [String: WatchAvailability]?
+    /// Set only by ``TMDBWrapper/getMovie(id:)``. Optional so cache entries written before it
+    /// existed decode as unknown, which is the safe answer.
+    var isFullDetail: Bool?
 
     func watch(for region: String) -> WatchAvailability? { watchByRegion?[region] }
+
+    /// Whether every field is accounted for, so a nil one means "none" rather than "not yet".
+    /// Can't be inferred from the fields: list and search records land with the same shape.
+    var isDetailPayload: Bool { isFullDetail == true }
 
     init(id: Int, title: String) {
         self.id = id
@@ -68,10 +75,13 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
         return false
     }
 
+    /// Genres for the metadata strip: the first two, which is all the cell has room for.
+    /// Dropping the lot past two read as the movie having no genres at all.
     var genresString: String {
-        switch genres?.count {
-        case 1: return genres![0].shorten()
-        case 2: return "\(genres![0].shorten()) &\n\(genres![1].shorten())"
+        let chosen = (genres ?? []).prefix(2).map { $0.shorten() }
+        switch chosen.count {
+        case 1: return chosen[0]
+        case 2: return "\(chosen[0]) &\n\(chosen[1])"
         default: return "N/A"
         }
     }

@@ -67,6 +67,17 @@ import UIKit
         #expect(model.movie?.poster == "/c.jpg")
     }
 
+    /// The caller's poster is already decoded from the screen it was tapped on, so the tint is
+    /// in place before `load` runs — no accent-then-colour flip.
+    @Test func cachedPosterTintsBeforeLoad() {
+        let path = "/blue-before-load.jpg"
+        let url = TMDBWrapper.imageURL(path: path, size: PosterSize.w342.rawValue)!
+        RemoteImageCache.shared.insert(UIImage(data: png(.blue))!, for: url)
+
+        let tint = rgba(MovieDetailModel(seed: makeMovie(id: 7, title: "Blue", poster: path)).tint)
+        #expect(tint.blue > tint.red)
+    }
+
     @Test func posterChangeRederivesTint() async {
         await cache.clear()
         // Seed a red tint, then serve a blue poster on refresh.

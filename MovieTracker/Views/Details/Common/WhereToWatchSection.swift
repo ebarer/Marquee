@@ -12,6 +12,8 @@ struct WhereToWatchSection: View {
     var releaseDate: Date?
     var isShow: Bool = false
     var tint: Color = .appAccent
+    /// The detail payload is still in flight; only matters until availability arrives.
+    var isLoading: Bool = false
 
     private let store = StreamingServicesStore.shared
     @State private var expanded = false
@@ -34,10 +36,15 @@ struct WhereToWatchSection: View {
         return groups.filter { store.selected.isSelected($0) }
     }
 
+    /// An empty map counts as no answer too: a stub carries none, and saying "unavailable"
+    /// before the payload replies is the one thing this must not do.
+    private var pending: Bool { isLoading && (availabilityByRegion?.isEmpty ?? true) }
+
     var body: some View {
         let groups = shown
         VStack(spacing: 0) {
             WhereToWatchHeader(available: !groups.isEmpty, inTheatres: inTheatres, tint: tint,
+                               isLoading: pending,
                                expanded: $expanded, onInfo: { showingServices = true })
             if expanded, !groups.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {

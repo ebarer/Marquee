@@ -112,7 +112,8 @@ struct ShowDetailView: View {
                                 leadRole: "Creator",
                                 leadTitleSingular: "Creator", leadTitlePlural: "Creators",
                                 castTitle: "Cast", castLimit: 5)
-                    RelatedShowsSection(shows: model.recommendations, tint: model.tint)
+                    RecommendationsSection(shows: model.recommendations, lists: lists,
+                                           tint: model.tint)
                 }
                 .padding(.bottom, 24)
             }

@@ -35,7 +35,7 @@ import Foundation
         movie.genres = ["Action", "Documentary"]
         #expect(movie.genresString == "Action &\nDocu.")
         movie.genres = ["A", "B", "C"]
-        #expect(movie.genresString == "N/A")
+        #expect(movie.genresString == "A &\nB")   // the cell fits two; the rest are dropped
     }
 
     @Test func bonusStringCoversAllCombinations() {

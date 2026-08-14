@@ -16,6 +16,9 @@ struct DetailHeaderBar<Actions: View>: View {
     var posterIdentity: String? = nil
     let title: String
     let subtitle: String
+    /// The runtime is still unknown, so it stands in as a bar rather than flashing in beside
+    /// the date a moment later.
+    var pendingDuration: Bool = false
     let progress: CGFloat
     let width: CGFloat
     @ViewBuilder let actions: () -> Actions
@@ -38,7 +41,7 @@ struct DetailHeaderBar<Actions: View>: View {
         // Each scaled slot gets a frame matching what it DRAWS (scaleEffect alone leaves the
         // layout full-size), so the column's box is its visible bounds and centering lands.
         let columnHeight = titleHeight * titleScale
-            + (subtitle.isEmpty ? 0 : (subtitleHeight + 8) * (1 - progress))
+            + (showsSubtitle ? (subtitleHeight + 8) * (1 - progress) : 0)
             + 8 + actionsHeight * actionsScale
         // Bottom-aligned at rest; as the header pins, the poster and the title/actions column
         // slide onto a shared center line.
@@ -66,10 +69,10 @@ struct DetailHeaderBar<Actions: View>: View {
                     .scaleEffect(titleScale, anchor: .bottomLeading)
                     .frame(height: titleHeight * titleScale, alignment: .bottom)
 
-                if !subtitle.isEmpty {
+                if showsSubtitle {
                     // Scales with the header and fades out, its slot collapsing to 0. Never
                     // clipped — opacity hits 0 before the shrinking slot reveals overflow.
-                    Text(subtitle)
+                    subtitleLine
                         .font(.subheadline)
                         .foregroundStyle(tint)
                         .fixedSize()
@@ -95,6 +98,42 @@ struct DetailHeaderBar<Actions: View>: View {
         }
         .padding(Self.padding)
     }
+
+    private var showsSubtitle: Bool { !subtitle.isEmpty || pendingDuration }
+
+    @ViewBuilder
+    private var subtitleLine: some View {
+        if pendingDuration {
+            HStack(spacing: 8) {
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                    Text("•")
+                }
+                MetadataPlaceholder(width: 62)   // about what "2 hr 11 min" occupies
+            }
+        } else {
+            Text(subtitle)
+        }
+    }
+}
+
+// Runtime still unknown: a bar holds its place beside the date instead of flashing in.
+#Preview("Pending duration") {
+    GeometryReader { proxy in
+        DetailHeaderBar(
+            posterThumbURL: Movie.preview.posterURL(.w342),
+            posterFullURL: Movie.preview.posterURL(.orig),
+            tint: .appAccent, zoomID: Movie.preview.id,
+            title: "The Odyssey", subtitle: "Jul 17, 2026",
+            pendingDuration: true,
+            progress: 0, width: proxy.size.width
+        ) {
+            Color.appAccent.frame(height: 44).clipShape(Capsule())
+        }
+        .frame(maxHeight: .infinity, alignment: .center)
+    }
+    .background(Color.appBackground)
+    .preferredColorScheme(.dark)
 }
 
 #Preview("Expanded / Collapsed") {

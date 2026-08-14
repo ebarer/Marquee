@@ -26,10 +26,16 @@ private enum RemoteImageRevalidation {
 /// cross-fading in changed artwork. Callers supply the placeholder.
 struct RemoteImage<Placeholder: View>: View {
     let url: URL?
+    /// Fade artwork that has to be fetched, for backdrops where the arrival is large and abrupt.
+    /// Artwork already on hand is never faded, whatever this says.
+    var fadesIn: Bool = false
     @ViewBuilder var placeholder: () -> Placeholder
 
     @State private var image: Image?
     @State private var loadedURL: URL?
+    /// Whether the artwork was on hand when this view appeared, decided once. Fading something
+    /// we could have drawn for the push reads as a flash.
+    @State private var readyOnAppear: Bool?
 
     private var displayed: Image? {
         if let image { return image }
@@ -39,16 +45,30 @@ struct RemoteImage<Placeholder: View>: View {
         return nil
     }
 
+    /// Showable now, or decodable from the URL cache without a fetch.
+    private var artworkOnHand: Bool {
+        guard let url else { return false }
+        return RemoteImageCache.shared.image(for: url) != nil || Self.cachedData(url) != nil
+    }
+
+    private var fadesArrival: Bool { fadesIn && readyOnAppear == false }
+
     var body: some View {
         ZStack {
+            // The placeholder stays underneath rather than cross-dissolving out: fading both
+            // at once washes the artwork out on the way in, and shows through it mid-fade.
+            placeholder()
             if let displayed {
                 displayed
                     .resizable()
                     .scaledToFill()
-            } else {
-                placeholder()
+                    .transition(.opacity)
             }
         }
+        // The animation belongs on the container: it's the arrival of the layer that fades, and
+        // an opacity set in the same update a view is inserted has nothing to animate from.
+        .animation(fadesArrival ? .easeInOut(duration: 0.3) : nil, value: displayed == nil)
+        .onAppear { if readyOnAppear == nil { readyOnAppear = artworkOnHand } }
         .task(id: url) { await load() }
     }
 
@@ -89,8 +109,10 @@ struct RemoteImage<Placeholder: View>: View {
     private func apply(_ uiImage: UIImage, for url: URL, animated: Bool) {
         RemoteImageCache.shared.insert(uiImage, for: url)
         let newImage = Image(uiImage: uiImage)
+        // `animated` is a swap of artwork already on screen; a first arrival is faded in by the
+        // layer's own transition instead.
         if animated {
-            withAnimation(.easeInOut(duration: 0.35)) { image = newImage }
+            withAnimation(.easeInOut(duration: 0.3)) { image = newImage }
         } else {
             image = newImage
         }

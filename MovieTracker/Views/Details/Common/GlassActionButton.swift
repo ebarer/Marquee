@@ -62,10 +62,15 @@ private struct GlassActionLabel: View {
     let width: CGFloat
     let tint: Color
 
+    @Environment(\.isEnabled) private var isEnabled
+
     var body: some View {
         Image(systemName: systemName)
             .font(.system(size: 20, weight: .semibold))
             .foregroundStyle(isOn ? .appBackground : tint)
+            // A disabled control keeps its slot in the bar, dimmed — `.plain` styling won't
+            // show the state on its own.
+            .opacity(isEnabled ? 1 : 0.3)
             .frame(width: width, height: ActionBarMetrics.size)
             .contentShape(Rectangle())
     }
