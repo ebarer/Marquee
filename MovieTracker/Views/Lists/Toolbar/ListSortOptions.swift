@@ -5,7 +5,13 @@
 
 import Foundation
 
-enum WatchedSortKey: String {
+/// Shared by the two sort keys so one menu row builder covers both.
+protocol SortKey: Equatable {
+    var title: String { get }
+    var symbol: String { get }
+}
+
+enum WatchedSortKey: String, SortKey {
     case releaseDate
     case dateWatched
     case rating
@@ -27,7 +33,7 @@ enum WatchedSortKey: String {
     }
 }
 
-enum ListSortKey: String {
+enum ListSortKey: String, SortKey {
     case releaseDate
     case dateAdded
 

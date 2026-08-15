@@ -13,10 +13,11 @@ struct ListManagerView: View {
 
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
-    @Query private var trackedItems: [MediaItem]
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
-    private var visibleLists: [MediaList] { lists.filter { !$0.isDeduplicated } }
+    private var visibleLists: [MediaList] {
+        store?.canonicalLists(lists) ?? lists.filter { !$0.isDeduplicated }
+    }
     private var watchList: MediaList? { visibleLists.first { $0.isWatchList } }
     private var customLists: [MediaList] { visibleLists.filter { !$0.isWatchList } }
 
@@ -26,8 +27,15 @@ struct ListManagerView: View {
         (customLists.map(\.sortOrder).max() ?? 0) + 1
     }
 
-    private var watchedCount: Int { trackedItems.lazy.filter { $0.watchedAt != nil }.count }
-    private var viewedCount: Int { trackedItems.lazy.filter { $0.lastViewedAt != nil }.count }
+    // Same counts the list titles show. They come from a fetch, not an observed property,
+    // so touch `revision` to re-read them after any write (else these rows stay stale).
+    private var watchedCount: Int { count(for: .watched) }
+    private var viewedCount: Int { count(for: .viewed) }
+
+    private func count(for selection: ListSelection) -> Int {
+        _ = store?.revision
+        return ListDestination.resolve(selection, lists: visibleLists).movieCount(using: store)
+    }
 
     @State private var editing: MediaList?
     @State private var creatingNew = false
@@ -218,7 +226,7 @@ struct ListManagerView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(list.name)
                     .foregroundStyle(.primary)
-                Text(countText((list.entries ?? []).count))
+                Text(countText(count(for: .list(list.uuid))))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

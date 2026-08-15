@@ -15,22 +15,20 @@ struct ListSortMenu: View {
 
     var body: some View {
         Menu {
-            // Sort key — the primary choices, each with its own symbol.
-            if let watchedSortKey {
-                Picker("Sort", selection: watchedSortKey) {
-                    label(WatchedSortKey.dateWatched).tag(WatchedSortKey.dateWatched)
-                    label(WatchedSortKey.releaseDate).tag(WatchedSortKey.releaseDate)
-                    label(WatchedSortKey.rating).tag(WatchedSortKey.rating)
+            // Sort key — the primary choices, each with its own symbol. Toggles, not a Picker:
+            // a Picker swallows the Section's header, and a Button can't show the checkmark
+            // alongside its symbol the way a menu Toggle does.
+            Section("Sort By") {
+                if let watchedSortKey {
+                    sortToggle(.dateWatched, selection: watchedSortKey)
+                    sortToggle(.releaseDate, selection: watchedSortKey)
+                    sortToggle(.rating, selection: watchedSortKey)
                 }
-                .labelsHidden()
-            }
 
-            if let listSortKey {
-                Picker("Sort", selection: listSortKey) {
-                    label(ListSortKey.releaseDate).tag(ListSortKey.releaseDate)
-                    label(ListSortKey.dateAdded).tag(ListSortKey.dateAdded)
+                if let listSortKey {
+                    sortToggle(.releaseDate, selection: listSortKey)
+                    sortToggle(.dateAdded, selection: listSortKey)
                 }
-                .labelsHidden()
             }
 
             // Order — nested so it reads as a single row with the current value as subtitle.
@@ -72,9 +70,16 @@ struct ListSortMenu: View {
         .menuActionDismissBehavior(.disabled)
     }
 
-    private func label(_ key: WatchedSortKey) -> some View { Label(key.title, systemImage: key.symbol) }
-    private func label(_ key: ListSortKey) -> some View { Label(key.title, systemImage: key.symbol) }
     private func label(_ filter: MediaTypeFilter) -> some View { Label(filter.title, systemImage: filter.symbol) }
+
+    /// One sort-key row, ticked while selected. Re-picking the current key is a no-op,
+    /// so the group behaves like a radio set rather than independent switches.
+    private func sortToggle<Key: SortKey>(_ key: Key, selection: Binding<Key>) -> some View {
+        Toggle(isOn: Binding(get: { selection.wrappedValue == key },
+                             set: { if $0 { selection.wrappedValue = key } })) {
+            Label(key.title, systemImage: key.symbol)
+        }
+    }
 
     /// A View-menu option as a Button (Pickers don't render option subtitles): title,
     /// optional subtitle, and a leading symbol that becomes a checkmark when selected.
