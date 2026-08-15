@@ -16,6 +16,7 @@ struct PersonDetailView: View {
     private var lists: [MediaList]
 
     @Environment(\.closeModal) private var closeModal
+    @Environment(\.isModalRoot) private var isModalRoot
 
     @Namespace private var photoNamespace
     @State private var showPhoto = false
@@ -95,7 +96,7 @@ struct PersonDetailView: View {
             }
             // Declared here, after the filter, so Close stays the rightmost item.
             if let closeModal {
-                ModalCloseItem(close: closeModal)
+                ModalCloseItem(close: closeModal, isRoot: isModalRoot)
             }
         }
         .background {

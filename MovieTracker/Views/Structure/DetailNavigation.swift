@@ -29,13 +29,29 @@ extension EnvironmentValues {
     }
 }
 
+private struct ModalRootKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// True for the screen the modal opened on. Set by `DetailRootView`, and not inherited by
+    /// pushed screens — they hang off the NavigationStack, not off the root's subtree.
+    var isModalRoot: Bool {
+        get { self[ModalRootKey.self] }
+        set { self[ModalRootKey.self] = newValue }
+    }
+}
+
 /// The modal's Close button. A screen with trailing items of its own renders this itself, after
 /// them: `modalDismissable()` applies from outside, and an outer item always lands leading.
 struct ModalCloseItem: ToolbarContent {
     let close: () -> Void
+    /// The root has no back button, so Close takes the leading side rather than sitting
+    /// opposite an empty corner. A pushed screen leaves that side to the back button.
+    var isRoot = false
 
     var body: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: isRoot ? .topBarLeading : .topBarTrailing) {
             Button("Close", systemImage: "xmark", action: close)
         }
     }
@@ -43,10 +59,11 @@ struct ModalCloseItem: ToolbarContent {
 
 private struct ModalDismissable: ViewModifier {
     @Environment(\.closeModal) private var closeModal
+    @Environment(\.isModalRoot) private var isModalRoot
 
     func body(content: Content) -> some View {
         if let closeModal {
-            content.toolbar { ModalCloseItem(close: closeModal) }
+            content.toolbar { ModalCloseItem(close: closeModal, isRoot: isModalRoot) }
         } else {
             content
         }

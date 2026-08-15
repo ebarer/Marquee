@@ -40,9 +40,17 @@ enum DetailRoot: Hashable, Identifiable {
 struct DetailRootView: View {
     let root: DetailRoot
 
+    // Whatever this renders is what the modal opened on — nothing is pushed over it yet, so
+    // its Close button owns the leading side.
+    var body: some View {
+        destination
+            .environment(\.isModalRoot, true)
+    }
+
     // Close is attached per case, not to the whole router: the person screen renders its own,
     // after the filter button, so an outer copy would double up.
-    var body: some View {
+    @ViewBuilder
+    private var destination: some View {
         switch root {
         case .movie(let movie): MovieDetailView(movie: movie).modalDismissable()
         case .show(let show): ShowDetailView(show: show).modalDismissable()
