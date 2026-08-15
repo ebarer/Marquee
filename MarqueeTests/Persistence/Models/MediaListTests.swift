@@ -98,6 +98,41 @@ import SwiftUI
         #expect(list.entry(for: 1) === earliest)
     }
 
+    /// Nothing else on `ListEntry` is synced to break the tie, so keeping both beats two
+    /// devices picking different survivors and dropping the row entirely.
+    @Test func dedupeEntriesKeepsBothWhenAddedAtTies() {
+        let list = MediaList(name: "Custom")
+        ctx.insert(list)
+        for _ in 0..<2 {
+            let entry = ListEntry(movie: makeMovie(id: 1))
+            entry.addedAt = .utc(2020, 1, 1); entry.list = list
+            ctx.insert(entry)
+        }
+        #expect(list.dedupeEntries() == false)
+        try? ctx.save()
+        #expect((list.entries ?? []).count == 2)
+    }
+
+    @Test func deduplicateEntriesSweepsEveryListNotJustMergedOnes() {
+        let watch = MediaList(name: "Watch List", isWatchList: true)
+        let custom = MediaList(name: "Faves", sortOrder: 1)
+        ctx.insert(watch); ctx.insert(custom)
+        // Two devices adding the same title to the same list — no list-level merge involved.
+        for list in [watch, custom] {
+            for year in [2020, 2021] {
+                let entry = ListEntry(movie: makeMovie(id: 7))
+                entry.addedAt = .utc(year, 1, 1); entry.list = list
+                ctx.insert(entry)
+            }
+        }
+
+        #expect(MediaList.deduplicateEntries(in: ctx))
+        try? ctx.save()
+        #expect((watch.entries ?? []).count == 1)
+        #expect((custom.entries ?? []).count == 1)
+        #expect(watch.entry(for: 7)?.addedAt == .utc(2020, 1, 1))
+    }
+
     @Test func deduplicateWatchListMergesEntriesAndMarksDuplicate() {
         let keep = MediaList(name: "Watch List", isWatchList: true)
         keep.createdAt = .utc(2020, 1, 1)

@@ -87,14 +87,21 @@ final class MediaList {
     func remove(_ movie: Movie) { remove(key: movie.mediaKey) }
     func toggle(_ movie: Movie) { toggle(key: movie.mediaKey) }
 
-    func dedupeEntries() {
-        guard let context = modelContext else { return }
+    @discardableResult
+    func dedupeEntries() -> Bool {
+        guard let context = modelContext else { return false }
         let groups = Dictionary(grouping: entries ?? []) { "\($0.tmdbID)-\($0.mediaTypeRaw)" }
+        var changed = false
         for (_, dupes) in groups where dupes.count > 1 {
-            for drop in dupes.sorted(by: { $0.addedAt < $1.addedAt }).dropFirst() {
+            // Keep every entry sharing the earliest `addedAt`: nothing else on `ListEntry` is
+            // synced to break a tie, and if two devices pick different survivors the row is lost.
+            guard let earliest = dupes.map(\.addedAt).min() else { continue }
+            for drop in dupes where drop.addedAt > earliest {
                 context.delete(drop)
+                changed = true
             }
         }
+        return changed
     }
 }
 
@@ -128,6 +135,17 @@ extension MediaList {
         let list = MediaList(name: "Watch List", symbol: "bookmark", sortOrder: 0, isWatchList: true)
         context.insert(list)
         return list
+    }
+
+    /// Collapse duplicate entries in *every* list. Two devices adding the same title to the
+    /// same list is the common case, and no list-level merge covers it. Run after the merge.
+    @discardableResult
+    static func deduplicateEntries(in context: ModelContext) -> Bool {
+        var changed = false
+        for list in (try? context.fetch(FetchDescriptor<MediaList>())) ?? [] {
+            if list.dedupeEntries() { changed = true }
+        }
+        return changed
     }
 
     /// Grace before a merged-away duplicate is deleted, so its entry re-parent syncs first.

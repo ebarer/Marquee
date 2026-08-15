@@ -12,9 +12,12 @@ extension PersistenceCoordinator {
 
     func seedWatchList() { _ = watchList; save() }
 
-    /// Converges duplicate Watch Lists, MediaItems, and TV-progress records a CloudKit import produced.
+    /// Converges duplicate Watch Lists, list entries, MediaItems, and TV-progress records a
+    /// CloudKit import produced.
     func deduplicate() {
         MediaList.deduplicateWatchList(in: context)
+        // After the merge, so entries re-parented onto the surviving list get collapsed too.
+        MediaList.deduplicateEntries(in: context)
         MediaItem.deduplicate(in: context)
         WatchedEpisode.deduplicate(in: context)
         WatchedSeason.deduplicate(in: context)

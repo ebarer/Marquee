@@ -120,6 +120,13 @@ struct ListManagerView: View {
                 .moveDisabled(true)
                 .deleteDisabled(true)
 
+#if DEBUG
+                SchemaPrimerSection(store: store)
+                    .listRowSeparatorTint(Self.separator)
+                    .moveDisabled(true)
+                    .deleteDisabled(true)
+#endif
+
                 Section {
                     Button {
                         pushed = .services
