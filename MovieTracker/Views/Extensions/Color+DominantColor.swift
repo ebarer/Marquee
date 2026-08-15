@@ -16,7 +16,36 @@ extension Color {
     /// for more than area, so a small saturated block (a title, a logo) beats a muted sky.
     static func dominantColor(from uiImage: UIImage) -> Color {
         guard let found = DominantHue.find(in: uiImage) else { return .appAccent }
-        return Color(hue: found.hue, saturation: max(0.5, found.saturation), brightness: 1)
+        let vivid = max(0.5, found.saturation)
+        return Color(hue: found.hue,
+                     saturation: TintLightness.saturation(hue: found.hue, atMost: vivid),
+                     brightness: 1)
+    }
+}
+
+/// Caps saturation so every tint clears the same perceived lightness. A fully saturated red or
+/// blue is barely half as light as a yellow, and reads as a muddy dark patch without this.
+private enum TintLightness {
+    private static let minLightness = 0.58
+
+    static func saturation(hue: Double, atMost saturation: Double) -> Double {
+        guard lightness(hue: hue, saturation: saturation) < minLightness else { return saturation }
+        // Lightness falls monotonically as saturation rises, so bisect for the crossing point.
+        var low = 0.0, high = saturation
+        for _ in 0..<12 {
+            let mid = (low + high) / 2
+            if lightness(hue: hue, saturation: mid) < minLightness { high = mid } else { low = mid }
+        }
+        return low
+    }
+
+    private static func lightness(hue: Double, saturation: Double) -> Double {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        UIColor(hue: hue, saturation: saturation, brightness: 1, alpha: 1)
+            .getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        let weighted = 0.299 * Double(red * red) + 0.587 * Double(green * green)
+            + 0.114 * Double(blue * blue)
+        return sqrt(weighted)
     }
 }
 
@@ -28,9 +57,10 @@ private enum DominantHue {
     /// Averaging the artwork down to this width is the blur step — it merges neighbouring pixels
     /// into blocks of colour while leaving hues intact.
     private static let sampleWidth = 128
-    /// Below these, a pixel is a grey or a shadow and carries no usable hue.
+    /// Below these, a pixel is a grey or near-black and carries no usable hue. The brightness bar
+    /// stays low: a dim green backdrop is still the colour the poster reads as.
     private static let minSaturation = 0.2
-    private static let minBrightness = 0.2
+    private static let minBrightness = 0.1
 
     static func find(in image: UIImage) -> (hue: Double, saturation: Double)? {
         guard let sample = pixels(of: image) else { return nil }
@@ -47,9 +77,9 @@ private enum DominantHue {
                             blue: Double(sample[index + 2]) / 255)
             guard pixel.saturation >= minSaturation, pixel.brightness >= minBrightness else { continue }
 
-            // Cubed saturation is what lets a vivid minority beat a muted majority; brightness
-            // squared then discounts the same hue where it sits in shadow.
-            let weight = pow(pixel.saturation, 3) * pow(pixel.brightness, 2)
+            // Cubed saturation lets a vivid minority beat a muted majority; brightness discounts
+            // shadow, but only linearly — squared, a lit accent beat a large dark backdrop.
+            let weight = pow(pixel.saturation, 3) * pixel.brightness
             let bin = min(binCount - 1, Int(pixel.hue * Double(binCount)))
             let angle = pixel.hue * 2 * .pi
             weights[bin] += weight
