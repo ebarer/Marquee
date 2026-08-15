@@ -99,6 +99,7 @@
 		CE822F4E301D1B450070F69B /* ListIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F4D301D1B450070F69B /* ListIcon.swift */; };
 		CE85670630303A47001D4372 /* View+SwipeGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE85670530303A47001D4372 /* View+SwipeGrid.swift */; };
 		CE85670830303A66001D4372 /* SearchResultsGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE85670730303A66001D4372 /* SearchResultsGrid.swift */; };
+		CE85672A303072E8001D4372 /* ListVisibleCount.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE856729303072E8001D4372 /* ListVisibleCount.swift */; };
 		CE8C0C95301AFEDA00F08C6A /* ListEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8C0C94301AFEDA00F08C6A /* ListEditorView.swift */; };
 		CE8C0C99301BD1DC00F08C6A /* ListMembershipMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8C0C98301BD1DC00F08C6A /* ListMembershipMenu.swift */; };
 		CE8DD1A930292222006213BD /* ExpandableText.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD1A830292222006213BD /* ExpandableText.swift */; };
@@ -378,6 +379,7 @@
 		CE822F4D301D1B450070F69B /* ListIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListIcon.swift; sourceTree = "<group>"; };
 		CE85670530303A47001D4372 /* View+SwipeGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+SwipeGrid.swift"; sourceTree = "<group>"; };
 		CE85670730303A66001D4372 /* SearchResultsGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultsGrid.swift; sourceTree = "<group>"; };
+		CE856729303072E8001D4372 /* ListVisibleCount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListVisibleCount.swift; sourceTree = "<group>"; };
 		CE8C0C94301AFEDA00F08C6A /* ListEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListEditorView.swift; sourceTree = "<group>"; };
 		CE8C0C98301BD1DC00F08C6A /* ListMembershipMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListMembershipMenu.swift; sourceTree = "<group>"; };
 		CE8DD1A830292222006213BD /* ExpandableText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableText.swift; sourceTree = "<group>"; };
@@ -793,6 +795,7 @@
 			children = (
 				CEEAFCEF3019D1FA00D06E0E /* ListsView.swift */,
 				CEB9BA7330249B8B002C6ED4 /* ListContentView.swift */,
+				CE856729303072E8001D4372 /* ListVisibleCount.swift */,
 				CE70BC57302FD2120059F0F3 /* Sections */,
 				CE70BC58302FD2150059F0F3 /* Entries */,
 				CE70BC65302FD67F0059F0F3 /* Table */,
@@ -1693,6 +1696,7 @@
 				CE8DD1D930296386006213BD /* StarRating.swift in Sources */,
 				CE3FE9DD3022D7C800FCC44B /* SearchMatching.swift in Sources */,
 				CEE790113029DCCC0040DADB /* SearchContext.swift in Sources */,
+				CE85672A303072E8001D4372 /* ListVisibleCount.swift in Sources */,
 				CE8DD3B53029CD02006213BD /* SectionFormatter.swift in Sources */,
 				CE8DD20D302966AB006213BD /* ShowDetailModel.swift in Sources */,
 				CEB9BAC43025F7AC002C6ED4 /* SimulatorTools.swift in Sources */,
@@ -2016,7 +2020,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.15.3;
+				CURRENT_PROJECT_VERSION = 2026.8.15.4;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2042,7 +2046,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.15.3;
+				CURRENT_PROJECT_VERSION = 2026.8.15.4;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (

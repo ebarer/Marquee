@@ -21,13 +21,14 @@ The Xcode project is still named `MovieTracker`; the app target is **Marquee**
 
 ## Architecture
 
-Three layers, one direction of dependency: **Views → Persistence → Source**.
+Three layers, listed as the project lists them. Dependency runs one way, in the other order:
+**Views → Persistence → Source**.
 
 | Layer | Role | Rule |
 |---|---|---|
+| `Views/` | SwiftUI screens plus their view-models | Never touches `ModelContext` directly |
 | `Source/` | Domain types, TMDB networking, search engine, streaming catalog | No SwiftUI, no SwiftData |
 | `Persistence/` | SwiftData models, the store, caching, import/export | Knows `Source`, not `Views` |
-| `Views/` | SwiftUI screens plus their view-models | Never touches `ModelContext` directly |
 
 ### Data flow
 
@@ -80,11 +81,18 @@ monitor, and picks a shell by size class:
   its own `NavigationStack`.
 - **Regular (iPad)** – `SidebarRootView`: `NavigationSplitView`; detail screens open as sized
   sheets via the `openDetail` environment action, with `closeModal` injected for the Close button.
+  `DetailRootView` marks what the sheet opened on with `isModalRoot`, so Close takes the leading
+  side there and the trailing side on a pushed screen, where Back owns the leading one.
 
 Both shells attach `.detailDestinations()`, so any screen can push a `Movie`, `Show`, `Episode`,
-or `Person` without knowing which shell it's in. Each page publishes its accent colour with
-`.pageTint(_:)` (a `PreferenceKey`), which the shell applies — that's how the UI takes on the
-current poster's colour.
+or `Person` without knowing which shell it's in. Preferences carry state the other way, up to
+whichever shell owns the chrome: `.pageTint(_:)` hands up a page's accent colour (that's how the
+UI takes on the current poster's colour), and `.listVisibleCount(_:)` hands up how many rows a
+list is showing, for the "3 of 30 Titles" navigation subtitle.
+
+The same screens serve both shells, in two presentations: `ListTable` renders a list as `List`
+rows on iPhone, `ListGrid` as cards in a grid on iPad, both from one `ListContentView` and the
+same `SectionSnapshot`s. Search does likewise — rows on iPhone, `SearchResultsGrid` on iPad.
 
 ---
 
@@ -92,6 +100,22 @@ current poster's colour.
 
 ```
 MovieTracker/
+├── App/                        # AppDelegate, SceneDelegate, UITestHooks
+├── Views/
+│   ├── Structure/              # RootView, the two shells, sidebar, detail routing, PageTint
+│   ├── Featured/               # Discover
+│   ├── Lists/                  # ListsView + ListContentView, and the visible-count preference
+│   │   ├── Sections/           # SectionSnapshot, SectionFormatter, ListSectionsModel, header
+│   │   ├── Entries/            # One entry's body, context, actions, links, swipes
+│   │   ├── Table/              # ListTable: the iPhone rows
+│   │   ├── Grid/               # ListGrid: the iPad cards
+│   │   └── Toolbar/            # Title label + switcher, sort/filter menu and its options
+│   ├── Search/                 # Search screen, people strip, iPad results grid
+│   ├── Details/                # Movie/ Show/ Person/ Episode/ + Common/ building blocks
+│   ├── Shared/                 # Images, Cards, Rows, Lists, Controls, Actions, Text
+│   ├── Settings/               # List manager (settings hub), streaming, region, cache, backup
+│   ├── Extensions/             # Color, String, DateFormatter, detailDestinations, swipe grid
+│   └── Preview/                # In-memory container + sample data for previews
 ├── Source/                     # Domain + services (no UI, no SwiftData)
 │   ├── Representations/        # Movie, Show, Season, Episode, Person, MediaRef, MediaKey…
 │   ├── Requests/               # TMDBWrapper (+Movie, +TV, +Person)
@@ -104,25 +128,18 @@ MovieTracker/
 │   ├── Sync/                   # CloudSyncMonitor, SyncLog
 │   ├── Cache/                  # MediaCacheStore, prefetcher, season counts
 │   └── Transfer/               # JSON library backup, CSV import, import/export coordinator
-├── Views/
-│   ├── App/                    # AppDelegate, SceneDelegate
-│   ├── Structure/              # RootView, the two shells, sidebar, detail routing, PageTint
-│   ├── Featured/               # Discover
-│   ├── Lists/                  # Lists screen, sections, sorting, row actions
-│   ├── Search/                 # Search screen, people strip
-│   ├── Details/                # Movie/ Show/ Person/ Episode/ + Common/ building blocks
-│   ├── Shared/                 # Images, Cards, Rows, Lists, Controls, Text
-│   ├── Settings/               # List manager (settings hub), streaming, region, cache, backup
-│   ├── Extensions/             # Color, String, DateFormatter, detailDestinations
-│   └── Preview/                # In-memory container + sample data for previews
 └── Resources/                  # Assets, Info.plist, entitlements, sample JSON/images
 ```
+
+`Resources/` is a synchronized group — anything dropped in is built automatically. Everywhere
+else the project carries explicit file references, so a new source file has to be added to the
+target or the build fails.
 
 ### View-Model Placement
 
 Pure logic lives in `Source/`. A view-model that exists to drive one screen lives *next to that
 screen* (`Views/Details/Movie/MovieDetailModel.swift`, `Views/Featured/FeaturedModel.swift`,
-`Views/Lists/ListSectionsModel.swift`). They're `@MainActor @Observable` classes with
+`Views/Lists/Sections/ListSectionsModel.swift`). They're `@MainActor @Observable` classes with
 `private(set)` state and `async` load methods — no Combine.
 
 ### Previews
