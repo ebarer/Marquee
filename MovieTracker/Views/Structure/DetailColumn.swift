@@ -38,7 +38,7 @@ struct DetailColumn: View {
             case .collection(let collection):
                 FeaturedGridView(collection: collection)
             case .none:
-                FeaturedGridView(collection: .popular)
+                FeaturedGridView(collection: .popularMovies)
             }
         }
     }

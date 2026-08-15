@@ -23,7 +23,7 @@ import Foundation
     @Test func loadFetchesFirstPage() async {
         installPagedStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.load(.popular)
+        await model.load(.popularMovies)
         #expect(model.movies.map(\.id) == [1, 2])
         #expect(model.isLoading == false)
     }
@@ -31,16 +31,16 @@ import Foundation
     @Test func loadIsNoOpForSameCollectionAlreadyLoaded() async {
         installPagedStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.load(.popular)
+        await model.load(.popularMovies)
         let count = URLProtocolStub.requestedURLs.count
-        await model.load(.popular)  // ignored: same collection already loaded
+        await model.load(.popularMovies)  // ignored: same collection already loaded
         #expect(URLProtocolStub.requestedURLs.count == count)
     }
 
     @Test func paginationAppendsAndDedupes() async {
         installPagedStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.load(.popular)
+        await model.load(.popularMovies)
         await model.loadMoreIfNeeded(currentItem: model.movies.last!)
         #expect(model.movies.map(\.id) == [1, 2, 3])  // id 2 not duplicated
     }
@@ -48,7 +48,7 @@ import Foundation
     @Test func loadingDifferentCollectionResetsAndReloads() async {
         installPagedStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.load(.popular)
+        await model.load(.popularMovies)
         await model.loadMoreIfNeeded(currentItem: model.movies.last!)
         await model.load(.comingSoon)
         #expect(model.movies.map(\.id) == [1, 2])  // back to a fresh first page
@@ -60,7 +60,7 @@ import Foundation
         }
         defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.load(.popular)
+        await model.load(.popularMovies)
         let count = URLProtocolStub.requestedURLs.count
         await model.loadMoreIfNeeded(currentItem: model.movies.last!)
         #expect(URLProtocolStub.requestedURLs.count == count)  // no further fetch
@@ -82,7 +82,7 @@ import Foundation
     @Test func showShelfLoadsShows() async {
         installShowStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.load(.showsPopular)
+        await model.load(.popularShows)
         #expect(model.shows.map(\.id) == [1, 2])
         #expect(model.movies.isEmpty)
     }
@@ -90,7 +90,7 @@ import Foundation
     @Test func showShelfPaginationAppendsAndDedupes() async {
         installShowStub(); defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.load(.showsPopular)
+        await model.load(.popularShows)
         await model.loadMoreIfNeeded(currentShow: model.shows.last!)
         #expect(model.shows.map(\.id) == [1, 2, 3])  // id 2 not duplicated
     }
@@ -105,9 +105,9 @@ import Foundation
         }
         defer { URLProtocolStub.remove() }
         let model = FeaturedModel()
-        await model.load(.popular)
+        await model.load(.popularMovies)
         #expect(model.movies.map(\.id) == [1, 2])
-        await model.load(.showsPopular)
+        await model.load(.popularShows)
         #expect(model.shows.map(\.id) == [1, 2])
         #expect(model.movies.isEmpty)   // movie shelf cleared on switch
     }

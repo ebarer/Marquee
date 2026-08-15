@@ -12,7 +12,7 @@ final class FeaturedModel {
     private(set) var shows: [Show] = []
     private(set) var isLoading = false
 
-    private var collection: FeaturedCollection = .popular
+    private var collection: FeaturedCollection = .popularMovies
     private var lastPageFetched = 0
     private var totalPages = 1
 

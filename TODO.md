@@ -9,6 +9,12 @@ Polish:
 - [ ] 
 
 Ideas:
+- [ ] Settings page
+  - [ ] Version
+  - [ ] Cache management
+  - [ ] Region selection
+  - [ ] Streaming service selection
+  - [ ] Import/Export
 - [ ] Clean up person page
   - [ ] Center avatar, name below
   - [ ] Collapsing header with small avatar and name

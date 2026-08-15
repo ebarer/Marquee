@@ -36,10 +36,11 @@ struct SidebarColumn: View {
     var body: some View {
         List(selection: $selection) {
             Section("Discover") {
-                ForEach(FeaturedCollection.allCases) { collection in
-                    Label(collection.title, systemImage: collection.symbol)
-                        .tag(SidebarItem.collection(collection))
-                }
+                ForEach(FeaturedCollection.movieCases) { collectionRow($0) }
+            }
+
+            Section {
+                ForEach(FeaturedCollection.showCases) { collectionRow($0) }
             }
 
             Section("Lists") {
@@ -70,6 +71,11 @@ struct SidebarColumn: View {
     }
 
     // MARK: - Rows
+
+    private func collectionRow(_ collection: FeaturedCollection) -> some View {
+        collection.label
+            .tag(SidebarItem.collection(collection))
+    }
 
     private func listRow(_ list: MediaList) -> some View {
         let tag = SidebarItem.list(.list(list.uuid))
@@ -120,7 +126,7 @@ struct SidebarColumn: View {
 // `.modelContainer` attaches, crashing with "No eligible connection available".
 #Preview {
     NavigationStack {
-        SidebarColumn(selection: .constant(.collection(.popular)))
+        SidebarColumn(selection: .constant(.collection(.popularMovies)))
     }
     .modelContainer(previewModelContainer)
     .environment(PersistenceCoordinator(previewModelContainer.mainContext))
