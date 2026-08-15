@@ -1,6 +1,6 @@
 
 Important:
-- [ ] Break apart ListRows, it's way too long
+- [ ] 
 
 Polish:
 - [ ] iPad: Sidebar selection should match list tint

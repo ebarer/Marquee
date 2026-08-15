@@ -14,10 +14,7 @@ struct ListTable: View, Equatable {
     let lists: [MediaList]
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
-    @Environment(\.openDetail) private var openDetail
 
-    /// iPad: `List(selection:)` fires even during sync re-renders that were swallowing in-row taps.
-    @State private var tappedMovie: Movie?
     /// The "Older" archive bucket starts collapsed each visit.
     @State private var olderExpanded = false
     /// One per screen: a row carries only a single presentation of a kind — two would cancel
@@ -38,27 +35,13 @@ struct ListTable: View, Equatable {
 
     var body: some View {
         ScrollViewReader { proxy in
-            listContent
+            List { sectionsContent }
                 // Clear the floating tab bar so the last section isn't jammed against
                 // it, and leave slack to scroll an expanded "Older" bucket into view.
                 .contentMargins(.bottom, 24, for: .scrollContent)
                 .onChange(of: olderExpanded) { _, expanded in
                     guard expanded else { return }
                     withAnimation { proxy.scrollTo(Self.olderAnchor, anchor: .top) }
-                }
-        }
-    }
-
-    @ViewBuilder
-    private var listContent: some View {
-        if openDetail == nil {
-            List { sectionsContent }
-        } else {
-            List(selection: $tappedMovie) { sectionsContent }
-                .onChange(of: tappedMovie) { _, movie in
-                    guard let movie else { return }
-                    openDetail?(AnyHashable(movie))
-                    tappedMovie = nil
                 }
         }
     }
@@ -114,47 +97,15 @@ struct ListTable: View, Equatable {
 
     // MARK: - Rows
 
-    @ViewBuilder
     private func rows(for entries: [MediaSnapshot], hasHeader: Bool) -> some View {
         ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
             let firstEdge: Visibility = (!hasHeader && index == 0) ? .hidden : .automatic
             let lastEdge: Visibility = index == entries.count - 1 ? .hidden : .automatic
-            row(for: entry)
+            ListEntryRow(entry: entry, context: context, actions: actions, lists: lists)
                 .listRowSeparator(lastEdge, edges: .bottom)
                 // Hide the first row's top separator when it has no header above it.
                 .listRowSeparator(firstEdge, edges: .top)
         }
-    }
-
-    @ViewBuilder
-    private func row(for entry: MediaSnapshot) -> some View {
-        if entry.mediaType == .tv {
-            TVListRow(entry: entry, context: context, actions: actions)
-        } else {
-            movieRow(entry)
-        }
-    }
-
-    /// Movies keep `MovieListRow` for its platform routing: on iPad it tags the row so
-    /// `List(selection:)` opens the detail, immune to the re-renders that swallowed in-row taps.
-    private func movieRow(_ entry: MediaSnapshot) -> some View {
-        MovieListRow(
-            movie: entry.movie,
-            subtitle: context.subtitle(for: entry),
-            showsSubtitle: !context.isViewed,
-            duration: context.duration(for: entry),
-            rating: context.rating(for: entry),
-            ratingTint: context.listColor,
-            status: context.status(for: entry),
-            lists: lists,
-            leadingActions: {
-                ListEntryLeadingSwipe(entry: entry, context: context, actions: actions)
-            },
-            trailingActions: {
-                ListEntryDeleteButton { actions.requestDelete(entry) }
-            }
-        )
-        .listEntryConfirmation(for: entry, actions: actions)
     }
 }
 

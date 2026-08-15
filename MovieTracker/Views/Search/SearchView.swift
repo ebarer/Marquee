@@ -69,9 +69,8 @@ struct SearchView: View {
         let lastEdge: Visibility = index == model.results.count - 1 ? .hidden : .automatic
         switch ref {
         case .movie(let movie):
-            MovieListRow(
+            SearchMovieRow(
                 movie: movie,
-                derivesStatus: true,
                 lists: lists,
                 leadingActions: { WatchedSwipeButton(movie: movie) },
                 trailingActions: { WatchListSwipeButton(movie: movie) }

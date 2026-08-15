@@ -1,21 +1,15 @@
 //
-//  MovieListRow.swift
+//  SearchMovieRow.swift
 //  MovieTracker
 //
 
 import SwiftUI
 import SwiftData
 
-struct MovieListRow<Leading: View, Trailing: View>: View {
+/// A search result's movie row: insets, swipes and the membership menu around a `MovieRow`, plus
+/// the tap routing each shell needs. The lists build their rows from `ListEntryRow` instead.
+struct SearchMovieRow<Leading: View, Trailing: View>: View {
     let movie: Movie
-    var subtitle: String? = nil
-    var role: String? = nil
-    var showsSubtitle: Bool = true
-    var duration: String? = nil
-    var rating: Double? = nil
-    var ratingTint: Color = .appAccent
-    var status: PosterStatus? = nil
-    var derivesStatus: Bool = false
     let lists: [MediaList]
     @ViewBuilder var leadingActions: () -> Leading
     @ViewBuilder var trailingActions: () -> Trailing
@@ -55,30 +49,25 @@ struct MovieListRow<Leading: View, Trailing: View>: View {
         }
     }
 
+    /// Search always derives the badge from the store: a result carries no list membership.
     private var row: some View {
-        MovieRow(movie: movie, subtitle: subtitle, role: role,
-                 showsSubtitle: showsSubtitle, duration: duration,
-                 rating: rating, ratingTint: ratingTint, status: status,
-                 derivesStatus: derivesStatus)
+        MovieRow(movie: movie, derivesStatus: true)
     }
 }
 
 #Preview {
     NavigationStack {
         List {
-            MovieListRow(movie: .preview, lists: [],
-                         leadingActions: {
-                             WatchedSwipeButton(movie: .preview)
-                         }, trailingActions: {
-                             WatchListSwipeButton(movie: .preview)
-                         })
+            SearchMovieRow(movie: .preview, lists: [],
+                           leadingActions: {
+                               WatchedSwipeButton(movie: .preview)
+                           }, trailingActions: {
+                               WatchListSwipeButton(movie: .preview)
+                           })
 
-            MovieListRow(movie: Movie.previewList[1],
-                         subtitle: "Watched Aug 2, 2026", role: "Director",
-                         duration: "2 hr 53 min", rating: 4.0,
-                         lists: [],
-                         leadingActions: { EmptyView() },
-                         trailingActions: { EmptyView() })
+            SearchMovieRow(movie: Movie.previewList[1], lists: [],
+                           leadingActions: { EmptyView() },
+                           trailingActions: { EmptyView() })
         }
         .listStyle(.plain)
         .detailDestinations()

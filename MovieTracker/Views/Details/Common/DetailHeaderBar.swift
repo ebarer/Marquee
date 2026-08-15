@@ -32,9 +32,9 @@ struct DetailHeaderBar<Actions: View>: View {
     private static var padding: CGFloat { 16 }
 
     var body: some View {
-        // The text column keeps a FIXED width (based on the full-size poster) so the title
-        // never re-fits/re-wraps as the poster shrinks — that reflow caused visible vibration.
-        let columnWidth = width - Self.padding * 2 - Self.posterWidth - 12
+        // The text column keeps a FIXED width (full-size poster) so the title never re-wraps as
+        // the poster shrinks — that reflow vibrated. Clamped: pass one proposes width 0 (→ negative).
+        let columnWidth = max(0, width - Self.padding * 2 - Self.posterWidth - 12)
         let titleScale = 1 - 0.25 * progress
         let actionsScale = 1 - 0.2 * progress
         let posterHeight = Self.posterHeight - 37.5 * progress
