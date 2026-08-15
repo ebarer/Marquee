@@ -64,10 +64,17 @@ struct SidebarColumn: View {
                            count: viewedCount)
             }
         }
+        // The selection pill draws in the tint, so it takes the selected list's own colour.
+        .tint(selectionTint)
         .navigationTitle("")
         .toolbarTitleDisplayMode(.inline)
         .toolbar { toolbar }
         .sheet(isPresented: $showListManager) { ListManagerView() }
+    }
+
+    private var selectionTint: Color {
+        guard case .list(let listSelection) = selection else { return .appAccent }
+        return ListDestination.resolve(listSelection, lists: lists).color
     }
 
     // MARK: - Rows

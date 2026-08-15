@@ -127,9 +127,7 @@ struct ListContentView: View {
                                 listFoldOlder: foldsOlder)
     }
 
-    // The grid renders every section expanded, so folding there would strand the "Older" bucket
-    // open under a heading the person can't collapse. Until it can, don't fold and don't offer to.
-    private var foldsOlder: Bool { watchListFoldOlder && showsTable }
+    private var foldsOlder: Bool { watchListFoldOlder }
 
     private var isRealList: Bool {
         if case .list = selection { return true }
@@ -141,7 +139,7 @@ struct ListContentView: View {
     // Folding only produces an "Older" bucket for the Watch List sorted by release
     // date; under date-added the list is flat, so the toggle would be a no-op.
     private var showsFoldToggle: Bool {
-        showsTable && destination.list?.isWatchList == true && currentListSortKey == .releaseDate
+        destination.list?.isWatchList == true && currentListSortKey == .releaseDate
     }
 
     private var listSortKeyBinding: Binding<ListSortKey> {

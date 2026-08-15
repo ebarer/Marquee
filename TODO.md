@@ -3,9 +3,12 @@ Important:
 - [ ] 
 
 Polish:
-- [ ] iPad: Sidebar selection should match list tint
-- [ ] iPad: Header should minimize further, huge veritcal gap
-- [ ] iPad: Person page is missing details
+- [x] iPad: Sidebar selection should match list tint
+- [x] iPad: Header should minimize further, huge veritcal gap
+- [x] iPad: Filter button on person page to the left of the close button
+- [x] iPad: Movie/TV search results lay out like lists
+- [x] iPad: Collapse older movies/shows in lists, same as on Phone
+- [ ] iPad: Sparse grid sections leave the right side empty
 - [ ] 
 
 Ideas:

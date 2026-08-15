@@ -29,16 +29,24 @@ extension EnvironmentValues {
     }
 }
 
+/// The modal's Close button. A screen with trailing items of its own renders this itself, after
+/// them: `modalDismissable()` applies from outside, and an outer item always lands leading.
+struct ModalCloseItem: ToolbarContent {
+    let close: () -> Void
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button("Close", systemImage: "xmark", action: close)
+        }
+    }
+}
+
 private struct ModalDismissable: ViewModifier {
     @Environment(\.closeModal) private var closeModal
 
     func body(content: Content) -> some View {
         if let closeModal {
-            content.toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close", systemImage: "xmark") { closeModal() }
-                }
-            }
+            content.toolbar { ModalCloseItem(close: closeModal) }
         } else {
             content
         }

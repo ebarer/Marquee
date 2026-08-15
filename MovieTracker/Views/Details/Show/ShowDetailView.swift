@@ -34,6 +34,9 @@ struct ShowDetailView: View {
     @State private var headerPinned = false
     @State private var isSeen = false
     @State private var overscroll: CGFloat = 0
+    /// The page's top edge in window coordinates — a sheet sits inset in the window, so a bare
+    /// `.global` reading would count that offset as nav-bar height.
+    @State private var pageTop: CGFloat = 0
     /// The season chosen in the episodes picker, lifted here so the header poster can
     /// swap to match. Nil until the user picks one (falls back to `openingSeason`/first).
     @State private var selectedSeason: Int?
@@ -83,13 +86,17 @@ struct ShowDetailView: View {
 
     private func detailContent(show: Show) -> some View {
         GeometryReader { container in
-            let navBarBottom = container.frame(in: .global).minY
+            // The reader sits below the nav bar, so its distance from the page's top edge is the
+            // bar's bottom edge — `pageTop`, not 0, because a sheet sits inset in the window.
+            let navBarBottom = container.frame(in: .global).minY - pageTop
             let fullHeight = container.size.height + navBarBottom
             let imageHeight = fullHeight * 0.45
             let headerRest = fullHeight * 0.54
 
             ScrollView {
                 VStack(spacing: 0) {
+                    pageTopProbe
+
                     ShowDetailHeader(show: show, tint: model.tint, lists: lists,
                                      navBarBottom: navBarBottom, imageHeight: imageHeight,
                                      headerRest: headerRest, overscroll: overscroll,
@@ -130,6 +137,18 @@ struct ShowDetailView: View {
                 overscroll = newValue
             }
         }
+    }
+
+    /// Zero-height, at the top of the scroll content: window position minus scroll-space position
+    /// is where the page begins. `ignoresSafeArea` widens what the ScrollView draws, not its frame.
+    private var pageTopProbe: some View {
+        Color.clear
+            .frame(height: 0)
+            .onGeometryChange(for: CGFloat.self) {
+                $0.frame(in: .global).minY - $0.frame(in: .named("scroll")).minY
+            } action: { newValue in
+                pageTop = newValue
+            }
     }
 
     private func refreshInProgressSeason() {

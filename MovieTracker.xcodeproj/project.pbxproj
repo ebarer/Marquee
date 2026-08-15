@@ -97,6 +97,8 @@
 		CE8041A7301D441300F5D6F2 /* EmojiField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8041A6301D441300F5D6F2 /* EmojiField.swift */; };
 		CE822F4C301D13DF0070F69B /* ListManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F4B301D13DF0070F69B /* ListManagerView.swift */; };
 		CE822F4E301D1B450070F69B /* ListIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F4D301D1B450070F69B /* ListIcon.swift */; };
+		CE85670630303A47001D4372 /* View+SwipeGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE85670530303A47001D4372 /* View+SwipeGrid.swift */; };
+		CE85670830303A66001D4372 /* SearchResultsGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE85670730303A66001D4372 /* SearchResultsGrid.swift */; };
 		CE8C0C95301AFEDA00F08C6A /* ListEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8C0C94301AFEDA00F08C6A /* ListEditorView.swift */; };
 		CE8C0C99301BD1DC00F08C6A /* ListMembershipMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8C0C98301BD1DC00F08C6A /* ListMembershipMenu.swift */; };
 		CE8DD1A930292222006213BD /* ExpandableText.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD1A830292222006213BD /* ExpandableText.swift */; };
@@ -374,6 +376,8 @@
 		CE8041A6301D441300F5D6F2 /* EmojiField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiField.swift; sourceTree = "<group>"; };
 		CE822F4B301D13DF0070F69B /* ListManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListManagerView.swift; sourceTree = "<group>"; };
 		CE822F4D301D1B450070F69B /* ListIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListIcon.swift; sourceTree = "<group>"; };
+		CE85670530303A47001D4372 /* View+SwipeGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+SwipeGrid.swift"; sourceTree = "<group>"; };
+		CE85670730303A66001D4372 /* SearchResultsGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultsGrid.swift; sourceTree = "<group>"; };
 		CE8C0C94301AFEDA00F08C6A /* ListEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListEditorView.swift; sourceTree = "<group>"; };
 		CE8C0C98301BD1DC00F08C6A /* ListMembershipMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListMembershipMenu.swift; sourceTree = "<group>"; };
 		CE8DD1A830292222006213BD /* ExpandableText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableText.swift; sourceTree = "<group>"; };
@@ -779,6 +783,7 @@
 				CE3FE9C1302286CF00FCC44B /* SearchPeopleStrip.swift */,
 				CE3FE9F5302403F700FCC44B /* SearchPeopleListView.swift */,
 				CE56977B301C824D00DF9142 /* SearchMovieRow.swift */,
+				CE85670730303A66001D4372 /* SearchResultsGrid.swift */,
 			);
 			path = Search;
 			sourceTree = "<group>";
@@ -1258,6 +1263,7 @@
 				CEEAFCE73019D1D100D06E0E /* Color+ProjectColors.swift */,
 				CEB9BA8830249FFC002C6ED4 /* View+DetailDestinations.swift */,
 				CE70BC47302FB32D0059F0F3 /* Color+DominantColor.swift */,
+				CE85670530303A47001D4372 /* View+SwipeGrid.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1616,6 +1622,7 @@
 				CE8DD21B30296706006213BD /* SeasonEpisodeList.swift in Sources */,
 				CE8DD34D302984A8006213BD /* ImageSize.swift in Sources */,
 				CE8DD1D53029636A006213BD /* DetailHeaderBar.swift in Sources */,
+				CE85670830303A66001D4372 /* SearchResultsGrid.swift in Sources */,
 				CE8DD29330297711006213BD /* SyncLog.swift in Sources */,
 				CE72A0EE302C3EC200AB2597 /* PosterSymbolBadge.swift in Sources */,
 				CEB8A46B301EF1E5002FBF31 /* TrailerPlayerView.swift in Sources */,
@@ -1712,6 +1719,7 @@
 				CE70BC20302F19940059F0F3 /* PosterTint.swift in Sources */,
 				CEFAA211302D47CA00221EB8 /* Person+KnownFor.swift in Sources */,
 				CEE790133029DCCF0040DADB /* SearchTool.swift in Sources */,
+				CE85670630303A47001D4372 /* View+SwipeGrid.swift in Sources */,
 				CE56975E301C1A6100DF9142 /* FeaturedCollection.swift in Sources */,
 				CE3FE9F6302403F700FCC44B /* SearchPeopleListView.swift in Sources */,
 				CEE790153029DCD10040DADB /* SearchResults.swift in Sources */,

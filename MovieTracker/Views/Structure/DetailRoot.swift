@@ -40,13 +40,15 @@ enum DetailRoot: Hashable, Identifiable {
 struct DetailRootView: View {
     let root: DetailRoot
 
+    // Close is attached per case, not to the whole router: the person screen renders its own,
+    // after the filter button, so an outer copy would double up.
     var body: some View {
         switch root {
-        case .movie(let movie): MovieDetailView(movie: movie)
-        case .show(let show): ShowDetailView(show: show)
-        case .episode(let episode): EpisodeDetailView(episode: episode)
+        case .movie(let movie): MovieDetailView(movie: movie).modalDismissable()
+        case .show(let show): ShowDetailView(show: show).modalDismissable()
+        case .episode(let episode): EpisodeDetailView(episode: episode).modalDismissable()
         case .person(let person): PersonDetailView(person: person)
-        case .people(let list): SearchPeopleListView(list: list)
+        case .people(let list): SearchPeopleListView(list: list).modalDismissable()
         }
     }
 }

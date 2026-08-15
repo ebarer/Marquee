@@ -15,6 +15,8 @@ struct PersonDetailView: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
 
+    @Environment(\.closeModal) private var closeModal
+
     @Namespace private var photoNamespace
     @State private var showPhoto = false
     @State private var showNavTitle = false
@@ -90,6 +92,10 @@ struct PersonDetailView: View {
                         button
                     }
                 }
+            }
+            // Declared here, after the filter, so Close stays the rightmost item.
+            if let closeModal {
+                ModalCloseItem(close: closeModal)
             }
         }
         .background {

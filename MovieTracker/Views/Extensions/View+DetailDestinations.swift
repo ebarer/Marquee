@@ -17,8 +17,9 @@ extension View {
             .navigationDestination(for: Episode.self) { episode in
                 EpisodeDetailView(episode: episode).modalDismissable()
             }
+            // No `modalDismissable()`: the person screen renders Close itself, after its filter.
             .navigationDestination(for: Person.self) { person in
-                PersonDetailView(person: person).modalDismissable()
+                PersonDetailView(person: person)
             }
             .navigationDestination(for: PeopleList.self) { list in
                 SearchPeopleListView(list: list).modalDismissable()

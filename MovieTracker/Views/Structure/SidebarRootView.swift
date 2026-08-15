@@ -21,7 +21,6 @@ struct SidebarRootView: View {
         .sheet(item: $presented) { root in
             NavigationStack {
                 DetailRootView(root: root)
-                    .modalDismissable()
                     .detailDestinations()
             }
             // Injected on the stack so every pushed screen (cast → person, related

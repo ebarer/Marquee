@@ -13,18 +13,12 @@ struct SearchView: View {
     private var lists: [MediaList]
 
     @Environment(\.openDetail) private var openDetail
-    @State private var tappedMovie: Movie?
 
     var body: some View {
         searchList
         .listStyle(.plain)
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: tappedMovie) { _, movie in
-            guard let movie else { return }
-            openDetail?(AnyHashable(movie))
-            tappedMovie = nil
-        }
         .overlay {
             if isSearching {
                 if model.results.isEmpty && featuredPeople.isEmpty {
@@ -140,13 +134,14 @@ struct SearchView: View {
         !trimmedQuery.isEmpty
     }
 
-    /// iPhone uses a plain List so rows push; iPad drives selection so a tap opens the modal.
+    /// iPhone lists the results as rows that push; iPad lays them out as cards, like its lists.
     @ViewBuilder
     private var searchList: some View {
-        if openDetail == nil {
-            List { listContent }
+        if openDetail != nil, isSearching {
+            SearchResultsGrid(results: model.results, people: featuredPeople,
+                              peopleInlineCount: model.featuredPeopleInlineCount, lists: lists)
         } else {
-            List(selection: $tappedMovie) { listContent }
+            List { listContent }
         }
     }
 

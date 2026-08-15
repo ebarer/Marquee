@@ -33,6 +33,9 @@ struct MovieDetailView: View {
     // Top over-scroll (rubber-band) distance, from the scroll geometry — drives the
     // backdrop's elastic stretch. frame(in:) doesn't report top bounce reliably.
     @State private var overscroll: CGFloat = 0
+    // The page's top edge in window coordinates. A sheet sits inset in the window, so a bare
+    // `.global` reading would count the sheet's offset as nav-bar height.
+    @State private var pageTop: CGFloat = 0
 
     /// The payload once it lands, else the caller's stub.
     private var movie: Movie { model.movie ?? seed }
@@ -68,9 +71,9 @@ struct MovieDetailView: View {
 
     private func detailContent(movie: Movie) -> some View {
         GeometryReader { container in
-            // This reader sits below the nav bar, so its global top edge is the bar's bottom
-            // edge. The ScrollView ignores the top safe area so the backdrop draws under it.
-            let navBarBottom = container.frame(in: .global).minY
+            // This reader sits below the nav bar, so its distance from the page's top edge is
+            // the bar's bottom edge — the offset the header's collapsed layout works from.
+            let navBarBottom = container.frame(in: .global).minY - pageTop
             let fullHeight = container.size.height + navBarBottom
             let imageHeight = fullHeight * 0.45
             let headerRest = fullHeight * 0.54
@@ -79,6 +82,8 @@ struct MovieDetailView: View {
                 // The header is the first child (high zIndex) so it draws over the sections
                 // and the page scrolls underneath it once pinned.
                 VStack(spacing: 0) {
+                    pageTopProbe
+
                     MovieDetailHeader(movie: movie, tint: model.tint, lists: lists,
                                       navBarBottom: navBarBottom, imageHeight: imageHeight,
                                       headerRest: headerRest, overscroll: overscroll,
@@ -126,6 +131,18 @@ struct MovieDetailView: View {
                 overscroll = newValue
             }
         }
+    }
+
+    /// Zero-height, at the top of the scroll content: window position minus scroll-space position
+    /// is where the page begins. `ignoresSafeArea` widens what the ScrollView draws, not its frame.
+    private var pageTopProbe: some View {
+        Color.clear
+            .frame(height: 0)
+            .onGeometryChange(for: CGFloat.self) {
+                $0.frame(in: .global).minY - $0.frame(in: .named("scroll")).minY
+            } action: { newValue in
+                pageTop = newValue
+            }
     }
 
     @ViewBuilder
