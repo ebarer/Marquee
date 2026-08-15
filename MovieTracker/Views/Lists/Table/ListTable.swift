@@ -87,9 +87,9 @@ struct ListTable: View, Equatable {
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .rotationEffect(.degrees(olderExpanded ? 90 : 0))
-                Spacer()
             }
             .foregroundStyle(context.listColor)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

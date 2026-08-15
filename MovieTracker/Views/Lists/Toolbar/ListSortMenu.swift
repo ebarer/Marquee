@@ -13,11 +13,13 @@ struct ListSortMenu: View {
     var foldOlder: Binding<Bool>?
     var mediaFilter: Binding<MediaTypeFilter>?
 
+    // Used to style the button if actively filtering
+    private var isFiltering: Bool {
+        (mediaFilter?.wrappedValue ?? .all) != .all
+    }
+
     var body: some View {
         Menu {
-            // Sort key — the primary choices, each with its own symbol. Toggles, not a Picker:
-            // a Picker swallows the Section's header, and a Button can't show the checkmark
-            // alongside its symbol the way a menu Toggle does.
             Section("Sort By") {
                 if let watchedSortKey {
                     sortToggle(.dateWatched, selection: watchedSortKey)
@@ -31,7 +33,6 @@ struct ListSortMenu: View {
                 }
             }
 
-            // Order — nested so it reads as a single row with the current value as subtitle.
             Menu {
                 Picker("Order", selection: $ascending) {
                     Label("Ascending", systemImage: "arrow.up").tag(true)
@@ -44,7 +45,6 @@ struct ListSortMenu: View {
             }
             .menuActionDismissBehavior(.disabled)
 
-            // View — Movies / TV / Both; the row's subtitle reflects the current choice.
             if let mediaFilter {
                 Menu {
                     Picker("View", selection: mediaFilter) {
@@ -65,7 +65,8 @@ struct ListSortMenu: View {
                 .menuActionDismissBehavior(.disabled)
             }
         } label: {
-            Label("List Options", systemImage: "line.3.horizontal.decrease")
+            Label("List Options", systemImage: isFiltering
+                  ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease")
         }
         .menuActionDismissBehavior(.disabled)
     }
@@ -81,8 +82,6 @@ struct ListSortMenu: View {
         }
     }
 
-    /// A View-menu option as a Button (Pickers don't render option subtitles): title,
-    /// optional subtitle, and a leading symbol that becomes a checkmark when selected.
     @ViewBuilder
     private func viewButton(_ option: MediaTypeFilter, filter: Binding<MediaTypeFilter>,
                             subtitle: String? = nil) -> some View {

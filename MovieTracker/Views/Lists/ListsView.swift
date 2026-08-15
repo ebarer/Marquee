@@ -22,15 +22,20 @@ struct ListsView: View {
     @State private var selection: ListSelection?
     @State private var showListManager = false
 
+    /// The visible filtered count
+    @State private var visibleCount: Int?
+
     var body: some View {
         ListContentView(selection: resolvedSelection)
+            .onListVisibleCountChange { visibleCount = $0 }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Menu {
                         ListTitleMenu(selection: selectionBinding, watchList: watchList,
                                            customLists: customLists)
                     } label: {
-                        ListTitleLabel(name: title, color: activeColor, count: movieCount)
+                        ListTitleLabel(name: title, color: activeColor,
+                                       count: mediaCount, visible: visibleCount)
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
@@ -83,7 +88,7 @@ struct ListsView: View {
     private var destination: ListDestination { .resolve(resolvedSelection, lists: lists) }
     private var title: String { destination.name }
     private var activeColor: Color { destination.color }
-    private var movieCount: Int { destination.movieCount(using: store) }
+    private var mediaCount: Int { destination.mediaCount(using: store) }
 }
 
 #Preview("Idle") {

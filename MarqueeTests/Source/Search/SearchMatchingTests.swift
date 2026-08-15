@@ -292,22 +292,22 @@ import Foundation
 
     // MARK: - featuredPeople
 
-    @Test func featuredPeoplePutsMovieMatchesFirstThenNamedByPopularity() {
+    @Test func featuredPeoplePutsCastMatchesFirstThenNamedByPopularity() {
         let bale = castMember(11, "Christian Bale", "Batman")
         let named = [namedPerson(50, "Low", popularity: 5), namedPerson(51, "High", popularity: 10)]
-        let result = SearchMatching.featuredPeople(movieMatched: [bale], named: named, cap: 12)
+        let result = SearchMatching.featuredPeople(castMatched: [bale], named: named, cap: 12)
         #expect(result.map(\.name) == ["Christian Bale", "High", "Low"])
     }
 
     @Test func featuredPeopleDedupesAndCaps() {
         let shared = namedPerson(11, "Christian Bale", popularity: 8)
-        let movieMatched = [castMember(11, "Christian Bale", "Batman")]  // same id as `shared`
+        let castMatched = [castMember(11, "Christian Bale", "Batman")]  // same id as `shared`
         let named = [shared, namedPerson(52, "Other", popularity: 9)]
-        let result = SearchMatching.featuredPeople(movieMatched: movieMatched, named: named, cap: 12)
+        let result = SearchMatching.featuredPeople(castMatched: castMatched, named: named, cap: 12)
         #expect(result.map(\.id) == [11, 52])  // Bale not duplicated
 
         let capped = SearchMatching.featuredPeople(
-            movieMatched: movieMatched,
+            castMatched: castMatched,
             named: (0..<20).map { namedPerson(100 + $0, "P\($0)", popularity: Float($0)) },
             cap: 5)
         #expect(capped.count == 5)
@@ -315,27 +315,27 @@ import Foundation
 
     // MARK: - inlinePeopleCount
 
-    private func inlineCount(movieMatched: [Person], named: [Person]) -> Int {
+    private func inlineCount(castMatched: [Person], named: [Person]) -> Int {
         func withPhoto(_ person: Person) -> Person {
             var photographed = person
             photographed.profilePicture = "/x.jpg"
             return photographed
         }
         let featured = SearchMatching.featuredPeople(
-            movieMatched: movieMatched,
+            castMatched: castMatched,
             named: named.map(withPhoto),  // photos so the noise filter keeps them
             cap: 50, namedNoiseFloor: 1)
         return SearchMatching.inlinePeopleCount(
-            featured, movieMatchedIDs: Set(movieMatched.map(\.id)),
+            featured, castMatchedIDs: Set(castMatched.map(\.id)),
             inlinePopularityFloor: 1, minInline: 3, previewLimit: 8)
     }
 
-    @Test func inlineFoldsLowPopularityNamesakesBehindMovieMatches() {
+    @Test func inlineFoldsLowPopularityNamesakesBehindCastMatches() {
         // The "Up" case: 2 movie leads + 5 obscure namesakes (pop < 1) → only the
         // 2 leads inline, the rest fold under "More", even though total is < 8.
         let leads = [castMember(1, "Ed Asner", "Carl"), castMember(2, "Christopher Plummer", "Muntz")]
         let namesakes = (0..<5).map { namedPerson(100 + $0, "Namesake \($0)", popularity: 0.2) }
-        #expect(inlineCount(movieMatched: leads, named: namesakes) == 2)
+        #expect(inlineCount(castMatched: leads, named: namesakes) == 2)
     }
 
     @Test func inlineKeepsPopularNamedPeople() {
@@ -343,14 +343,14 @@ import Foundation
         let named = [namedPerson(1, "Famous", popularity: 30),
                      namedPerson(2, "Known", popularity: 4),
                      namedPerson(3, "Obscure", popularity: 0.1)]
-        #expect(inlineCount(movieMatched: [], named: named) == 2)  // Obscure folds
+        #expect(inlineCount(castMatched: [], named: named) == 2)  // Obscure folds
     }
 
     @Test func inlineShowsMinimumWhenNothingIsProminent() {
         // Pure obscure-name search: nothing clears the bar, so show the top few
         // rather than a bare "More" button.
         let named = (0..<6).map { namedPerson(1 + $0, "Obscure \($0)", popularity: 0.1) }
-        #expect(inlineCount(movieMatched: [], named: named) == 3)  // minInline
+        #expect(inlineCount(castMatched: [], named: named) == 3)  // minInline
     }
 
     @Test func inlineFoldsPhotolessNamesakeAbovePopularityFloor() {
@@ -364,18 +364,18 @@ import Foundation
         let leads = [castMember(1, "Gerard Butler", "Leonidas"), castMember(2, "Lena Headey", "Gorgo")]
         let andre = withPhoto(namedPerson(10, "André 3000", popularity: 1.44)) // photo → prominent
         let junk = namedPerson(11, "AI-D*300", popularity: 1.04)               // no photo → folds
-        let featured = SearchMatching.featuredPeople(movieMatched: leads, named: [andre, junk],
+        let featured = SearchMatching.featuredPeople(castMatched: leads, named: [andre, junk],
                                                      cap: 50, namedNoiseFloor: 1)
         #expect(featured.map(\.name).contains("AI-D*300"))  // still reachable in the full list
         let inline = SearchMatching.inlinePeopleCount(
-            featured, movieMatchedIDs: Set(leads.map(\.id)),
+            featured, castMatchedIDs: Set(leads.map(\.id)),
             inlinePopularityFloor: 1, minInline: 3, previewLimit: 8)
         #expect(inline == 3)  // Butler, Headey, André 3000 — junk folded
     }
 
     @Test func inlineClampsToPreviewLimit() {
         let many = (0..<20).map { castMember(1 + $0, "Cast \($0)", "Role \($0)") }
-        #expect(inlineCount(movieMatched: many, named: []) == 8)  // previewLimit
+        #expect(inlineCount(castMatched: many, named: []) == 8)  // previewLimit
     }
 
     @Test func featuredPeopleDropsNoiseEntriesWithoutPhotoOrPopularity() {
@@ -390,7 +390,7 @@ import Foundation
         let popularNoPhoto = namedPerson(62, "Popular", popularity: 5)            // pop saves it
 
         let result = SearchMatching.featuredPeople(
-            movieMatched: [], named: [junk, obscureReal, popularNoPhoto],
+            castMatched: [], named: [junk, obscureReal, popularNoPhoto],
             cap: 12, namedNoiseFloor: 1)
         #expect(result.map(\.name) == ["Popular", "Obscure Actor"])  // junk dropped
     }

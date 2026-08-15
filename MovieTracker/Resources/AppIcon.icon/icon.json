@@ -63,6 +63,7 @@
             }
           },
           "glass" : true,
+          "hidden" : false,
           "image-name" : "Rounded Rectangle 5 copy.png",
           "name" : "Bottom",
           "position" : {
@@ -76,6 +77,16 @@
       ],
       "lighting" : "individual",
       "name" : "Checkmark",
+      "opacity-specializations" : [
+        {
+          "appearance" : "dark",
+          "value" : 0
+        },
+        {
+          "appearance" : "tinted",
+          "value" : 0
+        }
+      ],
       "refractivity" : {
         "depth" : 0.5,
         "enabled" : true,
@@ -90,6 +101,111 @@
         "enabled" : true,
         "value" : 0.3
       }
+    },
+    {
+      "blend-mode-specializations" : [
+        {
+          "appearance" : "dark",
+          "value" : "normal"
+        },
+        {
+          "appearance" : "tinted",
+          "value" : "normal"
+        }
+      ],
+      "blur-material-specializations" : [
+        {
+          "value" : null
+        },
+        {
+          "appearance" : "tinted",
+          "value" : null
+        }
+      ],
+      "hidden" : false,
+      "layers" : [
+        {
+          "glass-specializations" : [
+            {
+              "value" : true
+            },
+            {
+              "appearance" : "tinted",
+              "value" : true
+            }
+          ],
+          "hidden" : false,
+          "image-name" : "Check copy 2.png",
+          "name" : "Check copy 2",
+          "position" : {
+            "scale" : 0.64,
+            "translation-in-points" : [
+              0.31999999999993634,
+              -1.2799999999999727
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "name" : "Checkmark",
+      "opacity-specializations" : [
+        {
+          "value" : 0
+        },
+        {
+          "appearance" : "dark",
+          "value" : 1
+        },
+        {
+          "appearance" : "tinted",
+          "value" : 1
+        }
+      ],
+      "refractivity-specializations" : [
+        {
+          "value" : {
+            "depth" : 0.5,
+            "enabled" : true,
+            "strength" : 0
+          }
+        },
+        {
+          "appearance" : "tinted",
+          "value" : {
+            "depth" : 0.5,
+            "enabled" : true,
+            "strength" : 0
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular-specializations" : [
+        {
+          "value" : "outside"
+        },
+        {
+          "appearance" : "tinted",
+          "value" : "inside"
+        }
+      ],
+      "translucency-specializations" : [
+        {
+          "value" : {
+            "enabled" : true,
+            "value" : 0.3
+          }
+        },
+        {
+          "appearance" : "tinted",
+          "value" : {
+            "enabled" : true,
+            "value" : 0.3
+          }
+        }
+      ]
     },
     {
       "blur-material-specializations" : [
@@ -120,6 +236,7 @@
               }
             }
           },
+          "hidden" : false,
           "image-name" : "Image.png",
           "name" : "Film",
           "position" : {

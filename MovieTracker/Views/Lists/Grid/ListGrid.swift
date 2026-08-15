@@ -20,41 +20,33 @@ struct ListGrid: View {
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 3)
 
-    /// ScrollViewReader target for the collapsible "Older" section.
-    private static let olderAnchor = "older-section"
-
     private var actions: ListEntryActions {
         ListEntryActions(store: store, context: context, pending: $pending)
     }
 
+    // Headers scroll with the content. Pinning them put a strip of cards between the nav bar's
+    // glass and the pinned header, and no scroll-to-anchor on expand: it aimed under the bar.
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 20) {
-                    ForEach(sections) { section in
-                        if section.isCollapsible {
-                            olderHeader(count: section.entries.count)
-                                .padding(.horizontal, 20)
-                                .id(Self.olderAnchor)
-                            if olderExpanded {
-                                grid(for: section)
-                            }
-                        } else {
-                            if !section.title.isEmpty {
-                                ListSectionLabel(section: section, tint: context.listColor)
-                                    .font(.headline)
-                                    .padding(.horizontal, 20)
-                            }
+        ScrollView {
+            // Spacing is small because every header carries its own height (`SectionHeaderRow`).
+            LazyVStack(alignment: .leading, spacing: 10) {
+                ForEach(sections) { section in
+                    if section.isCollapsible {
+                        olderHeader(count: section.entries.count)
+                        if olderExpanded {
                             grid(for: section)
                         }
+                    } else {
+                        if !section.title.isEmpty {
+                            ListSectionLabel(section: section, tint: context.listColor)
+                                .font(.headline)
+                                .modifier(SectionHeaderRow())
+                        }
+                        grid(for: section)
                     }
                 }
-                .padding(.vertical, 16)
             }
-            .onChange(of: olderExpanded) { _, expanded in
-                guard expanded else { return }
-                withAnimation { proxy.scrollTo(Self.olderAnchor, anchor: .top) }
-            }
+            .padding(.vertical, 16)
         }
         .swipeGridContainer()
     }
@@ -78,10 +70,10 @@ struct ListGrid: View {
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .rotationEffect(.degrees(olderExpanded ? 90 : 0))
-                Spacer()
             }
             .font(.headline)
             .foregroundStyle(context.listColor)
+            .modifier(SectionHeaderRow())
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -95,6 +87,21 @@ struct ListGrid: View {
         .buttonStyle(.plain)
         .listEntryContextMenu(for: entry, lists: lists)
         .listEntrySwipes(entry: entry, context: context, actions: actions)
+    }
+}
+
+/// One height for every section header — the 44pt the collapsible one needs as a tap target —
+/// so a list's first row sits where the last one's did. The text sits at the band's bottom.
+private struct SectionHeaderRow: ViewModifier {
+    /// Trims the gap above without shrinking the band: the button keeps its 44pt of hit area
+    /// and the overhang lands on the empty space between sections.
+    private static var overhang: CGFloat { 8 }
+
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .bottomLeading)
+            .padding(.horizontal, 20)
+            .padding(.top, -Self.overhang)
     }
 }
 

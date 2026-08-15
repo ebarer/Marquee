@@ -61,6 +61,22 @@ struct ListContentView: View {
         .navigationTitle(title)
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
+            // The iPhone's host supplies its own title (the list switcher); this is the iPad,
+            // where the bar would otherwise show a plain white name and no count.
+            if !showsTable {
+                ToolbarItem(placement: .title) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(activeColor)
+                }
+                ToolbarItem(placement: .subtitle) {
+                    // Sized and greyed as `ListTitleLabel` does it on the phone.
+                    countLabel
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             if selection == .viewed {
                 ToolbarItem(placement: sortPlacement) {
                     Button(role: .destructive) {
@@ -69,7 +85,7 @@ struct ListContentView: View {
                         Label("Clear Viewed", systemImage: "trash")
                     }
                     .tint(activeColor)
-                    .disabled(movieCount == 0)
+                    .disabled(mediaCount == 0)
                 }
             } else {
                 ToolbarItem(placement: sortPlacement) {
@@ -94,6 +110,22 @@ struct ListContentView: View {
         }
         .task(id: sectionsInput) { await sectionsModel.rebuild(for: sectionsInput, store: store) }
         .onChange(of: selection) { _, _ in sectionsModel.clear() }
+        // The compact shell owns its navigation title, so it reads the count from here.
+        .listVisibleCount(visibleCount)
+    }
+
+    /// What the screen is actually showing. Equal to `mediaCount` until the media filter or the
+    /// search narrows the rows; the list's own size while a rebuild is in flight.
+    private var visibleCount: Int {
+        guard sectionsModel.loadedInput == sectionsInput else { return mediaCount }
+        return sectionsModel.sections.reduce(0) { $0 + $1.entries.count }
+    }
+
+    /// "30 Titles", or "3 of 30 Titles" while something is filtered out.
+    private var countLabel: Text {
+        visibleCount == mediaCount
+            ? Text("^[\(mediaCount) Title](inflect: true)")
+            : Text("\(visibleCount) of ^[\(mediaCount) Title](inflect: true)")
     }
 
     // MARK: - Derived per-selection
@@ -120,7 +152,7 @@ struct ListContentView: View {
 
     private var title: String { destination.name }
     private var activeColor: Color { destination.color }
-    private var movieCount: Int { destination.movieCount(using: store) }
+    private var mediaCount: Int { destination.mediaCount(using: store) }
     private var listRequest: ListRequest? {
         destination.listRequest(watchedSort: watchedSortKey,
                                 listByDateAdded: currentListSortKey == .dateAdded,
@@ -183,7 +215,7 @@ struct ListContentView: View {
 
     // `version` (store revision) forces a rebuild after a silent edit that leaves the count unchanged.
     private var sectionsInput: ListSectionsModel.Input {
-        ListSectionsModel.Input(request: listRequest, count: movieCount,
+        ListSectionsModel.Input(request: listRequest, count: mediaCount,
                                 ascending: currentAscending, filter: filterText,
                                 mediaFilter: mediaFilter, version: store?.revision ?? 0)
     }

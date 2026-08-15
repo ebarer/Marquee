@@ -34,7 +34,7 @@ struct ListManagerView: View {
 
     private func count(for selection: ListSelection) -> Int {
         _ = store?.revision
-        return ListDestination.resolve(selection, lists: visibleLists).movieCount(using: store)
+        return ListDestination.resolve(selection, lists: visibleLists).mediaCount(using: store)
     }
 
     @State private var editing: MediaList?

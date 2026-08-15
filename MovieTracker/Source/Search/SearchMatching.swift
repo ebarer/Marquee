@@ -182,9 +182,9 @@ enum SearchMatching {
         return notable + noise
     }
 
-    /// Movie matches first, then name matches by popularity, deduped and capped. A name match
-    /// with neither a photo nor `namedNoiseFloor` popularity is dropped as a non-person entry.
-    static func featuredPeople(movieMatched: [Person], named: [Person], cap: Int,
+    /// Cast matches first (from films and the top show), then name matches by popularity, deduped
+    /// and capped. A name match with neither a photo nor `namedNoiseFloor` popularity is dropped.
+    static func featuredPeople(castMatched: [Person], named: [Person], cap: Int,
                                namedNoiseFloor: Float = 0) -> [Person] {
         let credibleNamed = named.filter {
             $0.popularity >= namedNoiseFloor || $0.profilePicture != nil
@@ -192,7 +192,7 @@ enum SearchMatching {
 
         var seen = Set<Int>()
         var merged: [Person] = []
-        for person in movieMatched where seen.insert(person.id).inserted {
+        for person in castMatched where seen.insert(person.id).inserted {
             merged.append(person)
         }
         for person in credibleNamed.sorted(by: { $0.popularity > $1.popularity })
@@ -202,17 +202,17 @@ enum SearchMatching {
         return Array(merged.prefix(cap))
     }
 
-    /// Length of `featured`'s inline "prominent" prefix — movie matches, plus named people
+    /// Length of `featured`'s inline "prominent" prefix — cast matches, plus named people
     /// clearing `inlinePopularityFloor` *and* having a photo. Falls back to `minInline`.
-    static func inlinePeopleCount(_ featured: [Person], movieMatchedIDs: Set<Int>,
+    static func inlinePeopleCount(_ featured: [Person], castMatchedIDs: Set<Int>,
                                   inlinePopularityFloor: Float, minInline: Int,
                                   previewLimit: Int) -> Int {
         var prominent = 0
         for person in featured {
-            let isMovieMatch = movieMatchedIDs.contains(person.id)
+            let isCastMatch = castMatchedIDs.contains(person.id)
             let isProminentNamed = person.popularity >= inlinePopularityFloor
                 && person.profilePicture != nil
-            guard isMovieMatch || isProminentNamed else { break }
+            guard isCastMatch || isProminentNamed else { break }
             prominent += 1
         }
         let inline = prominent > 0 ? prominent : minInline

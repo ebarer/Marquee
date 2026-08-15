@@ -48,7 +48,7 @@ final class SearchModel {
     private let debounce = Duration.milliseconds(300)
 
     var featuredPeople: [Person] {
-        SearchMatching.featuredPeople(movieMatched: castMatchedPeople,
+        SearchMatching.featuredPeople(castMatched: castMatchedPeople,
                                       named: namedPeople,
                                       cap: maxFeaturedPeople,
                                       namedNoiseFloor: namedNoiseFloor)
@@ -56,7 +56,7 @@ final class SearchModel {
 
     var featuredPeopleInlineCount: Int {
         SearchMatching.inlinePeopleCount(featuredPeople,
-                                         movieMatchedIDs: Set(castMatchedPeople.map(\.id)),
+                                         castMatchedIDs: Set(castMatchedPeople.map(\.id)),
                                          inlinePopularityFloor: inlinePopularityFloor,
                                          minInline: minInlinePeople,
                                          previewLimit: stripPreviewLimit)
