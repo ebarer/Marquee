@@ -9,6 +9,8 @@ import SwiftUI
 /// the tracked-season rows. Partial seasons get the half-filled corner badge.
 struct SeasonRowContent: View {
     let entry: MediaSnapshot
+    /// Appended to the season line — the watched date on the Watched list.
+    var detail: String? = nil
     var tint: Color = .appAccent
 
     var body: some View {
@@ -28,9 +30,11 @@ struct SeasonRowContent: View {
                 Text(entry.title)
                     .font(.body)
                     .lineLimit(2)
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 if let nextEpisodeDate = entry.nextEpisodeDate {
                     Text(nextEpisodeDate.toString())
                         .font(.subheadline)
@@ -45,14 +49,19 @@ struct SeasonRowContent: View {
         }
     }
 
-    private var subtitle: String {
-        guard let season = entry.seasonNumber else { return "" }
-        guard let watched = entry.seasonWatched, let total = entry.seasonTotal, total > 0 else {
+    static let separator = "  •  "
+
+    /// The season, its episode progress while there's more to watch, and `detail` — one line.
+    var subtitle: String {
+        [season, detail].compactMap { $0 }.joined(separator: Self.separator)
+    }
+
+    private var season: String? {
+        guard let season = entry.seasonNumber else { return nil }
+        guard isPartial, let watched = entry.seasonWatched, let total = entry.seasonTotal else {
             return "Season \(season)"
         }
-        let remaining = total - watched
-        guard remaining > 0 else { return "Season \(season)" }
-        return "Season \(season)  •  Ep. \(watched + 1) of \(total)"
+        return "Season \(season)\(Self.separator)Ep. \(watched + 1) of \(total)"
     }
 
     private var isPartial: Bool {
@@ -68,7 +77,8 @@ struct SeasonRowContent: View {
                                          seasonWatched: 3, seasonTotal: 10,
                                          nextEpisodeDate: .now.addingTimeInterval(-40 * 24 * 3600)))
         SeasonRowContent(entry: .preview(id: 2, title: "Completed", mediaType: .tv, season: 1,
-                                         seasonWatched: 8, seasonTotal: 8, userRating: 4.5))
+                                         seasonWatched: 8, seasonTotal: 8, userRating: 4.5),
+                         detail: "Finished \(Date().toString())")
         SeasonRowContent(entry: .preview(id: 3, title: "Caught Up", mediaType: .tv, season: 3,
                                          seasonWatched: 5, seasonTotal: 8,
                                          nextEpisodeDate: .now.addingTimeInterval(5 * 24 * 3600)))

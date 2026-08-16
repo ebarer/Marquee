@@ -22,15 +22,16 @@ struct PersonDetailView: View {
     @State private var showPhoto = false
     @State private var showNavTitle = false
     @State private var navBarBottom: CGFloat = 0
-    @State private var hideExtraneous = true
+    /// Remembered across people and launches; talk-show and courtesy credits are the default
+    /// selection, so an untouched filter behaves as it always has.
+    @AppStorage("personCreditFilter") private var filter = CreditFilter()
     @State private var filterButtonHidden = false
 
     private let bioHeaderID = "personBioHeader"
 
     private var current: Person { model.person ?? person }
-    private var hasExtraneousCredits: Bool {
-        current.allCredits.contains { $0.isExtraneousCredit }
-    }
+    private var availableKinds: [CreditKind] { CreditKind.present(in: current.allCredits) }
+    private var isFiltering: Bool { availableKinds.contains(where: filter.hides) }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -56,7 +57,7 @@ struct PersonDetailView: View {
                     knownForSection
 
                     PersonFilmography(credits: current.allCredits, lists: lists,
-                                      hideExtraneous: $hideExtraneous,
+                                      filter: $filter,
                                       navBarBottom: navBarBottom,
                                       onFilterHiddenChange: { hidden in
                                           withAnimation(.easeInOut(duration: 0.2)) {
@@ -78,20 +79,16 @@ struct PersonDetailView: View {
                     .foregroundStyle(.white)
                     .opacity(showNavTitle ? 1 : 0)
             }
-            if filterButtonHidden && hasExtraneousCredits {
+            if filterButtonHidden && availableKinds.count > 1 {
                 ToolbarItem(placement: .topBarTrailing) {
-                    let button = Button {
-                        withAnimation(.easeInOut) { hideExtraneous.toggle() }
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease")
+                    // State lives in the symbol: `.glassProminent` rendered identically either
+                    // way, leaving a tap looking like it did nothing.
+                    CreditFilterMenu(kinds: availableKinds, filter: $filter) {
+                        Image(systemName: isFiltering
+                              ? "line.3.horizontal.decrease.circle.fill"
+                              : "line.3.horizontal.decrease")
                     }
-                    .accessibilityLabel(hideExtraneous ? "Show all credits" : "Hide Self and Thanks credits")
-
-                    if hideExtraneous {
-                        button.buttonStyle(.glassProminent).tint(.appAccent)
-                    } else {
-                        button
-                    }
+                    .tint(.appAccent)
                 }
             }
             // Declared here, after the filter, so Close stays the rightmost item.

@@ -111,6 +111,7 @@ extension Person {
                 var movie = Movie(id: 1, title: "The Odyssey")
                 movie.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 17).date
                 movie.creditRole = "Director"
+                movie.creditKind = .directing
                 movie.poster = "preview-poster"
                 movie.popularity = 120
                 movie.voteCount = 1_400
@@ -120,18 +121,31 @@ extension Person {
                 var movie = Movie(id: 20, title: "Oppenheimer")
                 movie.releaseDate = DateComponents(calendar: .current, year: 2023, month: 7, day: 21).date
                 movie.creditRole = "Director"
+                movie.creditKind = .directing
                 movie.poster = "preview-poster-alt"
                 movie.popularity = 98
                 movie.voteCount = 9_800
                 return movie
             }(),
             {
+                // Credited three ways on Tenet: all of them listed, most prominent first.
                 var movie = Movie(id: 21, title: "Tenet")
                 movie.releaseDate = DateComponents(calendar: .current, year: 2020, month: 9, day: 3).date
-                movie.creditRole = "Writer"
+                movie.creditRole = "Director, Writer, Producer"
+                movie.creditKind = .directing
                 movie.poster = "preview-poster"
                 movie.popularity = 76
                 movie.voteCount = 7_600
+                return movie
+            }(),
+            {
+                var movie = Movie(id: 22, title: "Man of Steel")
+                movie.releaseDate = DateComponents(calendar: .current, year: 2013, month: 6, day: 14).date
+                movie.creditRole = "Story"
+                movie.creditKind = .writing
+                movie.poster = "preview-poster-alt"
+                movie.popularity = 54
+                movie.voteCount = 15_000
                 return movie
             }()
         ]
@@ -140,6 +154,7 @@ extension Person {
                 var show = Show(id: 1001, name: "Nightfall")
                 show.firstAirDate = DateComponents(calendar: .current, year: 2021, month: 9, day: 12).date
                 show.creditRole = "Executive Producer"
+                show.creditKind = .producing
                 show.poster = "preview-poster"
                 show.popularity = 64
                 show.voteCount = 2_900
@@ -151,6 +166,7 @@ extension Person {
                 var show = Show(id: 1002, name: "The Lighthouse Files")
                 show.firstAirDate = DateComponents(calendar: .current, year: 2018, month: 3, day: 4).date
                 show.creditRole = "Self"
+                show.creditKind = .appearance
                 show.poster = "preview-poster-alt"
                 show.popularity = 21
                 show.voteCount = 480

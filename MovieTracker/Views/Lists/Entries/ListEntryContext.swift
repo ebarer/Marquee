@@ -21,9 +21,12 @@ struct ListEntryContext: Equatable {
         return false
     }
 
+    /// The watched date, on the Watched list only. A season is *finished* rather than watched —
+    /// the show it belongs to may still be running.
     func subtitle(for entry: MediaSnapshot) -> String? {
         guard isWatched, let date = entry.dateWatched else { return nil }
-        return "Watched \(date.toString())"
+        let verb = entry.seasonNumber == nil ? "Watched" : "Finished"
+        return "\(verb) \(date.toString())"
     }
 
     func status(for entry: MediaSnapshot) -> PosterStatus? {

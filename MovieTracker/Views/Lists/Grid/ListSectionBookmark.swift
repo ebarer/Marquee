@@ -9,8 +9,6 @@ import SwiftUI
 struct ListSectionBookmark: View {
     let section: SectionSnapshot
     let tint: Color
-    /// Set only for the collapsible "Older" bucket, whose chevron shows its state.
-    var expanded: Bool? = nil
 
     static let width: CGFloat = 124
 
@@ -22,18 +20,9 @@ struct ListSectionBookmark: View {
                     .foregroundStyle(tint)
             }
 
-            HStack(spacing: 4) {
-                Text(section.monthAndYear?.month ?? section.title)
-                    .font(.headline.bold())
-                    .foregroundStyle(tint)
-
-                if let expanded {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(tint)
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
-                }
-            }
+            Text(section.monthAndYear?.month ?? section.title)
+                .font(.headline.bold())
+                .foregroundStyle(tint)
 
             Text("^[\(section.entries.count) Title](inflect: true)")
                 .font(.caption)
@@ -93,8 +82,7 @@ extension SectionSnapshot {
     VStack(alignment: .leading, spacing: 12) {
         ListSectionBookmark(section: month, tint: .appAccent)
         ListSectionBookmark(section: rated, tint: ListDestination.watchedColor)
-        ListSectionBookmark(section: older, tint: .appAccent, expanded: false)
-        ListSectionBookmark(section: older, tint: .appAccent, expanded: true)
+        ListSectionBookmark(section: older, tint: .appAccent)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     .background(Color.appBackground)

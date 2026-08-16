@@ -38,10 +38,11 @@ struct MovieRow: View {
                 }
 
                 if let role, !role.isEmpty {
+                    // Unbounded: a person credited several ways on one title lists every role,
+                    // and on a short they did themselves that runs to a few lines.
                     Text(role)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
                 }
 
                 if let duration, !duration.isEmpty {

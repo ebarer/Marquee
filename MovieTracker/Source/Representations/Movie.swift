@@ -28,6 +28,8 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
     var bonusCredits = Credits(during: false, after: false)
     var team: [Person] = []
     var creditRole: String?
+    /// What `creditRole` is (from a person's movie credits). Nil outside that context.
+    var creditKind: CreditKind?
     /// Billing position in the cast (from a person's movie credits), where 0 is top-billed.
     /// Nil for crew credits and outside that context.
     var creditOrder: Int?
@@ -68,12 +70,7 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
             }
     }
 
-    var isExtraneousCredit: Bool {
-        guard let role = creditRole?.lowercased() else { return false }
-        if role == "self" || role.hasPrefix("self ") || role.hasPrefix("self-") { return true }
-        if role.contains("thanks") { return true }
-        return false
-    }
+    var isExtraneousCredit: Bool { CreditKind.isExtraneous(creditRole) }
 
     /// Genres for the metadata strip: the first two, which is all the cell has room for.
     /// Dropping the lot past two read as the movie having no genres at all.

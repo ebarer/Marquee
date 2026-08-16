@@ -52,14 +52,7 @@ extension Show {
         regularSeasons.reduce(0) { $0 + $1.episodeCount }
     }
 
-    /// Matches `Movie.isExtraneousCredit` so "Self"/"Thanks" TV appearances (talk
-    /// shows, etc.) can be filtered out of a person's credits.
-    var isExtraneousCredit: Bool {
-        guard let role = creditRole?.lowercased() else { return false }
-        if role == "self" || role.hasPrefix("self ") || role.hasPrefix("self-") { return true }
-        if role.contains("thanks") { return true }
-        return false
-    }
+    var isExtraneousCredit: Bool { CreditKind.isExtraneous(creditRole) }
 
     var primaryTrailer: MediaTrailer? {
         trailers?

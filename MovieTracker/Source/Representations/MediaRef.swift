@@ -60,6 +60,13 @@ enum MediaRef: Hashable, Identifiable, Sendable {
         }
     }
 
+    var creditKind: CreditKind {
+        switch self {
+        case .movie(let movie): return movie.creditKind ?? .crew
+        case .show(let show): return show.creditKind ?? .crew
+        }
+    }
+
     var isExtraneousCredit: Bool {
         switch self {
         case .movie(let movie): return movie.isExtraneousCredit

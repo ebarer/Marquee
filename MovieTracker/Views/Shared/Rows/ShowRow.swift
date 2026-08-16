@@ -42,10 +42,10 @@ struct ShowRow: View {
                     .lineLimit(2)
 
                 if let role, !role.isEmpty {
+                    // Unbounded, as in ``MovieRow``: every role the person had is listed.
                     Text(role)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
                 }
 
                 if let episodeCount, episodeCount > 0 {

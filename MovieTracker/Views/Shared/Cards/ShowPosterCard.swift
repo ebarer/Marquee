@@ -23,16 +23,22 @@ struct ShowPosterCard: View {
     var body: some View {
         VStack(spacing: 6) {
             poster
+            caption
+        }
+    }
 
-            // The name and season count read as one caption block, so they sit tighter
-            // together than either does to the poster.
+    // The name and season count read as one caption block, so they sit tighter
+    // together than either does to the poster.
+    private var caption: some View {
+        ZStack(alignment: .top) {
+            if reservesTitleSpace { captionReserve }
             VStack(spacing: 1) {
                 Text(show.name)
                     .font(.caption)
                     .fontWeight(.medium)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.white)
-                    .lineLimit(titleLineLimit, reservesSpace: reservesTitleSpace)
+                    .lineLimit(titleLineLimit)
                     .frame(maxWidth: .infinity, alignment: .center)
 
                 ShowSeasonCountText(show: show,
@@ -40,6 +46,19 @@ struct ShowPosterCard: View {
                                     font: .caption2)
             }
         }
+    }
+
+    /// A blank caption at full height. Reserving the space here rather than on the name keeps
+    /// cards a common height without opening a gap between a short name and the season count.
+    private var captionReserve: some View {
+        VStack(spacing: 1) {
+            Text(" ")
+                .font(.caption)
+                .fontWeight(.medium)
+                .lineLimit(titleLineLimit, reservesSpace: true)
+            Text(" ").font(.caption2)
+        }
+        .hidden()
     }
 
     @ViewBuilder
@@ -66,10 +85,16 @@ struct ShowPosterCard: View {
     }
 }
 
+// A one-line name beside a two-line one: the season count stays put under both.
 #Preview {
     HStack(alignment: .top, spacing: 16) {
         ShowPosterCard(show: .preview, posterWidth: 110)
         ShowPosterCard(show: Show.previewList[1], posterWidth: 110)
+        ShowPosterCard(show: {
+            var short = Show.preview
+            short.name = "Andor"
+            return short
+        }(), posterWidth: 110)
     }
     .padding()
     .background(Color.appBackground)

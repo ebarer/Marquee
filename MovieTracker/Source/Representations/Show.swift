@@ -29,6 +29,8 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     var originCountry: [String]?
     var trailers: [MediaTrailer]?
     var creditRole: String?
+    /// What `creditRole` is (from a person's TV credits). Nil outside that context.
+    var creditKind: CreditKind?
     /// Episodes the credited person appeared in (from a person's TV credits); shown in
     /// their filmography instead of the year range. Nil outside that context.
     var episodeCount: Int?

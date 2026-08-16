@@ -10,7 +10,7 @@ import SwiftUI
 struct PersonFilmography: View {
     let credits: [MediaRef]
     let lists: [MediaList]
-    @Binding var hideExtraneous: Bool
+    @Binding var filter: CreditFilter
     var navBarBottom: CGFloat = 0
     var onFilterHiddenChange: (Bool) -> Void = { _ in }
 
@@ -30,6 +30,9 @@ struct PersonFilmography: View {
                     }
                 }
             }
+            // Declared here so every route into the filter animates alike — a `withAnimation`
+            // around the mutation misses, since `@AppStorage` publishes outside it.
+            .animation(.easeInOut, value: filter.active)
         }
     }
 
@@ -39,17 +42,14 @@ struct PersonFilmography: View {
                 .font(.headline)
                 .foregroundStyle(.white)
             Spacer(minLength: 8)
-            if hasExtraneousCredits {
-                Button {
-                    withAnimation(.easeInOut) { hideExtraneous.toggle() }
-                } label: {
-                    Image(systemName: hideExtraneous
+            if availableKinds.count > 1 {
+                CreditFilterMenu(kinds: availableKinds, filter: $filter) {
+                    Image(systemName: isFiltering
                           ? "line.3.horizontal.decrease.circle.fill"
                           : "line.3.horizontal.decrease.circle")
                         .font(.title3)
                 }
                 .tint(.appAccent)
-                .accessibilityLabel(hideExtraneous ? "Show all credits" : "Hide Self and Thanks credits")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -61,12 +61,12 @@ struct PersonFilmography: View {
         } action: { onFilterHiddenChange($0) }
     }
 
-    private var hasExtraneousCredits: Bool {
-        credits.contains { $0.isExtraneousCredit }
-    }
+    private var availableKinds: [CreditKind] { CreditKind.present(in: credits) }
+
+    private var isFiltering: Bool { availableKinds.contains(where: filter.hides) }
 
     private var visibleCredits: [MediaRef] {
-        hideExtraneous ? credits.filter { !$0.isExtraneousCredit } : credits
+        credits.filter { !filter.hides($0.creditKind) }
     }
 
     /// Credits with a date still in the future. Undated credits are omitted entirely.
@@ -93,18 +93,30 @@ struct PersonFilmography: View {
     }
 }
 
-#Preview {
-    NavigationStack {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                PersonFilmography(credits: Person.preview.allCredits, lists: [],
-                                  hideExtraneous: .constant(true))
+#Preview("Filtering") {
+    FilmographyPreview(filter: CreditFilter())
+}
+
+#Preview("Filter off") {
+    FilmographyPreview(filter: CreditFilter(isOn: false))
+}
+
+private struct FilmographyPreview: View {
+    @State var filter: CreditFilter
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    PersonFilmography(credits: Person.preview.allCredits, lists: [],
+                                      filter: $filter)
+                }
             }
+            .detailDestinations()
         }
-        .detailDestinations()
+        .background(Color.appBackground)
+        .modelContainer(previewModelContainer)
+        .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+        .preferredColorScheme(.dark)
     }
-    .background(Color.appBackground)
-    .modelContainer(previewModelContainer)
-    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
-    .preferredColorScheme(.dark)
 }

@@ -60,6 +60,18 @@ import Foundation
         #expect(credit("Special Thanks").isExtraneousCredit)
         #expect(credit("Director").isExtraneousCredit == false)
         #expect(credit("Herself").isExtraneousCredit == false)
+
+        // Real TMDB strings. "Selft" is a typo'd self-appearance; "Idea" is an
+        // attribution-only job TMDB files under Writing beside real screenplays.
+        #expect(credit("Selft").isExtraneousCredit)
+        #expect(credit("Idea").isExtraneousCredit)
+        #expect(credit("Self - Writer / Director, \"Oppenheimer\"").isExtraneousCredit)
+        #expect(credit("Self - Commentary, Doodlebug (voice)").isExtraneousCredit)
+
+        // A character name that merely starts with "self" is still a part someone played.
+        #expect(credit("Selfish Man").isExtraneousCredit == false)
+        #expect(credit("Screenplay").isExtraneousCredit == false)
+        #expect(credit("Idealist").isExtraneousCredit == false)
     }
 
     @Test func primaryTrailerPrefersOfficialTrailerOnYouTube() {

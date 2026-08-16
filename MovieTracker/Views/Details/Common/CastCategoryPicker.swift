@@ -26,18 +26,18 @@ struct CastCategoryPicker: View {
     let titleFor: (CastCategory) -> String
     let onSelect: (CastCategory) -> Void
 
+    private var selection: Binding<CastCategory> {
+        Binding(get: { current }, set: { onSelect($0) })
+    }
+
     var body: some View {
         if categories.count > 1 {
+            // A styled label backed by an embedded Picker, as in `SeasonHeader`: the menu keeps
+            // the standard checkmark gutter while the category reads as a section title.
             Menu {
-                ForEach(categories, id: \.self) { option in
-                    Button {
-                        onSelect(option)
-                    } label: {
-                        if option == current {
-                            Label(titleFor(option), systemImage: "checkmark")
-                        } else {
-                            Text(titleFor(option))
-                        }
+                Picker("Category", selection: selection) {
+                    ForEach(categories, id: \.self) { option in
+                        Text(titleFor(option)).tag(option)
                     }
                 }
             } label: {

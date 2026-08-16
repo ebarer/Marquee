@@ -14,7 +14,8 @@ struct ListEntryContent: View {
     var body: some View {
         if entry.mediaType == .tv {
             if entry.seasonNumber != nil {
-                SeasonRowContent(entry: entry, tint: context.listColor)
+                SeasonRowContent(entry: entry, detail: context.subtitle(for: entry),
+                                 tint: context.listColor)
             } else {
                 // An untracked show (e.g. fully watched on a custom list), badged like a movie.
                 ShowRow(show: entry.show(), showsSeasonCount: false,
@@ -43,6 +44,12 @@ struct ListEntryContent: View {
                                          season: 2, seasonWatched: 3, seasonTotal: 10),
                          context: context)
         ListEntryContent(entry: .preview(id: 4, title: "Andor", mediaType: .tv), context: context)
+        // On the Watched list a finished season carries the date it was finished on.
+        ListEntryContent(entry: .preview(id: 5, title: "Shōgun", mediaType: .tv, season: 1,
+                                         seasonWatched: 10, seasonTotal: 10, dateWatched: .now),
+                         context: ListEntryContext(selection: .watched, isWatchList: false,
+                                                   watchListIDs: [],
+                                                   listColor: ListDestination.watchedColor))
     }
     .listStyle(.plain)
     .modelContainer(previewModelContainer)

@@ -15,8 +15,6 @@ struct ListGrid: View {
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @State private var pending: ListEntryConfirmation?
-    /// The "Older" archive bucket starts collapsed each visit, as in `ListTable`.
-    @State private var olderExpanded = false
 
     /// Room for a row's poster beside two lines of title and a rating.
     private static let cardWidth: CGFloat = 280
@@ -30,9 +28,9 @@ struct ListGrid: View {
         ScrollView {
             LazyVStack(spacing: Self.spacing) {
                 ForEach(sections) { section in
-                    if section.isCollapsible {
-                        collapsible(section)
-                    } else if section.monthAndYear != nil {
+                    // "Older" isn't folded here: it's one more shelf, and a shelf costs
+                    // no more room than the collapsed bookmark standing in for it would.
+                    if section.monthAndYear != nil || section.isCollapsible {
                         shelf(for: section) {
                             ListSectionBookmark(section: section, tint: context.listColor)
                         }
@@ -55,30 +53,6 @@ struct ListGrid: View {
             }
         }
     }
-
-    /// The "Older" bucket: its bookmark is the control, and its shelf appears alongside.
-    @ViewBuilder
-    private func collapsible(_ section: SectionSnapshot) -> some View {
-        if olderExpanded {
-            shelf(for: section) { olderBookmark(section) }
-        } else {
-            olderBookmark(section)
-                .frame(height: Self.collapsedHeight)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private func olderBookmark(_ section: SectionSnapshot) -> some View {
-        Button {
-            withAnimation { olderExpanded.toggle() }
-        } label: {
-            ListSectionBookmark(section: section, tint: context.listColor, expanded: olderExpanded)
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// Tall enough that the collapsed bucket reads as the shelf it stands in for.
-    private static let collapsedHeight: CGFloat = 72
 
     /// A bucket that isn't a month — a rating or an initial — holds far more titles than a shelf
     /// can show, so it flows under a plain header instead. The flat layout has no header at all.
