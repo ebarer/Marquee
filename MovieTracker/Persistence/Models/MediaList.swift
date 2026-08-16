@@ -52,8 +52,18 @@ final class MediaList {
 
     // MARK: Membership
 
+    /// Fetched rather than walked: `entries` is a relationship, so scanning it faults every row
+    /// of the list — and this sits in every membership read and write.
     func entry(for tmdbID: Int, _ mediaType: MediaType = .movie) -> ListEntry? {
-        (entries ?? []).first { $0.tmdbID == tmdbID && $0.mediaTypeRaw == mediaType.rawValue }
+        let raw = mediaType.rawValue
+        guard let context = modelContext else {
+            return (entries ?? []).first { $0.tmdbID == tmdbID && $0.mediaTypeRaw == raw }
+        }
+        let listID = uuid
+        var descriptor = FetchDescriptor<ListEntry>(
+            predicate: #Predicate { $0.tmdbID == tmdbID && $0.mediaTypeRaw == raw && $0.list?.uuid == listID })
+        descriptor.fetchLimit = 1
+        return (try? context.fetch(descriptor))?.first
     }
 
     func contains(_ tmdbID: Int, _ mediaType: MediaType = .movie) -> Bool {

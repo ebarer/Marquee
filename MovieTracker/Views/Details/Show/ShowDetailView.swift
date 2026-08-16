@@ -72,7 +72,7 @@ struct ShowDetailView: View {
                 store?.reconcileSeasons(for: show)
                 refreshInProgressSeason()
                 await model.reconcileMembership(using: store)
-                isSeen = store?.isShowFullyWatched(show) ?? false
+                isSeen = store?.isShowWatchedCached(showID: showID) ?? false
             }
         }
         // Resolve the opening season off the CACHED show, before the network payload lands —
@@ -80,7 +80,7 @@ struct ShowDetailView: View {
         .onChange(of: model.show?.id) { refreshInProgressSeason() }
         // Keep the checkmark live when episodes are toggled in the episodes section.
         .onChange(of: store?.revision) {
-            if let show = model.show { isSeen = store?.isShowFullyWatched(show) ?? false }
+            isSeen = store?.isShowWatchedCached(showID: showID) ?? false
         }
     }
 
@@ -161,7 +161,7 @@ struct ShowDetailView: View {
     private func reconcileMembership() {
         Task {
             await model.reconcileMembership(using: store)
-            if let show = model.show { isSeen = store?.isShowFullyWatched(show) ?? false }
+            isSeen = store?.isShowWatchedCached(showID: showID) ?? false
         }
     }
 

@@ -17,10 +17,7 @@ func makeInMemoryStore() -> PersistenceCoordinator {
     // cloudKitDatabase defaults to .automatic: the app's entitlement then attaches a mirroring
     // delegate that can't set up, and its store monitor stalls the run ~100s on teardown.
     let config = ModelConfiguration(url: url, cloudKitDatabase: .none)
-    let container = try! ModelContainer(
-        for: MediaItem.self, MediaList.self, ListEntry.self,
-        WatchedEpisode.self, WatchedSeason.self, TrackedSeason.self,
-        configurations: config)
+    let container = try! ModelContainer(for: MarqueeSchema.schema, configurations: config)
     return PersistenceCoordinator(ModelContext(container))
 }
 

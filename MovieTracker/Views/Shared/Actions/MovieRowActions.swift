@@ -17,14 +17,13 @@ struct WatchedSwipeButton: View {
     init(show: Show) { self.key = show.mediaKey }
 
     private var isWatched: Bool {
-        guard let store else { return false }
-        _ = store.revision   // observe persisted changes so the icon doesn't go stale
-        return store.isWatched(key: key)
+        store?.badges.isWatched(key.tmdbID, key.mediaType) ?? false
     }
 
     var body: some View {
         Button {
-            store?.setWatched(!isWatched, forKey: key)
+            let watched = isWatched
+            store?.afterCommit { store?.setWatched(!watched, forKey: key) }
         } label: {
             if isWatched {
                 Image("checkmark.slashed")
@@ -46,7 +45,7 @@ struct WatchListSwipeButton: View {
 
     var body: some View {
         Button {
-            store?.addToWatchList(forKey: key)
+            store?.afterCommit { store?.addToWatchList(forKey: key) }
         } label: {
             Image(systemName: "bookmark")
         }

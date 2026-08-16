@@ -16,8 +16,8 @@ import SwiftData
 
     private func sections(_ request: ListRequest, ascending: Bool, filter: String = "",
                           mediaFilter: MediaTypeFilter = .all) async -> [SectionSnapshot] {
-        let coordinator = ListCoordinator(modelContainer: store.context.container)
-        let list = await coordinator.load(request: request, filter: filter, mediaFilter: mediaFilter)
+        let coordinator = ListCoordinator(container: store.context.container)
+        let list = coordinator.load(request: request, filter: filter, mediaFilter: mediaFilter)
         return SectionFormatter.sections(from: list, ascending: ascending)
     }
 

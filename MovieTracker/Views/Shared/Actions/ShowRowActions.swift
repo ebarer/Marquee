@@ -44,9 +44,7 @@ struct ShowWatchedSwipeButton: View {
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     private var isWatched: Bool {
-        guard let store else { return false }
-        _ = store.revision
-        return store.isShowWatchedCached(showID: showID)
+        store?.badges.isShowWatched(showID: showID) ?? false
     }
 
     var body: some View {

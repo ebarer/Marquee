@@ -229,6 +229,12 @@
 		CED63633302FF09500D36A81 /* SchemaPrimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED63632302FF09500D36A81 /* SchemaPrimer.swift */; };
 		CED63635302FF0CA00D36A81 /* SchemaPrimerSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED63634302FF0CA00D36A81 /* SchemaPrimerSection.swift */; };
 		CED640C330318BFF0057509D /* ListShelf.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED640C230318BFF0057509D /* ListShelf.swift */; };
+		CED641093031C2990057509D /* MediaBadgeIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED641083031C2990057509D /* MediaBadgeIndex.swift */; };
+		CED6410B3031C8B20057509D /* ShowProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED6410A3031C8B20057509D /* ShowProgress.swift */; };
+		CED6410D3031C9300057509D /* ShowProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED6410C3031C9300057509D /* ShowProgressTests.swift */; };
+		CED6410F3031CA7B0057509D /* FrameBudgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED6410E3031CA7B0057509D /* FrameBudgetTests.swift */; };
+		CED641113031CF570057509D /* MarqueeSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED641103031CF570057509D /* MarqueeSchema.swift */; };
+		CED641143031CF820057509D /* SchemaPrimerCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED641133031CF820057509D /* SchemaPrimerCoverageTests.swift */; };
 		CEDA8BC321997F71006BB3CD /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEDA8BC221997F71006BB3CD /* String+Extension.swift */; };
 		CEE7900F3029DCC70040DADB /* SearchProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEE7900E3029DCC70040DADB /* SearchProvider.swift */; };
 		CEE790113029DCCC0040DADB /* SearchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEE790103029DCCC0040DADB /* SearchContext.swift */; };
@@ -510,6 +516,12 @@
 		CED63632302FF09500D36A81 /* SchemaPrimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaPrimer.swift; sourceTree = "<group>"; };
 		CED63634302FF0CA00D36A81 /* SchemaPrimerSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaPrimerSection.swift; sourceTree = "<group>"; };
 		CED640C230318BFF0057509D /* ListShelf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListShelf.swift; sourceTree = "<group>"; };
+		CED641083031C2990057509D /* MediaBadgeIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaBadgeIndex.swift; sourceTree = "<group>"; };
+		CED6410A3031C8B20057509D /* ShowProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowProgress.swift; sourceTree = "<group>"; };
+		CED6410C3031C9300057509D /* ShowProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowProgressTests.swift; sourceTree = "<group>"; };
+		CED6410E3031CA7B0057509D /* FrameBudgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameBudgetTests.swift; sourceTree = "<group>"; };
+		CED641103031CF570057509D /* MarqueeSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueeSchema.swift; sourceTree = "<group>"; };
+		CED641133031CF820057509D /* SchemaPrimerCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaPrimerCoverageTests.swift; sourceTree = "<group>"; };
 		CEDA8BC221997F71006BB3CD /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
 		CEE7900E3029DCC70040DADB /* SearchProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchProvider.swift; sourceTree = "<group>"; };
 		CEE790103029DCCC0040DADB /* SearchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchContext.swift; sourceTree = "<group>"; };
@@ -673,6 +685,7 @@
 				E33BCA56A7A3300D8DE946D9 /* Models */,
 				E2922440C9FA6CA50C4CF70A /* Store */,
 				FBBF96E3F7E461523F252D0E /* Transfer */,
+				CED641123031CF820057509D /* Sync */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -705,6 +718,7 @@
 			isa = PBXGroup;
 			children = (
 				241014CEC7050FA0C3B72AE8 /* PerformanceTests.swift */,
+				CED6410E3031CA7B0057509D /* FrameBudgetTests.swift */,
 			);
 			path = Performance;
 			sourceTree = "<group>";
@@ -1102,6 +1116,8 @@
 				CE8DD2CE30297959006213BD /* ListRequest.swift */,
 				CE8DD3B23029CC75006213BD /* ListResult.swift */,
 				CE8DD2D03029795D006213BD /* MediaSnapshot.swift */,
+				CED641083031C2990057509D /* MediaBadgeIndex.swift */,
+				CED6410A3031C8B20057509D /* ShowProgress.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -1115,6 +1131,7 @@
 				CE8DD2C2302978C9006213BD /* TrackedSeason.swift */,
 				CE8DD2C0302978BF006213BD /* WatchedSeason.swift */,
 				CE8DD2BE302978B5006213BD /* WatchedEpisode.swift */,
+				CED641103031CF570057509D /* MarqueeSchema.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1277,6 +1294,14 @@
 			path = Extensions;
 			sourceTree = "<group>";
 		};
+		CED641123031CF820057509D /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				CED641133031CF820057509D /* SchemaPrimerCoverageTests.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
 		CEE790243029DFD90040DADB /* Search */ = {
 			isa = PBXGroup;
 			children = (
@@ -1369,6 +1394,7 @@
 				0CA4D15E66C3DBCAAC695214 /* ShowBadgeStateTests.swift */,
 				A7CADF5A47C13196126C7B8E /* ShowPersistenceTests.swift */,
 				8A2D446986222B44DD7CF8BA /* WatchListOptOutTests.swift */,
+				CED6410C3031C9300057509D /* ShowProgressTests.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -1543,6 +1569,8 @@
 				4E958E33101E7FAEB114F4CC /* ShowPersistenceTests.swift in Sources */,
 				601D7BFA57C503F22D5FF062 /* WatchListOptOutTests.swift in Sources */,
 				D24748DB27DFA35B76FA990D /* CSVImportTests.swift in Sources */,
+				CED6410D3031C9300057509D /* ShowProgressTests.swift in Sources */,
+				CED6410F3031CA7B0057509D /* FrameBudgetTests.swift in Sources */,
 				FACD94602614AECEE6D39043 /* LibraryBackupTests.swift in Sources */,
 				DAB44DA28C9D5530B64012E1 /* EpisodeTests.swift in Sources */,
 				92D9F3E713A7E0EA3FC8D54D /* MediaTrailerTests.swift in Sources */,
@@ -1557,6 +1585,7 @@
 				B5DD0C3EEB12A50D3C283A4D /* TMDBTVDecodingTests.swift in Sources */,
 				5D198884590E05E77F9A0C52 /* SearchInterlaceTests.swift in Sources */,
 				2E3A6D47175935CB6749199D /* SearchMatchingTests.swift in Sources */,
+				CED641143031CF820057509D /* SchemaPrimerCoverageTests.swift in Sources */,
 				AD901742117F148B4F79FE07 /* SearchPolicyTests.swift in Sources */,
 				AA94A3D49845A1BF82B8D931 /* TestSupport.swift in Sources */,
 				7E8015330106F7599CACF615 /* URLProtocolStub.swift in Sources */,
@@ -1637,6 +1666,7 @@
 				CEB8A46B301EF1E5002FBF31 /* TrailerPlayerView.swift in Sources */,
 				CE8DD2003029655C006213BD /* RelatedMoviesSection.swift in Sources */,
 				CE8DD21D3029671C006213BD /* EpisodesBySeasonSection.swift in Sources */,
+				CED6410B3031C8B20057509D /* ShowProgress.swift in Sources */,
 				CE56977C301C824D00DF9142 /* SearchMovieRow.swift in Sources */,
 				CE8DD219302966F8006213BD /* SeasonHeader.swift in Sources */,
 				CE8DD22130296750006213BD /* ShowDetailView.swift in Sources */,
@@ -1676,6 +1706,7 @@
 				CE8DD29530297721006213BD /* CloudSyncMonitor.swift in Sources */,
 				CE8C0C99301BD1DC00F08C6A /* ListMembershipMenu.swift in Sources */,
 				CE85678A3031779A001D4372 /* ListSectionBookmark.swift in Sources */,
+				CED641093031C2990057509D /* MediaBadgeIndex.swift in Sources */,
 				CE569754301C19AE00DF9142 /* PersonRow.swift in Sources */,
 				CE8DD1D330296359006213BD /* HeaderTitle.swift in Sources */,
 				CE8DD2E4302979FF006213BD /* LibraryBackupTransfer.swift in Sources */,
@@ -1776,6 +1807,7 @@
 				CE8DD3283029816A006213BD /* Person.swift in Sources */,
 				CE569750301C19A600DF9142 /* MoviePosterCard.swift in Sources */,
 				CE8DD230302967C9006213BD /* FilmographyRows.swift in Sources */,
+				CED641113031CF570057509D /* MarqueeSchema.swift in Sources */,
 				CE8DD232302967D3006213BD /* UpcomingSection.swift in Sources */,
 				CE8DD22C302967B2006213BD /* PersonDetailModel.swift in Sources */,
 				CEB8A483301F1C1B002FBF31 /* BackupTransfer.swift in Sources */,
@@ -2028,7 +2060,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.16.2;
+				CURRENT_PROJECT_VERSION = 2026.8.16.3;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2054,7 +2086,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.16.2;
+				CURRENT_PROJECT_VERSION = 2026.8.16.3;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (

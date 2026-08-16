@@ -6,10 +6,33 @@
 import Foundation
 import SwiftData
 
-/// Off-main reader for the Lists screen: fetches a list's rows, their section-anchor dates,
-/// and the `SectionLayout`. Arranging them into titled sections is `SectionFormatter`'s job.
-@ModelActor
-actor ListCoordinator {
+/// Off-main reader for the Lists screen: a list's rows, their anchor dates, and its `SectionLayout`.
+/// Not a `@ModelActor` — that ran on main for main-actor callers; callers use `Task.detached`.
+final class ListCoordinator {
+    let modelContext: ModelContext
+
+    init(container: ModelContainer) {
+        modelContext = ModelContext(container)
+    }
+
+    /// Asserted by FrameBudgetTests: everything here assumes it isn't on the main thread.
+    func runsOnMainThread() -> Bool { Thread.isMainThread }
+
+    /// Rebuild the badge snapshot away from the main actor — it scans every watched title,
+    /// Watch List entry, and watched episode, which is far more than a frame's worth.
+    func badgeIndex() -> MediaBadgeIndex {
+        MediaBadgeIndex(context: modelContext)
+    }
+
+    /// Fetch *and* group in one hop. Formatting sorts every row and runs a `DateFormatter` per
+    /// section, so it belongs here rather than on the main actor the caller is suspended on.
+    func sections(request: ListRequest, ascending: Bool, filter: String,
+                  mediaFilter: MediaTypeFilter = .all) -> [SectionSnapshot] {
+        SectionFormatter.sections(from: load(request: request, filter: filter,
+                                             mediaFilter: mediaFilter),
+                                  ascending: ascending)
+    }
+
     func load(request: ListRequest, filter: String, mediaFilter: MediaTypeFilter = .all) -> ListResult {
         let result: ListResult
         switch request {

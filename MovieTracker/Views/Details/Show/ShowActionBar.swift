@@ -70,9 +70,7 @@ struct ShowActionBar: View {
         .confirmationDialog("Remove from Watch List?", isPresented: $showRemoveConfirm,
                             titleVisibility: .visible) {
             Button("Remove", role: .destructive) {
-                store?.dismissFromWatchList(show)
-                refresh()
-                onChange()
+                store?.afterCommit { store?.dismissFromWatchList(show); refresh(); onChange() }
             }
         } message: {
             Text("You've watched some episodes, so it stays on your Watch List automatically. Removing keeps it off until you add it back.")
@@ -83,16 +81,16 @@ struct ShowActionBar: View {
     // (and sticks). Adding it back is a plain tap that re-tracks the next-episode season.
     private func handleBookmarkTap() {
         guard let store else { return }
-        if tracked {
-            if hasProgress {
-                showRemoveConfirm = true
-            } else {
+        if tracked, hasProgress {
+            showRemoveConfirm = true
+            return
+        }
+        let wasTracked = tracked
+        tracked.toggle()
+        store.afterCommit {
+            if wasTracked {
                 store.toggleWatchList(show)
-                refresh()
-                onChange()
-            }
-        } else {
-            if hasProgress {
+            } else if hasProgress {
                 store.restoreToWatchList(show)
             } else {
                 store.addToWatchList(show)
@@ -132,7 +130,11 @@ struct ShowActionBar: View {
             GlassActionMenu(systemName: "plus", isOn: anyMember, shape: Circle(), tint: tint) {
                 ListMembershipToggles(lists: customLists,
                                       isMember: { $0.contains(show.id, .tv) },
-                                      toggle: { store?.toggle(show, in: $0); refresh(); onChange() })
+                                      toggle: { list in
+                                          store?.afterCommit {
+                                              store?.toggle(show, in: list); refresh(); onChange()
+                                          }
+                                      })
             }
             // Stays open so several lists can be toggled in one go.
             .menuActionDismissBehavior(.disabled)
@@ -140,11 +142,14 @@ struct ShowActionBar: View {
         }
     }
 
+    /// Persisted facts only. Deriving these from `show.regularSeasons` meant a stub payload read
+    /// as unwatched, so the controls flipped once detail loaded — and it cost a fetch per season.
     private func refresh() {
-        tracked = watchList?.contains(show.id, .tv) ?? false
-        hasProgress = store?.hasWatchedEpisodes(show) ?? false
-        isSeen = store?.isShowFullyWatched(show) ?? false
-        caughtUp = store?.isShowCaughtUp(show, episodesBySeason: episodesBySeason) ?? false
+        let progress = store?.showProgress(showID: show.id) ?? ShowProgress()
+        tracked = progress.isTracked
+        hasProgress = progress.hasProgress
+        isSeen = progress.isWatched
+        caughtUp = progress.isCaughtUp
     }
 }
 

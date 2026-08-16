@@ -26,6 +26,9 @@ final class MediaItem {
     /// Cached "every aired season is watched" for `.tv`, so show detail is right on entry.
     /// Kept in sync by `reconcileMembership`/`unwatchSeason`; nil for movies.
     var showWatched: Bool?
+    /// Cached "every aired episode watched, unaired ones remain" for `.tv`. Same choke point;
+    /// nil for movies, and while no loaded episodes can settle it.
+    var showCaughtUp: Bool?
     /// The user removed this show from the auto-managed Watch List; persisted so watched
     /// progress can't bounce it back on. Cleared by `restoreToWatchList`.
     var watchListOptOut: Bool?
@@ -67,7 +70,7 @@ final class MediaItem {
 
     func pruneIfEmpty() {
         guard userRating == nil, watchedAt == nil, lastViewedAt == nil,
-              showWatched != true, watchListOptOut != true else { return }
+              showWatched != true, showCaughtUp != true, watchListOptOut != true else { return }
         modelContext?.delete(self)
     }
 }

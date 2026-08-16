@@ -17,11 +17,7 @@ struct ShowPosterCard: View {
 
     private var status: PosterStatus? {
         guard let store else { return nil }
-        _ = store.revision   // observe persisted changes so the badge refreshes live
-        if store.isShowWatchedCached(showID: show.id) { return .watched }
-        if store.hasWatchedEpisodes(showID: show.id) { return .partial }
-        if store.isInWatchList(show) { return .watchList }
-        return nil
+        return .derive(showID: show.id, from: store.badges)
     }
 
     var body: some View {

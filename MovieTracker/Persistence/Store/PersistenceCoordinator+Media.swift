@@ -23,18 +23,22 @@ extension PersistenceCoordinator {
         MediaItem.setWatched(watched, for: key, in: context); save()
     }
 
-    /// Watched-list row count: watched movies plus watched TV seasons (which track
-    /// separately from movie MediaItems).
+    /// Watched movies plus watched TV seasons (which track separately). Memoised against
+    /// `revision`: both counts sit in view bodies that re-run constantly.
     var watchedCount: Int {
-        let movieType = MediaType.movie.rawValue
-        let movies = (try? context.fetchCount(FetchDescriptor<MediaItem>(
-            predicate: #Predicate { $0.watchedAt != nil && $0.mediaTypeRaw == movieType }))) ?? 0
-        let seasons = (try? context.fetchCount(FetchDescriptor<WatchedSeason>())) ?? 0
-        return movies + seasons
+        cachedCount(.watched) {
+            let movieType = MediaType.movie.rawValue
+            let movies = (try? context.fetchCount(FetchDescriptor<MediaItem>(
+                predicate: #Predicate { $0.watchedAt != nil && $0.mediaTypeRaw == movieType }))) ?? 0
+            let seasons = (try? context.fetchCount(FetchDescriptor<WatchedSeason>())) ?? 0
+            return movies + seasons
+        }
     }
     var viewedCount: Int {
-        (try? context.fetchCount(FetchDescriptor<MediaItem>(
-            predicate: #Predicate { $0.lastViewedAt != nil }))) ?? 0
+        cachedCount(.viewed) {
+            (try? context.fetchCount(FetchDescriptor<MediaItem>(
+                predicate: #Predicate { $0.lastViewedAt != nil }))) ?? 0
+        }
     }
 
     // MARK: - Fact writes

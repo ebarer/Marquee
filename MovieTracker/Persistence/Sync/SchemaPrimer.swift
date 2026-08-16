@@ -34,6 +34,7 @@ enum SchemaPrimer {
         item.watchedAt = now
         item.lastViewedAt = now
         item.showWatched = true
+        item.showCaughtUp = true
         item.watchListOptOut = true
         context.insert(item)
 

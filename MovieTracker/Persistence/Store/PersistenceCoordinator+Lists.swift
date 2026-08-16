@@ -60,7 +60,6 @@ extension PersistenceCoordinator {
     /// display sections is `SectionFormatter`'s job — see the `sections(for:…)` convenience.
     func list(for request: ListRequest, filter: String,
               mediaFilter: MediaTypeFilter = .all) async -> ListResult {
-        let coordinator = ListCoordinator(modelContainer: context.container)
-        return await coordinator.load(request: request, filter: filter, mediaFilter: mediaFilter)
+        await readingOffMain { $0.load(request: request, filter: filter, mediaFilter: mediaFilter) }
     }
 }

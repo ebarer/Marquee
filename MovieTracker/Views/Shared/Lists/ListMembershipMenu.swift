@@ -44,15 +44,15 @@ private struct WatchedMenuToggle: View {
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
     private var isWatched: Bool {
-        guard let store else { return false }
-        _ = store.revision
-        return store.isWatched(movie)
+        store?.badges.isWatched(movie.id) ?? false
     }
 
     var body: some View {
         Toggle(isOn: Binding(
             get: { isWatched },
-            set: { store?.setWatched($0, for: movie); onChange() }
+            set: { watched in
+                store?.afterCommit { store?.setWatched(watched, for: movie); onChange() }
+            }
         )) {
             Label {
                 Text("Watched")

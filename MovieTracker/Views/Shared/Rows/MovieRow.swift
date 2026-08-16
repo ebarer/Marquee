@@ -72,10 +72,7 @@ struct MovieRow: View {
     private var effectiveStatus: PosterStatus? {
         if let status { return status }
         guard derivesStatus, let store else { return nil }
-        _ = store.revision   // observe persisted changes so the badge refreshes live
-        if store.isWatched(movie) { return .watched }
-        if store.isInWatchList(movie) { return .watchList }
-        return nil
+        return .derive(movieID: movie.id, from: store.badges)
     }
 
     private var displayedSubtitle: String? {

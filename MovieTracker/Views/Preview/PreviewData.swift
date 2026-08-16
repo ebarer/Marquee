@@ -205,9 +205,7 @@ extension Person {
 @MainActor
 let previewModelContainer: ModelContainer = {
     let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: MediaItem.self, MediaList.self, ListEntry.self,
-                                        WatchedEpisode.self, WatchedSeason.self, TrackedSeason.self,
-                                        configurations: configuration)
+    let container = try! ModelContainer(for: MarqueeSchema.schema, configurations: configuration)
     let context = container.mainContext
 
     let watchList = MediaList(name: "Watch List", symbol: "bookmark", sortOrder: 0, isWatchList: true)
@@ -239,9 +237,7 @@ let previewModelContainer: ModelContainer = {
 @MainActor
 let detailPreviewContainer: ModelContainer = {
     let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: MediaItem.self, MediaList.self, ListEntry.self,
-                                        WatchedEpisode.self, WatchedSeason.self, TrackedSeason.self,
-                                        configurations: configuration)
+    let container = try! ModelContainer(for: MarqueeSchema.schema, configurations: configuration)
     let context = container.mainContext
     context.insert(MediaList(name: "Watch List", symbol: "bookmark", sortOrder: 0, isWatchList: true))
     context.insert(MediaList(name: "Favorites", symbol: "heart", sortOrder: 1, colorIndex: 2))

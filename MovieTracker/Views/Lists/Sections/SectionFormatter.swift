@@ -181,11 +181,13 @@ enum SectionFormatter {
 // MARK: - Convenience
 
 extension PersistenceCoordinator {
-    /// Load a feed and format it into display sections in one call — the entry point the Lists
-    /// screen and tests use. Bridges the persistence read (`feed`) and the presentation formatter.
+    /// Load and format in one call — the entry point the Lists screen and tests use. Both halves
+    /// run off the main thread, so nothing lands on the main actor but the finished sections.
     func sections(for request: ListRequest, ascending: Bool, filter: String,
                   mediaFilter: MediaTypeFilter = .all) async -> [SectionSnapshot] {
-        let list = await list(for: request, filter: filter, mediaFilter: mediaFilter)
-        return SectionFormatter.sections(from: list, ascending: ascending)
+        await readingOffMain {
+            $0.sections(request: request, ascending: ascending,
+                        filter: filter, mediaFilter: mediaFilter)
+        }
     }
 }

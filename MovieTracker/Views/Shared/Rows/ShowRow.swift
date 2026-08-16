@@ -83,16 +83,10 @@ struct ShowRow: View {
         }
     }
 
-    /// TV progress is episode-based, so a series reads as watched / partially watched /
-    /// to-watch rather than the movie `watchedAt` flag.
     private var effectiveStatus: PosterStatus? {
         if let status { return status }
         guard derivesStatus, let store else { return nil }
-        _ = store.revision   // observe persisted changes so the badge refreshes live
-        if store.isShowWatchedCached(showID: show.id) { return .watched }
-        if store.hasWatchedEpisodes(showID: show.id) { return .partial }
-        if store.isInWatchList(showID: show.id) { return .watchList }
-        return nil
+        return .derive(showID: show.id, from: store.badges)
     }
 }
 

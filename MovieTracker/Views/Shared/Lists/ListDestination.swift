@@ -55,7 +55,12 @@ struct ListDestination {
     @MainActor
     func mediaCount(using store: PersistenceCoordinator?) -> Int {
         switch selection {
-        case .list: return (list?.entries ?? []).count
+        // `entries` is a relationship: counting it faults every row, and this is read from a
+        // body that re-runs constantly, so it goes through the store's per-revision memo.
+        case .list:
+            guard let list else { return 0 }
+            guard let store else { return (list.entries ?? []).count }
+            return store.cachedCount(.entries(list.uuid)) { (list.entries ?? []).count }
         case .watched: return store?.watchedCount ?? 0
         case .viewed: return store?.viewedCount ?? 0
         }

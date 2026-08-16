@@ -49,21 +49,41 @@ extension PersistenceCoordinator {
     /// Every aired *episode* is watched but unaired ones remain — caught up, not finished.
     /// False when an incomplete season's episodes aren't loaded: no air dates to check.
     func isShowCaughtUp(_ show: Show, episodesBySeason: [Int: [Episode]] = [:]) -> Bool {
+        caughtUpState(show, episodesBySeason: episodesBySeason) ?? false
+    }
+
+    /// `isShowCaughtUp`, but nil when an incomplete season's episodes aren't loaded: with no air
+    /// dates to check the answer is unknown, and a cached one must not be overwritten with false.
+    func caughtUpState(_ show: Show, episodesBySeason: [Int: [Episode]] = [:]) -> Bool? {
         let seasons = show.regularSeasons
-        guard !seasons.isEmpty, !isShowFullyWatched(show), hasWatchedEpisodes(show) else { return false }
-        return seasons.allSatisfy { season in
+        guard !seasons.isEmpty else { return nil }
+        guard hasWatchedEpisodes(show), !isShowFullyWatched(show) else { return false }
+        for season in seasons {
             let watched = watchedEpisodeNumbers(showID: show.id, season: season.seasonNumber)
-            if watched.count >= season.episodeCount { return true }
+            if watched.count >= season.episodeCount { continue }
             let episodes = episodesBySeason[season.seasonNumber] ?? season.episodes
-            guard !episodes.isEmpty else { return false }
-            return !episodes.contains { $0.hasAired && !watched.contains($0.episodeNumber) }
+            guard !episodes.isEmpty else { return nil }
+            if episodes.contains(where: { $0.hasAired && !watched.contains($0.episodeNumber) }) {
+                return false
+            }
         }
+        return true
     }
 
     /// The persisted fully-watched flag, readable from `showID` alone — lets detail seed its
     /// checkmark on entry instead of computing (and animating) it once the payload arrives.
     func isShowWatchedCached(showID: Int) -> Bool {
         MediaItem.find(tmdbID: showID, mediaType: .tv, in: context)?.showWatched ?? false
+    }
+
+    /// Everything the show controls need, from persisted facts only — right on entry, and cheap
+    /// enough to re-read on a store tick. `reconcileMembership` is what keeps it true.
+    func showProgress(showID: Int) -> ShowProgress {
+        let item = MediaItem.find(tmdbID: showID, mediaType: .tv, in: context)
+        return ShowProgress(isWatched: item?.showWatched == true,
+                            isCaughtUp: item?.showCaughtUp == true,
+                            hasProgress: hasWatchedEpisodes(showID: showID),
+                            isTracked: isInWatchList(showID: showID))
     }
 
     /// Whether the show has any watched episodes — the show is "in progress" and the
@@ -75,7 +95,9 @@ extension PersistenceCoordinator {
     /// `hasWatchedEpisodes` from the show id alone — the row/card badge reads it without a
     /// loaded show, so a partially-watched series can show its progress mark.
     func hasWatchedEpisodes(showID: Int) -> Bool {
-        !WatchedEpisode.all(showTmdbID: showID, in: context).isEmpty
+        let count = (try? context.fetchCount(FetchDescriptor<WatchedEpisode>(
+            predicate: #Predicate { $0.showTmdbID == showID }))) ?? 0
+        return count > 0
     }
 
     /// Watch List membership from the show id alone (never creates the list).
@@ -249,9 +271,10 @@ extension PersistenceCoordinator {
         if let snapshot = WatchedSeason.find(showTmdbID: showID, seasonNumber: seasonNumber, in: context) {
             context.delete(snapshot)
         }
-        // Clearing a season can only break "fully watched"; drop the cached flag.
+        // Clearing a season leaves aired episodes unwatched, so neither flag can still hold.
         if let item = MediaItem.find(tmdbID: showID, mediaType: .tv, in: context) {
             item.showWatched = nil
+            item.showCaughtUp = nil
             item.pruneIfEmpty()
         }
         save()
@@ -305,12 +328,15 @@ extension PersistenceCoordinator {
         let incomplete = firstIncompleteSeason(show)
         let hasCompletable = show.regularSeasons.contains { $0.episodeCount > 0 }
 
-        // Persist the fully-watched flag on every reconcile — this is the single choke
-        // point after any episode/season/show mutation, so the cache never drifts.
-        setShowWatchedCache(incomplete == nil && hasCompletable, show: show)
+        // Persist the show-level flags on every reconcile — this is the single choke point
+        // after any episode/season/show mutation, so the caches never drift.
+        let fullyWatched = incomplete == nil && hasCompletable
+        setShowWatchedCache(fullyWatched, show: show)
+        setShowCaughtUpCache(fullyWatched ? false : caughtUpState(show, episodesBySeason: episodesBySeason),
+                             show: show)
 
         // Truly finished — watched and to-watch are mutually exclusive.
-        if incomplete == nil && hasCompletable {
+        if fullyWatched {
             MediaList.watchList(in: context)?.remove(key: key)
             if let existing { context.delete(existing) }
             save()
@@ -361,6 +387,18 @@ extension PersistenceCoordinator {
             MediaItem.upsert(key: show.mediaKey, in: context).showWatched = true
         } else if let item = MediaItem.find(key: show.mediaKey, in: context) {
             item.showWatched = nil
+            item.pruneIfEmpty()
+        }
+    }
+
+    /// As `setShowWatchedCache`, but nil means "episodes couldn't settle it" — keep what's
+    /// stored rather than clearing a known-good flag on a payload-less reconcile.
+    private func setShowCaughtUpCache(_ caughtUp: Bool?, show: Show) {
+        guard let caughtUp else { return }
+        if caughtUp {
+            MediaItem.upsert(key: show.mediaKey, in: context).showCaughtUp = true
+        } else if let item = MediaItem.find(key: show.mediaKey, in: context) {
+            item.showCaughtUp = nil
             item.pruneIfEmpty()
         }
     }

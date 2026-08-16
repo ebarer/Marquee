@@ -10,10 +10,7 @@ struct RootView: View {
     static let sharedContainer: ModelContainer = {
         let configuration = ModelConfiguration(cloudKitDatabase: .automatic)
         do {
-            return try ModelContainer(
-                for: MediaItem.self, MediaList.self, ListEntry.self,
-                WatchedEpisode.self, WatchedSeason.self, TrackedSeason.self,
-                configurations: configuration)
+            return try ModelContainer(for: MarqueeSchema.schema, configurations: configuration)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }

@@ -1,11 +1,17 @@
 
 Important:
-- [ ] ! Performance issues when marking as watched
 - [ ] Marking as watched should save watched date if you toggle it
-- [ ] Cache watched state on shows
 
 Polish:
-- [ ] "older" bookmark shouldn't change height when collapsed
+- [ ] Watched: date watched should show up for seasons "Finished on x/y/z"
+- [ ] People: expand filter menu on people to include more options (present a checklist menu):
+  - [ ] self/…
+  - [ ] producer roles
+- [ ] People: always make sure to prioritze director/acting role over others in the list
+- [ ] Discover Grid: Incorrect gap between TV show name and number of seasons
+- [ ] Episode details: include cast (first position), and use standard picker
+- [ ] "older" category shouldn't be collapsed when presented in grid, since it's a single shelf it takes up no extra room
+- [ ] presenting watch list should start scrolled to the (current month - 1)
 - [ ] sorting by rating, etc. the header is too low, should be closer to nav bar
 - [ ] tapping selected list in sidebar should scroll to top
 - [ ] Drop the `.movie` default from mediaType arguments, so a show can't pass as a movie

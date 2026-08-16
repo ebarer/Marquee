@@ -41,8 +41,8 @@ struct MovieActionBar: View {
     private var bookmarkButton: some View {
         GlassActionButton(systemName: tracked ? "bookmark.fill" : "bookmark", isOn: tracked,
                           shape: Circle(), tint: tint) {
-            store?.toggleWatchList(movie)
-            refresh()
+            tracked.toggle()
+            store?.afterCommit { store?.toggleWatchList(movie); refresh() }
         }
         .glassEffectID("bookmark", in: glassNamespace)
         .glassEffectTransition(.matchedGeometry)
@@ -54,14 +54,17 @@ struct MovieActionBar: View {
         GlassActionButton(systemName: "checkmark", isOn: isSeen,
                           width: isSeen ? ActionBarMetrics.size * 2 + ActionBarMetrics.spacing : ActionBarMetrics.size,
                           shape: Capsule(), tint: tint) {
-            if isSeen {
-                store?.setWatched(false, for: movie)
-                if wasOnWatchList { store?.addToWatchList(movie) }
-            } else {
-                wasOnWatchList = tracked
-                store?.setWatched(true, for: movie)
+            let watched = !isSeen
+            if watched { wasOnWatchList = tracked }
+            // Flip the glass now, persist on the next turn: the write and the store tick it
+            // raises would otherwise run inside the tap and cost the morph its opening frames.
+            isSeen = watched
+            tracked = watched ? false : wasOnWatchList
+            store?.afterCommit {
+                store?.setWatched(watched, for: movie)
+                if !watched, wasOnWatchList { store?.addToWatchList(movie) }
+                refresh()
             }
-            refresh()
         }
         .glassEffectID("watched", in: glassNamespace)
     }
@@ -72,8 +75,7 @@ struct MovieActionBar: View {
             let member = list.contains(movie.id)
             GlassActionButton(systemName: member ? filledSymbol(list.symbol) : list.symbol,
                               isOn: member, shape: Circle(), tint: tint) {
-                store?.toggle(movie, in: list)
-                refresh()
+                store?.afterCommit { store?.toggle(movie, in: list); refresh() }
             }
             .glassEffectID("plus", in: glassNamespace)
         } else if !customLists.isEmpty {
@@ -81,7 +83,9 @@ struct MovieActionBar: View {
             GlassActionMenu(systemName: "plus", isOn: anyMember, shape: Circle(), tint: tint) {
                 ListMembershipToggles(lists: customLists,
                                       isMember: { $0.contains(movie.id) },
-                                      toggle: { store?.toggle(movie, in: $0); refresh() })
+                                      toggle: { list in
+                                          store?.afterCommit { store?.toggle(movie, in: list); refresh() }
+                                      })
             }
             // Stays open so several lists can be toggled in one go.
             .menuActionDismissBehavior(.disabled)
