@@ -77,6 +77,6 @@ struct ListEntryActions {
     private func unwatchSeason(_ entry: MediaSnapshot, season: Int) {
         guard let store else { return }
         store.unwatchSeason(showID: entry.tmdbID, seasonNumber: season)
-        Task { @MainActor in await store.reconcile(showID: entry.tmdbID) }
+        Task { @MainActor in await store.reconcile(showID: entry.tmdbID, editedSeason: season) }
     }
 }

@@ -35,7 +35,17 @@ extension PersistenceCoordinator {
 
     func isSeasonWatched(_ season: Season, showID: Int) -> Bool {
         guard season.episodeCount > 0 else { return false }
-        return watchedEpisodeNumbers(showID: showID, season: season.seasonNumber).count >= season.episodeCount
+        let watched = watchedEpisodeNumbers(showID: showID, season: season.seasonNumber).count
+        return watched >= season.episodeCount || completedSnapshotCovers(season, showID: showID)
+    }
+
+    /// Whether a `WatchedSeason` still vouches for the season. A CloudKit import lands episode
+    /// records in unordered batches, so absent ones can't disprove a snapshot — only growth can.
+    private func completedSnapshotCovers(_ season: Season, showID: Int) -> Bool {
+        guard let snapshot = WatchedSeason.find(showTmdbID: showID,
+                                                seasonNumber: season.seasonNumber, in: context)
+        else { return false }
+        return snapshot.episodeCount >= season.episodeCount
     }
 
     /// Every *aired* regular season is complete, so an ongoing show reads as watched until
@@ -153,10 +163,7 @@ extension PersistenceCoordinator {
     /// The show's next-to-watch season: the first regular season with aired episodes that
     /// isn't fully watched. Nil when every aired season is complete (or none has aired).
     func firstIncompleteSeason(_ show: Show) -> Season? {
-        show.regularSeasons.first { season in
-            season.episodeCount > 0
-                && watchedEpisodeNumbers(showID: show.id, season: season.seasonNumber).count < season.episodeCount
-        }
+        show.regularSeasons.first { $0.episodeCount > 0 && !isSeasonWatched($0, showID: show.id) }
     }
 
     // MARK: - Background refresh (new-season detection)
@@ -207,7 +214,7 @@ extension PersistenceCoordinator {
     func toggleEpisodeWatched(show: Show, season: Season, episodeNumber: Int) {
         let now = isEpisodeWatched(showID: show.id, season: season.seasonNumber, episode: episodeNumber)
         applyEpisode(!now, showID: show.id, season: season.seasonNumber, episode: episodeNumber)
-        reconcileSeason(show: show, season: season)
+        reconcileSeason(show: show, season: season, afterLocalEdit: true)
         reconcileMembership(show, episodesBySeason: [season.seasonNumber: season.episodes])
     }
 
@@ -217,7 +224,7 @@ extension PersistenceCoordinator {
         for number in episodeNumbers(for: season, airedOnly: watched) {
             applyEpisode(watched, showID: show.id, season: season.seasonNumber, episode: number)
         }
-        reconcileSeason(show: show, season: season)
+        reconcileSeason(show: show, season: season, afterLocalEdit: true)
         reconcileMembership(show, episodesBySeason: [season.seasonNumber: season.episodes])
     }
 
@@ -233,7 +240,8 @@ extension PersistenceCoordinator {
                 applyEpisode(watched, showID: show.id, season: season.seasonNumber, episode: number)
             }
             reconcileSeason(show: show, season: season,
-                            completedAt: watched ? seasonFinaleDate(season) : nil)
+                            completedAt: watched ? seasonFinaleDate(season) : nil,
+                            afterLocalEdit: true)
         }
         let merged = Dictionary(uniqueKeysWithValues: show.regularSeasons.map {
             ($0.seasonNumber, known[$0.seasonNumber] ?? $0.episodes)
@@ -291,9 +299,10 @@ extension PersistenceCoordinator {
 
     /// Re-sync a show after an id-only mutation that couldn't reconcile itself. No-op when
     /// the show can't be resolved (offline, cold cache) — it self-heals on next open.
-    func reconcile(showID: Int) async {
+    /// Pass `editedSeason` so the season the user just changed can lose its snapshot.
+    func reconcile(showID: Int, editedSeason: Int? = nil) async {
         guard let show = await resolveShow(id: showID) else { return }
-        reconcileSeasons(for: show)
+        reconcileSeasons(for: show, editedSeason: editedSeason)
         reconcileMembership(show)
     }
 
@@ -315,8 +324,12 @@ extension PersistenceCoordinator {
 
     /// Recompute every regular season's snapshot from the current episode records — used
     /// when the show reappears (episodes may have been toggled from the episode detail).
-    func reconcileSeasons(for show: Show) {
-        for season in show.regularSeasons { reconcileSeason(show: show, season: season) }
+    /// `editedSeason` is the one the user just changed, whose episode records can be trusted.
+    func reconcileSeasons(for show: Show, editedSeason: Int? = nil) {
+        for season in show.regularSeasons {
+            reconcileSeason(show: show, season: season,
+                            afterLocalEdit: season.seasonNumber == editedSeason)
+        }
         save()
     }
 
@@ -452,13 +465,18 @@ extension PersistenceCoordinator {
 
     /// Upsert or remove the season's Watched-list snapshot; only *completed* seasons appear.
     /// `completedAt` seeds a new snapshot only — an existing date is never clobbered.
-    private func reconcileSeason(show: Show, season: Season, completedAt: Date? = nil) {
+    private func reconcileSeason(show: Show, season: Season, completedAt: Date? = nil,
+                                 afterLocalEdit: Bool = false) {
         let watchedCount = watchedEpisodeNumbers(showID: show.id, season: season.seasonNumber).count
         let existing = WatchedSeason.find(showTmdbID: show.id, seasonNumber: season.seasonNumber, in: context)
 
         let complete = season.episodeCount > 0 && watchedCount >= season.episodeCount
         guard complete else {
-            if let existing { context.delete(existing) }
+            // A snapshot carries a watched date and rating nothing else can re-derive, and its
+            // delete syncs. Drop it only on a local unwatch, or once the season has outgrown it.
+            if let existing, afterLocalEdit || existing.episodeCount < season.episodeCount {
+                context.delete(existing)
+            }
             return
         }
 

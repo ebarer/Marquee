@@ -121,7 +121,9 @@ struct EpisodeHeaderOverlay: View {
                                 season: episode.seasonNumber, episode: episode.episodeNumber)
         // The episode page only knows the show id; reconcile through the shared path so the
         // season snapshot + Watch List membership end up where the season-detail toggle would.
-        Task { @MainActor in await store.reconcile(showID: episode.showTmdbID) }
+        Task { @MainActor in
+            await store.reconcile(showID: episode.showTmdbID, editedSeason: episode.seasonNumber)
+        }
     }
 }
 
