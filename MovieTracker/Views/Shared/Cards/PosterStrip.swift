@@ -11,11 +11,15 @@ struct PosterStrip: View {
     let media: [MediaRef]
     let lists: [MediaList]
     var showsYear: Bool = false
+    /// Set by a person's Known For, where a show opens their episodes rather than the show.
+    var showsEpisodeCredits: Bool = false
 
-    init(media: [MediaRef], lists: [MediaList], showsYear: Bool = false) {
+    init(media: [MediaRef], lists: [MediaList], showsYear: Bool = false,
+         showsEpisodeCredits: Bool = false) {
         self.media = media
         self.lists = lists
         self.showsYear = showsYear
+        self.showsEpisodeCredits = showsEpisodeCredits
     }
 
     init(movies: [Movie], lists: [MediaList], showsYear: Bool = false) {
@@ -56,12 +60,19 @@ struct PosterStrip: View {
             .buttonStyle(.plain)
             .movieContextMenu(for: movie, lists: lists)
         case .show(let show):
-            NavigationLink(value: show) {
+            NavigationLink(value: destination(show)) {
                 ShowPosterCard(show: show, titleLineLimit: 3,
                                reservesTitleSpace: false, posterWidth: 90)
             }
             .buttonStyle(.plain)
         }
+    }
+
+    /// A credit with no ids behind it has no episodes to list, so it opens the show.
+    private func destination(_ show: Show) -> ShowCreditDestination {
+        showsEpisodeCredits && !show.creditIDs.isEmpty
+            ? .episodes(ShowEpisodeCredits(show: show))
+            : .show(show)
     }
 
     private func releaseYear(_ ref: MediaRef) -> String? {

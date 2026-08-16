@@ -40,12 +40,14 @@ extension TMDBWrapper {
     }
 
     static func moviesNowPlaying(page: Int) async throws -> PagedResult<Movie> {
-        // Region release date (not `primary_release_date`) so a film that premiered
-        // abroad earlier but is in US theatres now still shows — re-releases belong.
+        // Region release date catches a film that premiered abroad first; the primary-date floor
+        // then drops anniversary re-releases, and the vote floor the one-screening long tail.
         try await discoverMovies(page: page, extra: [
             URLQueryItem(name: "with_release_type", value: "2|3"),
             URLQueryItem(name: "release_date.gte", value: dateParam(daysFromNow: -42)),
             URLQueryItem(name: "release_date.lte", value: dateParam(daysFromNow: 0)),
+            URLQueryItem(name: "primary_release_date.gte", value: dateParam(daysFromNow: -365)),
+            URLQueryItem(name: "vote_count.gte", value: "10"),
             URLQueryItem(name: "sort_by", value: "popularity.desc"),
         ])
     }
@@ -101,11 +103,6 @@ extension TMDBWrapper {
     /// `/movie/*` lists silently ignore, so globally-popular titles with no US release don't leak in.
     private static func discoverMovies(page: Int, extra: [URLQueryItem]) async throws -> PagedResult<Movie> {
         try await moviePage("/discover/movie", page: page, queryItems: extra)
-    }
-
-    private static func dateParam(daysFromNow days: Int) -> String {
-        let date = Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
-        return DateFormatter.iso8601DAw.string(from: date)
     }
 
     private static func moviePage(_ path: String, page: Int,

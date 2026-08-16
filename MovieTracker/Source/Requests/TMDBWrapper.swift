@@ -47,6 +47,12 @@ extension TMDBWrapper {
         return data
     }
 
+    /// A `YYYY-MM-DD` bound for the discover date filters.
+    static func dateParam(daysFromNow days: Int) -> String {
+        let date = Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
+        return DateFormatter.iso8601DAw.string(from: date)
+    }
+
     static func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
         do {
             return try decoder.decode(type, from: data)

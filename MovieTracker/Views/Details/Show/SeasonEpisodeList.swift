@@ -10,6 +10,8 @@ struct SeasonEpisodeList: View {
     let episodes: [Episode]
     let watchedNumbers: Set<Int>
     var tint: Color = .appAccent
+    /// Set by a person's episode list; see ``EpisodeRowText``.
+    var role: String? = nil
     let onToggle: (Episode) -> Void
 
     var body: some View {
@@ -17,7 +19,8 @@ struct SeasonEpisodeList: View {
             ForEach(Array(episodes.enumerated()), id: \.element.id) { index, episode in
                 EpisodeRow(episode: episode,
                            isWatched: watchedNumbers.contains(episode.episodeNumber),
-                           tint: tint) {
+                           tint: tint,
+                           role: role) {
                     onToggle(episode)
                 }
                 if index < episodes.count - 1 { rowSeparator }

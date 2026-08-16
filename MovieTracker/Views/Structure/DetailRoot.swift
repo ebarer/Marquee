@@ -12,6 +12,7 @@ enum DetailRoot: Hashable, Identifiable {
     case episode(Episode)
     case person(Person)
     case people(PeopleList)
+    case episodeCredits(ShowEpisodeCredits)
 
     var id: String {
         switch self {
@@ -20,6 +21,7 @@ enum DetailRoot: Hashable, Identifiable {
         case .episode(let episode): return "episode-\(episode.id)"
         case .person(let person): return "person-\(person.id)"
         case .people(let list): return "people-\(list.title)"
+        case .episodeCredits(let credit): return "credit-\(credit.show.id)"
         }
     }
 
@@ -31,6 +33,9 @@ enum DetailRoot: Hashable, Identifiable {
         case let episode as Episode: self = .episode(episode)
         case let person as Person: self = .person(person)
         case let list as PeopleList: self = .people(list)
+        case let credit as ShowEpisodeCredits: self = .episodeCredits(credit)
+        case .show(let show) as ShowCreditDestination: self = .show(show)
+        case .episodes(let credit) as ShowCreditDestination: self = .episodeCredits(credit)
         default: return nil
         }
     }
@@ -57,6 +62,7 @@ struct DetailRootView: View {
         case .episode(let episode): EpisodeDetailView(episode: episode).modalDismissable()
         case .person(let person): PersonDetailView(person: person)
         case .people(let list): SearchPeopleListView(list: list).modalDismissable()
+        case .episodeCredits(let credit): ShowEpisodeCreditsView(credit: credit).modalDismissable()
         }
     }
 }

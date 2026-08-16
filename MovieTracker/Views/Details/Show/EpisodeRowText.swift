@@ -9,6 +9,9 @@ import SwiftUI
 struct EpisodeRowText: View {
     let episode: Episode
     var tint: Color = .appAccent
+    /// The character played, which a person's episode list shows in place of duration and
+    /// rating — in their credits, who they were beats how long the episode ran.
+    var role: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -21,7 +24,12 @@ struct EpisodeRowText: View {
                 .font(.caption)
                 .foregroundStyle(tint)
 
-            if episode.duration != nil || (episode.rating ?? 0) > 0 {
+            if let role, !role.isEmpty {
+                Text(role)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            } else if episode.duration != nil || (episode.rating ?? 0) > 0 {
                 HStack(spacing: 5) {
                     if let duration = episode.duration {
                         Text(duration)

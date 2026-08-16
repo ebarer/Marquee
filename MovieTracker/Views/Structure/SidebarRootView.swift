@@ -8,7 +8,7 @@ import SwiftUI
 struct SidebarRootView: View {
     @Bindable var searchModel: SearchModel
 
-    @State private var selection: SidebarItem? = .collection(.popularMovies)
+    @State private var selection: SidebarItem? = .collection(.nowPlaying)
     @State private var presented: DetailRoot?
 
     var body: some View {

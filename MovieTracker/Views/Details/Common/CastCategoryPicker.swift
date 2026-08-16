@@ -32,30 +32,36 @@ struct CastCategoryPicker: View {
 
     var body: some View {
         if categories.count > 1 {
-            // A styled label backed by an embedded Picker, as in `SeasonHeader`: the menu keeps
-            // the standard checkmark gutter while the category reads as a section title.
-            Menu {
-                Picker("Category", selection: selection) {
-                    ForEach(categories, id: \.self) { option in
-                        Text(titleFor(option)).tag(option)
+            // Width goes outside the Menu, as in `SeasonHeader`: a label as wide as the iPad
+            // detail sheet makes UIKit take the sheet as the menu's source and hide it.
+            HStack(spacing: 0) {
+                // A styled label backed by an embedded Picker: the menu keeps the standard
+                // checkmark gutter while the category reads as a section title.
+                Menu {
+                    Picker("Category", selection: selection) {
+                        ForEach(categories, id: \.self) { option in
+                            Text(titleFor(option)).tag(option)
+                        }
                     }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(titleFor(current))
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        Image(systemName: "chevron.down")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(tint)
+                    }
+                    .contentShape(Rectangle())
                 }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(titleFor(current))
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                    Image(systemName: "chevron.down")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(tint)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 4)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 4)
         } else {
             SectionHeader(title: titleFor(current))
         }

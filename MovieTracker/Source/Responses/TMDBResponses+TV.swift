@@ -211,19 +211,29 @@ extension TMDBWrapper {
     struct AggregateCreditsRaw: Codable {
         var cast: [AggregateCastRaw]
 
-        /// Cast ranked by episodes appeared in (then billing order), capped at `limit`.
+        /// Cast ranked so the people the show is about come first, capped at `limit`.
         /// Shared by the show's recurring cast and a season's cast.
         func rankedCast(limit: Int) -> [Person] {
-            cast
-                .sorted {
-                    if $0.totalEpisodeCount != $1.totalEpisodeCount {
-                        return $0.totalEpisodeCount > $1.totalEpisodeCount
-                    }
-                    return ($0.order ?? .max) < ($1.order ?? .max)
-                }
+            let floor = regularFloor()
+            return cast
+                .sorted { rank($0, floor: floor) < rank($1, floor: floor) }
                 .prefix(limit)
                 .map { Person(id: $0.id, name: $0.name, role: $0.characterName,
                               pic: $0.profilePicture, type: .Cast) }
+        }
+
+        /// The run that makes someone a regular, whose billing order means something. TMDB
+        /// files hundreds of one-episode guests carrying order values in the hundreds.
+        private func regularFloor() -> Int {
+            max(2, (cast.map(\.totalEpisodeCount).max() ?? 0) / 10)
+        }
+
+        /// Regulars in the show's own billing order, then the rest by how much they were in:
+        /// ranking on episodes alone buries a departed lead under the ensemble who stayed.
+        private func rank(_ member: AggregateCastRaw, floor: Int) -> (Int, Int, Int) {
+            member.totalEpisodeCount >= floor
+                ? (0, member.order ?? .max, -member.totalEpisodeCount)
+                : (1, -member.totalEpisodeCount, member.order ?? .max)
         }
 
         struct AggregateCastRaw: Codable {

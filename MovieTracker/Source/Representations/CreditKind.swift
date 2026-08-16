@@ -8,16 +8,16 @@ import Foundation
 /// What a person did on a title, from TMDB's cast/crew split and the crew department.
 /// Ranks their duplicate credits, and gives the filmography something to filter by.
 enum CreditKind: String, Codable, CaseIterable, Identifiable, Sendable {
-    // Declaration order is the ranking order: a person credited twice on one title is listed
-    // once, under whichever of their roles comes first here.
-    case directing, acting, writing, producing, crew, appearance
+    // Declaration order ranks a person's several roles on one title. Acting leads: Cranston
+    // directed a few Malcolms, but he's known for playing Hal.
+    case acting, directing, writing, producing, crew, appearance
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .directing: return "Directing"
         case .acting: return "Acting"
+        case .directing: return "Directing"
         case .writing: return "Writing"
         case .producing: return "Producing"
         case .crew: return "Other Crew"

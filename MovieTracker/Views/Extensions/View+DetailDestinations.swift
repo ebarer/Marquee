@@ -24,5 +24,11 @@ extension View {
             .navigationDestination(for: PeopleList.self) { list in
                 SearchPeopleListView(list: list).modalDismissable()
             }
+            .navigationDestination(for: ShowCreditDestination.self) { destination in
+                switch destination {
+                case .show(let show): ShowDetailView(show: show).modalDismissable()
+                case .episodes(let credit): ShowEpisodeCreditsView(credit: credit).modalDismissable()
+                }
+            }
     }
 }

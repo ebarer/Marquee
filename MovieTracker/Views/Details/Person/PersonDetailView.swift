@@ -30,6 +30,9 @@ struct PersonDetailView: View {
     private let bioHeaderID = "personBioHeader"
 
     private var current: Person { model.person ?? person }
+    private var entries: [FilmographyEntry] {
+        FilmographyEntry.entries(for: current.allCredits, episodeCredits: model.episodeCredits)
+    }
     private var availableKinds: [CreditKind] { CreditKind.present(in: current.allCredits) }
     private var isFiltering: Bool { availableKinds.contains(where: filter.hides) }
 
@@ -56,8 +59,9 @@ struct PersonDetailView: View {
 
                     knownForSection
 
-                    PersonFilmography(credits: current.allCredits, lists: lists,
+                    PersonFilmography(entries: entries, lists: lists,
                                       filter: $filter,
+                                      isResolving: model.isResolvingCredits,
                                       navBarBottom: navBarBottom,
                                       onFilterHiddenChange: { hidden in
                                           withAnimation(.easeInOut(duration: 0.2)) {
@@ -90,6 +94,8 @@ struct PersonDetailView: View {
                     }
                     .tint(.appAccent)
                 }
+
+                ToolbarSpacer(.fixed)
             }
             // Declared here, after the filter, so Close stays the rightmost item.
             if let closeModal {
@@ -123,7 +129,7 @@ struct PersonDetailView: View {
         let knownFor = Array(current.knownFor.prefix(10))
         if !knownFor.isEmpty {
             SectionHeader(title: "Known For")
-            PosterStrip(media: knownFor, lists: lists)
+            PosterStrip(media: knownFor, lists: lists, showsEpisodeCredits: true)
         }
     }
 }

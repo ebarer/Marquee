@@ -61,7 +61,19 @@ extension TMDBWrapper {
     }
 
     static func showsOnTheAir(page: Int) async throws -> PagedResult<Show> {
-        try await showPage("/tv/on_the_air", page: page)
+        // `/tv/on_the_air` is curated and ignores every filter, so an air-date window on
+        // discover stands in for it — wide enough that a weekly series doesn't drop out.
+        try await discoverShows(page: page, extra: [
+            URLQueryItem(name: "sort_by", value: "popularity.desc"),
+            URLQueryItem(name: "air_date.gte", value: dateParam(daysFromNow: -14)),
+            URLQueryItem(name: "air_date.lte", value: dateParam(daysFromNow: 7)),
+            // News strips like TMZ, talk, soaps and reality, cut by genre *and* by type
+            // because TMDB tags a given show under only one of the two.
+            URLQueryItem(name: "without_genres", value: "10763,10767,10766,10764"),
+            URLQueryItem(name: "with_type", value: "0|2|4"),
+            // Low enough that a week-one premiere still ranks.
+            URLQueryItem(name: "vote_count.gte", value: "10"),
+        ])
     }
 
     private static func discoverShows(page: Int, extra: [URLQueryItem]) async throws -> PagedResult<Show> {

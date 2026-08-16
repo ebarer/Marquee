@@ -15,7 +15,7 @@ struct DetailColumn: View {
             // Search attaches to a stable container inside the stack so the field
             // renders in the trailing nav bar and content still fills the column.
             ZStack {
-                content
+                DetailContent(selection: selection, searchModel: searchModel)
             }
             .searchable(text: $searchModel.query, placement: .toolbar,
                         prompt: SearchModel.placeholder)
@@ -23,6 +23,25 @@ struct DetailColumn: View {
                 searchModel.search(newValue)
             }
         }
+    }
+}
+
+/// Its own view because `dismissSearch` only reaches a child of the `.searchable` above.
+private struct DetailContent: View {
+    let selection: SidebarItem?
+    let searchModel: SearchModel
+
+    @Environment(\.dismissSearch) private var dismissSearch
+
+    var body: some View {
+        content
+            // Picking a sidebar row is a move away from search, so the results give way to
+            // the pick — with the abandoned term kept in recents to search again.
+            .onChange(of: selection) { _, _ in
+                guard isSearching else { return }
+                searchModel.commit()
+                dismissSearch()
+            }
     }
 
     @ViewBuilder
@@ -38,7 +57,7 @@ struct DetailColumn: View {
             case .collection(let collection):
                 FeaturedGridView(collection: collection)
             case .none:
-                FeaturedGridView(collection: .popularMovies)
+                FeaturedGridView(collection: .nowPlaying)
             }
         }
     }

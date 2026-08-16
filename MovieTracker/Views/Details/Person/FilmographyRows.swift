@@ -8,13 +8,13 @@ import SwiftUI
 /// The credit rows (movie or show) for one filmography group, with separators between them.
 /// Movies carry watch/watched swipe actions and a context menu.
 struct FilmographyRows: View {
-    let credits: [MediaRef]
+    let entries: [FilmographyEntry]
     let lists: [MediaList]
 
     var body: some View {
-        ForEach(Array(credits.enumerated()), id: \.element.id) { index, ref in
-            row(ref)
-            if index < credits.count - 1 {
+        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+            row(entry)
+            if index < entries.count - 1 {
                 Rectangle()
                     .fill(Color.appSeparator)
                     .frame(height: 0.5)
@@ -24,10 +24,11 @@ struct FilmographyRows: View {
     }
 
     @ViewBuilder
-    private func row(_ ref: MediaRef) -> some View {
-        switch ref {
+    private func row(_ entry: FilmographyEntry) -> some View {
+        switch entry.ref {
         case .movie(let movie): movieRow(movie)
-        case .show(let show): showRow(show)
+        case .show(let show):
+            ShowCreditRow(show: show, credit: entry.credit, season: entry.season)
         }
     }
 
@@ -51,20 +52,6 @@ struct FilmographyRows: View {
         .movieContextMenu(for: movie, lists: lists)
     }
 
-    private func showRow(_ show: Show) -> some View {
-        NavigationLink(value: show) {
-            HStack(spacing: 8) {
-                ShowRow(show: show, role: show.creditRole, showsSeasonCount: false,
-                        episodeCount: show.episodeCount)
-                chevron
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.rowPress)
-    }
-
     private var chevron: some View {
         Image(systemName: "chevron.right")
             .font(.footnote.weight(.semibold))
@@ -76,7 +63,9 @@ struct FilmographyRows: View {
     NavigationStack {
         ScrollView {
             LazyVStack(spacing: 0) {
-                FilmographyRows(credits: Person.preview.allCredits, lists: [])
+                FilmographyRows(entries: FilmographyEntry.entries(for: Person.preview.allCredits,
+                                                                  episodeCredits: [:]),
+                                lists: [])
             }
         }
         .detailDestinations()

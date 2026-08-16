@@ -1,16 +1,18 @@
 
 Important:
-- [ ] Marking as watched should save watched date if you toggle it
+- [ ] 
 
 Polish:
 - [ ] presenting watch list should start scrolled to the (current month - 1)
 - [ ] sorting by rating, etc. the header is too low, should be closer to nav bar
 - [ ] tapping selected list in sidebar should scroll to top
+- [ ] Marking as watched should save watched date if you toggle it
 - [ ] Drop the `.movie` default from mediaType arguments, so a show can't pass as a movie
   - [ ] `MediaItem.init(tmdbID:mediaType:)`, `MediaItem.find(tmdbID:mediaType:)`
   - [ ] `MediaList.entry(for:_:)`, MediaList.contains(_:_:)
 
 Ideas:`
+- [ ] Search for role/cast inside detail pages (search bar above cast/credits section?)
 - [ ] Clean up person page
   - [ ] Center avatar, name below
   - [ ] Collapsing header with small avatar and name

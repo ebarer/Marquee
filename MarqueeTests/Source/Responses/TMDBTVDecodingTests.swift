@@ -41,9 +41,10 @@ import Foundation
             {"id":"v1","name":"Trailer","key":"xyz","type":"Trailer","site":"YouTube","official":true,"published_at":"2011-01-01"}
           ]},
           "aggregate_credits": {"cast":[
-            {"id":1,"name":"Lead Actor","profile_path":"/a.jpg","order":2,"total_episode_count":70,"roles":[{"character":"Hero"}]},
-            {"id":2,"name":"Recurring Actor","profile_path":null,"order":0,"total_episode_count":30,"roles":[{"character":"Sidekick"}]},
-            {"id":3,"name":"Tied Actor","order":5,"total_episode_count":70,"roles":[{"character":"Villain"}]}
+            {"id":1,"name":"Second Billed","profile_path":"/a.jpg","order":2,"total_episode_count":70,"roles":[{"character":"Hero"}]},
+            {"id":2,"name":"Departed Lead","profile_path":null,"order":0,"total_episode_count":30,"roles":[{"character":"Sidekick"}]},
+            {"id":3,"name":"Tied Actor","order":5,"total_episode_count":70,"roles":[{"character":"Villain"}]},
+            {"id":4,"name":"One Off Guest","order":1,"total_episode_count":1,"roles":[{"character":"Waiter"}]}
           ]},
           "content_ratings": {"results":[
             {"iso_3166_1":"\(region)","rating":"TV-MA"},
@@ -93,11 +94,12 @@ import Foundation
         #expect(try decodeShow(#"{"id":1,"name":"X"}"#).certification() == nil)
     }
 
-    @Test func recurringCastRankedByEpisodeCountThenOrder() throws {
+    /// Billing order among the regulars, so a lead who left partway (30 of 70 episodes) still
+    /// leads — and a one-episode guest billed second doesn't jump any of them.
+    @Test func recurringCastRanksRegularsByBillingOrderThenGuestsByPresence() throws {
         let cast = try decodeShow(fullShowJSON()).recurringCast()
-        // 70/order2, 70/order5 (tie broken by order), then 30.
-        #expect(cast.map(\.id) == [1, 3, 2])
-        #expect(cast.first?.role == "Hero")
+        #expect(cast.map(\.id) == [2, 1, 3, 4])
+        #expect(cast.first?.role == "Sidekick")
         #expect(cast.allSatisfy { $0.type == .Cast })
     }
 

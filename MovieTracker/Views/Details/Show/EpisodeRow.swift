@@ -11,6 +11,8 @@ struct EpisodeRow: View {
     let episode: Episode
     var isWatched: Bool
     var tint: Color = .appAccent
+    /// Set by a person's episode list; see ``EpisodeRowText``.
+    var role: String? = nil
     var onToggleWatched: () -> Void
 
     // Matches the poster width in the Recommendations strip for column alignment.
@@ -29,7 +31,7 @@ struct EpisodeRow: View {
                 .accessibilityLabel(accessibilityLabel)
 
                 HStack(alignment: .center, spacing: 8) {
-                    EpisodeRowText(episode: episode, tint: tint)
+                    EpisodeRowText(episode: episode, tint: tint, role: role)
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))

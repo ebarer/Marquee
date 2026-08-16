@@ -96,8 +96,16 @@ struct SidebarColumn: View {
     // MARK: - Rows
 
     private func collectionRow(_ collection: FeaturedCollection) -> some View {
-        collection.label
-            .tag(SidebarItem.collection(collection))
+        let selected = selection == .collection(collection)
+        return Label {
+            Text(collection.title)
+        } icon: {
+            // Pinned, because the list-wide tint below follows the selected list's colour and
+            // would otherwise drag Discover along with it.
+            collection.icon
+                .foregroundStyle(selected ? Color.white : Color.appAccent)
+        }
+        .tag(SidebarItem.collection(collection))
     }
 
     /// The Lists section in canonical order: Watch List, Watched, custom lists, Viewed.
@@ -148,9 +156,20 @@ struct SidebarColumn: View {
 
 // A `.constant` binding, not `@Previewable @State`: the latter runs the view's `@Query` before
 // `.modelContainer` attaches, crashing with "No eligible connection available".
-#Preview {
+#Preview("Discover selected") {
     NavigationStack {
         SidebarColumn(selection: .constant(.collection(.popularMovies)))
+    }
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+    .environment(CloudSyncMonitor(isSyncing: false))
+    .preferredColorScheme(.dark)
+}
+
+// Watched is turquoise, so the sidebar tint is too: the Discover icons above must stay gold.
+#Preview("List selected") {
+    NavigationStack {
+        SidebarColumn(selection: .constant(.list(.watched)))
     }
     .modelContainer(previewModelContainer)
     .environment(PersistenceCoordinator(previewModelContainer.mainContext))

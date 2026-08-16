@@ -5,12 +5,13 @@
 
 import SwiftUI
 
+// Ordered as the sidebar and the title menu show them: current first, popular last in each group.
 enum FeaturedCollection: Int, CaseIterable, Identifiable {
-    case popularMovies
     case nowPlaying
     case comingSoon
-    case popularShows
+    case popularMovies
     case showsOnTheAir
+    case popularShows
 
     static var movieCases: [FeaturedCollection] { allCases.filter { !$0.isShow } }
     static var showCases: [FeaturedCollection] { allCases.filter(\.isShow) }
@@ -27,11 +28,11 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .popularMovies: return "Popular Movies"
         case .nowPlaying: return "Now Playing"
         case .comingSoon: return "Coming Soon"
-        case .popularShows: return "Popular Shows"
+        case .popularMovies: return "Popular Movies"
         case .showsOnTheAir: return "On Air"
+        case .popularShows: return "Popular Shows"
         }
     }
 
@@ -61,17 +62,17 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
 extension FeaturedCollection {
     func movies(page: Int) async throws -> PagedResult<Movie> {
         switch self {
-        case .popularMovies: return try await TMDBWrapper.moviesPopular(page: page)
         case .nowPlaying: return try await TMDBWrapper.moviesNowPlaying(page: page)
         case .comingSoon: return try await TMDBWrapper.moviesComingSoon(page: page)
+        case .popularMovies: return try await TMDBWrapper.moviesPopular(page: page)
         default: return PagedResult<Movie>.empty
         }
     }
 
     func shows(page: Int) async throws -> PagedResult<Show> {
         switch self {
-        case .popularShows: return try await TMDBWrapper.showsPopular(page: page)
         case .showsOnTheAir: return try await TMDBWrapper.showsOnTheAir(page: page)
+        case .popularShows: return try await TMDBWrapper.showsPopular(page: page)
         default: return PagedResult<Show>.empty
         }
     }

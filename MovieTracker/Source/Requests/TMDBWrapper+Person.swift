@@ -12,6 +12,12 @@ extension TMDBWrapper {
         return translate(person: try decode(PersonRaw.self, from: data))
     }
 
+    /// The episodes behind one of a person's TV credits (see ``CreditRaw``).
+    static func getCredit(id: String) async throws -> EpisodeCredit {
+        let data = try await fetch("/credit/\(id)")
+        return try decode(CreditRaw.self, from: data).credit()
+    }
+
     static func searchForPeople(query: String, page: Int = 1) async throws -> PagedResult<Person> {
         guard !query.isEmpty else { return .empty }
         let data = try await fetch("/search/person", queryItems: [

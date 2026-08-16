@@ -62,6 +62,7 @@ extension TMDBWrapper {
 
             var byID = [Int: Show]()
             var roles = [Int: [(kind: CreditKind, role: String?)]]()
+            var creditIDs = [Int: [String]]()
             for (isCast, collection) in [(true, raw.cast), (false, raw.crew)] {
                 for item in collection {
                     var credit = Show(id: item.id, name: item.name)
@@ -76,6 +77,9 @@ extension TMDBWrapper {
                         credit.firstAirDate = airDateString.toDate(format: .iso8601DAw)
                     }
                     roles[item.id, default: []].append((credit.creditKind ?? .crew, item.role))
+                    if let creditID = item.creditID {
+                        creditIDs[item.id, default: []].append(creditID)
+                    }
                     if let kept = byID[item.id], rank(kept.creditKind) <= rank(credit.creditKind) {
                         continue
                     }
@@ -84,7 +88,11 @@ extension TMDBWrapper {
             }
 
             return byID.values
-                .map { merging($0, roles: roles[$0.id] ?? []) }
+                .map { show -> Show in
+                    var credit = merging(show, roles: roles[show.id] ?? [])
+                    credit.creditIDs = creditIDs[show.id] ?? []
+                    return credit
+                }
                 .sorted {
                     guard let airA = $0.firstAirDate else { return false }
                     guard let airB = $1.firstAirDate else { return true }
@@ -140,6 +148,8 @@ extension TMDBWrapper {
                 var popularity: Double?
                 var voteCount: Int?
                 var episodeCount: Int?
+                /// The handle for `/credit/{id}`, which resolves the episodes behind the count.
+                var creditID: String?
 
                 var role: String? { character ?? job }
 
@@ -149,6 +159,7 @@ extension TMDBWrapper {
                     case firstAirDateString = "first_air_date"
                     case poster = "poster_path"
                     case episodeCount = "episode_count"
+                    case creditID = "credit_id"
                 }
             }
         }
@@ -181,6 +192,45 @@ extension TMDBWrapper {
                     case releaseDateString = "release_date"
                     case poster = "poster_path"
                 }
+            }
+        }
+    }
+
+    /// `/credit/{credit_id}` — the episode-level detail behind one TV credit. TMDB names the
+    /// individual episodes of a guest credit, and names the season for a whole run.
+    struct CreditRaw: Codable {
+        var media: MediaRaw?
+
+        func credit() -> EpisodeCredit {
+            EpisodeCredit(seasons: media?.seasonCredits() ?? [])
+        }
+
+        struct MediaRaw: Codable {
+            var episodes: [EpisodeRaw]?
+            var seasons: [SeasonRaw]?
+
+            /// Decided per season, not per credit: a regular who also has a special named
+            /// gets both shapes at once, and reading it either/or loses one of them.
+            func seasonCredits() -> [EpisodeCredit.SeasonCredit] {
+                let listed = Dictionary(grouping: episodes ?? [], by: \.seasonNumber)
+                var known: [Int: Season] = [:]
+                for raw in seasons ?? [] { known[raw.seasonNumber] = raw.season() }
+
+                // A season named with none of its episodes singled out is the person's whole run.
+                var credits = known
+                    .filter { listed[$0.key] == nil }
+                    .map { EpisodeCredit.SeasonCredit(season: $0.value) }
+
+                // Episodes named within a season are the credit — TMDB sometimes omits the
+                // season itself, so stand any missing one up from its episodes.
+                credits += listed.map { number, episodes in
+                    let season = known[number]
+                        ?? Season(id: -(number + 1), seasonNumber: number, name: "Season \(number)")
+                    return EpisodeCredit.SeasonCredit(
+                        season: season, episodeNumbers: Set(episodes.map(\.episodeNumber)))
+                }
+
+                return credits.sorted { $0.season.seasonNumber < $1.season.seasonNumber }
             }
         }
     }

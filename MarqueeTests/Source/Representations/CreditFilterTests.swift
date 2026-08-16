@@ -151,11 +151,11 @@ import Foundation
         #expect(CreditKind.merge([(.crew, nil), (.crew, "")]).role == nil)
     }
 
-    /// An acting credit alongside crew work still files under the higher-ranking kind, so the
-    /// filmography's ordering and filtering are unchanged by listing the extra roles.
-    @Test func theTopRankingKindStillDecidesFiling() {
-        let merged = CreditKind.merge([(.acting, "Bartender"), (.directing, "Director")])
-        #expect(merged.kind == .directing)
-        #expect(merged.role == "Director, Bartender")
+    /// Acting outranks crew work: someone who acted in a show and directed some of it is
+    /// known for the part, so that's what the credit files and reads as.
+    @Test func actingOutranksCrewWorkOnTheSameTitle() {
+        let merged = CreditKind.merge([(.directing, "Director"), (.acting, "Hal")])
+        #expect(merged.kind == .acting)
+        #expect(merged.role == "Hal, Director")
     }
 }

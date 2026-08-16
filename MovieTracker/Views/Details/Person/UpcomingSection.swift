@@ -7,8 +7,10 @@ import SwiftUI
 
 /// The collapsible "Upcoming" group of a filmography (credits dated in the future).
 struct UpcomingSection: View {
-    let credits: [MediaRef]
+    let entries: [FilmographyEntry]
     let lists: [MediaList]
+
+    private var count: Int { entries.count }
 
     @State private var expanded = false
 
@@ -20,7 +22,7 @@ struct UpcomingSection: View {
                 Text("Upcoming")
                     .font(.headline)
                     .foregroundStyle(Color.appAccent)
-                Text("(\(credits.count))")
+                Text("(\(count))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Image(systemName: "chevron.right")
@@ -36,11 +38,11 @@ struct UpcomingSection: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Upcoming, \(credits.count) titles")
+        .accessibilityLabel("Upcoming, \(count) titles")
         .accessibilityHint(expanded ? "Collapses the section" : "Expands the section")
 
         if expanded {
-            FilmographyRows(credits: credits, lists: lists)
+            FilmographyRows(entries: entries, lists: lists)
         }
     }
 }
@@ -49,7 +51,9 @@ struct UpcomingSection: View {
     NavigationStack {
         ScrollView {
             LazyVStack(spacing: 0) {
-                UpcomingSection(credits: Person.preview.allCredits, lists: [])
+                UpcomingSection(entries: FilmographyEntry.entries(for: Person.preview.allCredits,
+                                                                  episodeCredits: [:]),
+                                lists: [])
             }
         }
         .detailDestinations()

@@ -13,8 +13,12 @@ struct ShowRow: View {
     var role: String? = nil
     /// Credits pass `false` to skip the lazy per-row season-count fetch.
     var showsSeasonCount: Bool = true
-    /// When set (a person's TV credits), shows "N Episodes" in place of the year range.
-    var episodeCount: Int? = nil
+    /// When set (a person's TV credits), replaces the year range — "S7 · E5", "Season 1",
+    /// or "12 Episodes", resolved by the caller from ``EpisodeCredit``.
+    var episodeSummary: String? = nil
+    /// Art to use in place of the show's own — the season's, in a person's credits, so a run
+    /// split across years doesn't repeat one poster down the list.
+    var posterOverride: URL? = nil
     /// An explicit poster badge; leave nil and set `derivesStatus` to read it from the store.
     var status: PosterStatus? = nil
     /// Derive the badge from watched progress / Watch List membership (lists, search).
@@ -30,7 +34,7 @@ struct ShowRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            PosterImage(url: show.posterURL(.w185))
+            PosterImage(url: posterOverride ?? show.posterURL(.w185))
                 .frame(width: 51, height: 76)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .overlay { badge }
@@ -48,8 +52,8 @@ struct ShowRow: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if let episodeCount, episodeCount > 0 {
-                    Text("^[\(episodeCount) Episode](inflect: true)")
+                if let episodeSummary {
+                    Text(episodeSummary)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else if yearRange != "N/A" {
@@ -69,7 +73,7 @@ struct ShowRow: View {
         .task(id: show.id) {
             // A stub (no seasons loaded) lacks last-air/status, so upgrade the year range
             // independently of the season-count text — otherwise "2021–Present" never shows.
-            guard episodeCount == nil, show.seasonCount == 0,
+            guard episodeSummary == nil, show.seasonCount == 0,
                   let full = await ShowSeasonCountStore.shared.show(for: show.id) else { return }
             resolvedYearRange = full.yearRange
         }

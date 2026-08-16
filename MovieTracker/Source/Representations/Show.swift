@@ -34,6 +34,9 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     /// Episodes the credited person appeared in (from a person's TV credits); shown in
     /// their filmography instead of the year range. Nil outside that context.
     var episodeCount: Int?
+    /// TMDB credit ids behind that count — a person can be filed under several for one show.
+    /// They're the handle for resolving which episodes (see ``EpisodeCredit``).
+    var creditIDs: [String] = []
     var creators: [Person] = []
     var recurringCast: [Person] = []
     var seasons: [Season] = []
