@@ -15,7 +15,8 @@ import SwiftData
 @Suite struct ListEntrySubtitleTests {
     let store = makeInMemoryStore()
 
-    private static let watchedDay = Date.utc(2026, 8, 16)
+    // nonisolated: it is a default argument below, which is evaluated off the main actor.
+    private nonisolated static let watchedDay = Date.utc(2026, 8, 16)
     private var stamp: String { Self.watchedDay.toString() }
 
     private func context(_ selection: ListSelection) -> ListEntryContext {

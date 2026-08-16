@@ -10,6 +10,12 @@
 import XCTest
 
 final class MovieDetailDisclosureUITests: XCTestCase {
+    private static let ratingCell = "metadata-value-RATING"
+    private static let genreCell = "metadata-value-GENRE"
+    private static let creditClipsCell = "metadata-value-CREDIT CLIPS"
+    private static let verdict = "whereToWatch-verdict"
+    private static let noDescription = "No movie description available."
+
     override func setUp() { continueAfterFailure = false }
 
     /// Opens the first movie on Discover, from empty caches and with the detail request held back
@@ -27,29 +33,22 @@ final class MovieDetailDisclosureUITests: XCTestCase {
         return app
     }
 
-    /// Every distinct label a value cell showed while the page loaded, in order. Empty means the
-    /// cell never disclosed anything, which these tests treat as a failure rather than a pass.
+    /// Samples repeatedly for `seconds`, keeping each distinct value a probe reported, in order.
     @MainActor
-    private func disclosures(of identifier: String, in app: XCUIApplication,
-                             forSeconds seconds: TimeInterval) -> [String] {
-        var seen: [String] = []
+    private func record(forSeconds seconds: TimeInterval,
+                        _ sample: @MainActor () -> [String: String]) -> [String: [String]] {
+        var seen: [String: [String]] = [:]
         let deadline = Date().addingTimeInterval(seconds)
         while Date() < deadline {
-            let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-            if element.exists {
-                let label = element.label
-                if !label.isEmpty, seen.last != label { seen.append(label) }
+            for (key, value) in sample() where !value.isEmpty && seen[key]?.last != value {
+                seen[key, default: []].append(value)
             }
-            usleep(40_000)   // 40ms
         }
         return seen
     }
 
     /// Asserts a cell disclosed something, and that an em dash was its last word on the matter.
-    @MainActor
-    private func assertNoFillInAfterEmpty(_ identifier: String, in app: XCUIApplication) {
-        let seen = disclosures(of: identifier, in: app, forSeconds: 10)
-
+    private func assertNoFillInAfterEmpty(_ identifier: String, _ seen: [String]) {
         XCTAssertFalse(seen.isEmpty,
                        "\(identifier) never disclosed a value — the test would pass vacuously")
 
@@ -60,45 +59,39 @@ final class MovieDetailDisclosureUITests: XCTestCase {
         }
     }
 
+    /// Every field is watched over one shared load: they all live on the same page, and a launch
+    /// apiece cost ~19s each to prove the same thing.
     @MainActor
-    func testRatingCellNeverFillsInAfterReportingEmpty() {
-        assertNoFillInAfterEmpty("metadata-value-RATING", in: pushFirstMovie())
-    }
-
-    @MainActor
-    func testGenreCellNeverFillsInAfterReportingEmpty() {
-        assertNoFillInAfterEmpty("metadata-value-GENRE", in: pushFirstMovie())
-    }
-
-    @MainActor
-    func testCreditClipsCellNeverFillsInAfterReportingEmpty() {
-        assertNoFillInAfterEmpty("metadata-value-CREDIT CLIPS", in: pushFirstMovie())
-    }
-
-    @MainActor
-    func testStreamingVerdictNeverFlips() {
+    func testNoFieldFillsInAfterReportingEmpty() {
         let app = pushFirstMovie()
-        let seen = disclosures(of: "whereToWatch-verdict", in: app, forSeconds: 10)
+        continueAfterFailure = true
 
-        XCTAssertFalse(seen.isEmpty, "The streaming verdict never appeared")
-        XCTAssertFalse(seen.contains("Unavailable to Stream") && seen.contains("Available to Stream"),
-                       "Streaming verdict flipped mid-load: \(seen)")
-    }
-
-    @MainActor
-    func testDescriptionNeverReplacesTheUnavailableLine() {
-        let app = pushFirstMovie()
-        let unavailable = "No movie description available."
-
-        var sawUnavailable = false
-        let deadline = Date().addingTimeInterval(10)
-        while Date() < deadline {
-            if app.staticTexts[unavailable].exists { sawUnavailable = true }
-            usleep(40_000)
+        let cells = [Self.ratingCell, Self.genreCell, Self.creditClipsCell, Self.verdict]
+        let seen = record(forSeconds: 10) {
+            var sample: [String: String] = [:]
+            for identifier in cells {
+                let element = app.descendants(matching: .any)
+                    .matching(identifier: identifier).firstMatch
+                if element.exists { sample[identifier] = element.label }
+            }
+            if app.staticTexts[Self.noDescription].exists {
+                sample[Self.noDescription] = Self.noDescription
+            }
+            return sample
         }
 
-        if sawUnavailable {
-            XCTAssertTrue(app.staticTexts[unavailable].exists,
+        for cell in [Self.ratingCell, Self.genreCell, Self.creditClipsCell] {
+            assertNoFillInAfterEmpty(cell, seen[cell] ?? [])
+        }
+
+        let verdicts = seen[Self.verdict] ?? []
+        XCTAssertFalse(verdicts.isEmpty, "The streaming verdict never appeared")
+        XCTAssertFalse(verdicts.contains("Unavailable to Stream")
+                       && verdicts.contains("Available to Stream"),
+                       "Streaming verdict flipped mid-load: \(verdicts)")
+
+        if seen[Self.noDescription] != nil {
+            XCTAssertTrue(app.staticTexts[Self.noDescription].exists,
                           "Claimed no description, then showed one")
         }
     }

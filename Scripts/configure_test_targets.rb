@@ -109,25 +109,41 @@ ui.add_dependency(app)
 
 project.save
 
-# --- Test plan: run this target SERIALLY. The suites share global state
+# --- Test plans: run every target SERIALLY. The suites share global state
 # (URLSession.shared stubs, MediaCacheStore.shared, on-disk store), so parallel
-# execution races; serial is also the right model for the integration tests. ---
+# execution races; serial is also the right model for the integration tests.
+#
+# Two plans, because the UI tests and the measure() benchmarks are ~95% of the
+# wall clock and only ~3% of the assertions. `Marquee` (default) is the
+# every-commit plan; `Marquee-Full` is the pre-release/CI one. ---
+FAST_PLAN = APP_TARGET_NAME               # unit tests, no benchmarks
+FULL_PLAN = "#{APP_TARGET_NAME}-Full"     # everything
+
 def container(uuid, name)
   { "containerPath" => "container:MovieTracker.xcodeproj", "identifier" => uuid, "name" => name }
 end
-plan = {
-  "configurations" => [{ "id" => SecureRandom.uuid.upcase, "name" => "Configuration 1", "options" => {} }],
-  "defaultOptions" => { "targetForVariableExpansion" => container(app.uuid, APP_TARGET_NAME) },
-  "testTargets" => [
-    { "parallelizable" => false, "target" => container(unit.uuid, UNIT[:name]) },
-    { "parallelizable" => false, "target" => container(ui.uuid, UI[:name]) },
-  ],
-  "version" => 1,
-}
-plan_path = File.join(ROOT, "#{APP_TARGET_NAME}.xctestplan")
-File.write(plan_path, JSON.pretty_generate(plan) + "\n")
 
-# --- Point the scheme at the plan. With a default test plan, inline <Testables>
+def write_plan(root, name, app_target, test_targets)
+  plan = {
+    "configurations" => [{ "id" => SecureRandom.uuid.upcase, "name" => "Configuration 1", "options" => {} }],
+    "defaultOptions" => { "targetForVariableExpansion" => app_target },
+    "testTargets" => test_targets,
+    "version" => 1,
+  }
+  File.write(File.join(root, "#{name}.xctestplan"), JSON.pretty_generate(plan) + "\n")
+end
+
+app_ref = container(app.uuid, APP_TARGET_NAME)
+unit_ref = container(unit.uuid, UNIT[:name])
+ui_ref = container(ui.uuid, UI[:name])
+
+write_plan(ROOT, FAST_PLAN, app_ref,
+           [{ "parallelizable" => false, "skippedTests" => ["PerformanceTests"], "target" => unit_ref }])
+write_plan(ROOT, FULL_PLAN, app_ref,
+           [{ "parallelizable" => false, "target" => unit_ref },
+            { "parallelizable" => false, "target" => ui_ref }])
+
+# --- Point the scheme at the plans. With a default test plan, inline <Testables>
 # are ignored, so drop them (they'd otherwise pile up stale refs across runs). ---
 scheme_path = Xcodeproj::XCScheme.user_data_dir(PROJECT_PATH) + "#{APP_TARGET_NAME}.xcscheme"
 scheme = File.exist?(scheme_path) ? Xcodeproj::XCScheme.new(scheme_path) : Xcodeproj::XCScheme.new
@@ -135,9 +151,11 @@ test_action = scheme.test_action.xml_element
 test_action.delete_element('Testables')
 test_action.delete_element('TestPlans')
 plans = REXML::Element.new('TestPlans')
-ref = plans.add_element('TestPlanReference')
-ref.add_attribute('reference', "container:#{APP_TARGET_NAME}.xctestplan")
-ref.add_attribute('default', 'YES')
+[[FAST_PLAN, true], [FULL_PLAN, false]].each do |name, is_default|
+  ref = plans.add_element('TestPlanReference')
+  ref.add_attribute('reference', "container:#{name}.xctestplan")
+  ref.add_attribute('default', 'YES') if is_default
+end
 test_action.add_element(plans)
 scheme.save_as(PROJECT_PATH, APP_TARGET_NAME, false)
 
