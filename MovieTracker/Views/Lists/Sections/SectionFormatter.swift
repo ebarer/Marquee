@@ -109,8 +109,8 @@ enum SectionFormatter {
 
     // MARK: Month/year grouping (+ "Older" fold)
 
-    /// See `grouped`: only fold when there's a meaningful recent block to keep on screen
-    /// (>= `foldMinRecent`) and a backlog large enough to be worth hiding (>= `foldMinOlder`).
+    /// See `grouped`: only fold when enough rows stay on screen (>= `foldMinRecent`) and the
+    /// backlog is large enough to be worth hiding (>= `foldMinOlder`).
     private static let foldMinRecent = 2
     private static let foldMinOlder = 3
 
@@ -123,15 +123,16 @@ enum SectionFormatter {
         return calendar.date(byAdding: .month, value: -1, to: startOfMonth) ?? startOfMonth
     }
 
-    /// Groups by month/year. When folding, entries before the cutoff are pulled out and appended
-    /// as one collapsible "Older" bucket at the bottom (top when ascending — it reads as an archive).
-    private static func grouped(_ rows: [DatedRow], ascending: Bool, foldOlder: Bool) -> [SectionSnapshot] {
+    /// Groups by month/year. Entries before the cutoff whose media type folds are pulled out into
+    /// one collapsible "Older" bucket at the bottom (top when ascending — it reads as an archive).
+    private static func grouped(_ rows: [DatedRow], ascending: Bool, foldOlder: OlderFold) -> [SectionSnapshot] {
         var recent = rows
         var older: [MediaSnapshot] = []
-        if foldOlder {
+        if !foldOlder.isEmpty {
             let cutoff = olderCutoff()
-            let recentSplit = rows.filter { $0.date >= cutoff }
-            let olderSplit = rows.filter { $0.date < cutoff }
+            let folds = { (row: DatedRow) in row.date < cutoff && foldOlder.folds(row.snapshot.mediaType) }
+            let recentSplit = rows.filter { !folds($0) }
+            let olderSplit = rows.filter(folds)
             if recentSplit.count >= foldMinRecent && olderSplit.count >= foldMinOlder {
                 recent = recentSplit
                 let olderSorted = olderSplit.sorted { $0.date < $1.date }

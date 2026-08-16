@@ -10,7 +10,8 @@ struct ListSortMenu: View {
     @Binding var ascending: Bool
     var watchedSortKey: Binding<WatchedSortKey>?
     var listSortKey: Binding<ListSortKey>?
-    var foldOlder: Binding<Bool>?
+    var foldOlderMovies: Binding<Bool>?
+    var foldOlderShows: Binding<Bool>?
     var mediaFilter: Binding<MediaTypeFilter>?
 
     // Used to style the button if actively filtering
@@ -56,9 +57,13 @@ struct ListSortMenu: View {
                         label(.tv).tag(MediaTypeFilter.tv)
                     }
 
-                    if let foldOlder {
-                        Section {
-                            Toggle("Hide Older Titles", isOn: foldOlder)
+                    // A fold toggle only for the media types currently on screen.
+                    Section {
+                        if let foldOlderMovies, mediaFilter.wrappedValue != .tv {
+                            Toggle("Hide Older Movies", isOn: foldOlderMovies)
+                        }
+                        if let foldOlderShows, mediaFilter.wrappedValue != .movies {
+                            Toggle("Hide Older Shows", isOn: foldOlderShows)
                         }
                     }
                 } label: {
@@ -127,8 +132,11 @@ struct ListSortMenu: View {
 #Preview("Sort menu — Watch List") {
     @Previewable @State var ascending = true
     @Previewable @State var key: ListSortKey = .releaseDate
-    @Previewable @State var fold = true
-    ListSortMenu(ascending: $ascending, listSortKey: $key, foldOlder: $fold)
+    @Previewable @State var foldMovies = true
+    @Previewable @State var foldShows = false
+    @Previewable @State var mediaFilter: MediaTypeFilter = .all
+    ListSortMenu(ascending: $ascending, listSortKey: $key, foldOlderMovies: $foldMovies,
+                 foldOlderShows: $foldShows, mediaFilter: $mediaFilter)
         .tint(.appAccent)
         .padding()
         .background(Color.appBackground)

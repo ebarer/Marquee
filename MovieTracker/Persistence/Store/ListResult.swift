@@ -17,8 +17,9 @@ struct DatedRow: Sendable, Equatable {
 enum SectionLayout: Sendable, Equatable {
     /// One headerless section, sorted by date.
     case flat
-    /// Month/year buckets, optionally folding stale rows into a collapsed "Older" bucket.
-    case months(foldOlder: Bool)
+    /// Month/year buckets, folding the stale rows of the named media types into a collapsed
+    /// "Older" bucket.
+    case months(foldOlder: OlderFold)
     /// Buckets by half-star rating, unrated last.
     case ratingStars
     /// Buckets by the title's first letter, digits and symbols under "#".

@@ -27,7 +27,8 @@ struct ListContentView: View {
     @AppStorage("watchedListAscending") private var watchedAscending = false
     @AppStorage("viewedListAscending") private var viewedAscending = false
     @AppStorage("watchedSortKey") private var watchedSortKey: WatchedSortKey = .dateWatched
-    @AppStorage("watchListFoldOlder") private var watchListFoldOlder = true
+    @AppStorage("watchListFoldOlder") private var foldOlderMovies = true
+    @AppStorage("watchListFoldOlderShows") private var foldOlderShows = false
     @AppStorage("listMediaTypeFilter") private var mediaFilter: MediaTypeFilter = .all
 
     private var filterText: String { externalFilter ?? localFilter }
@@ -92,7 +93,8 @@ struct ListContentView: View {
                     ListSortMenu(ascending: ascendingBinding,
                                  watchedSortKey: selection == .watched ? $watchedSortKey : nil,
                                  listSortKey: isRealList ? listSortKeyBinding : nil,
-                                 foldOlder: showsFoldToggle ? $watchListFoldOlder : nil,
+                                 foldOlderMovies: showsFoldToggle ? $foldOlderMovies : nil,
+                                 foldOlderShows: showsFoldToggle ? $foldOlderShows : nil,
                                  mediaFilter: $mediaFilter)
                         .tint(activeColor)
                 }
@@ -159,7 +161,12 @@ struct ListContentView: View {
                                 listFoldOlder: foldsOlder)
     }
 
-    private var foldsOlder: Bool { watchListFoldOlder }
+    private var foldsOlder: OlderFold {
+        var fold: OlderFold = []
+        if foldOlderMovies { fold.insert(.movies) }
+        if foldOlderShows { fold.insert(.shows) }
+        return fold
+    }
 
     private var isRealList: Bool {
         if case .list = selection { return true }

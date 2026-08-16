@@ -27,8 +27,9 @@ extension LibraryBackup {
                 sortOrder: list.sortOrder, createdAt: list.createdAt,
                 entries: (list.entries ?? []).map { entry in
                     LibraryBackup.Entry(
-                        movieID: entry.tmdbID, title: entry.title, posterPath: entry.posterPath,
-                        releaseDate: entry.releaseDate, dateAdded: entry.addedAt,
+                        movieID: entry.tmdbID, mediaType: entry.mediaTypeRaw, title: entry.title,
+                        posterPath: entry.posterPath, releaseDate: entry.releaseDate,
+                        sortDate: entry.sortDate, dateAdded: entry.addedAt,
                         dateWatched: nil, userRating: nil)
                 }
             )
@@ -42,8 +43,9 @@ extension LibraryBackup {
                 colorIndex: 0, kind: Kind.watched.rawValue, sortOrder: 2, createdAt: Date(),
                 entries: watched.map { item in
                     LibraryBackup.Entry(
-                        movieID: item.tmdbID, title: item.title, posterPath: item.posterPath,
-                        releaseDate: item.releaseDate, dateAdded: item.addedAt,
+                        movieID: item.tmdbID, mediaType: item.mediaTypeRaw, title: item.title,
+                        posterPath: item.posterPath, releaseDate: item.releaseDate,
+                        sortDate: item.sortDate, dateAdded: item.addedAt,
                         dateWatched: item.watchedAt, userRating: item.userRating)
                 }))
         }
@@ -63,7 +65,7 @@ extension LibraryBackup {
                 continue
             case .watched:
                 for entry in archivedList.entries {
-                    let item = MediaItem.upsert(movie(from: entry), in: context)
+                    let item = MediaItem.upsert(key: key(from: entry), in: context)
                     if item.watchedAt == nil {
                         item.watchedAt = entry.dateWatched ?? MediaItem.floatingDay(from: Date())
                     }
@@ -75,11 +77,12 @@ extension LibraryBackup {
                 guard let list = target(archivedList, isWatchList: isWatchList,
                                         using: store, summary: &summary) else { continue }
                 for entry in archivedList.entries {
-                    guard !list.contains(entry.movieID) else {
+                    let key = key(from: entry)
+                    guard !list.contains(key.tmdbID, key.mediaType) else {
                         summary.entriesSkipped += 1
                         continue
                     }
-                    let member = ListEntry(movie: movie(from: entry))
+                    let member = ListEntry(key: key)
                     member.list = list
                     context.insert(member)
                     summary.entriesAdded += 1
@@ -106,10 +109,10 @@ extension LibraryBackup {
         return created
     }
 
-    private static func movie(from entry: LibraryBackup.Entry) -> Movie {
-        var movie = Movie(id: entry.movieID, title: entry.title)
-        movie.poster = entry.posterPath
-        movie.releaseDate = entry.releaseDate
-        return movie
+    private static func key(from entry: LibraryBackup.Entry) -> MediaKey {
+        MediaKey(tmdbID: entry.movieID,
+                 mediaType: MediaType(rawValue: entry.mediaType) ?? .movie,
+                 title: entry.title, posterPath: entry.posterPath,
+                 releaseDate: entry.releaseDate, runtime: nil, sortDate: entry.sortDate)
     }
 }

@@ -32,7 +32,7 @@ actor ListCoordinator {
 
     // MARK: List membership (ListEntry)
 
-    private func loadList(_ listID: UUID, sort: ListSortKey, foldOlder: Bool, filter: String) -> ListResult {
+    private func loadList(_ listID: UUID, sort: ListSortKey, foldOlder: OlderFold, filter: String) -> ListResult {
         // Only the Watch List folds a stale backlog into "Older", and only under release-date
         // sort; by-date-added is a flat list, and rating/title bucket on the row itself.
         func layout(isWatchList: Bool) -> SectionLayout {
@@ -40,7 +40,7 @@ actor ListCoordinator {
             case .dateAdded: return .flat
             case .rating: return .ratingStars
             case .alphabetical: return .initials
-            case .releaseDate: return .months(foldOlder: isWatchList && foldOlder)
+            case .releaseDate: return .months(foldOlder: isWatchList ? foldOlder : [])
             }
         }
         let byDateAdded = sort == .dateAdded
@@ -139,7 +139,7 @@ actor ListCoordinator {
         switch sort {
         case .rating: layout = .ratingStars
         case .alphabetical: layout = .initials
-        case .dateWatched, .releaseDate: layout = .months(foldOlder: false)
+        case .dateWatched, .releaseDate: layout = .months(foldOlder: [])
         }
         return ListResult(rows: rows, layout: layout)
     }

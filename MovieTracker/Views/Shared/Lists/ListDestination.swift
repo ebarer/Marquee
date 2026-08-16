@@ -61,7 +61,8 @@ struct ListDestination {
         }
     }
 
-    func listRequest(watchedSort: WatchedSortKey, listSort: ListSortKey, listFoldOlder: Bool) -> ListRequest? {
+    func listRequest(watchedSort: WatchedSortKey, listSort: ListSortKey,
+                     listFoldOlder: OlderFold) -> ListRequest? {
         switch selection {
         case .list(let uuid): return list != nil ? .list(uuid, sort: listSort, foldOlder: listFoldOlder) : nil
         case .watched: return .watched(sort: watchedSort)

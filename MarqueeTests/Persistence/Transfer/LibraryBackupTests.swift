@@ -48,6 +48,14 @@ import SwiftData
         let entry = try decoder.decode(LibraryBackup.Entry.self, from: Data(json.utf8))
         #expect(entry.userRating == nil)
     }
+
+    @Test func entryDecodesMissingMediaTypeAsMovie() throws {
+        // Files written before shows were tracked have no media type; they held movies only.
+        let json = #"{"movieID":1,"title":"A","dateAdded":"2011-01-01T00:00:00Z"}"#
+        let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
+        let entry = try decoder.decode(LibraryBackup.Entry.self, from: Data(json.utf8))
+        #expect(entry.mediaType == MediaType.movie.rawValue)
+    }
 }
 
 @Suite struct ImportSummaryTests {
@@ -78,6 +86,25 @@ import SwiftData
         let watchedList = backup.lists.first { $0.kind == LibraryBackup.Kind.watched.rawValue }
         #expect(watchedList?.entries.first?.movieID == 2)
         #expect(watchedList?.entries.first?.userRating == 3)
+    }
+
+    @Test func showsSurviveExportAndImportAsTV() {
+        let store = makeInMemoryStore()
+        let list = MediaList(name: "Faves", sortOrder: 1)
+        store.insert(list)
+        var show = Show(id: 7, name: "Silo")
+        show.firstAirDate = .utc(2023, 5, 5)
+        store.add(show, to: list)
+
+        let backup = LibraryBackup.export(from: store.context)
+        let exported = backup.lists.first { $0.name == "Faves" }?.entries.first
+        #expect(exported?.mediaType == MediaType.tv.rawValue)
+
+        // Import into a fresh store: the entry must come back as a show, not a movie.
+        let fresh = makeInMemoryStore()
+        _ = LibraryBackup.merge(backup, using: fresh)
+        let imported = fresh.customLists.first { $0.name == "Faves" }?.entries?.first
+        #expect(imported?.mediaType == .tv)
     }
 
     @Test func mergeCreatesCustomListAndSetsWatchedFacts() {
