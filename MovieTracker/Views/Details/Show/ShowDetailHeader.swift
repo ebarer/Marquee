@@ -22,7 +22,7 @@ struct ShowDetailHeader: View {
     /// can date each season to its finale.
     var episodesBySeason: [Int: [Episode]] = [:]
     @Binding var headerPinned: Bool
-    @Binding var isSeen: Bool
+    @Binding var progress: ShowProgress
     var onChange: () -> Void = {}
 
     var body: some View {
@@ -41,7 +41,8 @@ struct ShowDetailHeader: View {
                 progress: progress, width: width
             ) {
                 ShowActionBar(show: show, lists: lists, tint: tint,
-                              episodesBySeason: episodesBySeason, isSeen: $isSeen, onChange: onChange)
+                              episodesBySeason: episodesBySeason, progress: $progress,
+                              onChange: onChange)
             }
         }
     }
@@ -69,7 +70,7 @@ struct ShowDetailHeader: View {
                 ShowDetailHeader(show: .preview, tint: .appAccent, lists: [],
                                  navBarBottom: 100, imageHeight: proxy.size.height * 0.41,
                                  headerRest: proxy.size.height * 0.5,
-                                 headerPinned: .constant(false), isSeen: .constant(false))
+                                 headerPinned: .constant(false), progress: .constant(ShowProgress()))
                 Color.appSeparator.frame(height: 1200)
             }
         }

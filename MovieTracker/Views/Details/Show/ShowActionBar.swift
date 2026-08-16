@@ -15,21 +15,21 @@ struct ShowActionBar: View {
     /// Loaded episodes per season number, so marking the whole show watched can date each
     /// season to its finale rather than today.
     var episodesBySeason: [Int: [Episode]] = [:]
-    @Binding var isSeen: Bool
+    /// Owned by the detail screen, which reads it before the payload lands — seeding it here
+    /// would draw an untracked bar for a frame and then flip.
+    @Binding var progress: ShowProgress
     /// Refine list membership after a mutation (advance the tracked season, precise
     /// next-episode date) — supplied by the detail screen, which can load episodes.
     var onChange: () -> Void = {}
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Namespace private var glassNamespace
-    @State private var tracked = false
-    @State private var hasProgress = false
-    @State private var caughtUp = false
     @State private var wasOnWatchList = false
     @State private var showRemoveConfirm = false
-    // Gate the watched animation so the first sync (entry) settles instantly; only
-    // user-driven changes after appearance animate the bookmark↔checkmark transition.
+    // Only changes after the first frame animate the bookmark↔checkmark transition.
     @State private var didAppear = false
+
+    private var isSeen: Bool { progress.isWatched }
 
     private var canonical: [MediaList] { store?.canonicalLists(lists) ?? lists }
     private var watchList: MediaList? { canonical.first { $0.isWatchList } }
@@ -41,28 +41,21 @@ struct ShowActionBar: View {
                 if !isSeen {
                     bookmarkButton
                 }
-                ShowWatchedButton(isSeen: isSeen, isCaughtUp: caughtUp, isOngoing: show.isOngoing,
-                                  tint: tint, glassNamespace: glassNamespace, onApply: applyWatched)
+                ShowWatchedButton(isSeen: isSeen, isCaughtUp: progress.isCaughtUp,
+                                  isOngoing: show.isOngoing, tint: tint,
+                                  glassNamespace: glassNamespace, onApply: applyWatched)
                 customListsControl
                 TrailerButton(trailer: show.primaryTrailer, tint: tint)
             }
         }
         .animation(didAppear ? .spring(response: 0.4, dampingFraction: 0.8) : nil, value: isSeen)
-        .animation(didAppear ? .easeInOut : nil, value: caughtUp)
-        .onAppear {
-            refresh()
-            didAppear = true
-        }
-        // Caught-up needs the season's episodes to date-check, and they arrive lazily.
-        .onChange(of: episodesBySeason.count) { refresh() }
-        // Re-sync when episodes are toggled elsewhere: unwatching one pulls a finished show
-        // back onto the Watch List, so the bookmark that reappears must read as on.
-        .onChange(of: store?.revision) { refresh() }
+        .animation(didAppear ? .easeInOut : nil, value: progress.isCaughtUp)
+        .onAppear { didAppear = true }
     }
 
     private var bookmarkButton: some View {
-        GlassActionButton(systemName: tracked ? "bookmark.fill" : "bookmark", isOn: tracked,
-                          shape: Circle(), tint: tint) {
+        GlassActionButton(systemName: progress.isTracked ? "bookmark.fill" : "bookmark",
+                          isOn: progress.isTracked, shape: Circle(), tint: tint) {
             handleBookmarkTap()
         }
         .glassEffectID("bookmark", in: glassNamespace)
@@ -81,12 +74,13 @@ struct ShowActionBar: View {
     // (and sticks). Adding it back is a plain tap that re-tracks the next-episode season.
     private func handleBookmarkTap() {
         guard let store else { return }
-        if tracked, hasProgress {
+        if progress.isTracked, progress.hasProgress {
             showRemoveConfirm = true
             return
         }
-        let wasTracked = tracked
-        tracked.toggle()
+        let wasTracked = progress.isTracked
+        let hasProgress = progress.hasProgress
+        progress.isTracked.toggle()
         store.afterCommit {
             if wasTracked {
                 store.toggleWatchList(show)
@@ -103,7 +97,7 @@ struct ShowActionBar: View {
     private func applyWatched(_ watched: Bool) {
         Task { @MainActor in
             if watched {
-                wasOnWatchList = tracked
+                wasOnWatchList = progress.isTracked
                 await store?.setShowWatched(true, show: show, episodesBySeason: episodesBySeason)
             } else {
                 await store?.setShowWatched(false, show: show)
@@ -145,17 +139,13 @@ struct ShowActionBar: View {
     /// Persisted facts only. Deriving these from `show.regularSeasons` meant a stub payload read
     /// as unwatched, so the controls flipped once detail loaded — and it cost a fetch per season.
     private func refresh() {
-        let progress = store?.showProgress(showID: show.id) ?? ShowProgress()
-        tracked = progress.isTracked
-        hasProgress = progress.hasProgress
-        isSeen = progress.isWatched
-        caughtUp = progress.isCaughtUp
+        progress = store?.showProgress(showID: show.id) ?? ShowProgress()
     }
 }
 
 // Interactive: tap Watched to confirm and watch the pill span, or bookmark/list live.
 #Preview {
-    @Previewable @State var isSeen = false
+    @Previewable @State var progress = ShowProgress()
     let context = previewModelContainer.mainContext
     let watch = MediaList(name: "Watch List", symbol: "bookmark", sortOrder: 0, isWatchList: true)
     let favorites = MediaList(name: "Favorites", symbol: "heart", sortOrder: 1, colorIndex: 2)
@@ -163,7 +153,7 @@ struct ShowActionBar: View {
     context.insert(watch); context.insert(favorites); context.insert(queued)
 
     return ShowActionBar(show: .preview, lists: [watch, favorites, queued],
-                         tint: .appAccent, isSeen: $isSeen)
+                         tint: .appAccent, progress: $progress)
         .padding()
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)

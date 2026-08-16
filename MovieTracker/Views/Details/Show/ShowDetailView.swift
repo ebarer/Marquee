@@ -32,7 +32,9 @@ struct ShowDetailView: View {
     private var lists: [MediaList]
     @State private var model = ShowDetailModel()
     @State private var headerPinned = false
-    @State private var isSeen = false
+    /// The action bar's tracked/watched/caught-up facts, owned here so they're already right
+    /// on the first frame the bar draws.
+    @State private var progress = ShowProgress()
     @State private var overscroll: CGFloat = 0
     /// The page's top edge in window coordinates — a sheet sits inset in the window, so a bare
     /// `.global` reading would count that offset as nav-bar height.
@@ -58,9 +60,9 @@ struct ShowDetailView: View {
         .toolbarTitleDisplayMode(.inline)
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .task {
-            // Seed from the persisted flag (showID only) so the checkmark is correct before
+            // Seed from the persisted facts (showID only) so the controls are correct before
             // the payload loads, rather than flipping once it's computed.
-            isSeen = store?.isShowWatchedCached(showID: showID) ?? false
+            refreshProgress()
             await model.load(id: showID)
             if let show = model.show {
                 store?.recordView(show)
@@ -72,16 +74,15 @@ struct ShowDetailView: View {
                 store?.reconcileSeasons(for: show)
                 refreshInProgressSeason()
                 await model.reconcileMembership(using: store)
-                isSeen = store?.isShowWatchedCached(showID: showID) ?? false
+                refreshProgress()
             }
         }
         // Resolve the opening season off the CACHED show, before the network payload lands —
         // otherwise the screen sits on season 1 and jumps once loading finishes.
         .onChange(of: model.show?.id) { refreshInProgressSeason() }
-        // Keep the checkmark live when episodes are toggled in the episodes section.
-        .onChange(of: store?.revision) {
-            isSeen = store?.isShowWatchedCached(showID: showID) ?? false
-        }
+        // Keep the controls live when episodes are toggled in the episodes section: unwatching
+        // one pulls a finished show back onto the Watch List, so the bookmark must follow.
+        .onChange(of: store?.revision) { refreshProgress() }
     }
 
     private func detailContent(show: Show) -> some View {
@@ -102,7 +103,7 @@ struct ShowDetailView: View {
                                      headerRest: headerRest, overscroll: overscroll,
                                      seasonPosterPath: seasonPosterPath(for: show),
                                      episodesBySeason: model.seasonEpisodes,
-                                     headerPinned: $headerPinned, isSeen: $isSeen,
+                                     headerPinned: $headerPinned, progress: $progress,
                                      onChange: reconcileMembership)
                         .zIndex(1)
                     ShowMetadataStrip(show: show, tint: model.tint)
@@ -156,12 +157,16 @@ struct ShowDetailView: View {
         inProgressSeason = store?.firstIncompleteSeason(show)?.seasonNumber
     }
 
+    private func refreshProgress() {
+        progress = store?.showProgress(showID: showID) ?? ShowProgress()
+    }
+
     /// Refresh list membership after an action-bar mutation (advance the tracked season,
     /// re-derive the show-level watched state for the checkmark).
     private func reconcileMembership() {
         Task {
             await model.reconcileMembership(using: store)
-            isSeen = store?.isShowWatchedCached(showID: showID) ?? false
+            refreshProgress()
         }
     }
 
