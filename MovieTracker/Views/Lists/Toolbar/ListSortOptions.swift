@@ -9,18 +9,22 @@ import Foundation
 protocol SortKey: Equatable {
     var title: String { get }
     var symbol: String { get }
+    /// The order applied when this key is picked: latest/highest first for dates and ratings, A→Z for titles.
+    var defaultAscending: Bool { get }
 }
 
 enum WatchedSortKey: String, SortKey {
     case releaseDate
     case dateWatched
     case rating
+    case alphabetical
 
     var title: String {
         switch self {
         case .dateWatched: return "Date Watched"
         case .releaseDate: return "Release Date"
         case .rating: return "Rating"
+        case .alphabetical: return "Title"
         }
     }
 
@@ -29,6 +33,14 @@ enum WatchedSortKey: String, SortKey {
         case .releaseDate: return "popcorn.fill"
         case .dateWatched: return "calendar.badge.checkmark"
         case .rating: return "star.fill"
+        case .alphabetical: return "textformat"
+        }
+    }
+
+    var defaultAscending: Bool {
+        switch self {
+        case .alphabetical: return true
+        case .dateWatched, .releaseDate, .rating: return false
         }
     }
 }
@@ -36,11 +48,15 @@ enum WatchedSortKey: String, SortKey {
 enum ListSortKey: String, SortKey {
     case releaseDate
     case dateAdded
+    case rating
+    case alphabetical
 
     var title: String {
         switch self {
         case .releaseDate: return "Release Date"
         case .dateAdded: return "Date Added"
+        case .rating: return "Rating"
+        case .alphabetical: return "Title"
         }
     }
 
@@ -48,6 +64,15 @@ enum ListSortKey: String, SortKey {
         switch self {
         case .releaseDate: return "popcorn.fill"
         case .dateAdded: return "calendar.badge.plus"
+        case .rating: return "star.fill"
+        case .alphabetical: return "textformat"
+        }
+    }
+
+    var defaultAscending: Bool {
+        switch self {
+        case .releaseDate, .alphabetical: return true
+        case .dateAdded, .rating: return false
         }
     }
 }

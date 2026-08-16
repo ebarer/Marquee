@@ -155,7 +155,7 @@ struct ListContentView: View {
     private var mediaCount: Int { destination.mediaCount(using: store) }
     private var listRequest: ListRequest? {
         destination.listRequest(watchedSort: watchedSortKey,
-                                listByDateAdded: currentListSortKey == .dateAdded,
+                                listSort: currentListSortKey,
                                 listFoldOlder: foldsOlder)
     }
 

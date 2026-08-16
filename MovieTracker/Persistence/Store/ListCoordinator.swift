@@ -13,8 +13,8 @@ actor ListCoordinator {
     func load(request: ListRequest, filter: String, mediaFilter: MediaTypeFilter = .all) -> ListResult {
         let result: ListResult
         switch request {
-        case .list(let listID, let byDateAdded, let foldOlder):
-            result = loadList(listID, byDateAdded: byDateAdded, foldOlder: foldOlder, filter: filter)
+        case .list(let listID, let sort, let foldOlder):
+            result = loadList(listID, sort: sort, foldOlder: foldOlder, filter: filter)
         case .watched(let sort):
             result = loadWatched(sort: sort, filter: filter)
         case .viewed:
@@ -32,14 +32,22 @@ actor ListCoordinator {
 
     // MARK: List membership (ListEntry)
 
-    private func loadList(_ listID: UUID, byDateAdded: Bool, foldOlder: Bool, filter: String) -> ListResult {
+    private func loadList(_ listID: UUID, sort: ListSortKey, foldOlder: Bool, filter: String) -> ListResult {
         // Only the Watch List folds a stale backlog into "Older", and only under release-date
-        // sort; by-date-added is a flat list.
-        let layout: SectionLayout = byDateAdded ? .flat : .months(foldOlder: false)
+        // sort; by-date-added is a flat list, and rating/title bucket on the row itself.
+        func layout(isWatchList: Bool) -> SectionLayout {
+            switch sort {
+            case .dateAdded: return .flat
+            case .rating: return .ratingStars
+            case .alphabetical: return .initials
+            case .releaseDate: return .months(foldOlder: isWatchList && foldOlder)
+            }
+        }
+        let byDateAdded = sort == .dateAdded
 
         let descriptor = FetchDescriptor<ListEntry>(predicate: #Predicate { $0.list?.uuid == listID })
         guard let entries = try? modelContext.fetch(descriptor) else {
-            return ListResult(rows: [], layout: layout)
+            return ListResult(rows: [], layout: layout(isWatchList: false))
         }
 
         // Only the Watch List represents a show by its tracked season; custom lists show the
@@ -95,7 +103,7 @@ actor ListCoordinator {
                                                     nextEpisodeDate: nil, runtime: entry.runtime,
                                                     dateWatched: facts?.watched, userRating: facts?.rating))
         }
-        return ListResult(rows: rows, layout: byDateAdded ? .flat : .months(foldOlder: isWatchList && foldOlder))
+        return ListResult(rows: rows, layout: layout(isWatchList: isWatchList))
     }
 
     // MARK: Derived Watched (MediaItem + WatchedSeason)
@@ -126,8 +134,14 @@ actor ListCoordinator {
             rows.append(DatedRow(date: date, snapshot: snapshot(from: season, watched: watched)))
         }
 
-        // Rating sort buckets by star count; every other sort groups by month.
-        return ListResult(rows: rows, layout: sort == .rating ? .ratingStars : .months(foldOlder: false))
+        // Rating buckets by star count and title by first letter; the date sorts group by month.
+        let layout: SectionLayout
+        switch sort {
+        case .rating: layout = .ratingStars
+        case .alphabetical: layout = .initials
+        case .dateWatched, .releaseDate: layout = .months(foldOlder: false)
+        }
+        return ListResult(rows: rows, layout: layout)
     }
 
     // MARK: Derived Viewed (MediaItem, flat recency)

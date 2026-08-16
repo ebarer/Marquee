@@ -25,11 +25,14 @@ struct ListSortMenu: View {
                     sortToggle(.dateWatched, selection: watchedSortKey)
                     sortToggle(.releaseDate, selection: watchedSortKey)
                     sortToggle(.rating, selection: watchedSortKey)
+                    sortToggle(.alphabetical, selection: watchedSortKey)
                 }
 
                 if let listSortKey {
                     sortToggle(.releaseDate, selection: listSortKey)
                     sortToggle(.dateAdded, selection: listSortKey)
+                    sortToggle(.rating, selection: listSortKey)
+                    sortToggle(.alphabetical, selection: listSortKey)
                 }
             }
 
@@ -73,11 +76,15 @@ struct ListSortMenu: View {
 
     private func label(_ filter: MediaTypeFilter) -> some View { Label(filter.title, systemImage: filter.symbol) }
 
-    /// One sort-key row, ticked while selected. Re-picking the current key is a no-op,
-    /// so the group behaves like a radio set rather than independent switches.
+    /// One sort-key row, ticked while selected. Re-picking the current key is a no-op, so the
+    /// group behaves like a radio set; switching keys also resets the order to that key's default.
     private func sortToggle<Key: SortKey>(_ key: Key, selection: Binding<Key>) -> some View {
         Toggle(isOn: Binding(get: { selection.wrappedValue == key },
-                             set: { if $0 { selection.wrappedValue = key } })) {
+                             set: { isOn in
+                                 guard isOn, selection.wrappedValue != key else { return }
+                                 selection.wrappedValue = key
+                                 ascending = key.defaultAscending
+                             })) {
             Label(key.title, systemImage: key.symbol)
         }
     }
@@ -109,7 +116,7 @@ struct ListSortMenu: View {
 
 #Preview("Sort menu — List") {
     @Previewable @State var ascending = true
-    @Previewable @State var key: ListSortKey = .dateAdded
+    @Previewable @State var key: ListSortKey = .alphabetical
     ListSortMenu(ascending: $ascending, listSortKey: $key)
         .tint(.appAccent)
         .padding()

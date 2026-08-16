@@ -44,7 +44,7 @@ import SwiftData
             (2, "Mar", .utc(2020, 3, 15), .utc(2022, 1, 2)),
             (3, "Jan2", .utc(2020, 1, 20), .utc(2022, 1, 3)),
         ])
-        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: true)
+        let result = await sections(.list(id, sort: .releaseDate, foldOlder: true), ascending: true)
         #expect(result.count == 2)
         #expect(result.first?.entries.count == 2)   // two January titles
         #expect(result.last?.entries.map(\.tmdbID) == [2])
@@ -55,8 +55,56 @@ import SwiftData
             (1, "Jan", .utc(2020, 1, 15), .utc(2022, 1, 1)),
             (2, "Mar", .utc(2020, 3, 15), .utc(2022, 1, 2)),
         ])
-        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        let result = await sections(.list(id, sort: .releaseDate, foldOlder: true), ascending: false)
         #expect(result.first?.entries.map(\.tmdbID) == [2])  // March first
+    }
+
+    @Test func listRatingSortGroupsByStars() async {
+        let id = seedList([
+            (1, "Rated", .utc(2020, 1, 15), .utc(2022, 1, 1)),
+            (2, "Unrated", .utc(2020, 3, 15), .utc(2022, 1, 2)),
+        ])
+        store.setRating(3.5, for: makeMovie(id: 1, title: "Rated"))
+        let result = await sections(.list(id, sort: .rating, foldOlder: true), ascending: false)
+        #expect(result.map(\.title) == ["3.5 Stars", "Unrated"])
+        #expect(result.first?.entries.map(\.tmdbID) == [1])
+    }
+
+    @Test func listAlphabeticalSortGroupsByInitial() async {
+        let id = seedList([
+            (1, "Arrival", .utc(2020, 1, 15), .utc(2022, 1, 1)),
+            (2, "Blade Runner", .utc(2020, 3, 15), .utc(2022, 1, 2)),
+            (3, "Alien", .utc(2020, 5, 15), .utc(2022, 1, 3)),
+            (4, "1917", .utc(2020, 7, 15), .utc(2022, 1, 4)),
+        ])
+        let result = await sections(.list(id, sort: .alphabetical, foldOlder: true), ascending: true)
+        #expect(result.map(\.title) == ["#", "A", "B"])
+        #expect(result[1].entries.map(\.title) == ["Alien", "Arrival"])
+    }
+
+    @Test func alphabeticalIgnoresLeadingArticles() async {
+        let id = seedList([
+            (1, "The Matrix", nil, .utc(2022, 1, 1)),
+            (2, "A Minecraft Movie", nil, .utc(2022, 1, 2)),
+            (3, "An Education", nil, .utc(2022, 1, 3)),
+            (4, "The", nil, .utc(2022, 1, 4)),
+        ])
+        let result = await sections(.list(id, sort: .alphabetical, foldOlder: true), ascending: true)
+        #expect(result.map(\.title) == ["E", "M", "T"])
+        // Ordered on "Matrix" and "Minecraft Movie", not the articles.
+        #expect(result[1].entries.map(\.title) == ["The Matrix", "A Minecraft Movie"])
+        #expect(result.last?.entries.map(\.title) == ["The"])   // nothing left to sort by
+    }
+
+    @Test func alphabeticalDescendingReversesLettersAndTitles() async {
+        let id = seedList([
+            (1, "Arrival", nil, .utc(2022, 1, 1)),
+            (2, "Alien", nil, .utc(2022, 1, 2)),
+            (3, "Blade Runner", nil, .utc(2022, 1, 3)),
+        ])
+        let result = await sections(.list(id, sort: .alphabetical, foldOlder: true), ascending: false)
+        #expect(result.map(\.title) == ["B", "A"])
+        #expect(result.last?.entries.map(\.title) == ["Arrival", "Alien"])
     }
 
     @Test func listByDateAddedIsFlatHeaderless() async {
@@ -65,7 +113,7 @@ import SwiftData
             (2, "B", nil, .utc(2022, 6, 1)),
             (3, "C", nil, .utc(2022, 3, 1)),
         ])
-        let result = await sections(.list(id, byDateAdded: true, foldOlder: true), ascending: true)
+        let result = await sections(.list(id, sort: .dateAdded, foldOlder: true), ascending: true)
         #expect(result.count == 1)
         #expect(result[0].title.isEmpty)
         #expect(result[0].entries.map(\.tmdbID) == [1, 3, 2])  // by addedAt asc
@@ -76,13 +124,13 @@ import SwiftData
             (1, "The Matrix", .utc(2020, 1, 15), .utc(2022, 1, 1)),
             (2, "Inception", .utc(2020, 2, 15), .utc(2022, 1, 2)),
         ])
-        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: true, filter: "matrix")
+        let result = await sections(.list(id, sort: .releaseDate, foldOlder: true), ascending: true, filter: "matrix")
         #expect(result.flatMap(\.entries).map(\.tmdbID) == [1])
     }
 
     @Test func emptyListYieldsNoSections() async {
         let id = seedList([])
-        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: true)
+        let result = await sections(.list(id, sort: .releaseDate, foldOlder: true), ascending: true)
         #expect(result.isEmpty)
     }
 
@@ -102,7 +150,7 @@ import SwiftData
 
     @Test func watchListFoldsOlderWhenBothCountsClearThreshold() async {
         let id = seedWatchList(recent: 2, old: 3)
-        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        let result = await sections(.list(id, sort: .releaseDate, foldOlder: true), ascending: false)
         #expect(result.contains { $0.isCollapsible })
         #expect(result.last?.title == "Older")
         #expect(Set(result.last?.entries.map(\.tmdbID) ?? []) == [200, 201, 202])
@@ -112,7 +160,7 @@ import SwiftData
         // No recent releases at all, so folding would hide the whole list behind a
         // collapsed "Older" bucket. Keep every title visible in its month section.
         let id = seedWatchList(recent: 0, old: 5)
-        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        let result = await sections(.list(id, sort: .releaseDate, foldOlder: true), ascending: false)
         #expect(!result.contains { $0.isCollapsible })
         #expect(result.flatMap(\.entries).count == 5)
     }
@@ -121,7 +169,7 @@ import SwiftData
         // Only one upcoming title — not a big enough new-releases block to justify
         // tucking the backlog away; keep it all inline.
         let id = seedWatchList(recent: 1, old: 6)
-        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        let result = await sections(.list(id, sort: .releaseDate, foldOlder: true), ascending: false)
         #expect(!result.contains { $0.isCollapsible })
         #expect(result.flatMap(\.entries).count == 7)
     }
@@ -130,7 +178,7 @@ import SwiftData
         // Plenty of upcoming titles but only two old ones — folding two rows into a
         // bucket saves nothing, so leave them visible.
         let id = seedWatchList(recent: 5, old: 2)
-        let result = await sections(.list(id, byDateAdded: false, foldOlder: true), ascending: false)
+        let result = await sections(.list(id, sort: .releaseDate, foldOlder: true), ascending: false)
         #expect(!result.contains { $0.isCollapsible })
         #expect(result.flatMap(\.entries).count == 7)
     }
@@ -138,7 +186,7 @@ import SwiftData
     @Test func watchListKeepsAllMonthsWhenFoldDisabled() async {
         // Counts clear the thresholds, so only the toggle keeps it expanded.
         let id = seedWatchList(recent: 3, old: 3)
-        let result = await sections(.list(id, byDateAdded: false, foldOlder: false), ascending: false)
+        let result = await sections(.list(id, sort: .releaseDate, foldOlder: false), ascending: false)
         #expect(!result.contains { $0.isCollapsible })
     }
 

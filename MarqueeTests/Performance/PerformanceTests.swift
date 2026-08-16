@@ -42,7 +42,7 @@ final class PerformanceTests: XCTestCase {
             let expectation = expectation(description: "build")
             Task {
                 let coordinator = ListCoordinator(modelContainer: container)
-                let list = await coordinator.load(request: .list(uuid, byDateAdded: false, foldOlder: true),
+                let list = await coordinator.load(request: .list(uuid, sort: .releaseDate, foldOlder: true),
                                                   filter: "")
                 _ = SectionFormatter.sections(from: list, ascending: false)
                 expectation.fulfill()

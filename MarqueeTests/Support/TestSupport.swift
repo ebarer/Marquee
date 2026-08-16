@@ -14,7 +14,9 @@ import SwiftData
 @MainActor
 func makeInMemoryStore() -> PersistenceCoordinator {
     let url = URL.temporaryDirectory.appending(path: "MarqueeTests-\(UUID().uuidString).store")
-    let config = ModelConfiguration(url: url)
+    // cloudKitDatabase defaults to .automatic: the app's entitlement then attaches a mirroring
+    // delegate that can't set up, and its store monitor stalls the run ~100s on teardown.
+    let config = ModelConfiguration(url: url, cloudKitDatabase: .none)
     let container = try! ModelContainer(
         for: MediaItem.self, MediaList.self, ListEntry.self,
         WatchedEpisode.self, WatchedSeason.self, TrackedSeason.self,

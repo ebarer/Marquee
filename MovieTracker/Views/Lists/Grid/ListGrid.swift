@@ -6,8 +6,8 @@
 import SwiftUI
 import SwiftData
 
-/// The iPad presentation: the same sections, entries and swipes as `ListTable`, as grid cards.
-/// Taps route through `DetailLink` because in-`List` row taps were being swallowed during sync.
+/// The iPad presentation: a shelf per section, its name pinned at the leading edge. Taps route
+/// through `DetailLink` because in-`List` row taps were being swallowed during sync.
 struct ListGrid: View {
     let sections: [SectionSnapshot]
     let context: ListEntryContext
@@ -18,90 +18,109 @@ struct ListGrid: View {
     /// The "Older" archive bucket starts collapsed each visit, as in `ListTable`.
     @State private var olderExpanded = false
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 3)
+    /// Room for a row's poster beside two lines of title and a rating.
+    private static let cardWidth: CGFloat = 280
+    private static let spacing: CGFloat = 16
 
     private var actions: ListEntryActions {
         ListEntryActions(store: store, context: context, pending: $pending)
     }
 
-    // Headers scroll with the content. Pinning them put a strip of cards between the nav bar's
-    // glass and the pinned header, and no scroll-to-anchor on expand: it aimed under the bar.
     var body: some View {
         ScrollView {
-            // Spacing is small because every header carries its own height (`SectionHeaderRow`).
-            LazyVStack(alignment: .leading, spacing: 10) {
+            LazyVStack(spacing: Self.spacing) {
                 ForEach(sections) { section in
                     if section.isCollapsible {
-                        olderHeader(count: section.entries.count)
-                        if olderExpanded {
-                            grid(for: section)
+                        collapsible(section)
+                    } else if section.monthAndYear != nil {
+                        shelf(for: section) {
+                            ListSectionBookmark(section: section, tint: context.listColor)
                         }
                     } else {
-                        if !section.title.isEmpty {
-                            ListSectionLabel(section: section, tint: context.listColor)
-                                .font(.headline)
-                                .modifier(SectionHeaderRow())
-                        }
-                        grid(for: section)
+                        stack(section)
                     }
                 }
             }
-            .padding(.vertical, 16)
+            .padding(.vertical, 20)
         }
+        .background(Color.appBackground)
         .swipeGridContainer()
     }
 
-    private func grid(for section: SectionSnapshot) -> some View {
-        LazyVGrid(columns: columns, spacing: 16) {
+    private func shelf(for section: SectionSnapshot,
+                       @ViewBuilder bookmark: () -> some View) -> some View {
+        ListShelf(spacing: Self.spacing, bookmark: bookmark) {
             ForEach(section.entries) { entry in
                 card(for: entry)
+            }
+        }
+    }
+
+    /// The "Older" bucket: its bookmark is the control, and its shelf appears alongside.
+    @ViewBuilder
+    private func collapsible(_ section: SectionSnapshot) -> some View {
+        if olderExpanded {
+            shelf(for: section) { olderBookmark(section) }
+        } else {
+            olderBookmark(section)
+                .frame(height: Self.collapsedHeight)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func olderBookmark(_ section: SectionSnapshot) -> some View {
+        Button {
+            withAnimation { olderExpanded.toggle() }
+        } label: {
+            ListSectionBookmark(section: section, tint: context.listColor, expanded: olderExpanded)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Tall enough that the collapsed bucket reads as the shelf it stands in for.
+    private static let collapsedHeight: CGFloat = 72
+
+    /// A bucket that isn't a month — a rating or an initial — holds far more titles than a shelf
+    /// can show, so it flows under a plain header instead. The flat layout has no header at all.
+    @ViewBuilder
+    private func stack(_ section: SectionSnapshot) -> some View {
+        if !section.title.isEmpty {
+            ListSectionLabel(section: section, tint: context.listColor)
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .bottomLeading)
+                .padding(.horizontal, 20)
+        }
+        grid(for: section)
+    }
+
+    private func grid(for section: SectionSnapshot) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: Self.cardWidth, maximum: 480),
+                                    spacing: Self.spacing)],
+                  spacing: Self.spacing) {
+            ForEach(section.entries) { entry in
+                ListEntryLink(entry: entry) {
+                    ListEntryContent(entry: entry, context: context)
+                        .gridCard()
+                }
+                .buttonStyle(.plain)
+                .listEntryContextMenu(for: entry, lists: lists)
+                .listEntrySwipes(entry: entry, context: context, actions: actions)
             }
         }
         .padding(.horizontal, 20)
     }
 
-    /// Tappable header for the collapsible "Older" bucket.
-    private func olderHeader(count: Int) -> some View {
-        Button {
-            withAnimation { olderExpanded.toggle() }
-        } label: {
-            HStack(spacing: 6) {
-                Text("Older (\(count))")
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .rotationEffect(.degrees(olderExpanded ? 90 : 0))
-            }
-            .font(.headline)
-            .foregroundStyle(context.listColor)
-            .modifier(SectionHeaderRow())
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
     private func card(for entry: MediaSnapshot) -> some View {
         ListEntryLink(entry: entry) {
             ListEntryContent(entry: entry, context: context)
+                // Fills the shelf, so every card on it is the same height.
+                .frame(maxHeight: .infinity, alignment: .top)
                 .gridCard()
         }
+        .frame(width: Self.cardWidth)
         .buttonStyle(.plain)
         .listEntryContextMenu(for: entry, lists: lists)
         .listEntrySwipes(entry: entry, context: context, actions: actions)
-    }
-}
-
-/// One height for every section header — the 44pt the collapsible one needs as a tap target —
-/// so a list's first row sits where the last one's did. The text sits at the band's bottom.
-private struct SectionHeaderRow: ViewModifier {
-    /// Trims the gap above without shrinking the band: the button keeps its 44pt of hit area
-    /// and the overhang lands on the empty space between sections.
-    private static var overhang: CGFloat { 8 }
-
-    func body(content: Content) -> some View {
-        content
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .bottomLeading)
-            .padding(.horizontal, 20)
-            .padding(.top, -Self.overhang)
     }
 }
 
@@ -126,6 +145,37 @@ private struct SectionHeaderRow: ViewModifier {
     .preferredColorScheme(.dark)
 }
 
+#Preview("Sparse sections") {
+    let sections = [
+        SectionSnapshot(id: DateComponents(year: 2026, month: 9), title: "September 2026",
+                        entries: [.preview(id: 1, title: "One Alone")], isCollapsible: false),
+        SectionSnapshot(id: DateComponents(year: 2026, month: 10), title: "October 2026",
+                        entries: [.preview(id: 2, title: "Severance", mediaType: .tv, season: 2,
+                                           seasonWatched: 3, seasonTotal: 10),
+                                  .preview(id: 3, title: "Andor", mediaType: .tv)],
+                        isCollapsible: false),
+        SectionSnapshot(id: DateComponents(year: 2026, month: 11), title: "November 2026",
+                        entries: [.preview(id: 4, title: "The Odyssey"),
+                                  .preview(id: 5, title: "Dune: Part Three"),
+                                  .preview(id: 6, title: "Wicked: For Good"),
+                                  .preview(id: 7, title: "Avatar: Fire and Ash")],
+                        isCollapsible: false),
+        SectionSnapshot(id: DateComponents(year: 2026, month: 12), title: "December 2026",
+                        entries: (8...14).map { .preview(id: $0, title: "Title Number \($0)") },
+                        isCollapsible: false),
+    ]
+    NavigationStack {
+        ListGrid(sections: sections,
+                 context: ListEntryContext(selection: .list(UUID()), isWatchList: true,
+                                           watchListIDs: [], listColor: .appAccent),
+                 lists: [])
+            .detailDestinations()
+    }
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+    .preferredColorScheme(.dark)
+}
+
 #Preview("Older bucket") {
     let sections = [
         SectionSnapshot(id: DateComponents(year: 2026, month: 8), title: "August 2026",
@@ -135,6 +185,53 @@ private struct SectionHeaderRow: ViewModifier {
                                   .preview(id: 4, title: "Old Two"),
                                   .preview(id: 5, title: "Old Three")],
                         isCollapsible: true),
+    ]
+    NavigationStack {
+        ListGrid(sections: sections,
+                 context: ListEntryContext(selection: .list(UUID()), isWatchList: true,
+                                           watchListIDs: [], listColor: .appAccent),
+                 lists: [])
+            .detailDestinations()
+    }
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+    .preferredColorScheme(.dark)
+}
+
+// Rating buckets stack under their header rather than scrolling sideways.
+#Preview("Rated sections") {
+    let sections = [
+        SectionSnapshot(id: DateComponents(year: 9009), title: "4.5 Stars",
+                        entries: (1...5).map { .preview(id: $0, title: "Title Number \($0)",
+                                                        dateWatched: .now, userRating: 4.5) },
+                        isCollapsible: false, ratingStars: 4.5),
+        SectionSnapshot(id: DateComponents(year: 9008), title: "4 Stars",
+                        entries: (6...8).map { .preview(id: $0, title: "Title Number \($0)",
+                                                        dateWatched: .now, userRating: 4) },
+                        isCollapsible: false, ratingStars: 4),
+        SectionSnapshot(id: DateComponents(year: 9000), title: "Unrated",
+                        entries: (9...11).map { .preview(id: $0, title: "Title Number \($0)",
+                                                         dateWatched: .now) },
+                        isCollapsible: false),
+    ]
+    NavigationStack {
+        ListGrid(sections: sections,
+                 context: ListEntryContext(selection: .watched, isWatchList: false,
+                                           watchListIDs: [],
+                                           listColor: ListDestination.watchedColor),
+                 lists: [])
+            .detailDestinations()
+    }
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Flat (no sections)") {
+    let sections = [
+        SectionSnapshot(id: DateComponents(), title: "",
+                        entries: (1...9).map { .preview(id: $0, title: "Title Number \($0)") },
+                        isCollapsible: false),
     ]
     NavigationStack {
         ListGrid(sections: sections,

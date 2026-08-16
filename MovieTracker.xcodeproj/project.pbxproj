@@ -100,6 +100,7 @@
 		CE85670630303A47001D4372 /* View+SwipeGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE85670530303A47001D4372 /* View+SwipeGrid.swift */; };
 		CE85670830303A66001D4372 /* SearchResultsGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE85670730303A66001D4372 /* SearchResultsGrid.swift */; };
 		CE85672A303072E8001D4372 /* ListVisibleCount.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE856729303072E8001D4372 /* ListVisibleCount.swift */; };
+		CE85678A3031779A001D4372 /* ListSectionBookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8567893031779A001D4372 /* ListSectionBookmark.swift */; };
 		CE8C0C95301AFEDA00F08C6A /* ListEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8C0C94301AFEDA00F08C6A /* ListEditorView.swift */; };
 		CE8C0C99301BD1DC00F08C6A /* ListMembershipMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8C0C98301BD1DC00F08C6A /* ListMembershipMenu.swift */; };
 		CE8DD1A930292222006213BD /* ExpandableText.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD1A830292222006213BD /* ExpandableText.swift */; };
@@ -227,6 +228,7 @@
 		CED476AE30268F0A008549CB /* PreviewShowData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED476AD30268F0A008549CB /* PreviewShowData.swift */; };
 		CED63633302FF09500D36A81 /* SchemaPrimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED63632302FF09500D36A81 /* SchemaPrimer.swift */; };
 		CED63635302FF0CA00D36A81 /* SchemaPrimerSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED63634302FF0CA00D36A81 /* SchemaPrimerSection.swift */; };
+		CED640C330318BFF0057509D /* ListShelf.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED640C230318BFF0057509D /* ListShelf.swift */; };
 		CEDA8BC321997F71006BB3CD /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEDA8BC221997F71006BB3CD /* String+Extension.swift */; };
 		CEE7900F3029DCC70040DADB /* SearchProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEE7900E3029DCC70040DADB /* SearchProvider.swift */; };
 		CEE790113029DCCC0040DADB /* SearchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEE790103029DCCC0040DADB /* SearchContext.swift */; };
@@ -380,6 +382,7 @@
 		CE85670530303A47001D4372 /* View+SwipeGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+SwipeGrid.swift"; sourceTree = "<group>"; };
 		CE85670730303A66001D4372 /* SearchResultsGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultsGrid.swift; sourceTree = "<group>"; };
 		CE856729303072E8001D4372 /* ListVisibleCount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListVisibleCount.swift; sourceTree = "<group>"; };
+		CE8567893031779A001D4372 /* ListSectionBookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListSectionBookmark.swift; sourceTree = "<group>"; };
 		CE8C0C94301AFEDA00F08C6A /* ListEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListEditorView.swift; sourceTree = "<group>"; };
 		CE8C0C98301BD1DC00F08C6A /* ListMembershipMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListMembershipMenu.swift; sourceTree = "<group>"; };
 		CE8DD1A830292222006213BD /* ExpandableText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableText.swift; sourceTree = "<group>"; };
@@ -506,6 +509,7 @@
 		CED476AD30268F0A008549CB /* PreviewShowData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewShowData.swift; sourceTree = "<group>"; };
 		CED63632302FF09500D36A81 /* SchemaPrimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaPrimer.swift; sourceTree = "<group>"; };
 		CED63634302FF0CA00D36A81 /* SchemaPrimerSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaPrimerSection.swift; sourceTree = "<group>"; };
+		CED640C230318BFF0057509D /* ListShelf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListShelf.swift; sourceTree = "<group>"; };
 		CEDA8BC221997F71006BB3CD /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
 		CEE7900E3029DCC70040DADB /* SearchProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchProvider.swift; sourceTree = "<group>"; };
 		CEE790103029DCCC0040DADB /* SearchContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchContext.swift; sourceTree = "<group>"; };
@@ -847,6 +851,8 @@
 			isa = PBXGroup;
 			children = (
 				CEB9BAA130257847002C6ED4 /* ListGrid.swift */,
+				CE8567893031779A001D4372 /* ListSectionBookmark.swift */,
+				CED640C230318BFF0057509D /* ListShelf.swift */,
 			);
 			path = Grid;
 			sourceTree = "<group>";
@@ -1669,11 +1675,13 @@
 				CE8DD217302966E2006213BD /* EpisodeRow.swift in Sources */,
 				CE8DD29530297721006213BD /* CloudSyncMonitor.swift in Sources */,
 				CE8C0C99301BD1DC00F08C6A /* ListMembershipMenu.swift in Sources */,
+				CE85678A3031779A001D4372 /* ListSectionBookmark.swift in Sources */,
 				CE569754301C19AE00DF9142 /* PersonRow.swift in Sources */,
 				CE8DD1D330296359006213BD /* HeaderTitle.swift in Sources */,
 				CE8DD2E4302979FF006213BD /* LibraryBackupTransfer.swift in Sources */,
 				CE8DD1AB30292305006213BD /* GlassActionButton.swift in Sources */,
 				CE3FE9C2302286CF00FCC44B /* SearchPeopleStrip.swift in Sources */,
+				CED640C330318BFF0057509D /* ListShelf.swift in Sources */,
 				CE569752301C19AA00DF9142 /* MovieRow.swift in Sources */,
 				CE310EF43020765D0092A86B /* ListEditorIcon.swift in Sources */,
 				CE8DD2D13029795D006213BD /* MediaSnapshot.swift in Sources */,
@@ -2020,7 +2028,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.15.4;
+				CURRENT_PROJECT_VERSION = 2026.8.16.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2046,7 +2054,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.15.4;
+				CURRENT_PROJECT_VERSION = 2026.8.16.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (

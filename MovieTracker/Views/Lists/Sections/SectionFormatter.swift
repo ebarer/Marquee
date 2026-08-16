@@ -6,7 +6,7 @@
 import Foundation
 
 /// Arranges a `ListResult` (raw dated rows + a layout) into the Lists screen's titled sections:
-/// month/year grouping, the collapsed "Older" fold, and rating-star buckets. Pure — no store.
+/// month/year grouping, the collapsed "Older" fold, rating stars, and title initials. Pure — no store.
 enum SectionFormatter {
     static func sections(from list: ListResult, ascending: Bool) -> [SectionSnapshot] {
         switch list.layout {
@@ -16,6 +16,8 @@ enum SectionFormatter {
             return grouped(list.rows, ascending: ascending, foldOlder: foldOlder)
         case .ratingStars:
             return byRating(list.rows, ascending: ascending)
+        case .initials:
+            return byInitial(list.rows, ascending: ascending)
         }
     }
 
@@ -57,6 +59,52 @@ enum SectionFormatter {
         let stars = Double(halfSteps) / 2
         let text = stars == stars.rounded() ? String(format: "%.0f", stars) : String(format: "%.1f", stars)
         return "\(text) \(halfSteps == 2 ? "Star" : "Stars")"
+    }
+
+    // MARK: Initial-letter buckets
+
+    /// Buckets rows by their sort title's first letter, A…Z with "#" leading. Bucketing rather than
+    /// grouping a sorted run keeps one section per letter however the collation orders titles.
+    private static func byInitial(_ rows: [DatedRow], ascending: Bool) -> [SectionSnapshot] {
+        var buckets: [String: [(key: String, row: DatedRow)]] = [:]
+        for row in rows {
+            let key = sortTitle(row.snapshot.title)
+            buckets[initial(of: key), default: []].append((key, row))
+        }
+        let keys = buckets.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        let ordered = ascending ? keys : Array(keys.reversed())
+        return ordered.map { letter in
+            let sorted = buckets[letter]!.sorted {
+                $0.key.localizedStandardCompare($1.key) == .orderedAscending
+            }
+            let entries = (ascending ? sorted : Array(sorted.reversed())).map(\.row.snapshot)
+            // Keying off the letter's scalar with an 8000 offset can't collide with month keys
+            // or the 9000+ rating ones.
+            let id = DateComponents(year: 8000 + Int(letter.unicodeScalars.first?.value ?? 0))
+            return SectionSnapshot(id: id, title: letter, entries: entries, isCollapsible: false)
+        }
+    }
+
+    /// Leading words a title is filed under rather than sorted by, so "The Matrix" lands in M.
+    private static let leadingArticles: Set<String> = ["a", "an", "the"]
+
+    /// A title's sort form: its leading article dropped. A title that is only an article keeps it,
+    /// so "The" still sorts (and files) as itself.
+    static func sortTitle(_ title: String) -> String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let space = trimmed.firstIndex(where: \.isWhitespace),
+              leadingArticles.contains(trimmed[trimmed.startIndex..<space].lowercased()) else { return trimmed }
+        let rest = trimmed[space...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return rest.isEmpty ? trimmed : rest
+    }
+
+    /// A title's index letter: the first letter stripped of case and diacritics, or "#" when the
+    /// title starts with a digit or symbol.
+    private static func initial(of title: String) -> String {
+        guard let first = title.first(where: { !$0.isWhitespace }), first.isLetter else { return "#" }
+        return String(first)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .uppercased()
     }
 
     // MARK: Month/year grouping (+ "Older" fold)

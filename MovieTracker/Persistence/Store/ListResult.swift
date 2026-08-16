@@ -21,6 +21,8 @@ enum SectionLayout: Sendable, Equatable {
     case months(foldOlder: Bool)
     /// Buckets by half-star rating, unrated last.
     case ratingStars
+    /// Buckets by the title's first letter, digits and symbols under "#".
+    case initials
 }
 
 /// The raw output of `ListCoordinator`: rows plus the layout the formatter should apply.

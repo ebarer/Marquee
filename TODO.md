@@ -1,9 +1,13 @@
 
 Important:
-- [ ] 
+- [ ] ! Performance issues when marking as watched
+- [ ] Marking as watched should save watched date if you toggle it
+- [ ] Cache watched state on shows
 
 Polish:
-- [ ] iPad: Sparse grid sections leave the right side empty
+- [ ] "older" bookmark shouldn't change height when collapsed
+- [ ] sorting by rating, etc. the header is too low, should be closer to nav bar
+- [ ] tapping selected list in sidebar should scroll to top
 - [ ] Drop the `.movie` default from mediaType arguments, so a show can't pass as a movie
   - [ ] `MediaItem.init(tmdbID:mediaType:)`, `MediaItem.find(tmdbID:mediaType:)`
   - [ ] `MediaList.entry(for:_:)`, MediaList.contains(_:_:)

@@ -143,6 +143,29 @@ struct ListTable: View, Equatable {
     .preferredColorScheme(.dark)
 }
 
+#Preview("Custom list — grouped by title") {
+    // Mirrors SectionFormatter.byInitial output: one section per letter, "#" leading.
+    let sections = [
+        SectionSnapshot(id: DateComponents(year: 8035), title: "#",
+                        entries: [.preview(id: 1, title: "1917")], isCollapsible: false),
+        SectionSnapshot(id: DateComponents(year: 8065), title: "A",
+                        entries: [.preview(id: 2, title: "Alien"),
+                                  .preview(id: 3, title: "Arrival")], isCollapsible: false),
+        SectionSnapshot(id: DateComponents(year: 8066), title: "B",
+                        entries: [.preview(id: 4, title: "Blade Runner")], isCollapsible: false),
+    ]
+    NavigationStack {
+        ListTable(sections: sections,
+                 context: ListEntryContext(selection: .list(UUID()), isWatchList: false,
+                                           watchListIDs: [], listColor: .appAccent),
+                 lists: [])
+            .listStyle(.plain)
+    }
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+    .preferredColorScheme(.dark)
+}
+
 #Preview("Watched — grouped by stars") {
     // Mirrors SectionFormatter.byRating output: one section per star count, unrated last.
     let sections = [

@@ -6,6 +6,37 @@
 import SwiftUI
 import SwiftData
 
+/// A row of the sidebar's Lists section, from a stored `MediaList` or derived (Watched, Viewed).
+private struct ListRow: Identifiable {
+    let id: String
+    let name: String
+    let symbol: String
+    let color: Color
+    let tag: SidebarItem
+    let count: Int
+    let assetImage: UIImage?
+
+    init(_ list: MediaList) {
+        id = list.uuid.uuidString
+        name = list.name
+        symbol = ListSymbol.outline(list.symbol)
+        color = list.color
+        tag = .list(.list(list.uuid))
+        count = list.entries?.count ?? 0
+        assetImage = ListSymbol.menuImage(list.symbol)
+    }
+
+    init(name: String, symbol: String, color: Color, tag: SidebarItem, count: Int) {
+        id = name
+        self.name = name
+        self.symbol = symbol
+        self.color = color
+        self.tag = tag
+        self.count = count
+        assetImage = nil
+    }
+}
+
 struct SidebarColumn: View {
     @Binding var selection: SidebarItem?
 
@@ -32,38 +63,23 @@ struct SidebarColumn: View {
     }
 
     @State private var showListManager = false
+    @State private var discoverExpanded = true
+    @State private var listsExpanded = true
 
     var body: some View {
         List(selection: $selection) {
-            Section("Discover") {
-                ForEach(FeaturedCollection.movieCases) { collectionRow($0) }
+            Section("Discover", isExpanded: $discoverExpanded) {
+                ForEach(FeaturedCollection.allCases) { collectionRow($0) }
             }
 
-            Section {
-                ForEach(FeaturedCollection.showCases) { collectionRow($0) }
-            }
-
-            Section("Lists") {
-                // A ForEach (not a bare `if let`) so the row carries its selection tag into
-                // `List(selection:)`; a conditional row silently loses it.
-                ForEach(watchList.map { [$0] } ?? []) { listRow($0) }
-                derivedRow(name: "Watched", symbol: "checkmark.rectangle.stack",
-                           color: ListDestination.watchedColor, tag: .list(.watched),
-                           count: watchedCount)
-            }
-
-            if !customLists.isEmpty {
-                Section {
-                    ForEach(customLists) { listRow($0) }
-                }
-            }
-
-            Section {
-                derivedRow(name: "Viewed", symbol: "clock.arrow.circlepath",
-                           color: ListDestination.viewedColor, tag: .list(.viewed),
-                           count: viewedCount)
+            // Every list in one section, rendered by one ForEach: a second collapsible section
+            // crashes the sidebar list's cell dequeue, and so does a second ForEach in here.
+            Section("Lists", isExpanded: $listsExpanded) {
+                ForEach(listRows) { listRow($0) }
             }
         }
+        // `.sidebar` is what puts the disclosure control on the "Lists" header.
+        .listStyle(.sidebar)
         // The selection pill draws in the tint, so it takes the selected list's own colour.
         .tint(selectionTint)
         .navigationTitle("")
@@ -84,26 +100,27 @@ struct SidebarColumn: View {
             .tag(SidebarItem.collection(collection))
     }
 
-    private func listRow(_ list: MediaList) -> some View {
-        let tag = SidebarItem.list(.list(list.uuid))
-        let selected = selection == tag
-        return SidebarRow(title: list.name, tag: tag, selected: selected,
-                          badge: list.entries?.count ?? 0) {
-            if let image = ListSymbol.menuImage(list.symbol) {
-                Image(uiImage: image)
-            } else {
-                Image(systemName: ListSymbol.outline(list.symbol))
-                    .foregroundStyle(selected ? Color.white : list.color)
-            }
-        }
+    /// The Lists section in canonical order: Watch List, Watched, custom lists, Viewed.
+    private var listRows: [ListRow] {
+        (watchList.map { [ListRow($0)] } ?? [])
+        + [ListRow(name: "Watched", symbol: "checkmark.rectangle.stack",
+                   color: ListDestination.watchedColor, tag: .list(.watched),
+                   count: watchedCount)]
+        + customLists.map(ListRow.init)
+        + [ListRow(name: "Viewed", symbol: "clock.arrow.circlepath",
+                   color: ListDestination.viewedColor, tag: .list(.viewed),
+                   count: viewedCount)]
     }
 
-    private func derivedRow(name: String, symbol: String, color: Color,
-                            tag: SidebarItem, count: Int) -> some View {
-        let selected = selection == tag
-        return SidebarRow(title: name, tag: tag, selected: selected, badge: count) {
-            Image(systemName: symbol)
-                .foregroundStyle(selected ? Color.white : color)
+    private func listRow(_ row: ListRow) -> some View {
+        let selected = selection == row.tag
+        return SidebarRow(title: row.name, tag: row.tag, selected: selected, badge: row.count) {
+            if let image = row.assetImage {
+                Image(uiImage: image)
+            } else {
+                Image(systemName: row.symbol)
+                    .foregroundStyle(selected ? Color.white : row.color)
+            }
         }
     }
 

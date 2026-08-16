@@ -184,7 +184,7 @@ import SwiftData
         store.reconcileMembership(show)
 
         let uuid = store.watchList.uuid
-        let sections = await store.sections(for: .list(uuid, byDateAdded: false, foldOlder: false),
+        let sections = await store.sections(for: .list(uuid, sort: .releaseDate, foldOlder: false),
                                             ascending: false, filter: "")
         let rows = sections.flatMap(\.entries)
         #expect(rows.contains { $0.tmdbID == 30 && $0.seasonNumber == 1 && $0.seasonTotal == 3 })
@@ -198,7 +198,7 @@ import SwiftData
         store.add(show, to: list)
         store.reconcileMembership(show)   // a TrackedSeason exists (show is on a list)…
 
-        let sections = await store.sections(for: .list(list.uuid, byDateAdded: false, foldOlder: false),
+        let sections = await store.sections(for: .list(list.uuid, sort: .releaseDate, foldOlder: false),
                                             ascending: false, filter: "")
         let rows = sections.flatMap(\.entries)
         // …but a custom list shows the whole show, never a season.

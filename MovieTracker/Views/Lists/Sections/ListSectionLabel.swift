@@ -26,9 +26,13 @@ struct ListSectionLabel: View {
                                 entries: [], isCollapsible: false, ratingStars: 4.5)
     let month = SectionSnapshot(id: DateComponents(year: 2026, month: 8), title: "August 2026",
                                 entries: [], isCollapsible: false)
+    let letter = SectionSnapshot(id: DateComponents(year: 8065), title: "A",
+                                 entries: [], isCollapsible: false)
     VStack(alignment: .leading, spacing: 16) {
         ListSectionLabel(section: rated, tint: ListDestination.watchedColor)
         ListSectionLabel(section: month, tint: .appAccent)
+            .font(.headline)
+        ListSectionLabel(section: letter, tint: .appAccent)
             .font(.headline)
     }
     .padding()

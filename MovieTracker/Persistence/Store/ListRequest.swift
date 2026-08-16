@@ -7,7 +7,7 @@ import Foundation
 
 /// Which list the Lists screen loads.
 enum ListRequest: Sendable, Equatable {
-    case list(UUID, byDateAdded: Bool, foldOlder: Bool)
+    case list(UUID, sort: ListSortKey, foldOlder: Bool)
     case watched(sort: WatchedSortKey)
     case viewed
 }
