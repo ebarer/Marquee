@@ -15,7 +15,9 @@ struct PersonFilmography: View {
     /// so the list waits rather than laying out rows it would then have to move.
     var isResolving: Bool = false
     var navBarBottom: CGFloat = 0
-    var onFilterHiddenChange: (Bool) -> Void = { _ in }
+    /// The request while this header is scrolled out of sight, so the page can carry its
+    /// controls in the bar; nil while the header is on screen.
+    var onHeaderHiddenChange: (DetailSearchRequest?) -> Void = { _ in }
 
     var body: some View {
         if isResolving {
@@ -52,16 +54,18 @@ struct PersonFilmography: View {
                 .font(.headline)
                 .foregroundStyle(.white)
             Spacer(minLength: 8)
+            DetailSearchButton(request: searchRequest)
             if availableKinds.count > 1 {
                 CreditFilterMenu(kinds: availableKinds, filter: $filter) {
                     Image(systemName: isFiltering
                           ? "line.3.horizontal.decrease.circle.fill"
-                          : "line.3.horizontal.decrease.circle")
-                        .font(.title3)
+                          : "line.3.horizontal.decrease")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.appAccent)
+                        .sectionHeaderControl()
                 }
-                .tint(.appAccent)
+                .buttonStyle(.plain)
             }
-            DetailSearchButton(request: searchRequest)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
@@ -69,7 +73,9 @@ struct PersonFilmography: View {
         .padding(.bottom, 4)
         .onGeometryChange(for: Bool.self) { proxy in
             proxy.frame(in: .global).maxY <= navBarBottom
-        } action: { onFilterHiddenChange($0) }
+        } action: { hidden in
+            onHeaderHiddenChange(hidden ? searchRequest : nil)
+        }
     }
 
     private var availableKinds: [CreditKind] { CreditKind.present(in: entries.map(\.ref)) }

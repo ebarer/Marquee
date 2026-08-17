@@ -9,15 +9,20 @@ import SwiftUI
 enum DetailSearch {
     static let minimumRows = 8
     static let morphID = "detailSearchField"
-    static let crossfade = Animation.easeInOut(duration: 0.3)
+    static let crossfade = Animation.easeOut(duration: 0.22)
 
+}
+
+/// Where a search was opened from, which decides how the field arrives.
+enum DetailSearchOrigin {
+    case body, toolbar
 }
 
 /// What a section needs to open ``DetailSearchScreen``.
 struct DetailSearchAction {
     let namespace: Namespace.ID
     let isPresented: Bool
-    let open: (DetailSearchRequest) -> Void
+    let open: (DetailSearchRequest, DetailSearchOrigin) -> Void
 }
 
 private struct DetailSearchKey: EnvironmentKey {
@@ -36,6 +41,7 @@ private struct DetailSearchHost: ViewModifier {
     @State private var request: DetailSearchRequest?
     // True while search fades out. Clearing `request` outright skips the transition entirely.
     @State private var isClosing = false
+    @State private var origin = DetailSearchOrigin.body
 
     // The field is positioned from this. Bar margins differ between a full screen and a sheet.
     @State private var cancelFrame: CGRect?
@@ -50,7 +56,7 @@ private struct DetailSearchHost: ViewModifier {
                 .accessibilityHidden(request != nil)
 
             if let request {
-                DetailSearchScreen(request: request, namespace: namespace,
+                DetailSearchScreen(request: request, namespace: namespace, origin: origin,
                                    cancelFrame: cancelFrame, isClosing: isClosing, onClose: close)
                     .opacity(isClosing ? 0 : 1)
                     // Also fires when a result is pushed over this, which ends the search.
@@ -82,8 +88,9 @@ private struct DetailSearchHost: ViewModifier {
     }
 
     private var action: DetailSearchAction {
-        DetailSearchAction(namespace: namespace, isPresented: isSearching) { opened in
+        DetailSearchAction(namespace: namespace, isPresented: isSearching) { opened, from in
             isClosing = false
+            origin = from
             withAnimation(DetailSearch.crossfade) { request = opened }
         }
     }
@@ -112,21 +119,39 @@ struct DetailSearchButton: View {
 
     var body: some View {
         // Unmounted while search is up: matchedGeometryEffect needs one view per ID.
-        if let detailSearch, !detailSearch.isPresented,
-           request.rowCount >= DetailSearch.minimumRows {
+        if let detailSearch, !detailSearch.isPresented, request.isSearchable {
             Button {
-                detailSearch.open(request)
+                detailSearch.open(request, .body)
             } label: {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(request.tint)
-                    .frame(width: 32, height: 32)
-                    .contentShape(Rectangle())
+                    .sectionHeaderControl()
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .circle)
             .matchedGeometryEffect(id: DetailSearch.morphID, in: detailSearch.namespace)
             .accessibilityLabel(request.prompt)
+        }
+    }
+}
+
+/// The same control for a navigation bar, which supplies its own glass.
+struct DetailSearchToolbarItem: ToolbarContent {
+    let request: DetailSearchRequest
+
+    @Environment(\.detailSearch) private var detailSearch
+
+    var body: some ToolbarContent {
+        if let detailSearch, !detailSearch.isPresented, request.isSearchable {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    detailSearch.open(request, .toolbar)
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .tint(request.tint)
+                .accessibilityLabel(request.prompt)
+            }
         }
     }
 }

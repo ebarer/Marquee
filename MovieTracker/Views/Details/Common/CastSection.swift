@@ -20,6 +20,9 @@ struct CastSection: View {
     var castTitle: String = "Cast"
     /// How many cast members show before the "Show More" expander.
     var castLimit: Int = 10
+    /// Global y below which this section's header counts as covered — the pinned header's edge.
+    var coveredBelow: CGFloat = 0
+    var onSearchHiddenChange: (DetailSearchRequest?) -> Void = { _ in }
 
     @State private var selection: CastCategory?
     @State private var castExpanded = false
@@ -70,6 +73,11 @@ struct CastSection: View {
                                            withAnimation(.easeInOut) { selection = option }
                                        },
                                        accessory: { DetailSearchButton(request: searchRequest) })
+                        .onGeometryChange(for: Bool.self) { proxy in
+                            proxy.frame(in: .global).maxY <= coveredBelow
+                        } action: { covered in
+                            onSearchHiddenChange(covered ? searchRequest : nil)
+                        }
                     categoryList(category)
                         // New identity per category so switching crossfades the list.
                         .id(category)

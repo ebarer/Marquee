@@ -36,6 +36,15 @@ struct MovieDetailView: View {
     // The page's top edge in window coordinates. A sheet sits inset in the window, so a bare
     // `.global` reading would count the sheet's offset as nav-bar height.
     @State private var pageTop: CGFloat = 0
+    /// Set by the cast section once its header scrolls under the pinned one, so its search
+    /// button can carry on in the bar.
+    @State private var hiddenSearch: DetailSearchRequest?
+
+    @Environment(\.closeModal) private var closeModal
+    @Environment(\.isModalRoot) private var isModalRoot
+    @Environment(\.detailSearch) private var detailSearch
+
+    private var isSearching: Bool { detailSearch?.isPresented == true }
 
     /// The payload once it lands, else the caller's stub.
     private var movie: Movie { model.movie ?? seed }
@@ -58,6 +67,15 @@ struct MovieDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("") // Visually overrides the center title space
+                }
+                // Both stand down while the search field occupies the bar's row.
+                if let hiddenSearch, !isSearching {
+                    DetailSearchToolbarItem(request: hiddenSearch)
+                    ToolbarSpacer(.fixed)
+                }
+                // Rendered here, after the search button, so Close stays the rightmost item.
+                if let closeModal, !isSearching {
+                    ModalCloseItem(close: closeModal, isRoot: isModalRoot)
                 }
             }
             .task {
@@ -109,7 +127,10 @@ struct MovieDetailView: View {
                     RelatedMoviesSection(collection: model.collection, lists: lists,
                                          tint: model.tint)
 
-                    CastSection(cast: movie.team, tint: model.tint)
+                    CastSection(cast: movie.team, tint: model.tint,
+                                coveredBelow: container.frame(in: .global).minY
+                                    + CollapsedHeader.extent,
+                                onSearchHiddenChange: { hiddenSearch = $0 })
 
                     // Held back until the payload is in, so recommendations can't land ahead of
                     // the cast that belongs above them.

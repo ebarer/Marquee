@@ -25,7 +25,8 @@ struct PersonDetailView: View {
     /// Remembered across people and launches; talk-show and courtesy credits are the default
     /// selection, so an untouched filter behaves as it always has.
     @AppStorage("personCreditFilter") private var filter = CreditFilter()
-    @State private var filterButtonHidden = false
+    /// Set once the credits header scrolls off, so its controls carry on in the bar.
+    @State private var hiddenSearch: DetailSearchRequest?
 
     @Environment(\.detailSearch) private var detailSearch
     private var isSearching: Bool { detailSearch?.isPresented == true }
@@ -66,9 +67,9 @@ struct PersonDetailView: View {
                                       filter: $filter,
                                       isResolving: model.isResolvingCredits,
                                       navBarBottom: navBarBottom,
-                                      onFilterHiddenChange: { hidden in
+                                      onHeaderHiddenChange: { request in
                                           withAnimation(.easeInOut(duration: 0.2)) {
-                                              filterButtonHidden = hidden
+                                              hiddenSearch = request
                                           }
                                       })
                 }
@@ -86,17 +87,21 @@ struct PersonDetailView: View {
                     .foregroundStyle(.white)
                     .opacity(showNavTitle && !isSearching ? 1 : 0)
             }
-            // Would sit over the search field and take the taps meant for its cancel.
-            if filterButtonHidden && availableKinds.count > 1 && !isSearching {
-                ToolbarItem(placement: .topBarTrailing) {
-                    // State lives in the symbol: `.glassProminent` rendered identically either
-                    // way, leaving a tap looking like it did nothing.
-                    CreditFilterMenu(kinds: availableKinds, filter: $filter) {
-                        Image(systemName: isFiltering
-                              ? "line.3.horizontal.decrease.circle.fill"
-                              : "line.3.horizontal.decrease")
+            // Both would sit over the search field and take the taps meant for its cancel.
+            if let hiddenSearch, !isSearching {
+                DetailSearchToolbarItem(request: hiddenSearch)
+
+                if availableKinds.count > 1 {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        // State lives in the symbol: `.glassProminent` rendered identically
+                        // either way, leaving a tap looking like it did nothing.
+                        CreditFilterMenu(kinds: availableKinds, filter: $filter) {
+                            Image(systemName: isFiltering
+                                  ? "line.3.horizontal.decrease.circle.fill"
+                                  : "line.3.horizontal.decrease")
+                        }
+                        .tint(.appAccent)
                     }
-                    .tint(.appAccent)
                 }
 
                 ToolbarSpacer(.fixed)

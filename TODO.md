@@ -6,10 +6,11 @@ Important:
   - [ ] move search button into nav bar on scroll, beside filter button for person
   - [ ] filter button should become glass
 - [ ] Swipe on tv season should mark that episode as watched, secondary action to mark entire season
-- [ ] Person: tv show cells in credits don't show watched/in progress bad
-- [ ] Person: tv show cell doesn't support orb or swipe, nor does known for
+- [x] Person: tv show cells in credits don't show watched/in progress badge
+- [x] Person: tv show cell doesn't support orb or swipe, nor does known for
 
 Polish:
+- [ ] tv season header should be sticky until scrolling to next header
 - [ ] presenting watch list should start scrolled to the (current month - 1)
 - [ ] iPad: when sorting by rating, etc. the header is too low, should be closer to nav bar
 - [ ] iPad: tapping selected list in sidebar should scroll to top

@@ -45,6 +45,7 @@ struct DetailSearchRequest: Hashable {
     var tint: Color = .appAccent
 
     var rowCount: Int { groups.reduce(0) { $0 + $1.rowCount } }
+    var isSearchable: Bool { rowCount >= DetailSearch.minimumRows }
 }
 
 /// Searches one detail section's list, covering the page it was opened from.

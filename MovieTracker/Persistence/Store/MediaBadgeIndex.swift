@@ -19,10 +19,17 @@ struct MediaBadgeIndex: Sendable {
         }
     }
 
+    /// A show's season, for the completed-season lookup.
+    struct SeasonKey: Hashable, Sendable {
+        let showID: Int
+        let seasonNumber: Int
+    }
+
     private let watched: Set<Key>
     private let watchList: Set<Key>
     private let showsWatched: Set<Int>
     private let showsInProgress: Set<Int>
+    private let seasonsWatched: Set<SeasonKey>
 
     /// Empty, for previews and a missing store.
     init() {
@@ -30,6 +37,7 @@ struct MediaBadgeIndex: Sendable {
         watchList = []
         showsWatched = []
         showsInProgress = []
+        seasonsWatched = []
     }
 
     // Every fetch here names `propertiesToFetch`: materialising whole models to read two columns
@@ -58,6 +66,13 @@ struct MediaBadgeIndex: Sendable {
         var episodes = FetchDescriptor<WatchedEpisode>()
         episodes.propertiesToFetch = [\.showTmdbID]
         showsInProgress = Set(((try? context.fetch(episodes)) ?? []).map(\.showTmdbID))
+
+        // A `WatchedSeason` exists exactly while the season is complete, so its presence is
+        // the answer — no per-row episode counting.
+        var seasons = FetchDescriptor<WatchedSeason>()
+        seasons.propertiesToFetch = [\.showTmdbID, \.seasonNumber]
+        seasonsWatched = Set(((try? context.fetch(seasons)) ?? [])
+            .map { SeasonKey(showID: $0.showTmdbID, seasonNumber: $0.seasonNumber) })
     }
 
     func isWatched(_ tmdbID: Int, _ mediaType: MediaType = .movie) -> Bool {
@@ -72,4 +87,8 @@ struct MediaBadgeIndex: Sendable {
     func isShowWatched(showID: Int) -> Bool { showsWatched.contains(showID) }
 
     func hasWatchedEpisodes(showID: Int) -> Bool { showsInProgress.contains(showID) }
+
+    func isSeasonWatched(showID: Int, seasonNumber: Int) -> Bool {
+        seasonsWatched.contains(SeasonKey(showID: showID, seasonNumber: seasonNumber))
+    }
 }

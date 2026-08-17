@@ -21,6 +21,15 @@ struct SectionHeader: View {
     }
 }
 
+extension View {
+    /// The glass circle a detail section header puts its controls in.
+    func sectionHeaderControl() -> some View {
+        frame(width: 32, height: 32)
+            .contentShape(Rectangle())
+            .glassEffect(.regular.interactive(), in: .circle)
+    }
+}
+
 #Preview {
     VStack(spacing: 0) {
         SectionHeader(title: "Cast & Crew")

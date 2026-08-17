@@ -5,6 +5,14 @@
 
 import SwiftUI
 
+/// How far a pinned ``CollapsingBackdropHeader`` reaches below the navigation bar. Not nested in
+/// it: a generic type's statics can't be reached without naming its parameter.
+enum CollapsedHeader {
+    static let posterHeight: CGFloat = 150
+    static let padding: CGFloat = 16
+    static let extent: CGFloat = padding + posterHeight * 0.75 + padding
+}
+
 /// A collapsing, pinning backdrop header shared by the movie and show detail screens. It owns
 /// all the scroll geometry; the caller supplies the bar via `bar(progress, width)`.
 struct CollapsingBackdropHeader<Bar: View>: View {
@@ -18,13 +26,7 @@ struct CollapsingBackdropHeader<Bar: View>: View {
     @Binding var headerPinned: Bool
     @ViewBuilder let bar: (_ progress: CGFloat, _ width: CGFloat) -> Bar
 
-    private static var posterHeight: CGFloat { 150 }
-    private static var padding: CGFloat { 16 }
-
-    /// The collapsed height: a sliver of backdrop under the nav bar plus the compacted bar.
-    private var minHeader: CGFloat {
-        navBarBottom + Self.padding + Self.posterHeight * 0.75 + Self.padding
-    }
+    private var minHeader: CGFloat { navBarBottom + CollapsedHeader.extent }
 
     /// Scroll distance over which the header collapses from full to pinned.
     private var collapseDist: CGFloat { max(1, headerRest - minHeader) }
