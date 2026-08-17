@@ -5,9 +5,8 @@
 
 import Foundation
 
-/// Session memo for `/credit/{id}` lookups — the episodes behind a person's TV credits.
-/// Filmography rows resolve lazily as they scroll into view, so repeat and concurrent
-/// lookups for the same credit have to collapse into one request.
+/// Session memo for `/credit/{id}` lookups. Filmography rows resolve lazily as they scroll,
+/// so repeat and concurrent lookups for the same credit have to collapse into one request.
 @MainActor
 final class EpisodeCreditStore {
     static let shared = EpisodeCreditStore()

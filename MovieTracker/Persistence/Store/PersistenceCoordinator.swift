@@ -15,6 +15,10 @@ import OSLog
 final class PersistenceCoordinator {
     let context: ModelContext
 
+    /// Held separately from `context` so `readingOffMain` never reaches through the
+    /// main-actor-isolated, non-Sendable `ModelContext` to get at it.
+    @ObservationIgnored nonisolated let container: ModelContainer
+
     private(set) var revision = 0
 
     private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PersistenceCoordinator",
@@ -25,7 +29,7 @@ final class PersistenceCoordinator {
     /// Run a Lists read on a background thread. The coordinator and its `ModelContext` are built
     /// and finished inside the detached task, so nothing crosses back but the Sendable result.
     nonisolated func readingOffMain<T: Sendable>(_ read: @Sendable @escaping (ListCoordinator) -> T) async -> T {
-        let container = context.container
+        let container = self.container
         return await Task.detached { read(ListCoordinator(container: container)) }.value
     }
 
@@ -36,6 +40,7 @@ final class PersistenceCoordinator {
 
     init(_ context: ModelContext) {
         self.context = context
+        self.container = context.container
     }
 
     /// Returns `true` only on the first call. Safe without locking: `@MainActor`.

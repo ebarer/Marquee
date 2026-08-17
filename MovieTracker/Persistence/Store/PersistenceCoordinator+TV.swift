@@ -297,9 +297,8 @@ extension PersistenceCoordinator {
         return try? await TMDBWrapper.getShow(id: id)
     }
 
-    /// Re-sync a show after an id-only mutation that couldn't reconcile itself. No-op when
-    /// the show can't be resolved (offline, cold cache) — it self-heals on next open.
-    /// Pass `editedSeason` so the season the user just changed can lose its snapshot.
+    /// Re-sync a show after an id-only mutation. A show that won't resolve (offline, cold cache)
+    /// self-heals on next open; `editedSeason` is the one to drop the snapshot of.
     func reconcile(showID: Int, editedSeason: Int? = nil) async {
         guard let show = await resolveShow(id: showID) else { return }
         reconcileSeasons(for: show, editedSeason: editedSeason)
@@ -322,9 +321,8 @@ extension PersistenceCoordinator {
         await setShowWatched(watched, show: show)
     }
 
-    /// Recompute every regular season's snapshot from the current episode records — used
-    /// when the show reappears (episodes may have been toggled from the episode detail).
-    /// `editedSeason` is the one the user just changed, whose episode records can be trusted.
+    /// Recompute every regular season's snapshot from the current episode records.
+    /// `editedSeason` is the one just changed, whose episode records can be trusted.
     func reconcileSeasons(for show: Show, editedSeason: Int? = nil) {
         for season in show.regularSeasons {
             reconcileSeason(show: show, season: season,

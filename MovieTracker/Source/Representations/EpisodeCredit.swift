@@ -5,9 +5,8 @@
 
 import Foundation
 
-/// The episode-level shape of a person's credit on one show, as TMDB's `/credit` endpoint
-/// reports it: which seasons they appear in, and — unless they're in the whole season —
-/// which episodes within each.
+/// A person's credit on one show as TMDB's `/credit` endpoint reports it: which seasons they
+/// appear in, and — unless they're in the whole season — which episodes within each.
 struct EpisodeCredit: Hashable, Sendable {
     /// Ordered by season number.
     var seasons: [SeasonCredit]

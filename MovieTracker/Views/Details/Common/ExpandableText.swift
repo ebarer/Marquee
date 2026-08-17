@@ -22,8 +22,8 @@ struct ExpandableText: View {
     private var resolvedFont: Font { font ?? .system(size: fontSize) }
     private var truncated: Bool { fullHeight > limitedHeight + 1 }
 
-    // Full layout is always used (so wrapping never changes) and only the clip
-    // height toggles; nil until measured so the first frame isn't clamped to 0.
+    // nil hands the height back to the line-limited copy below, which is already the
+    // collapsed height; once measured the same value is what the expansion animates.
     private var clipHeight: CGFloat? {
         guard limitedHeight > 0 else { return nil }
         return expanded ? max(fullHeight, limitedHeight) : limitedHeight
@@ -31,15 +31,18 @@ struct ExpandableText: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
+            // A hidden line-limited copy sizes the block on the first layout pass; waiting
+            // on a measurement instead pushes at full height, then snaps shorter mid-push.
             Text(text)
                 .font(resolvedFont)
-                .foregroundStyle(.white.opacity(0.85))
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(lineLimit)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .hidden()
+                .background { heightReader { limitedHeight = $0 } }
                 .frame(height: clipHeight, alignment: .top)
+                .overlay(alignment: .topLeading) { fullText }
                 .clipped()
-                .opacity(limitedHeight > 0 ? 1 : 0)
-                .background { probe }
+                .background { fullProbe }
 
             if truncated && !expanded {
                 morePill
@@ -51,6 +54,15 @@ struct ExpandableText: View {
             withAnimation(.easeInOut) { expanded.toggle() }
             if collapsing { onCollapse() }
         }
+    }
+
+    // Wraps freely and overflows the clip, so wrapping never changes when it expands.
+    private var fullText: some View {
+        Text(text)
+            .font(resolvedFont)
+            .foregroundStyle(.white.opacity(0.85))
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var morePill: some View {
@@ -72,22 +84,14 @@ struct ExpandableText: View {
             .offset(y: moreBaselineNudge)
     }
 
-    // Hidden copies measured at the collapsed limit and at full height; the
-    // difference decides whether the "More" pill is warranted.
-    private var probe: some View {
-        ZStack {
-            Text(text)
-                .font(resolvedFont)
-                .lineLimit(lineLimit)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background { heightReader { limitedHeight = $0 } }
-            Text(text)
-                .font(resolvedFont)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background { heightReader { fullHeight = $0 } }
-        }
-        .hidden()
+    // Full height against the collapsed one decides whether "More" is warranted.
+    private var fullProbe: some View {
+        Text(text)
+            .font(resolvedFont)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background { heightReader { fullHeight = $0 } }
+            .hidden()
     }
 
     private func heightReader(_ report: @escaping (CGFloat) -> Void) -> some View {
