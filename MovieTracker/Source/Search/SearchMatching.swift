@@ -91,8 +91,8 @@ enum SearchMatching {
         return normalized(articleStripped(topTitle)).hasPrefix(needle)
     }
 
-    /// People from the top movie hits: cast credited as the searched character (ranked by
-    /// their film's vote count, not volatile `popularity`), else the named film's leads.
+    /// People from the top movie hits: whoever played the searched character, then the billing
+    /// of the films it named. Each stage only adds — none of them excludes the others.
     static func moviePeople(query: String,
                             films: [(movie: Movie, cast: [Person])],
                             minQueryLength: Int,
@@ -105,44 +105,73 @@ enum SearchMatching {
         let needle = normalized(articleStripped(query))
         guard !films.isEmpty else { return [] }
 
-        // 1) Cast credited as the searched character. The vote floor skips obscure films
-        //    that merely name one after the query; the length gate stops generic words.
-        if needle.count >= minQueryLength {
-            var order: [Int] = []
-            var byPerson: [Int: (person: Person, notability: Int)] = [:]
-            for (movie, cast) in films {
-                let filmNotability = movie.voteCount ?? 0
-                guard filmNotability >= minCharacterMatchVotes else { continue }
-                for person in cast.prefix(topBilledPerFilm) {
-                    guard let role = person.role,
-                          heroSegments(of: role).contains(needle) else { continue }
-                    if let existing = byPerson[person.id] {
-                        if filmNotability > existing.notability {
-                            byPerson[person.id] = (existing.person, filmNotability)
-                        }
-                    } else {
-                        byPerson[person.id] = (person, filmNotability)
-                        order.append(person.id)
-                    }
-                }
-            }
-            if !order.isEmpty {
-                return order
-                    .map { byPerson[$0]! }
-                    .sorted { $0.notability > $1.notability }
-                    .map(\.person)
-            }
+        var people: [Person] = []
+        var seen = Set<Int>()
+        func add(_ candidates: [Person]) {
+            for person in candidates where seen.insert(person.id).inserted { people.append(person) }
         }
 
-        // 2) Fallback: the top film's leads when the query names it but no character
-        //    matched (the lead is credited by real name, not the hero alias).
-        guard let top = films.first,
-              (top.movie.popularity ?? 0) >= leadFallbackMinPopularity,
-              topFilmLeadsApply(topTitle: top.movie.title, normalizedQuery: needle,
-                                minQueryLength: leadPrefixMinLength) else {
-            return []
+        // A query that names a character is answered by the people who played them, most
+        // notable film first: "batman" is Bale, then Pattinson, then Affleck, then Keaton.
+        if needle.count >= minQueryLength {
+            add(characterMatches(films, needle: needle, topBilledPerFilm: topBilledPerFilm,
+                                 minVotes: minCharacterMatchVotes))
         }
-        return Array(top.cast.prefix(leadFallbackCount))
+
+        // Then the billing of the films the query named — the whole answer when it names a
+        // title rather than a character ("avengers" is nobody's role).
+        for group in filmLeads(query: query, films: films,
+                               leadPrefixMinLength: leadPrefixMinLength,
+                               topBilledPerFilm: topBilledPerFilm,
+                               leadFallbackMinPopularity: leadFallbackMinPopularity) {
+            add(group.people)
+        }
+        return people
+    }
+
+    /// The billing of each film the query names, keyed by film. A title that merely shares a
+    /// word lends nobody, and neither does one too obscure to speak for the search.
+    static func filmLeads(query: String,
+                          films: [(movie: Movie, cast: [Person])],
+                          leadPrefixMinLength: Int,
+                          topBilledPerFilm: Int,
+                          leadFallbackMinPopularity: Double) -> [(filmID: Int, people: [Person])] {
+        let needle = normalized(articleStripped(query))
+        return films.compactMap { movie, cast in
+            guard (movie.popularity ?? 0) >= leadFallbackMinPopularity,
+                  topFilmLeadsApply(topTitle: movie.title, normalizedQuery: needle,
+                                    minQueryLength: leadPrefixMinLength) else { return nil }
+            return (movie.id, Array(cast.prefix(topBilledPerFilm)))
+        }
+    }
+
+    /// Cast credited as `needle`, ranked by their film's vote count rather than volatile
+    /// `popularity`. The vote floor skips obscure films that merely name a character after it.
+    static func characterMatches(_ films: [(movie: Movie, cast: [Person])],
+                                 needle: String, topBilledPerFilm: Int,
+                                 minVotes: Int) -> [Person] {
+        var order: [Int] = []
+        var byPerson: [Int: (person: Person, notability: Int)] = [:]
+        for (movie, cast) in films {
+            let notability = movie.voteCount ?? 0
+            guard notability >= minVotes else { continue }
+            for person in cast.prefix(topBilledPerFilm) {
+                guard let role = person.role,
+                      heroSegments(of: role).contains(needle) else { continue }
+                if let existing = byPerson[person.id] {
+                    if notability > existing.notability {
+                        byPerson[person.id] = (existing.person, notability)
+                    }
+                } else {
+                    byPerson[person.id] = (person, notability)
+                    order.append(person.id)
+                }
+            }
+        }
+        return order
+            .map { byPerson[$0]! }
+            .sorted { $0.notability > $1.notability }
+            .map(\.person)
     }
 
     /// How well a title matches, lower = stronger: 0 exact, 1 title prefix, 2 word prefix,
@@ -185,21 +214,35 @@ enum SearchMatching {
     /// Cast matches first (from films and the top show), then name matches by popularity, deduped
     /// and capped. A name match with neither a photo nor `namedNoiseFloor` popularity is dropped.
     static func featuredPeople(castMatched: [Person], named: [Person], cap: Int,
-                               namedNoiseFloor: Float = 0) -> [Person] {
+                               namedNoiseFloor: Float = 0, query: String = "",
+                               titleOwnsQuery: Bool = false) -> [Person] {
         let credibleNamed = named.filter {
             $0.popularity >= namedNoiseFloor || $0.profilePicture != nil
         }
+        let byPopularity = credibleNamed.sorted { $0.popularity > $1.popularity }
+        // A name query opens on the people who bear it. A title that *is* the query holds it
+        // against a lone namesake ("dune"), but not against a name several notable people share.
+        let needle = normalized(articleStripped(query))
+        let namesakes = byPopularity.filter {
+            $0.popularity >= namedNoiseFloor && nameMatches($0.name, normalizedQuery: needle)
+        }
+        let nameMatched = (namesakes.count > 1 || !titleOwnsQuery) ? namesakes : []
 
         var seen = Set<Int>()
         var merged: [Person] = []
-        for person in castMatched where seen.insert(person.id).inserted {
-            merged.append(person)
-        }
-        for person in credibleNamed.sorted(by: { $0.popularity > $1.popularity })
+        for person in nameMatched + castMatched + byPopularity
         where seen.insert(person.id).inserted {
             merged.append(person)
         }
         return Array(merged.prefix(cap))
+    }
+
+    /// Whether the query is one of this person's names. Whole segments only: "office" must not
+    /// claim someone called "Officer", and a partly-typed name waits until it's a name.
+    static func nameMatches(_ name: String, normalizedQuery needle: String) -> Bool {
+        guard needle.count >= 3 else { return false }
+        return name.split(whereSeparator: { $0 == " " || $0 == "-" })
+            .contains { normalized(String($0)) == needle }
     }
 
     /// Length of `featured`'s inline "prominent" prefix — cast matches, plus named people

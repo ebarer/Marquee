@@ -20,16 +20,33 @@ struct CastPeopleTool: SearchTool {
     var leadFallbackMinPopularity = 10.0
     /// A show surfaces its cast only when it's a strong, front-of-results match.
     var showWeakPopularity = 5.0
+    /// And only when it's actually notable: popularity is a trending number, so on its own it
+    /// let a 152-vote 1960s series speak for "avengers" and an 8-vote 1950s one for "robert".
+    var showMinVotes = 300
 
     func apply(to context: SearchContext, using provider: SearchProvider) async -> SearchContext {
         var context = context
-        let fromMovies = await moviePeople(context, using: provider)
-        let fromShow = await showPeople(context, using: provider)
-        context.castPeople = fromMovies + fromShow
+        // Kept apart: which of these opens the People strip is settled once the results are
+        // ranked, since only then is it known which title actually won the search.
+        let films = await namedFilms(context, using: provider)
+        context.filmCharacterPeople = SearchMatching.characterMatches(
+            films, needle: context.needle, topBilledPerFilm: topBilledPerFilm,
+            minVotes: minCharacterMatchVotes)
+        context.filmLeads = SearchMatching.filmLeads(
+            query: context.query, films: films, leadPrefixMinLength: minLeadPrefixLength,
+            topBilledPerFilm: topBilledPerFilm,
+            leadFallbackMinPopularity: leadFallbackMinPopularity)
+        context.leadsByFilmID = Dictionary(
+            films.map { ($0.movie.id, Array($0.cast.prefix(leadFallbackCount))) },
+            uniquingKeysWith: { first, _ in first })
+        context.showCastPeople = await showPeople(context, using: provider)
         return context
     }
 
-    private func moviePeople(_ context: SearchContext, using provider: SearchProvider) async -> [Person] {
+    /// The top movie hits paired with their cast, hydrated once. Empty when neither the
+    /// character path nor the lead path could apply to this query.
+    private func namedFilms(_ context: SearchContext,
+                            using provider: SearchProvider) async -> [(movie: Movie, cast: [Person])] {
         guard !context.movies.isEmpty else { return [] }
 
         // Character-matching needs a non-generic query length; the lead fallback needs an
@@ -61,19 +78,13 @@ struct CastPeopleTool: SearchTool {
             return buffer
         }
 
-        let films = zip(topMovies, casts).map { (movie: $0, cast: $1) }
-        return SearchMatching.moviePeople(query: context.query,
-                                          films: films,
-                                          minQueryLength: minRoleMatchLength,
-                                          leadPrefixMinLength: minLeadPrefixLength,
-                                          topBilledPerFilm: topBilledPerFilm,
-                                          minCharacterMatchVotes: minCharacterMatchVotes,
-                                          leadFallbackCount: leadFallbackCount,
-                                          leadFallbackMinPopularity: leadFallbackMinPopularity)
+        return zip(topMovies, casts).map { (movie: $0, cast: $1) }
     }
 
     private func showPeople(_ context: SearchContext, using provider: SearchProvider) async -> [Person] {
-        guard let top = context.shows.first, (top.popularity ?? 0) >= showWeakPopularity else { return [] }
+        guard let top = context.shows.first,
+              (top.popularity ?? 0) >= showWeakPopularity,
+              (top.voteCount ?? 0) >= showMinVotes else { return [] }
         guard let full = await provider.show(id: top.id) else { return [] }
         return Array(full.recurringCast.prefix(topBilledPerFilm))
     }

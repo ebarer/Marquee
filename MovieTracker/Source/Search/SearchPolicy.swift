@@ -41,7 +41,25 @@ struct SearchPolicy: Sendable {
                                                 relatedMovies: context.relatedMovies,
                                                 popularityBenchmark: await benchmark ?? .infinity)
         return SearchResults(movies: context.movies, shows: context.shows, results: results,
-                             namedPeople: context.namedPeople, castPeople: context.castPeople)
+                             namedPeople: context.namedPeople,
+                             castPeople: castPeople(context, results: results))
+    }
+
+    /// The strip follows the ranked results rather than ranking titles again: characters first,
+    /// then the film the list leads with, then the other named films', then the show's.
+    private func castPeople(_ context: SearchContext, results: [MediaRef]) -> [Person] {
+        let leadingFilmID = results.first { $0.isMovie }.flatMap { ref -> Int? in
+            guard case .movie(let movie) = ref else { return nil }
+            return movie.id
+        }
+        let promoted = leadingFilmID.flatMap { context.leadsByFilmID[$0] } ?? []
+        let filmPeople = context.filmCharacterPeople + promoted
+            + context.filmLeads.flatMap(\.people)
+
+        let showLeads = results.first?.isMovie == false
+        var seen = Set<Int>()
+        return (showLeads ? context.showCastPeople + filmPeople : filmPeople + context.showCastPeople)
+            .filter { seen.insert($0.id).inserted }
     }
 
     /// The default pipeline. Order matters: variants augment the movie set, then rank it, then

@@ -145,6 +145,29 @@ import Foundation
         #expect(moviePeople(query: "batman", films).map(\.name) == ["Christian Bale", "Robert Pattinson"])
     }
 
+    /// Every actor who played the character, ordered by their film's notability, ahead of the
+    /// top hit's other cast — Kravitz is no Batman, so she follows the four who are.
+    @Test func charactersLeadAheadOfTheTopHitsOtherCast() {
+        let films = [
+            film(1, "The Batman", votes: 12_241, popularity: 32, cast: [
+                castMember(10, "Robert Pattinson", "Bruce Wayne / The Batman"),
+                castMember(14, "Zoë Kravitz", "Selina Kyle"),
+            ]),
+            film(2, "Batman Begins", votes: 22_896, popularity: 20, cast: [
+                castMember(11, "Christian Bale", "Bruce Wayne / Batman"),
+            ]),
+            film(3, "Batman v Superman", votes: 8_000, popularity: 18, cast: [
+                castMember(12, "Ben Affleck", "Bruce Wayne / Batman"),
+            ]),
+            film(4, "Batman", votes: 5_000, popularity: 16, cast: [
+                castMember(13, "Michael Keaton", "Bruce Wayne / Batman"),
+            ]),
+        ]
+        #expect(moviePeople(query: "batman", films).map(\.name)
+                == ["Christian Bale", "Robert Pattinson", "Ben Affleck", "Michael Keaton",
+                    "Zoë Kravitz"])
+    }
+
     @Test func characterMatchesDedupeAcrossFilms() {
         let holland = castMember(20, "Tom Holland", "Peter Parker / Spider-Man")
         let films = [

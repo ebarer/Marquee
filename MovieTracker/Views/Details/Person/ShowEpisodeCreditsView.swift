@@ -65,7 +65,7 @@ struct ShowEpisodeCreditsView: View {
             .padding(.bottom, 24)
         }
         .background(Color.appBackground)
-        .navigationTitle(credit.show.name)
+        .navigationTitle("\(credit.show.name) Episodes")
         .toolbarTitleDisplayMode(.inline)
         .task { await model.load(credit) }
     }
@@ -120,8 +120,8 @@ struct ShowEpisodeCreditsView: View {
         ShowEpisodeCreditsView(
             preview: credit,
             model: .preview(show: show, groups: [
-                .init(season: seasons[0], episodes: [episodes[0], episodes[2]]),
                 .init(season: seasons[1], episodes: [guestSpot]),
+                .init(season: seasons[0], episodes: [episodes[2], episodes[0]]),
             ])
         )
         .detailDestinations()

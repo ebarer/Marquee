@@ -42,6 +42,8 @@ final class SearchModel {
     private let inlinePopularityFloor: Float = 1
     private let minInlinePeople = 3
     private let namedNoiseFloor: Float = 1
+    /// Votes a title needs before it outranks people who share its name.
+    private let titleOwnsVoteFloor = 300
     private let minRoleMatchLength = 4
     private let minLeadPrefixLength = 3
     private let weakMoviePopularity = 5.0
@@ -51,7 +53,22 @@ final class SearchModel {
         SearchMatching.featuredPeople(castMatched: castMatchedPeople,
                                       named: namedPeople,
                                       cap: maxFeaturedPeople,
-                                      namedNoiseFloor: namedNoiseFloor)
+                                      namedNoiseFloor: namedNoiseFloor,
+                                      query: query,
+                                      titleOwnsQuery: titleOwnsQuery)
+    }
+
+    /// Whether a notable title is literally what was typed. Then it owns the query and its
+    /// cast leads: "dune" means the film, not an obscure actor christened Dune.
+    private var titleOwnsQuery: Bool {
+        let needle = SearchMatching.normalized(SearchMatching.articleStripped(query))
+        guard !needle.isEmpty else { return false }
+        let titled = movies.prefix(5).map { ($0.title, $0.voteCount ?? 0) }
+            + shows.prefix(5).map { ($0.name, $0.voteCount ?? 0) }
+        return titled.contains {
+            $0.1 >= titleOwnsVoteFloor
+                && SearchMatching.titleMatches($0.0, normalizedQuery: needle)
+        }
     }
 
     var featuredPeopleInlineCount: Int {

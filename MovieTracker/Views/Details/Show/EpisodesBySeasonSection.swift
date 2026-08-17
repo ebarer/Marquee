@@ -67,8 +67,6 @@ struct EpisodesBySeasonSection: View {
         return !aired.isEmpty && aired.allSatisfy { watchedNumbers.contains($0.episodeNumber) }
     }
 
-    private var hasUnaired: Bool { currentEpisodes.contains { !$0.hasAired } }
-
     private var episodeCount: Int {
         if let episodes { return episodes.count }
         return currentSeasonObject?.episodeCount ?? 0
@@ -94,7 +92,7 @@ struct EpisodesBySeasonSection: View {
                     seasonName: currentSeasonObject?.name ?? "Season",
                     startYear: currentSeasonObject?.startYear, episodeCount: episodeCount,
                     allWatched: allWatched, allAiredWatched: allAiredWatched,
-                    hasUnaired: hasUnaired, canToggle: !currentEpisodes.isEmpty, showID: show.id,
+                    canToggle: !currentEpisodes.isEmpty, showID: show.id,
                     seasonWatchedDate: seasonWatchedDate,
                     lastEpisodeDate: currentEpisodes.compactMap(\.airDate).max(),
                     seasonRating: seasonRating, tint: tint,

@@ -42,10 +42,12 @@ final class ShowEpisodeCreditsModel {
             let number = seasonCredit.season.seasonNumber
             guard let season = try? await TMDBWrapper.getSeason(showID: credit.show.id,
                                                                 seasonNumber: number) else { continue }
-            let episodes = season.episodes.filter { seasonCredit.covers(episode: $0.episodeNumber) }
+            let episodes = season.episodes
+                .filter { seasonCredit.covers(episode: $0.episodeNumber) }
+                .sorted { $0.episodeNumber > $1.episodeNumber }
             if !episodes.isEmpty { loaded.append(Group(season: season, episodes: episodes)) }
         }
-        groups = loaded
+        groups = loaded.sorted { $0.season.seasonNumber > $1.season.seasonNumber }
     }
 
     /// Previews only: a model already holding its groups, so the screen renders offline.
