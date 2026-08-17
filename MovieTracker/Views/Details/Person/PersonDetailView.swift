@@ -27,6 +27,9 @@ struct PersonDetailView: View {
     @AppStorage("personCreditFilter") private var filter = CreditFilter()
     @State private var filterButtonHidden = false
 
+    @Environment(\.detailSearch) private var detailSearch
+    private var isSearching: Bool { detailSearch?.isPresented == true }
+
     private let bioHeaderID = "personBioHeader"
 
     private var current: Person { model.person ?? person }
@@ -81,9 +84,10 @@ struct PersonDetailView: View {
                 Text(current.name)
                     .font(.headline)
                     .foregroundStyle(.white)
-                    .opacity(showNavTitle ? 1 : 0)
+                    .opacity(showNavTitle && !isSearching ? 1 : 0)
             }
-            if filterButtonHidden && availableKinds.count > 1 {
+            // Would sit over the search field and take the taps meant for its cancel.
+            if filterButtonHidden && availableKinds.count > 1 && !isSearching {
                 ToolbarItem(placement: .topBarTrailing) {
                     // State lives in the symbol: `.glassProminent` rendered identically either
                     // way, leaving a tap looking like it did nothing.
@@ -98,7 +102,7 @@ struct PersonDetailView: View {
                 ToolbarSpacer(.fixed)
             }
             // Declared here, after the filter, so Close stays the rightmost item.
-            if let closeModal {
+            if let closeModal, !isSearching {
                 ModalCloseItem(close: closeModal, isRoot: isModalRoot)
             }
         }

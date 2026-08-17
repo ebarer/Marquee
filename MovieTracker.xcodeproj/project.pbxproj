@@ -57,6 +57,9 @@
 		CE3FE9C2302286CF00FCC44B /* SearchPeopleStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3FE9C1302286CF00FCC44B /* SearchPeopleStrip.swift */; };
 		CE3FE9DD3022D7C800FCC44B /* SearchMatching.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3FE9DC3022D7C800FCC44B /* SearchMatching.swift */; };
 		CE3FE9F6302403F700FCC44B /* SearchPeopleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3FE9F5302403F700FCC44B /* SearchPeopleListView.swift */; };
+		CE471FFF3032E5E8000313EE /* DetailSearchHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE471FFE3032E5E8000313EE /* DetailSearchHost.swift */; };
+		CE4720013032E5FE000313EE /* DetailSearchScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4720003032E5FE000313EE /* DetailSearchScreen.swift */; };
+		CE4720033032EBAE000313EE /* DetailSearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4720023032EBAE000313EE /* DetailSearchBar.swift */; };
 		CE56974A301C198500DF9142 /* PreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE569749301C198500DF9142 /* PreviewData.swift */; };
 		CE56974C301C199C00DF9142 /* PosterImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE56974B301C199C00DF9142 /* PosterImage.swift */; };
 		CE56974E301C199F00DF9142 /* ProfileImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE56974D301C199F00DF9142 /* ProfileImage.swift */; };
@@ -362,6 +365,9 @@
 		CE3FE9C1302286CF00FCC44B /* SearchPeopleStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchPeopleStrip.swift; sourceTree = "<group>"; };
 		CE3FE9DC3022D7C800FCC44B /* SearchMatching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchMatching.swift; sourceTree = "<group>"; };
 		CE3FE9F5302403F700FCC44B /* SearchPeopleListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchPeopleListView.swift; sourceTree = "<group>"; };
+		CE471FFE3032E5E8000313EE /* DetailSearchHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSearchHost.swift; sourceTree = "<group>"; };
+		CE4720003032E5FE000313EE /* DetailSearchScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSearchScreen.swift; sourceTree = "<group>"; };
+		CE4720023032EBAE000313EE /* DetailSearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSearchBar.swift; sourceTree = "<group>"; };
 		CE569749301C198500DF9142 /* PreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewData.swift; sourceTree = "<group>"; };
 		CE56974B301C199C00DF9142 /* PosterImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PosterImage.swift; sourceTree = "<group>"; };
 		CE56974D301C199F00DF9142 /* ProfileImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileImage.swift; sourceTree = "<group>"; };
@@ -1068,6 +1074,9 @@
 				CEB8A46E301F17B1002FBF31 /* SectionHeader.swift */,
 				CE70BC1D302F17DE0059F0F3 /* RecommendationsSection.swift */,
 				CE70BC21302F1CC50059F0F3 /* LoadingParagraph.swift */,
+				CE471FFE3032E5E8000313EE /* DetailSearchHost.swift */,
+				CE4720003032E5FE000313EE /* DetailSearchScreen.swift */,
+				CE4720023032EBAE000313EE /* DetailSearchBar.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -1674,6 +1683,7 @@
 				CE70BC64302FD41C0059F0F3 /* ListSectionLabel.swift in Sources */,
 				CE8DD38230298699006213BD /* SidebarRow.swift in Sources */,
 				CE8DD2BF302978B5006213BD /* WatchedEpisode.swift in Sources */,
+				CE4720033032EBAE000313EE /* DetailSearchBar.swift in Sources */,
 				CEFDA6FD3021E46100EFAB14 /* WatchProvider.swift in Sources */,
 				CEEAFCE83019D1D100D06E0E /* Color+ProjectColors.swift in Sources */,
 				CE8DD2CF30297959006213BD /* ListRequest.swift in Sources */,
@@ -1700,6 +1710,7 @@
 				CE8DD2BB30297899006213BD /* MediaList.swift in Sources */,
 				CEE790293029E3080040DADB /* HydrateTopMoviesTool.swift in Sources */,
 				CEE7901B3029DCE10040DADB /* RankMoviesTool.swift in Sources */,
+				CE471FFF3032E5E8000313EE /* DetailSearchHost.swift in Sources */,
 				CE310EF2302030020092A86B /* ListSectionsModel.swift in Sources */,
 				CE8DD22E302967BC006213BD /* PersonBioHeader.swift in Sources */,
 				CE8DD21B30296706006213BD /* SeasonEpisodeList.swift in Sources */,
@@ -1727,6 +1738,7 @@
 				CE8DD1E1302963DE006213BD /* WhereToWatchHeader.swift in Sources */,
 				CE8DD23830296803006213BD /* PersonDetailView.swift in Sources */,
 				CE8DD2A9302977D5006213BD /* PersistenceCoordinator+Lists.swift in Sources */,
+				CE4720013032E5FE000313EE /* DetailSearchScreen.swift in Sources */,
 				CE8DD37A30298663006213BD /* SidebarItem.swift in Sources */,
 				CE8DD2B930297883006213BD /* MediaItem.swift in Sources */,
 				CE8DD3703029863F006213BD /* AppDelegate.swift in Sources */,
@@ -2114,7 +2126,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.16.10;
+				CURRENT_PROJECT_VERSION = 2026.8.17.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2140,7 +2152,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.16.10;
+				CURRENT_PROJECT_VERSION = 2026.8.17.1;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (

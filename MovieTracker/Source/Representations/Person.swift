@@ -57,6 +57,10 @@ struct Person: Hashable, Identifiable, Codable, Sendable {
             }
         }
     }
+
+    func matches(query: String) -> Bool {
+        name.matches(query: query) || (role?.matches(query: query) ?? false)
+    }
 }
 
 // MARK: - Image Size Enumerations

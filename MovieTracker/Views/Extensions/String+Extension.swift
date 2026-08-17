@@ -18,6 +18,13 @@ extension String {
         }
     }
     
+    func matches(query: String) -> Bool {
+        func fold(_ text: String) -> String {
+            text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        }
+        return fold(self).contains(fold(query))
+    }
+
     func shorten() -> String {
         switch self {
         case "Science Fiction":

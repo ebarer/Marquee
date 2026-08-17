@@ -23,6 +23,30 @@ struct FilmographyEntry: Identifiable, Hashable {
     /// The season aired where there's a season, else the title's own date.
     var date: Date? { season?.season.airDate ?? ref.date }
 
+    static func upcoming(in entries: [FilmographyEntry], now: Date = Date()) -> [FilmographyEntry] {
+        entries.filter { ($0.date.map { $0 > now }) ?? false }
+    }
+
+    // Entries arrive newest-first, so grouping in order preserves that. Undated ones drop out.
+    static func byYear(in entries: [FilmographyEntry],
+                       now: Date = Date()) -> [(year: Int, entries: [FilmographyEntry])] {
+        var groups: [(year: Int, entries: [FilmographyEntry])] = []
+        for entry in entries {
+            guard let date = entry.date, date <= now else { continue }
+            let year = Calendar.current.component(.year, from: date)
+            if let index = groups.indices.last, groups[index].year == year {
+                groups[index].entries.append(entry)
+            } else {
+                groups.append((year: year, entries: [entry]))
+            }
+        }
+        return groups
+    }
+
+    func matches(query: String) -> Bool {
+        ref.title.matches(query: query) || (ref.creditRole?.matches(query: query) ?? false)
+    }
+
     /// Expands credits into rows, newest first: films as they are, a resolved TV credit split
     /// per season. Ties keep their incoming order, which is TMDB's own.
     static func entries(for credits: [MediaRef],

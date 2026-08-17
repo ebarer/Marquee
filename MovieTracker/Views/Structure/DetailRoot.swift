@@ -57,10 +57,11 @@ struct DetailRootView: View {
     @ViewBuilder
     private var destination: some View {
         switch root {
-        case .movie(let movie): MovieDetailView(movie: movie).modalDismissable()
-        case .show(let show): ShowDetailView(show: show).modalDismissable()
-        case .episode(let episode): EpisodeDetailView(episode: episode).modalDismissable()
-        case .person(let person): PersonDetailView(person: person)
+        case .movie(let movie): MovieDetailView(movie: movie).modalDismissable().detailSearchHost()
+        case .show(let show): ShowDetailView(show: show).modalDismissable().detailSearchHost()
+        case .episode(let episode):
+            EpisodeDetailView(episode: episode).modalDismissable().detailSearchHost()
+        case .person(let person): PersonDetailView(person: person).detailSearchHost()
         case .people(let list): SearchPeopleListView(list: list).modalDismissable()
         case .episodeCredits(let credit): ShowEpisodeCreditsView(credit: credit).modalDismissable()
         }

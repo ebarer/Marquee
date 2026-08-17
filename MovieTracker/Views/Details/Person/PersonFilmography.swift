@@ -61,6 +61,7 @@ struct PersonFilmography: View {
                 }
                 .tint(.appAccent)
             }
+            DetailSearchButton(request: searchRequest)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
@@ -79,28 +80,16 @@ struct PersonFilmography: View {
         entries.filter { !filter.hides($0.ref.creditKind) }
     }
 
-    /// Entries dated in the future — a film yet to open, or a season yet to air. Undated
-    /// entries are omitted entirely.
-    private var upcomingEntries: [FilmographyEntry] {
-        let now = Date()
-        return visibleEntries.filter { ($0.date.map { $0 > now }) ?? false }
+    private var searchRequest: DetailSearchRequest {
+        DetailSearchRequest(prompt: "Search Credits",
+                            groups: [DetailSearchGroup(title: "Credits",
+                                                       content: .credits(visibleEntries))])
     }
 
-    /// Released entries grouped into descending per-year sections. Entries arrive sorted
-    /// newest-first, so grouping in order preserves that ordering.
+    private var upcomingEntries: [FilmographyEntry] { FilmographyEntry.upcoming(in: visibleEntries) }
+
     private var releasedByYear: [(year: Int, entries: [FilmographyEntry])] {
-        let now = Date()
-        var groups: [(year: Int, entries: [FilmographyEntry])] = []
-        for entry in visibleEntries {
-            guard let date = entry.date, date <= now else { continue }
-            let year = Calendar.current.component(.year, from: date)
-            if let index = groups.indices.last, groups[index].year == year {
-                groups[index].entries.append(entry)
-            } else {
-                groups.append((year: year, entries: [entry]))
-            }
-        }
-        return groups
+        FilmographyEntry.byYear(in: visibleEntries)
     }
 }
 
@@ -142,6 +131,7 @@ private struct FilmographyPreview: View {
                 }
             }
             .detailDestinations()
+            .detailSearchHost()
         }
         .background(Color.appBackground)
         .modelContainer(previewModelContainer)

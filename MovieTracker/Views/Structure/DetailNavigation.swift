@@ -60,12 +60,16 @@ struct ModalCloseItem: ToolbarContent {
 private struct ModalDismissable: ViewModifier {
     @Environment(\.closeModal) private var closeModal
     @Environment(\.isModalRoot) private var isModalRoot
+    @Environment(\.detailSearch) private var detailSearch
 
+    // One branch always: swapping `content` for `content.toolbar` re-creates the page and
+    // loses its scroll position.
     func body(content: Content) -> some View {
-        if let closeModal {
-            content.toolbar { ModalCloseItem(close: closeModal, isRoot: isModalRoot) }
-        } else {
-            content
+        content.toolbar {
+            // Search puts its own cancel here.
+            if let closeModal, detailSearch?.isPresented != true {
+                ModalCloseItem(close: closeModal, isRoot: isModalRoot)
+            }
         }
     }
 }

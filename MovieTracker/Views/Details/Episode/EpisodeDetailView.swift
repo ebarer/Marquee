@@ -16,6 +16,9 @@ struct EpisodeDetailView: View {
     /// the episode's Guests and Crew. Empty if the show isn't cached.
     @State private var seriesCast: [Person] = []
 
+    @Environment(\.detailSearch) private var detailSearch
+    private var isSearching: Bool { detailSearch?.isPresented == true }
+
     var body: some View {
         GeometryReader { container in
             let navBarBottom = container.frame(in: .global).minY
@@ -43,13 +46,15 @@ struct EpisodeDetailView: View {
         .tint(tint)
         .navigationTitle(episode.name)
         .toolbarTitleDisplayMode(.inline)
-        .toolbarBackgroundVisibility(showNavTitle ? .visible : .hidden, for: .navigationBar)
+        // Both would cover the search field.
+        .toolbarBackgroundVisibility(showNavTitle && !isSearching ? .visible : .hidden,
+                                    for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text(episode.name)
                     .font(.headline)
                     .foregroundStyle(.white)
-                    .opacity(showNavTitle ? 1 : 0)
+                    .opacity(showNavTitle && !isSearching ? 1 : 0)
             }
         }
         .task { await loadTint() }

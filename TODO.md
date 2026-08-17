@@ -1,6 +1,13 @@
 
 Important:
-- [ ] 
+- [ ] Inline search polish:
+  - [ ] Cancel button on people page doesn't work
+  - [ ] People page has nav bar background, movies don't
+  - [ ] move search button into nav bar on scroll, beside filter button for person
+  - [ ] filter button should become glass
+- [ ] Swipe on tv season should mark that episode as watched, secondary action to mark entire season
+- [ ] Person: tv show cells in credits don't show watched/in progress bad
+- [ ] Person: tv show cell doesn't support orb or swipe, nor does known for
 
 Polish:
 - [ ] presenting watch list should start scrolled to the (current month - 1)
@@ -10,9 +17,11 @@ Polish:
 - [ ] Drop the `.movie` default from mediaType arguments, so a show can't pass as a movie
   - [ ] `MediaItem.init(tmdbID:mediaType:)`, `MediaItem.find(tmdbID:mediaType:)`
   - [ ] `MediaList.entry(for:_:)`, MediaList.contains(_:_:)
+- [ ] Use percent instead of out of 5
 
 Ideas:`
-- [ ] Search for role/cast inside detail pages (search bar above cast/credits section?)
+- [ ] Rotten tomatoes and IMDB links/integration?
+- [ ] List of trailers on long press?
 - [ ] Clean up person page
   - [ ] Center avatar, name below
   - [ ] Collapsing header with small avatar and name
@@ -31,3 +40,4 @@ Ideas:`
 Archive:
 - [ ] All glass buttons should morph into their confirmations/menus (SwiftUI bug)
 - [ ] Swipe-to-delete confirmations should anchor on the cell (SwiftUI bug)
+  - [ ] move search button into nav bar on scroll, beside filter button for person

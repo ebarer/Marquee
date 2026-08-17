@@ -65,9 +65,11 @@ struct CastSection: View {
                 }
                 if let category = currentCategory {
                     CastCategoryPicker(categories: availableCategories, current: category,
-                                       tint: tint, titleFor: title(for:)) { option in
-                        withAnimation(.easeInOut) { selection = option }
-                    }
+                                       tint: tint, titleFor: title(for:),
+                                       onSelect: { option in
+                                           withAnimation(.easeInOut) { selection = option }
+                                       },
+                                       accessory: { DetailSearchButton(request: searchRequest) })
                     categoryList(category)
                         // New identity per category so switching crossfades the list.
                         .id(category)
@@ -75,6 +77,17 @@ struct CastSection: View {
                 }
             }
         }
+    }
+
+    private var searchRequest: DetailSearchRequest {
+        let groups = [
+            DetailSearchGroup(title: directors.count > 1 ? leadTitlePlural : leadTitleSingular,
+                              content: .people(directors)),
+            DetailSearchGroup(title: castTitle, content: .people(castMembers)),
+            DetailSearchGroup(title: CastCategory.guests.title, content: .people(guests)),
+            DetailSearchGroup(title: CastCategory.crew.title, content: .people(crewMembers)),
+        ].filter { $0.rowCount > 0 }
+        return DetailSearchRequest(prompt: "Search Cast & Crew", groups: groups, tint: tint)
     }
 
     @ViewBuilder
@@ -113,13 +126,17 @@ struct CastSection: View {
     }
 }
 
+// Hosted, so the search button is present and tapping it zooms into search in the canvas.
 #Preview {
     NavigationStack {
         ScrollView {
             CastSection(cast: Movie.preview.team)
         }
         .detailDestinations()
+        .detailSearchHost()
     }
     .background(Color.appBackground)
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
     .preferredColorScheme(.dark)
 }
