@@ -49,12 +49,13 @@ struct ShowCreditRow: View {
         .buttonStyle(.rowPress)
     }
 
-    /// The season this row can complete, mirroring the lists: a finished season offers nothing
-    /// (there's no delete here either), and a season still airing would be completed early.
+    /// The season this row can complete, mirroring the lists: nothing on a finished season, a
+    /// caught-up show, or a season still airing, which would be completed early.
     private var completableSeason: Int? {
         guard let season, let store else { return nil }
         let number = season.season.seasonNumber
         guard !store.badges.isSeasonWatched(showID: show.id, seasonNumber: number),
+              !store.badges.isShowCaughtUp(showID: show.id),
               !season.season.episodes.contains(where: { !$0.hasAired })
         else { return nil }
         return number
@@ -151,8 +152,8 @@ struct ShowCreditRow: View {
     .preferredColorScheme(.dark)
 }
 
-// Interactive: only the second row swipes. Season 2 is finished, so it offers nothing — the same
-// as a finished season in the Watched list, where there's no "add back" and nothing to delete.
+// Interactive: only the second row swipes. A finished season offers nothing, and neither does a
+// caught-up show, whose every aired episode is already watched.
 #Preview("Swipes") {
     func show(_ id: Int, _ name: String, _ role: String) -> Show {
         var show = Show(id: id, name: name)
@@ -164,17 +165,23 @@ struct ShowCreditRow: View {
     let seasons = Season.previewSeasons
     let finished = show(4001, "The O.C.", "Alex Kelly")
     let unfinished = show(4002, "Euphoria", "Rue Bennett")
+    let caughtUp = show(4003, "Ted Lasso", "Rebecca Welton")
 
     let context = previewModelContainer.mainContext
     context.insert(WatchedSeason(showTmdbID: finished.id, seasonNumber: 2, showName: finished.name,
                                  seasonName: "Season 2", posterPath: nil, airDate: nil,
                                  episodeCount: 10))
+    let item = MediaItem(key: caughtUp.mediaKey)
+    item.showCaughtUp = true
+    context.insert(item)
+    context.insert(WatchedEpisode(showTmdbID: caughtUp.id, seasonNumber: 3, episodeNumber: 1))
 
     return NavigationStack {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ShowCreditRow(show: finished, season: .init(season: seasons[1]))
                 ShowCreditRow(show: unfinished, season: .init(season: seasons[2]))
+                ShowCreditRow(show: caughtUp, season: .init(season: seasons[2]))
             }
         }
         .swipeGridContainer()
