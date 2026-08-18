@@ -31,7 +31,7 @@ struct MovieDetailHeader: View {
                 posterFullURL: movie.posterURL(.orig),
                 tint: tint, zoomID: movie.id,
                 title: movie.title, subtitle: subtitle,
-                pendingDuration: pendingDuration,
+                pendingDetail: pendingDuration,
                 progress: progress, width: width
             ) {
                 MovieActionBar(movie: movie, lists: lists, tint: tint, isSeen: $isSeen)

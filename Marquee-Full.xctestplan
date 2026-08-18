@@ -1,7 +1,7 @@
 {
   "configurations": [
     {
-      "id": "569BD1FD-D5B7-417A-84B6-7DE3421137F7",
+      "id": "464E8C5C-89E4-412F-B645-D803EE7120DB",
       "name": "Configuration 1",
       "options": {
       }
@@ -19,7 +19,7 @@
       "parallelizable": false,
       "target": {
         "containerPath": "container:MovieTracker.xcodeproj",
-        "identifier": "1F4008B9F1A736BCAB029833",
+        "identifier": "797AE430A469D56188BFD227",
         "name": "MarqueeTests"
       }
     },
@@ -27,7 +27,7 @@
       "parallelizable": false,
       "target": {
         "containerPath": "container:MovieTracker.xcodeproj",
-        "identifier": "3FD7EC97AC3DCEFD13DC1433",
+        "identifier": "8467009189A72DFE51E07AEA",
         "name": "MarqueeUITests"
       }
     }

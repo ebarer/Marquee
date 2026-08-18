@@ -92,9 +92,8 @@ struct CollapsingBackdropHeader<Bar: View>: View {
 
                 // Liquid Glass base — the real refractive nav-bar glass, NOT a frosted grey
                 // `Material`, which only ever thins to grey and never to clear.
-                Color.clear
+                SectionHeaderGlass(tint: .black.opacity(0.35))
                     .frame(maxWidth: .infinity, minHeight: currentHeaderHeight, maxHeight: currentHeaderHeight)
-                    .glassEffect(.regular.tint(.black.opacity(0.35)), in: Rectangle())
                     .opacity(glassReveal*0.80) /// TODO:EAB: Work this 75% multiple into the glassReveal calculation directly.
 
                 // Bottom gradient grounds the header's lower edge into the app background,

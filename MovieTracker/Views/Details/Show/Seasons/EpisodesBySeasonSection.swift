@@ -13,6 +13,8 @@ struct EpisodesBySeasonSection: View {
     var tint: Color = .appAccent
     /// A season to open on (e.g. from a Watched-list season row); nil starts at season 1.
     var initialSeason: Int? = nil
+    /// Where the season header comes to rest: the bottom edge of the pinned detail header.
+    var pinLine: CGFloat = 0
     /// Owned by the detail screen so the header poster can follow the chosen season.
     @Binding var selectedSeason: Int?
 
@@ -86,7 +88,7 @@ struct EpisodesBySeasonSection: View {
 
     var body: some View {
         if !seasons.isEmpty {
-            VStack(alignment: .leading, spacing: 0) {
+            StickySection(space: "scroll", pinLine: pinLine) {
                 SeasonHeader(
                     seasons: seasons, currentSeason: currentSeason,
                     seasonName: currentSeasonObject?.name ?? "Season",
@@ -104,6 +106,7 @@ struct EpisodesBySeasonSection: View {
                         }
                     }
                 )
+            } content: {
                 content
             }
             .task(id: currentSeason) {
@@ -147,6 +150,7 @@ struct EpisodesBySeasonSection: View {
         EpisodesBySeasonSection(show: .preview, model: ShowDetailModel(),
                                 selectedSeason: $selectedSeason)
     }
+    .coordinateSpace(name: "scroll")
     .background(Color.appBackground)
     .modelContainer(previewModelContainer)
     .environment(PersistenceCoordinator(previewModelContainer.mainContext))

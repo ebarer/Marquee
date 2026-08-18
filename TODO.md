@@ -1,9 +1,5 @@
 
-Important:
-- [ ] TV season header should be sticky until scrolling to next header
-
 Project:
-- [ ] Organize Details/Common folder
 - [ ] 
 
 Polish:

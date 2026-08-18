@@ -44,8 +44,15 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     /// A transient navigation hint: which season the detail should open on (e.g. tapping
     /// a season row in the Watched list). Not part of identity.
     var initialSeason: Int?
+    /// Set only by ``TMDBWrapper/getShow(id:)``. Optional so cache entries written before it
+    /// existed decode as unknown, which is the safe answer.
+    var isFullDetail: Bool?
 
     func watch(for region: String) -> WatchAvailability? { watchByRegion?[region] }
+
+    /// Whether every field is accounted for, so a nil one means "none" rather than "not yet".
+    /// Can't be inferred from the fields: list and search records land with the same shape.
+    var isDetailPayload: Bool { isFullDetail == true }
 
     init(id: Int, name: String) {
         self.id = id

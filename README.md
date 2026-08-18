@@ -94,6 +94,25 @@ The same screens serve both shells, in two presentations: `ListTable` renders a 
 rows on iPhone, `ListGrid` as cards in a grid on iPad, both from one `ListContentView` and the
 same `SectionSnapshot`s. Search does likewise — rows on iPhone, `SearchResultsGrid` on iPad.
 
+### Pinned headers
+
+A detail screen is one `ScrollView` in the `"scroll"` coordinate space. `CollapsingBackdropHeader`
+owns the top of the page: it collapses to `CollapsedHeader.extent` below the navigation bar and
+holds there by offsetting itself at render time, since a `GeometryReader`-driven offset reads
+scroll a frame late and vibrates. `StickySection` pins a section header at that same line —
+the show's season picker — until the section's own bottom edge carries it off. Lists and search
+use SwiftUI's `pinnedViews` instead, and both routes take their chrome from
+`StickyHeaderBackground`: the page colour at rest, glass once content is scrolled under them.
+
+### Faulting in
+
+Movie and show detail open on the record the caller already had — title, poster, date — and the
+payload fills in around it, so neither screen shows a loading screen. A field is only ever
+reported empty once `isDetailPayload` says the full response landed; until then the cells,
+overview and availability stand in as bars (`MetadataPlaceholder`, `LoadingParagraph`). A failed
+fetch settles nothing, so the next pass retries. `MediaMemoryCache` returns a title fetched
+earlier in the session synchronously, which skips the pending state entirely on a revisit.
+
 ---
 
 ## Directory Hierarchy
@@ -111,8 +130,13 @@ MovieTracker/
 │   │   ├── Grid/               # ListGrid: the iPad cards
 │   │   └── Toolbar/            # Title label + switcher, sort/filter menu and its options
 │   ├── Search/                 # Search screen, people strip, iPad results grid
-│   ├── Details/                # Movie/ Show/ Person/ Episode/ + Common/ building blocks
-│   ├── Shared/                 # Images, Cards, Rows, Lists, Controls, Actions, Text
+│   ├── Details/                # One folder per screen, over shared Common/ building blocks
+│   │   ├── Movie/              # Model, view, header, action bar, metadata, related titles
+│   │   ├── Show/               # Show screen; Seasons/ holds the picker and episode rows
+│   │   ├── Person/             # Bio header, filmography, per-show episode credits
+│   │   ├── Episode/            # Episode screen and its still-image header
+│   │   └── Common/             # Header/, Sections/, Controls/, Search/, Loading/
+│   ├── Shared/                 # Images, Cards, Rows, Lists, Controls, Actions, Text, Headers
 │   ├── Settings/               # List manager (settings hub), streaming, region, cache, backup
 │   ├── Extensions/             # Color, String, DateFormatter, detailDestinations, swipe grid
 │   └── Preview/                # In-memory container + sample data for previews

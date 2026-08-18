@@ -16,7 +16,10 @@ extension TMDBWrapper {
                              value: "aggregate_credits,content_ratings,videos,watch/providers"),
             ]
         )
-        return translate(show: try decode(ShowRaw.self, from: data))
+        var show = translate(show: try decode(ShowRaw.self, from: data))
+        // The one response carrying every field, so the one place that can vouch for it.
+        show.isFullDetail = true
+        return show
     }
 
     static func getSeason(showID: Int, seasonNumber: Int) async throws -> Season {

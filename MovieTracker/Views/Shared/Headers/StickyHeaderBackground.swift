@@ -5,14 +5,16 @@
 
 import SwiftUI
 
-/// The glass a pinned header and a search field share.
+/// The glass a pinned header, a search field, and a collapsed detail header share.
 struct SectionHeaderGlass: View {
     /// Puts the glass's own bright edge outside the view's bounds, for the caller to clip.
     private static let bleed: CGFloat = 24
 
+    var tint: Color = Color.appBackground.opacity(0.55)
+
     var body: some View {
         Color.clear
-            .glassEffect(.regular.tint(Color.appBackground.opacity(0.55)), in: .rect)
+            .glassEffect(.regular.tint(tint), in: .rect)
             .padding(.vertical, -Self.bleed)
     }
 }
@@ -36,6 +38,8 @@ struct StickyHeaderBackground: ViewModifier {
     /// Where a pinned header comes to rest — the scroll view's top content inset.
     let pinLine: CGFloat
     let scrolled: Bool
+    /// How far the glass reaches above the header, to meet the bar over it.
+    var glassTop: CGFloat = 0
     var onPinnedChange: (Bool) -> Void = { _ in }
 
     @State private var pinned = false
@@ -47,12 +51,12 @@ struct StickyHeaderBackground: ViewModifier {
         content
             .background(alignment: .bottom) {
                 if wearsGlass {
-                    SectionHeaderGlass().frame(height: pinLine + height)
+                    SectionHeaderGlass().frame(height: glassTop + height)
                 } else {
                     Color.appBackground
                 }
             }
-            .clipShape(HeaderSlabClip(extraTop: wearsGlass ? pinLine : 0))
+            .clipShape(HeaderSlabClip(extraTop: wearsGlass ? glassTop : 0))
             .animation(.easeOut(duration: 0.15), value: wearsGlass)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
             .onGeometryChange(for: Bool.self) { proxy in
@@ -66,9 +70,10 @@ struct StickyHeaderBackground: ViewModifier {
 
 extension View {
     func stickyHeaderBackground(space: String, pinLine: CGFloat, scrolled: Bool,
+                                glassTop: CGFloat = 0,
                                 onPinnedChange: @escaping (Bool) -> Void = { _ in }) -> some View {
         modifier(StickyHeaderBackground(space: space, pinLine: pinLine, scrolled: scrolled,
-                                        onPinnedChange: onPinnedChange))
+                                        glassTop: glassTop, onPinnedChange: onPinnedChange))
     }
 }
 

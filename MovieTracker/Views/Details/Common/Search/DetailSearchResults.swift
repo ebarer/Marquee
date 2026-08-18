@@ -78,7 +78,8 @@ struct DetailSearchResults: View {
     private func header(for section: ResultSection) -> some View {
         if let title = section.title {
             SectionHeader(title: title, color: section.titleColor)
-                .stickyHeaderBackground(space: Self.space, pinLine: pinLine, scrolled: scrolled) { pinned in
+                .stickyHeaderBackground(space: Self.space, pinLine: pinLine, scrolled: scrolled,
+                                        glassTop: pinLine) { pinned in
                     if pinned {
                         pinnedSections.insert(section.id)
                     } else {

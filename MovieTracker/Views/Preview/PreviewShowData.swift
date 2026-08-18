@@ -39,6 +39,15 @@ extension Show {
         return show
     }
 
+    /// What a list row or search result carries: no seasons, status, network or overview, so the
+    /// detail screen opens on this and faults the rest in.
+    static var previewStub: Show {
+        var stub = Show(id: Show.preview.id, name: Show.preview.name)
+        stub.poster = Show.preview.poster
+        stub.firstAirDate = Show.preview.firstAirDate
+        return stub
+    }
+
     /// Nightfall under distinct ids so the season-watched and season-partial previews can carry
     /// different watched progress in the one shared `detailPreviewContainer` without colliding.
     static var previewWatched: Show {

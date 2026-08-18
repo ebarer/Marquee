@@ -14,26 +14,53 @@ enum MediaMemoryCache {
         let tint: Color?
     }
 
-    private static var entries: [Int: Entry] = [:]
-    private static var order: [Int] = []
-    private static let limit = 60
+    struct ShowEntry {
+        let show: Show
+        let tint: Color?
+    }
+
+    // Movies and shows keep separate buckets: a TMDB id is only unique within its media type.
+    private static var movies = Bucket<Entry>()
+    private static var shows = Bucket<ShowEntry>()
 
     static func movie(id: Int?) -> Entry? {
         guard let id else { return nil }
-        return entries[id]
+        return movies[id]
+    }
+
+    static func show(id: Int?) -> ShowEntry? {
+        guard let id else { return nil }
+        return shows[id]
     }
 
     static func store(_ movie: Movie, tint: Color?) {
-        if entries[movie.id] == nil { order.append(movie.id) }
-        entries[movie.id] = Entry(movie: movie, tint: tint)
-        while order.count > limit, let oldest = order.first {
-            order.removeFirst()
-            entries[oldest] = nil
-        }
+        movies.insert(Entry(movie: movie, tint: tint), id: movie.id)
+    }
+
+    static func store(_ show: Show, tint: Color?) {
+        shows.insert(ShowEntry(show: show, tint: tint), id: show.id)
     }
 
     static func removeAll() {
-        entries.removeAll()
-        order.removeAll()
+        movies = Bucket()
+        shows = Bucket()
+    }
+
+    private struct Bucket<Value> {
+        private static var limit: Int { 60 }
+
+        private var entries: [Int: Value] = [:]
+        private var order: [Int] = []
+
+        subscript(id: Int) -> Value? { entries[id] }
+
+        mutating func insert(_ value: Value, id: Int) {
+            if entries[id] == nil { order.append(id) }
+            entries[id] = value
+            while order.count > Self.limit, let oldest = order.first {
+                order.removeFirst()
+                entries[oldest] = nil
+            }
+        }
     }
 }

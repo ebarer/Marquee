@@ -38,6 +38,7 @@ struct ShowDetailHeader: View {
                 tint: tint, zoomID: show.id,
                 posterIdentity: seasonPosterPath,
                 title: show.name, subtitle: subtitle,
+                pendingDetail: pendingNetwork,
                 progress: progress, width: width
             ) {
                 ShowActionBar(show: show, lists: lists, tint: tint,
@@ -61,6 +62,9 @@ struct ShowDetailHeader: View {
         if let network = show.networks?.first { parts.append(network) }
         return parts.joined(separator: "  •  ")
     }
+
+    /// The network rides in on the detail payload, so a list or search record doesn't have it yet.
+    private var pendingNetwork: Bool { show.networks == nil && !show.isDetailPayload }
 }
 
 #Preview {

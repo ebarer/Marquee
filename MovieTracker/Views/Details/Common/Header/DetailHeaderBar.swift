@@ -16,9 +16,9 @@ struct DetailHeaderBar<Actions: View>: View {
     var posterIdentity: String? = nil
     let title: String
     let subtitle: String
-    /// The runtime is still unknown, so it stands in as a bar rather than flashing in beside
-    /// the date a moment later.
-    var pendingDuration: Bool = false
+    /// The subtitle's trailing field — a movie's runtime, a show's network — is still unknown,
+    /// so it stands in as a bar rather than flashing in a moment later.
+    var pendingDetail: Bool = false
     let progress: CGFloat
     let width: CGFloat
     @ViewBuilder let actions: () -> Actions
@@ -99,11 +99,11 @@ struct DetailHeaderBar<Actions: View>: View {
         .padding(Self.padding)
     }
 
-    private var showsSubtitle: Bool { !subtitle.isEmpty || pendingDuration }
+    private var showsSubtitle: Bool { !subtitle.isEmpty || pendingDetail }
 
     @ViewBuilder
     private var subtitleLine: some View {
-        if pendingDuration {
+        if pendingDetail {
             HStack(spacing: 8) {
                 if !subtitle.isEmpty {
                     Text(subtitle)
@@ -118,14 +118,14 @@ struct DetailHeaderBar<Actions: View>: View {
 }
 
 // Runtime still unknown: a bar holds its place beside the date instead of flashing in.
-#Preview("Pending duration") {
+#Preview("Pending detail") {
     GeometryReader { proxy in
         DetailHeaderBar(
             posterThumbURL: Movie.preview.posterURL(.w342),
             posterFullURL: Movie.preview.posterURL(.orig),
             tint: .appAccent, zoomID: Movie.preview.id,
             title: "The Odyssey", subtitle: "Jul 17, 2026",
-            pendingDuration: true,
+            pendingDetail: true,
             progress: 0, width: proxy.size.width
         ) {
             Color.appAccent.frame(height: 44).clipShape(Capsule())

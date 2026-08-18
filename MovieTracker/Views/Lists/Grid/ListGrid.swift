@@ -97,7 +97,8 @@ struct ListGrid: View {
         if !isShelf(section), !section.title.isEmpty {
             ListSectionLabel(section: section, tint: context.listColor)
                 .sectionHeaderInsets(horizontal: 20)
-                .stickyHeaderBackground(space: Self.space, pinLine: pinLine, scrolled: scrolled)
+                .stickyHeaderBackground(space: Self.space, pinLine: pinLine, scrolled: scrolled,
+                                        glassTop: pinLine)
         }
     }
 

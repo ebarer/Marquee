@@ -8,15 +8,43 @@ import SwiftUI
 /// Horizontal strip of show metadata cells, mirroring `MovieMetadataStrip`'s layout.
 /// Rating and watched dates are tracked per season, not at the show level.
 struct ShowMetadataStrip: View {
-    let show: Show
+    /// What the cells render, held separately because `Show`'s `==` is id-only (it doubles as a
+    /// navigation value): handed the whole struct, SwiftUI never sees the payload replace a stub.
+    struct Fields: Equatable {
+        var nextAirDate: Date?
+        var certification: String?
+        var seasonCount: Int
+        var totalEpisodes: Int
+        var rating: Double?
+        var genres: String
+
+        init(_ show: Show) {
+            nextAirDate = show.isOngoing ? show.nextAirDate : nil
+            certification = show.certification
+            seasonCount = show.seasonCount
+            totalEpisodes = show.totalEpisodes
+            rating = show.rating
+            genres = show.genresString
+        }
+    }
+
+    let fields: Fields
     var tint: Color = .appAccent
+    /// The detail payload is still in flight, so cells it fills read as placeholders.
+    var isLoading: Bool = false
+
+    init(show: Show, tint: Color = .appAccent, isLoading: Bool = false) {
+        self.fields = Fields(show)
+        self.tint = tint
+        self.isLoading = isLoading
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             MetadataHairline()
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 0) {
-                    if show.isOngoing, let nextAirDate = show.nextAirDate {
+                    if let nextAirDate = fields.nextAirDate {
                         MetadataCell(header: "NEXT EPISODE", minWidth: 80) {
                             // Tinted while it's a named day, so an episode landing this week
                             // stands out from the plain dates further off.
@@ -25,15 +53,31 @@ struct ShowMetadataStrip: View {
                         }
                         MetadataDivider()
                     }
-                    MetadataCell(header: "RATING", minWidth: 60) { certBadge }
+                    MetadataCell(header: "RATING", minWidth: 60) {
+                        value(known: fields.certification != nil, width: 26) { certBadge }
+                    }
                     MetadataDivider()
-                    MetadataCell(header: "SEASONS") { Text("\(show.seasonCount)") }
+                    MetadataCell(header: "SEASONS") {
+                        value(known: fields.seasonCount > 0, width: 12) {
+                            Text("\(fields.seasonCount)")
+                        }
+                    }
                     MetadataDivider()
-                    MetadataCell(header: "EPISODES") { Text("\(show.totalEpisodes)") }
+                    MetadataCell(header: "EPISODES") {
+                        value(known: fields.totalEpisodes > 0, width: 18) {
+                            Text("\(fields.totalEpisodes)")
+                        }
+                    }
                     MetadataDivider()
-                    MetadataCell(header: "TMDB.org") { tmdbScoreText(show.rating) }
+                    MetadataCell(header: "TMDB.org") {
+                        value(known: fields.rating != nil, width: 28) { tmdbScoreText(fields.rating) }
+                    }
                     MetadataDivider()
-                    MetadataCell(header: "GENRE", minWidth: 90) { metadataText(show.genresString) }
+                    MetadataCell(header: "GENRE", minWidth: 90) {
+                        value(known: !fields.genres.isEmpty, width: 36) {
+                            metadataText(fields.genres)
+                        }
+                    }
                 }
             }
             .scrollBounceBehavior(.always, axes: .horizontal)
@@ -41,9 +85,20 @@ struct ShowMetadataStrip: View {
         }
     }
 
+    /// A value the caller's stub can't know yet stands in as a bar, not as an empty one.
+    @ViewBuilder
+    private func value<V: View>(known: Bool, width: CGFloat,
+                                @ViewBuilder content: () -> V) -> some View {
+        if isLoading, !known {
+            MetadataPlaceholder(width: width)
+        } else {
+            content()
+        }
+    }
+
     @ViewBuilder
     private var certBadge: some View {
-        if let cert = show.certification, let image = UIImage(named: "Cert-\(cert)") {
+        if let cert = fields.certification, let image = UIImage(named: "Cert-\(cert)") {
             Image(uiImage: image)
                 .renderingMode(.template)
                 .resizable()
@@ -51,7 +106,7 @@ struct ShowMetadataStrip: View {
                 .frame(width: 44, height: 24)
                 .foregroundStyle(.white)
                 .accessibilityLabel(cert)
-        } else if let cert = show.certification, !cert.isEmpty {
+        } else if let cert = fields.certification, !cert.isEmpty {
             Text(cert)   // text fallback until the TV imageset lands
         } else {
             metadataUnavailable
@@ -87,4 +142,18 @@ struct ShowMetadataStrip: View {
     ShowMetadataStrip(show: Show.previewList[1])
         .background(Color.appBackground)
         .preferredColorScheme(.dark)
+}
+
+// A stub straight off a list row, with the payload still pending: bars, not em dashes. Must
+// match the filled strip's height — it sits under the header and can't grow as cells fill in.
+#Preview("Height across states") {
+    let bare = Show(id: 1, name: "Unknown")
+
+    return VStack(spacing: 20) {
+        ShowMetadataStrip(show: .preview)
+        ShowMetadataStrip(show: bare)
+        ShowMetadataStrip(show: bare, isLoading: true)
+    }
+    .background(Color.appBackground)
+    .preferredColorScheme(.dark)
 }

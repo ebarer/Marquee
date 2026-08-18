@@ -1,7 +1,7 @@
 {
   "configurations": [
     {
-      "id": "10D1617B-A58F-4FC4-9535-9E1A87F89EA3",
+      "id": "40C7B3B9-91F0-4FB0-9542-DFCB371D7E90",
       "name": "Configuration 1",
       "options": {
       }
@@ -22,7 +22,7 @@
       ],
       "target": {
         "containerPath": "container:MovieTracker.xcodeproj",
-        "identifier": "1F4008B9F1A736BCAB029833",
+        "identifier": "797AE430A469D56188BFD227",
         "name": "MarqueeTests"
       }
     }

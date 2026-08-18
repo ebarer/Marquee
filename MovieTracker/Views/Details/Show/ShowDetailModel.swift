@@ -20,30 +20,54 @@ final class ShowDetailModel {
     private(set) var seasonCast: [Int: [Person]] = [:]
     private(set) var loadingSeasons: Set<Int> = []
 
+    private let posterPath: String?
+    /// The payload landed; nothing left to fetch.
     private var loaded = false
-    /// Tints already derived, keyed by poster path — flipping between seasons is then free.
-    private var tintByPoster: [String: Color] = [:]
+    /// A fetch is in flight, so a re-entrant `load` doesn't start a second one.
+    private var loading = false
+
+    /// `seed` is what the caller already had on screen — name, poster, first-air date. A show
+    /// already fetched this session comes back whole from memory instead, so nothing faults in twice.
+    init(seed: Show? = nil) {
+        posterPath = seed?.poster
+        if let cached = MediaMemoryCache.show(id: seed?.id) {
+            show = cached.show
+            if let color = cached.tint { tint = color }
+            hydrateEpisodes(from: cached.show)
+        } else {
+            show = seed
+            if let color = PosterTint.cached(forPath: posterPath) { tint = color }
+        }
+    }
 
     func load(id: Int) async {
-        guard !loaded else { return }
-        loaded = true
+        guard !loaded, !loading else { return }
+        loading = true
+        defer { loading = false }
 
         if let cached = await MediaCacheStore.shared.loadShow(id: id) {
             show = cached.show
             if let color = cached.color { tint = color }
             hydrateEpisodes(from: cached.show)
+            MediaMemoryCache.store(cached.show, tint: cached.color)
         }
 
+        // A dropped request must not count as loaded, or the next pass skips the retry and the
+        // page sits on the caller's stub for good.
+        var interrupted = false
+
         do {
-            let full = try await TMDBWrapper.getShow(id: id)
+            let full = try await Self.fetchDetail(id: id)
             show = full
             invalidateGrownSeasons(against: full)
             // Cached for other surfaces only. The visible tint comes from `applyTint`, which
             // follows the poster on screen — assigning it here too would race with that.
-            let showTint = await posterTint(path: full.poster) ?? tint
+            let showTint = await PosterTint.resolve(forPath: full.poster) ?? tint
+            MediaMemoryCache.store(full, tint: showTint)
             await MediaCacheStore.shared.save(full, tint: showTint)
         } catch {
             print("Show detail load error: \(error)")
+            interrupted = true
         }
 
         do {
@@ -51,25 +75,24 @@ final class ShowDetailModel {
             recommendations = page.items.filter { $0.id != id }
         } catch {
             print("Show recommendations load error: \(error)")
+            interrupted = interrupted || error.isCancellation
         }
+
+        loaded = !interrupted
+    }
+
+    /// The detail request, held back when a UI test needs the unknown-fields window to be
+    /// long enough to observe.
+    private static func fetchDetail(id: Int) async throws -> Show {
+        if let delay = UITestHooks.detailDelay { try? await Task.sleep(for: delay) }
+        return try await TMDBWrapper.getShow(id: id)
     }
 
     /// Re-tint the page for the poster now on screen. Seasons carry their own artwork, so
     /// picking a season re-colours the screen to match the poster the header just swapped in.
     func applyTint(forPoster path: String?) async {
-        guard let color = await posterTint(path: path), color != tint else { return }
+        guard let color = await PosterTint.resolve(forPath: path), color != tint else { return }
         withAnimation(.easeInOut) { tint = color }
-    }
-
-    /// The average colour of a poster, fetched once per path.
-    private func posterTint(path: String?) async -> Color? {
-        guard let path else { return nil }
-        if let known = tintByPoster[path] { return known }
-        guard let url = TMDBWrapper.imageURL(path: path, size: PosterSize.w342.rawValue),
-              let data = try? await TMDBWrapper.imageData(from: url) else { return nil }
-        let color = Color.dominantColor(from: data)
-        tintByPoster[path] = color
-        return color
     }
 
     /// Refresh the show's list membership after a mutation. Loads the first-incomplete
@@ -126,6 +149,7 @@ extension ShowDetailModel {
     static func preview(_ show: Show, recommendations: [Show] = [], tint: Color = .appAccent) -> ShowDetailModel {
         let model = ShowDetailModel()
         model.show = show
+        model.show?.isFullDetail = true      // previews stand in for a landed payload
         model.recommendations = recommendations
         model.tint = tint
         for season in show.seasons {
@@ -135,9 +159,10 @@ extension ShowDetailModel {
         return model
     }
 
-    /// A model stuck in the loading state (no show), for the loading-screen preview.
-    static var previewLoading: ShowDetailModel {
-        let model = ShowDetailModel()
+    /// A model holding the caller's stub with the payload still pending, for the preview of
+    /// the page's faulting-in state.
+    static func previewPending(_ seed: Show) -> ShowDetailModel {
+        let model = ShowDetailModel(seed: seed)
         model.loaded = true
         return model
     }
