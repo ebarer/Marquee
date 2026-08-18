@@ -16,7 +16,7 @@ Write survivors clinically. No colloquialisms, no idiom, no personification of v
 // Bad:  Glass only earns its keep once rows are passing under the field.
 ```
 
-No comment may span three or more lines. `~/Desktop/find_long_comments.py` reports violations; expect zero before finalizing.
+No comment may span three or more lines. Run `python3 Scripts/find_long_comments.py .` before finalizing; expect zero findings.
 
 ## Architecture
 
