@@ -24,10 +24,7 @@ struct CollapsibleSectionHeader: View {
                     .foregroundStyle(tint)
                     .rotationEffect(.degrees(isExpanded ? 0 : -90))
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 4)
+            .sectionHeaderInsets()
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

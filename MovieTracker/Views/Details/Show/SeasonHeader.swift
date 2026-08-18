@@ -42,10 +42,8 @@ struct SeasonHeader: View {
             SeasonWatchedToggle(allWatched: allWatched, allAiredWatched: allAiredWatched,
                                 canToggle: canToggle, tint: tint, onToggle: onToggleAll)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 8)
+        // Tighter than the shared 10/10: two label lines beside a 44pt control.
+        .sectionHeaderInsets(top: 12, bottom: 4)
     }
 
     // A styled label backed by an embedded Picker — the menu keeps the standard checkmark

@@ -50,9 +50,7 @@ struct WhereToWatchHeader: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 4)
+        .sectionHeaderInsets()
     }
 
     /// Sized to the title it replaces, so the row doesn't jump when the answer arrives.

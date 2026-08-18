@@ -31,10 +31,7 @@ struct UpcomingSection: View {
                     .rotationEffect(.degrees(expanded ? 90 : 0))
                 Spacer(minLength: 8)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 4)
+            .sectionHeaderInsets()
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

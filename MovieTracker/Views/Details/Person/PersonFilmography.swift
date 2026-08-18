@@ -66,10 +66,7 @@ struct PersonFilmography: View {
                 .buttonStyle(.plain)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 4)
+        .sectionHeaderInsets()
         .onGeometryChange(for: Bool.self) { proxy in
             proxy.frame(in: .global).maxY <= navBarBottom
         } action: { hidden in

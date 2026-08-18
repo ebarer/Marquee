@@ -29,8 +29,7 @@ struct ListTable: View, Equatable {
     /// ScrollViewReader target for the collapsible "Older" section.
     private static let olderAnchor = "older-section"
 
-    /// A header belongs to the rows below it, so it sits closer to them than to the section above.
-    private static let headerInsets = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+    private static let headerInsets = SectionHeaderMetrics.listRowInsets
 
     private var actions: ListEntryActions {
         ListEntryActions(store: store, context: context, pending: $pending)
@@ -39,9 +38,8 @@ struct ListTable: View, Equatable {
     var body: some View {
         ScrollViewReader { proxy in
             List { sectionsContent }
-                // Default plain-list spacing reads as a break between lists; a header
-                // should sit closer to the rows it introduces than to the ones above.
-                .listSectionSpacing(10)
+                // The header's own insets set the spacing; section spacing would add to it.
+                .listSectionSpacing(0)
                 // Clear the floating tab bar so the last section isn't jammed against
                 // it, and leave slack to scroll an expanded "Older" bucket into view.
                 .contentMargins(.bottom, 24, for: .scrollContent)
@@ -95,8 +93,9 @@ struct ListTable: View, Equatable {
                     .font(.caption.weight(.semibold))
                     .rotationEffect(.degrees(olderExpanded ? 90 : 0))
             }
+            .font(.headline)
             .foregroundStyle(context.listColor)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

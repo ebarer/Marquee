@@ -16,6 +16,7 @@ struct ListSectionLabel: View {
             StarRating(display: stars, size: 15, tint: tint)
         } else {
             Text(section.title)
+                .font(.headline)
                 .foregroundStyle(tint)
         }
     }
@@ -31,9 +32,7 @@ struct ListSectionLabel: View {
     VStack(alignment: .leading, spacing: 16) {
         ListSectionLabel(section: rated, tint: ListDestination.watchedColor)
         ListSectionLabel(section: month, tint: .appAccent)
-            .font(.headline)
         ListSectionLabel(section: letter, tint: .appAccent)
-            .font(.headline)
     }
     .padding()
     .background(Color.appBackground)

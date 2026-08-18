@@ -46,10 +46,7 @@ struct CastCategoryPicker<Accessory: View>: View {
         }
         // Width goes outside the Menu, as in `SeasonHeader`: a label as wide as the iPad
         // detail sheet makes UIKit take the sheet as the menu's source and hide it.
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 4)
+        .sectionHeaderInsets()
     }
 
     private var categoryMenu: some View {

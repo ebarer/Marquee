@@ -52,9 +52,17 @@ struct SearchView: View {
             }
         } header: {
             if !featuredPeople.isEmpty {
-                Text("Movies & TV")
+                sectionHeader("Movies & TV")
             }
         }
+    }
+
+    /// The shared header metrics rather than the list's defaults.
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.headline)
+            .textCase(nil)
+            .listRowInsets(SectionHeaderMetrics.listRowInsets)
     }
 
     @ViewBuilder
@@ -114,12 +122,14 @@ struct SearchView: View {
             } header: {
                 HStack {
                     Text("Recent")
+                        .font(.headline)
                     Spacer()
                     Button("Clear") {
                         model.clearRecents()
                     }
-                    .textCase(nil)
                 }
+                .textCase(nil)
+                .listRowInsets(SectionHeaderMetrics.listRowInsets)
             }
         }
     }
@@ -141,7 +151,9 @@ struct SearchView: View {
             SearchResultsGrid(results: model.results, people: featuredPeople,
                               peopleInlineCount: model.featuredPeopleInlineCount, lists: lists)
         } else {
+            // The headers' insets set the spacing; section spacing would add to it.
             List { listContent }
+                .listSectionSpacing(0)
         }
     }
 
@@ -149,12 +161,14 @@ struct SearchView: View {
     private var listContent: some View {
         if isSearching {
             if !featuredPeople.isEmpty {
-                Section("People") {
+                Section {
                     SearchPeopleStrip(people: featuredPeople,
                                       inlineCount: model.featuredPeopleInlineCount)
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
+                } header: {
+                    sectionHeader("People")
                 }
             }
 

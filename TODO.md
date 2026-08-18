@@ -1,5 +1,6 @@
 
 Important:
+- [ ] TV season header should be sticky until scrolling to next header
 - [ ] Swipe on tv season should mark that episode as watched, secondary action to mark entire season
 
 Project:
@@ -7,9 +8,12 @@ Project:
 - [ ] 
 
 Polish:
-- [ ] tv season header should be sticky until scrolling to next header
-- [ ] add polished border around all places we see a poster
-- [ ] presenting watch list should start scrolled to the (current month - 1)
+- [ ] Grid:
+  - [ ] Introduce press state on poster
+  - [ ] Ensure placeholder doesn't show through poster on iPad
+  - [ ] Crossfade when changing featured lists
+- [ ] Add polished border around all places we see a poster
+- [ ] Presenting watch list should start scrolled to the (current month - 1)
 - [ ] iPad: when sorting by rating, etc. the header is too low, should be closer to nav bar
 - [ ] iPad: tapping selected list in sidebar should scroll to top
 - [ ] Marking as watched should save watched date if you toggle it

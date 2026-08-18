@@ -18,7 +18,8 @@ struct SearchResultsGrid: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 20) {
+            // Spacing comes from the headers' insets, matching the other lists.
+            LazyVStack(alignment: .leading, spacing: 0) {
                 if !people.isEmpty {
                     header("People")
                     SearchPeopleStrip(people: people, inlineCount: peopleInlineCount)
@@ -33,9 +34,11 @@ struct SearchResultsGrid: View {
                         }
                     }
                     .padding(.horizontal, 20)
+                    // No header above them, so the cards take its top inset.
+                    .padding(.top, people.isEmpty ? 16 : 0)
                 }
             }
-            .padding(.vertical, 16)
+            .padding(.bottom, 16)
         }
         .swipeGridContainer()
     }
@@ -67,7 +70,7 @@ struct SearchResultsGrid: View {
         Text(title)
             .font(.headline)
             .foregroundStyle(.secondary)
-            .padding(.horizontal, 20)
+            .sectionHeaderInsets(horizontal: 20)
     }
 }
 

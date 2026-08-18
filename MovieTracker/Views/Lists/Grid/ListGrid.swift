@@ -56,15 +56,15 @@ struct ListGrid: View {
 
     /// A bucket that isn't a month — a rating or an initial — holds far more titles than a shelf
     /// can show, so it flows under a plain header instead. The flat layout has no header at all.
-    @ViewBuilder
     private func stack(_ section: SectionSnapshot) -> some View {
-        if !section.title.isEmpty {
-            ListSectionLabel(section: section, tint: context.listColor)
-                .font(.headline)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .bottomLeading)
-                .padding(.horizontal, 20)
+        // Nested so the header-to-grid spacing comes from the header's insets, not the stack's.
+        VStack(spacing: 0) {
+            if !section.title.isEmpty {
+                ListSectionLabel(section: section, tint: context.listColor)
+                    .sectionHeaderInsets(horizontal: 20)
+            }
+            grid(for: section)
         }
-        grid(for: section)
     }
 
     private func grid(for section: SectionSnapshot) -> some View {

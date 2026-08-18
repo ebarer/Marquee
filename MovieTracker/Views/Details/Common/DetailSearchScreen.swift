@@ -65,6 +65,8 @@ struct DetailSearchScreen: View {
     @State private var acceptsTyping = false
     // Latched when search opens: a placement that changes mid-flight moves the field under it.
     @State private var placedAt: CGPoint?
+    @State private var safeTop: CGFloat = 0
+    @State private var fieldGlass = false
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -91,8 +93,9 @@ struct DetailSearchScreen: View {
                 .opacity(hasFlown && !isClosing ? 1 : 0)
 
             if showsResults, !isClosing {
-                DetailSearchResults(request: request, query: trimmedQuery)
-                    .padding(.top, resultsTop)
+                DetailSearchResults(request: request, query: trimmedQuery, barHeight: barHeight,
+                                    onFieldGlassChange: { fieldGlass = $0 })
+                    .ignoresSafeArea(.container, edges: .top)
                     .opacity(revealsResults ? 1 : 0)
                     // Built first, faded on the following pass: building them costs a frame, and
                     // starting the fade in the same one means it begins part-way through.
@@ -105,7 +108,16 @@ struct DetailSearchScreen: View {
                     }
             }
 
+            fieldBackdrop
             field
+        }
+        // The screen's top edge, from which the results' top inset is measured.
+        .background(alignment: .top) {
+            Color.clear
+                .frame(height: 0)
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.frame(in: .global).minY
+                } action: { safeTop = $0 }
         }
         .onAppear {
             placedAt = cancelCenter
@@ -146,6 +158,19 @@ struct DetailSearchScreen: View {
         guard contentFrame != .zero else { return DetailSearchBar.capsuleHeight + Self.fieldGap }
         return DetailSearchBar.capsuleHeight - DetailSearchBar.rowHeight + Self.fieldGap
     }
+
+    /// Glass behind the field, for lists with no section header to draw it.
+    private var fieldBackdrop: some View {
+        Color.clear
+            .frame(height: barHeight)
+            .background { DetailSearchGlass() }
+            .clipped()
+            .ignoresSafeArea(.container, edges: .top)
+            .opacity(hasFlown && !isClosing && fieldGlass ? 1 : 0)
+            .animation(.easeOut(duration: 0.15), value: fieldGlass)
+    }
+
+    private var barHeight: CGFloat { safeTop + resultsTop }
 
     // Not stacked above the results, whose size would then depend on this GeometryReader: the
     // keyboard resizes it, and every row would be rebuilt as the keyboard animated.
@@ -199,13 +224,19 @@ struct DetailSearchScreen: View {
     DetailSearchPreview(request: .previewCast, query: "qqq")
 }
 
+#Preview("Scrolled") {
+    DetailSearchPreview(request: .previewCast, scrolled: true)
+}
+
 private struct DetailSearchPreview: View {
     let request: DetailSearchRequest
     var query: String = ""
+    var scrolled = false
 
     var body: some View {
         NavigationStack {
             DetailSearchScreen(request: request, query: query, onClose: {})
+                .defaultScrollAnchor(scrolled ? .bottom : .top)
                 .detailDestinations()
                 // No host here, so no cancel button to measure: the field sits below the bar
                 // rather than in it. This previews the row, not its placement.

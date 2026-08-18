@@ -14,10 +14,18 @@ struct SectionHeader: View {
         Text(title)
             .font(.headline)
             .foregroundStyle(color)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 4)
+            .sectionHeaderInsets()
+    }
+}
+
+/// `UIListContentConfiguration.plainHeader()`: 17pt semibold, 10pt above and below, text 16pt in.
+enum SectionHeaderMetrics {
+    static let horizontal: CGFloat = 16
+    static let top: CGFloat = 10
+    static let bottom: CGFloat = 10
+
+    static var listRowInsets: EdgeInsets {
+        EdgeInsets(top: top, leading: horizontal, bottom: bottom, trailing: horizontal)
     }
 }
 
@@ -28,6 +36,15 @@ enum SectionHeaderControl {
 }
 
 extension View {
+    func sectionHeaderInsets(horizontal: CGFloat = SectionHeaderMetrics.horizontal,
+                             top: CGFloat = SectionHeaderMetrics.top,
+                             bottom: CGFloat = SectionHeaderMetrics.bottom) -> some View {
+        frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, horizontal)
+            .padding(.top, top)
+            .padding(.bottom, bottom)
+    }
+
     /// The glass circle a detail section header puts its controls in.
     func sectionHeaderControl() -> some View {
         frame(width: SectionHeaderControl.diameter, height: SectionHeaderControl.diameter)
