@@ -46,6 +46,8 @@ struct ShowDetailView: View {
     /// on the season they're in rather than season 1. Nil until then, and for a finished show.
     @State private var inProgressSeason: Int?
 
+    private var title: String { model.show?.name ?? showTitle }
+
     var body: some View {
         Group {
             if let show = model.show {
@@ -56,9 +58,15 @@ struct ShowDetailView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .tint(model.tint)
-        .navigationTitle("")
+        // The pinned header carries the title, so the nav bar stays chromeless.
+        .navigationTitle(title)
         .toolbarTitleDisplayMode(.inline)
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("") // Visually overrides the center title space
+            }
+        }
         .task {
             // Seed from the persisted facts (showID only) so the controls are correct before
             // the payload loads, rather than flipping once it's computed.

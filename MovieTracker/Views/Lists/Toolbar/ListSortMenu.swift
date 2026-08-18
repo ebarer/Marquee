@@ -14,8 +14,8 @@ struct ListSortMenu: View {
     var foldOlderMovies: Binding<Bool>?
     var foldOlderShows: Binding<Bool>?
     var mediaFilter: Binding<MediaTypeFilter>?
+    var tint: Color = .appAccent
 
-    // Used to style the button if actively filtering
     private var isFiltering: Bool {
         (mediaFilter?.wrappedValue ?? .all) != .all
     }
@@ -73,13 +73,18 @@ struct ListSortMenu: View {
                 .menuActionDismissBehavior(.disabled)
             }
         } label: {
-            Label("List Options", systemImage: isFiltering
-                  ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease")
+            Image(systemName: "line.3.horizontal.decrease")
+                .foregroundStyle(isFiltering ? Color.black : tint)
         }
+        // On the menu rather than its label, so the fill is centred on the item the bar lays out.
+        .filterOnBadge(isFiltering, size: DetailSearchBar.barItemCircle, color: tint)
         .menuActionDismissBehavior(.disabled)
+        .accessibilityLabel("List Options")
     }
 
-    private func label(_ filter: MediaTypeFilter) -> some View { Label(filter.title, systemImage: filter.symbol) }
+    private func label(_ filter: MediaTypeFilter) -> some View {
+        Label(filter.title, systemImage: filter.symbol)
+    }
 
     /// One sort-key row, ticked while selected. Re-picking the current key is a no-op, so the
     /// group behaves like a radio set; switching keys also resets the order to that key's default.
@@ -91,19 +96,6 @@ struct ListSortMenu: View {
                                  ascending = key.defaultAscending
                              })) {
             Label(key.title, systemImage: key.symbol)
-        }
-    }
-
-    @ViewBuilder
-    private func viewButton(_ option: MediaTypeFilter, filter: Binding<MediaTypeFilter>,
-                            subtitle: String? = nil) -> some View {
-        let selected = filter.wrappedValue == option
-        Button {
-            filter.wrappedValue = option
-        } label: {
-            Text(option.title)
-            if let subtitle { Text(subtitle) }
-            Image(systemName: selected ? "checkmark" : option.symbol)
         }
     }
 }
@@ -141,4 +133,41 @@ struct ListSortMenu: View {
         .padding()
         .background(Color.appBackground)
         .preferredColorScheme(.dark)
+}
+
+// In the bar it actually lives in, since the fill has to land inside the item's glass circle.
+private struct SortMenuBarPreview: View {
+    @State private var mediaFilter: MediaTypeFilter
+    @State private var ascending = true
+
+    init(mediaFilter: MediaTypeFilter) {
+        _mediaFilter = State(initialValue: mediaFilter)
+    }
+
+    var body: some View {
+        NavigationStack {
+            List(0..<20, id: \.self) { index in
+                Text("Row \(index)")
+            }
+            .listStyle(.plain)
+            .navigationTitle("Watched")
+            .toolbarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ListSortMenu(ascending: $ascending, listSortKey: .constant(.alphabetical),
+                                 mediaFilter: $mediaFilter, tint: ListDestination.watchedColor)
+                        .tint(ListDestination.watchedColor)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+#Preview("In a bar — filtering") {
+    SortMenuBarPreview(mediaFilter: .movies)
+}
+
+#Preview("In a bar — not filtering") {
+    SortMenuBarPreview(mediaFilter: .all)
 }

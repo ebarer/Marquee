@@ -51,11 +51,11 @@ struct CreditFilterMenu<Label: View>: View {
 extension View {
     /// The fill behind an active control's symbol, as Photos marks its favourite button: inset
     /// inside the control rather than covering it, and shaped like the space it sits in.
-    func filterOnBadge(_ isOn: Bool, size: CGSize) -> some View {
+    func filterOnBadge(_ isOn: Bool, size: CGSize, color: Color = .appAccent) -> some View {
         background {
             if isOn {
                 Capsule()
-                    .fill(Color.appAccent)
+                    .fill(color)
                     .frame(width: size.width, height: size.height)
             }
         }

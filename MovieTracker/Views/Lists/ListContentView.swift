@@ -99,7 +99,8 @@ struct ListContentView: View {
                                  listSortKeys: listSortKeys,
                                  foldOlderMovies: showsFoldToggle ? $foldOlderMovies : nil,
                                  foldOlderShows: showsFoldToggle ? $foldOlderShows : nil,
-                                 mediaFilter: $mediaFilter)
+                                 mediaFilter: $mediaFilter,
+                                 tint: activeColor)
                         .tint(activeColor)
                 }
             }

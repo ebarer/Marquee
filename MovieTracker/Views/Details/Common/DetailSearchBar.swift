@@ -31,6 +31,9 @@ struct DetailSearchBar: View {
     // A fill marking a bar item as active: wider than tall, so it echoes the group it sits in rather
     // than reading as a circle crammed into the end. Sized to clear the glass by 4pt all round.
     static let barItemFill = CGSize(width: 40, height: rowHeight - 8)
+    // The same fill on an item that stands alone rather than in a group, where a circle is what
+    // echoes the space it sits in.
+    static let barItemCircle = CGSize(width: rowHeight - 8, height: rowHeight - 8)
     // Where the magnifying glass sits: 12pt of padding plus half of a 20.3pt glyph. The flight
     // lines this up with the button's glyph.
     static let glyphCenter: CGFloat = 22
