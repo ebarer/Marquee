@@ -28,6 +28,7 @@ struct MediaBadgeIndex: Sendable {
     private let watched: Set<Key>
     private let watchList: Set<Key>
     private let showsWatched: Set<Int>
+    private let showsCaughtUp: Set<Int>
     private let showsInProgress: Set<Int>
     private let seasonsWatched: Set<SeasonKey>
 
@@ -36,6 +37,7 @@ struct MediaBadgeIndex: Sendable {
         watched = []
         watchList = []
         showsWatched = []
+        showsCaughtUp = []
         showsInProgress = []
         seasonsWatched = []
     }
@@ -44,16 +46,23 @@ struct MediaBadgeIndex: Sendable {
     // costs an order of magnitude more, and this runs on the main actor after each save.
     init(context: ModelContext) {
         var items = FetchDescriptor<MediaItem>(
-            predicate: #Predicate { $0.watchedAt != nil || $0.showWatched == true })
-        items.propertiesToFetch = [\.tmdbID, \.mediaTypeRaw, \.watchedAt, \.showWatched]
+            predicate: #Predicate {
+                $0.watchedAt != nil || $0.showWatched == true || $0.showCaughtUp == true
+            })
+        items.propertiesToFetch = [\.tmdbID, \.mediaTypeRaw, \.watchedAt, \.showWatched,
+                                   \.showCaughtUp]
         var watched: Set<Key> = []
         var showsWatched: Set<Int> = []
+        var showsCaughtUp: Set<Int> = []
         for item in (try? context.fetch(items)) ?? [] {
             if item.watchedAt != nil { watched.insert(Key(item.tmdbID, item.mediaType)) }
-            if item.mediaType == .tv, item.showWatched == true { showsWatched.insert(item.tmdbID) }
+            guard item.mediaType == .tv else { continue }
+            if item.showWatched == true { showsWatched.insert(item.tmdbID) }
+            if item.showCaughtUp == true { showsCaughtUp.insert(item.tmdbID) }
         }
         self.watched = watched
         self.showsWatched = showsWatched
+        self.showsCaughtUp = showsCaughtUp
 
         if let listID = MediaList.watchList(in: context)?.uuid {
             var entries = FetchDescriptor<ListEntry>(predicate: #Predicate { $0.list?.uuid == listID })
@@ -85,6 +94,10 @@ struct MediaBadgeIndex: Sendable {
 
     /// The persisted "every aired season watched" flag, matching `isShowWatchedCached`.
     func isShowWatched(showID: Int) -> Bool { showsWatched.contains(showID) }
+
+    /// Every aired episode watched with unaired ones still to come. Marking stops at today, so
+    /// there is nothing left for a mark-watched action to do.
+    func isShowCaughtUp(showID: Int) -> Bool { showsCaughtUp.contains(showID) }
 
     func hasWatchedEpisodes(showID: Int) -> Bool { showsInProgress.contains(showID) }
 

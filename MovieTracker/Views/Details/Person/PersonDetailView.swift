@@ -15,8 +15,6 @@ struct PersonDetailView: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
 
-    @Environment(\.closeModal) private var closeModal
-    @Environment(\.isModalRoot) private var isModalRoot
 
     @Namespace private var photoNamespace
     @State private var showPhoto = false
@@ -78,39 +76,23 @@ struct PersonDetailView: View {
         }
         .swipeActionsContainerIfAvailable()
         .background(Color.appBackground)
-        .navigationTitle(current.name)
-        .toolbarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(current.name)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .opacity(showNavTitle && !isSearching ? 1 : 0)
-            }
-            // Both would sit over the search field and take the taps meant for its cancel.
-            if let hiddenSearch, !isSearching {
-                DetailSearchToolbarItem(request: hiddenSearch)
-
-                if availableKinds.count > 1 {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        CreditFilterMenu(kinds: availableKinds, filter: $filter) {
-                            Image(systemName: "line.3.horizontal.decrease")
-                                .foregroundStyle(isFiltering ? Color.black : .white)
-                        }
-                        // On the menu rather than its label, so the fill is centred on the item
-                        // the bar lays out.
-                        .filterOnBadge(isFiltering, size: DetailSearchBar.barItemFill)
-                        .tint(.white)
+        .detailChrome(title: current.name, hiddenSearch: hiddenSearch) {
+            Text(current.name)
+                .font(.headline)
+                .foregroundStyle(.white)
+                .opacity(showNavTitle && !isSearching ? 1 : 0)
+        } extra: {
+            if availableKinds.count > 1 {
+                ToolbarItem(placement: .topBarTrailing) {
+                    CreditFilterMenu(kinds: availableKinds, filter: $filter) {
+                        Image(systemName: "line.3.horizontal.decrease")
+                            .foregroundStyle(isFiltering ? Color.black : .white)
                     }
+                    // On the menu rather than its label, so the fill is centred on the item
+                    // the bar lays out.
+                    .filterOnBadge(isFiltering, size: DetailSearchBar.barItemFill)
+                    .tint(.white)
                 }
-
-                // Placement spelled out: an automatic spacer doesn't land in the trailing group,
-                // so Close shares its glass with search and the filter.
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
-            }
-            // Declared here, after the filter, so Close stays the rightmost item.
-            if let closeModal, !isSearching {
-                ModalCloseItem(close: closeModal, isRoot: isModalRoot)
             }
         }
         .background {

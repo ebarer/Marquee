@@ -30,14 +30,16 @@ final class ShowDetailModel {
     /// already fetched this session comes back whole from memory instead, so nothing faults in twice.
     init(seed: Show? = nil) {
         posterPath = seed?.poster
-        if let cached = MediaMemoryCache.show(id: seed?.id) {
+        let cached = MediaMemoryCache.show(id: seed?.id)
+        if let cached {
             show = cached.show
-            if let color = cached.tint { tint = color }
             hydrateEpisodes(from: cached.show)
         } else {
             show = seed
-            if let color = PosterTint.cached(forPath: posterPath) { tint = color }
         }
+        // Only the seed's poster: it is the one the caller had on screen — a season's, off a
+        // tracked row — and the header opens on it. A show-level tint would be the wrong season.
+        if let color = PosterTint.cached(forPath: posterPath) { tint = color }
     }
 
     func load(id: Int) async {
@@ -47,8 +49,9 @@ final class ShowDetailModel {
 
         if let cached = await MediaCacheStore.shared.loadShow(id: id) {
             show = cached.show
-            if let color = cached.color { tint = color }
             hydrateEpisodes(from: cached.show)
+            // Its colour is the SHOW poster's, kept for other surfaces. Taking it here would
+            // repaint the page off the wrong artwork: the header is showing a season's poster.
             MediaMemoryCache.store(cached.show, tint: cached.color)
         }
 

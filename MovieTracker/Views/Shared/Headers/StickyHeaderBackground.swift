@@ -59,8 +59,10 @@ struct StickyHeaderBackground: ViewModifier {
             .clipShape(HeaderSlabClip(extraTop: wearsGlass ? glassTop : 0))
             .animation(.easeOut(duration: 0.15), value: wearsGlass)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+            // The reported frame carries the pin offset, so resting AT the line is what pinned
+            // means: past it, the next section has pushed this header off.
             .onGeometryChange(for: Bool.self) { proxy in
-                proxy.frame(in: .named(space)).minY <= pinLine + 0.5
+                abs(proxy.frame(in: .named(space)).minY - pinLine) <= 1
             } action: { isPinned in
                 pinned = isPinned
                 onPinnedChange(isPinned)

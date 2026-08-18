@@ -40,6 +40,9 @@ struct ShowDetailView: View {
     /// Where the viewer is up to, resolved once the show loads — a part-watched show opens
     /// on the season they're in rather than season 1. Nil until then, and for a finished show.
     @State private var inProgressSeason: Int?
+    /// Set by the cast section once its header scrolls under the pinned one, so its search
+    /// button can carry on in the bar.
+    @State private var hiddenSearch: DetailSearchRequest?
 
     /// The payload once it lands, else the caller's stub.
     private var show: Show { model.show ?? seed }
@@ -49,14 +52,8 @@ struct ShowDetailView: View {
             .background(Color.appBackground.ignoresSafeArea())
             .tint(model.tint)
             // The pinned header carries the title, so the nav bar stays chromeless.
-            .navigationTitle(show.name)
-            .toolbarTitleDisplayMode(.inline)
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("") // Visually overrides the center title space
-                }
-            }
+            .detailChrome(title: show.name, hiddenSearch: hiddenSearch)
             .task {
                 // Seed from the persisted facts (the show's id alone) so the controls are correct
                 // before the payload loads, rather than flipping once it's computed.
@@ -121,7 +118,14 @@ struct ShowDetailView: View {
                     CastSection(cast: show.creators + seasonCast(for: show), tint: model.tint,
                                 leadRole: "Creator",
                                 leadTitleSingular: "Creator", leadTitlePlural: "Creators",
-                                castTitle: "Cast", castLimit: 5)
+                                castTitle: "Cast", castLimit: 5,
+                                coveredBelow: container.frame(in: .global).minY
+                                    + CollapsedHeader.extent,
+                                onSearchHiddenChange: { request in
+                                    withAnimation(DetailSearch.barHandoff) {
+                                        hiddenSearch = request
+                                    }
+                                })
                     RecommendationsSection(shows: model.recommendations, lists: lists,
                                            tint: model.tint)
                 }

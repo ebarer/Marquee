@@ -13,6 +13,8 @@ struct ListEntryContext: Equatable {
     /// tmdbIDs on the Watch List, for the custom-list poster badge.
     let watchListIDs: Set<Int>
     let listColor: Color
+    /// Shows whose every aired episode is watched, so their swipe would have nothing to mark.
+    var caughtUpShowIDs: Set<Int> = []
 
     var isViewed: Bool { selection == .viewed }
     var isWatched: Bool { selection == .watched }
@@ -49,6 +51,8 @@ struct ListEntryContext: Equatable {
         guard entry.mediaType == .tv else { return isWatched ? .addToWatchList : .markWatched }
         // Nothing on a finished season: "add back" reads as confusing there.
         guard !isWatched else { return nil }
+        // Caught up: marking stops at today, so every action here would be a no-op.
+        guard !caughtUpShowIDs.contains(entry.tmdbID) else { return nil }
         guard let season = entry.seasonNumber else { return .toggleShowWatched }
         // Nothing to mark until the next episode has aired.
         return entry.nextEpisodeDate?.inTheFuture == true ? nil : .trackedSeason(season)

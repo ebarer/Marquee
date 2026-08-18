@@ -40,12 +40,6 @@ struct MovieDetailView: View {
     /// button can carry on in the bar.
     @State private var hiddenSearch: DetailSearchRequest?
 
-    @Environment(\.closeModal) private var closeModal
-    @Environment(\.isModalRoot) private var isModalRoot
-    @Environment(\.detailSearch) private var detailSearch
-
-    private var isSearching: Bool { detailSearch?.isPresented == true }
-
     /// The payload once it lands, else the caller's stub.
     private var movie: Movie { model.movie ?? seed }
 
@@ -61,25 +55,8 @@ struct MovieDetailView: View {
             .background(Color.appBackground.ignoresSafeArea())
             .tint(model.tint)
             // The pinned header carries the title, so the nav bar stays chromeless.
-            .navigationTitle(movie.title)
-            .toolbarTitleDisplayMode(.inline)
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("") // Visually overrides the center title space
-                }
-                // Both stand down while the search field occupies the bar's row.
-                if let hiddenSearch, !isSearching {
-                    DetailSearchToolbarItem(request: hiddenSearch)
-                    // Placement spelled out: an automatic spacer doesn't land in the trailing
-                    // group, so Close would share its glass with search.
-                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                }
-                // Rendered here, after the search button, so Close stays the rightmost item.
-                if let closeModal, !isSearching {
-                    ModalCloseItem(close: closeModal, isRoot: isModalRoot)
-                }
-            }
+            .detailChrome(title: movie.title, hiddenSearch: hiddenSearch)
             .task {
                 isSeen = seen   // Pin it, so later body passes stop querying the store.
                 await model.load(id: seed.id)

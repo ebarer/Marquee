@@ -142,7 +142,16 @@ struct ListContentView: View {
     /// The one place the per-selection facts are resolved: both presentations render from it.
     private var entryContext: ListEntryContext {
         ListEntryContext(selection: selection, isWatchList: destination.list?.isWatchList == true,
-                         watchListIDs: watchListIDs, listColor: activeColor)
+                         watchListIDs: watchListIDs, listColor: activeColor,
+                         caughtUpShowIDs: caughtUpShowIDs)
+    }
+
+    /// Read from the badge index once per pass, so no row queries the store for its swipe.
+    private var caughtUpShowIDs: Set<Int> {
+        guard let store else { return [] }
+        return Set(sectionsModel.sections.flatMap(\.entries)
+            .filter { $0.mediaType == .tv && store.badges.isShowCaughtUp(showID: $0.tmdbID) }
+            .map(\.tmdbID))
     }
 
     /// Resolved here so the rows get a value and never query the store themselves.

@@ -26,8 +26,9 @@ struct SeasonWatchedToggle: View {
             // away every episode's watched date, so that still asks.
             if allWatched { confirmingUnwatch = true } else { onToggle(true) }
         } label: {
-            Image(systemName: isCaughtUp ? "circle.tophalf.filled" : "checkmark")
-                .font(.system(size: 18, weight: .semibold))
+            // The same symbol the season swipe action marks with.
+            Image(systemName: isCaughtUp ? "circle.tophalf.filled" : "checkmark.rectangle.stack.fill")
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(allWatched || isCaughtUp ? .appBackground : tint)
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())

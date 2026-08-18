@@ -58,7 +58,7 @@ struct DetailRootView: View {
     private var destination: some View {
         switch root {
         case .movie(let movie): MovieDetailView(movie: movie).detailSearchHost()
-        case .show(let show): ShowDetailView(show: show).modalDismissable().detailSearchHost()
+        case .show(let show): ShowDetailView(show: show).detailSearchHost()
         case .episode(let episode):
             EpisodeDetailView(episode: episode).modalDismissable().detailSearchHost()
         case .person(let person): PersonDetailView(person: person).detailSearchHost()

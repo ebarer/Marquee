@@ -1,5 +1,6 @@
 
-Project:
+Next:
+- [ ] Swipe action should be disabled on TV season that is caught up
 - [ ] 
 
 Polish:
