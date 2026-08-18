@@ -68,7 +68,7 @@ struct PersonDetailView: View {
                                       isResolving: model.isResolvingCredits,
                                       navBarBottom: navBarBottom,
                                       onHeaderHiddenChange: { request in
-                                          withAnimation(.easeInOut(duration: 0.2)) {
+                                          withAnimation(DetailSearch.barHandoff) {
                                               hiddenSearch = request
                                           }
                                       })
@@ -93,18 +93,20 @@ struct PersonDetailView: View {
 
                 if availableKinds.count > 1 {
                     ToolbarItem(placement: .topBarTrailing) {
-                        // State lives in the symbol: `.glassProminent` rendered identically
-                        // either way, leaving a tap looking like it did nothing.
                         CreditFilterMenu(kinds: availableKinds, filter: $filter) {
-                            Image(systemName: isFiltering
-                                  ? "line.3.horizontal.decrease.circle.fill"
-                                  : "line.3.horizontal.decrease")
+                            Image(systemName: "line.3.horizontal.decrease")
+                                .foregroundStyle(isFiltering ? Color.black : .white)
                         }
-                        .tint(.appAccent)
+                        // On the menu rather than its label, so the fill is centred on the item
+                        // the bar lays out.
+                        .filterOnBadge(isFiltering, size: DetailSearchBar.barItemFill)
+                        .tint(.white)
                     }
                 }
 
-                ToolbarSpacer(.fixed)
+                // Placement spelled out: an automatic spacer doesn't land in the trailing group,
+                // so Close shares its glass with search and the filter.
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
             // Declared here, after the filter, so Close stays the rightmost item.
             if let closeModal, !isSearching {

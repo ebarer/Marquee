@@ -21,10 +21,16 @@ struct SectionHeader: View {
     }
 }
 
+enum SectionHeaderControl {
+    static let diameter: CGFloat = 32
+    /// The circle a control draws inside itself to show it is doing something, inset 4pt.
+    static let fill = CGSize(width: diameter - 8, height: diameter - 8)
+}
+
 extension View {
     /// The glass circle a detail section header puts its controls in.
     func sectionHeaderControl() -> some View {
-        frame(width: 32, height: 32)
+        frame(width: SectionHeaderControl.diameter, height: SectionHeaderControl.diameter)
             .contentShape(Rectangle())
             .glassEffect(.regular.interactive(), in: .circle)
     }

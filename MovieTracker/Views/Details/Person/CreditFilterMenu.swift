@@ -48,23 +48,47 @@ struct CreditFilterMenu<Label: View>: View {
     }
 }
 
+extension View {
+    /// The fill behind an active control's symbol, as Photos marks its favourite button: inset
+    /// inside the control rather than covering it, and shaped like the space it sits in.
+    func filterOnBadge(_ isOn: Bool, size: CGSize) -> some View {
+        background {
+            if isOn {
+                Capsule()
+                    .fill(Color.appAccent)
+                    .frame(width: size.width, height: size.height)
+            }
+        }
+    }
+}
+
 #Preview {
     @Previewable @State var filter = CreditFilter()
 
     VStack(spacing: 24) {
         CreditFilterMenu(kinds: [.directing, .acting, .producing, .appearance], filter: $filter) {
-            Image(systemName: filter.isOn
-                  ? "line.3.horizontal.decrease.circle.fill"
-                  : "line.3.horizontal.decrease.circle")
+            Image(systemName: "line.3.horizontal.decrease")
                 .font(.title3)
+                .foregroundStyle(filter.isOn ? Color.black : .white)
+                .filterOnBadge(filter.isOn, size: DetailSearchBar.barItemFill)
         }
-        .tint(.appAccent)
+
+        // Both states side by side, since the live one only shows whichever is stored.
+        HStack(spacing: 24) {
+            Image(systemName: "line.3.horizontal.decrease")
+                .foregroundStyle(.white)
+                .filterOnBadge(false, size: DetailSearchBar.barItemFill)
+            Image(systemName: "line.3.horizontal.decrease")
+                .foregroundStyle(Color.black)
+                .filterOnBadge(true, size: DetailSearchBar.barItemFill)
+        }
+        .font(.title3)
 
         Text(filter.isOn ? "Hiding \(filter.hidden.count)" : "Filter off")
             .font(.footnote)
             .foregroundStyle(.secondary)
     }
-    .padding()
+    .padding(40)
     .background(Color.appBackground)
     .preferredColorScheme(.dark)
 }

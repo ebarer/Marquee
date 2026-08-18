@@ -52,7 +52,10 @@ struct ModalCloseItem: ToolbarContent {
 
     var body: some ToolbarContent {
         ToolbarItem(placement: isRoot ? .topBarLeading : .topBarTrailing) {
+            // White, not the page's tint: a detail page tints itself from its artwork, and the
+            // bar's controls read as chrome rather than as part of the page.
             Button("Close", systemImage: "xmark", action: close)
+                .tint(.white)
         }
     }
 }

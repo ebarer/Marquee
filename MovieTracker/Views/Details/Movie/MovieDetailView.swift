@@ -71,7 +71,9 @@ struct MovieDetailView: View {
                 // Both stand down while the search field occupies the bar's row.
                 if let hiddenSearch, !isSearching {
                     DetailSearchToolbarItem(request: hiddenSearch)
-                    ToolbarSpacer(.fixed)
+                    // Placement spelled out: an automatic spacer doesn't land in the trailing
+                    // group, so Close would share its glass with search.
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 }
                 // Rendered here, after the search button, so Close stays the rightmost item.
                 if let closeModal, !isSearching {
@@ -130,7 +132,11 @@ struct MovieDetailView: View {
                     CastSection(cast: movie.team, tint: model.tint,
                                 coveredBelow: container.frame(in: .global).minY
                                     + CollapsedHeader.extent,
-                                onSearchHiddenChange: { hiddenSearch = $0 })
+                                onSearchHiddenChange: { request in
+                                    withAnimation(DetailSearch.barHandoff) {
+                                        hiddenSearch = request
+                                    }
+                                })
 
                     // Held back until the payload is in, so recommendations can't land ahead of
                     // the cast that belongs above them.

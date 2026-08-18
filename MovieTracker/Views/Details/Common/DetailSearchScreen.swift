@@ -51,21 +51,30 @@ struct DetailSearchRequest: Hashable {
 /// Searches one detail section's list, covering the page it was opened from.
 struct DetailSearchScreen: View {
     let request: DetailSearchRequest
-    let namespace: Namespace.ID
-    var cancelFrame: CGRect?
+    /// The control that opened search, in global coordinates. The field flies out of it.
+    var sourceFrame: CGRect?
+    var barSlot: CGRect?
+    var contentFrame: CGRect = .zero
     let isClosing: Bool
     let onClose: () -> Void
 
-    @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
-    private var lists: [MediaList]
-
     @State private var query: String
+    @State private var hasFlown = false
+    @State private var showsResults = false
+    @State private var revealsResults = false
+    @State private var acceptsTyping = false
+    // Latched when search opens: a placement that changes mid-flight moves the field under it.
+    @State private var placedAt: CGPoint?
 
-    init(request: DetailSearchRequest, namespace: Namespace.ID, cancelFrame: CGRect? = nil,
-         isClosing: Bool = false, query: String = "", onClose: @escaping () -> Void) {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    init(request: DetailSearchRequest, sourceFrame: CGRect? = nil, barSlot: CGRect? = nil,
+         contentFrame: CGRect = .zero, isClosing: Bool = false,
+         query: String = "", onClose: @escaping () -> Void) {
         self.request = request
-        self.namespace = namespace
-        self.cancelFrame = cancelFrame
+        self.sourceFrame = sourceFrame
+        self.barSlot = barSlot
+        self.contentFrame = contentFrame
         self.isClosing = isClosing
         self.onClose = onClose
         _query = State(initialValue: query)
@@ -73,121 +82,104 @@ struct DetailSearchScreen: View {
 
     private var trimmedQuery: String { query.trimmingCharacters(in: .whitespaces) }
 
-    private var matches: [DetailSearchGroup] {
-        request.groups.compactMap { $0.filtered(by: trimmedQuery) }
-    }
-
     var body: some View {
-        ZStack {
-            // Opaque immediately. A background that fades in lets the page show through the
-            // results, doubling every row.
+        ZStack(alignment: .top) {
+            // Fades with the field, so the page recedes as it arrives. Only the colour fades: the
+            // rows would have to be drawn over the page for the whole animation.
             Color.appBackground
                 .ignoresSafeArea()
-                .transition(.identity)
+                .opacity(hasFlown && !isClosing ? 1 : 0)
 
-            placedStack
-                .transition(.opacity)
+            if showsResults, !isClosing {
+                DetailSearchResults(request: request, query: trimmedQuery)
+                    .padding(.top, resultsTop)
+                    .opacity(revealsResults ? 1 : 0)
+                    // Built first, faded on the following pass: building them costs a frame, and
+                    // starting the fade in the same one means it begins part-way through.
+                    .task {
+                        withAnimation(DetailSearch.reveal) {
+                            revealsResults = true
+                        } completion: {
+                            acceptsTyping = true
+                        }
+                    }
+            }
+
+            field
+        }
+        .onAppear {
+            placedAt = cancelCenter
+            // Rows arrive after the field lands. Building them first spends the flight's frames on
+            // layout, and the first half of it never gets drawn.
+            withAnimation(DetailSearch.entry) {
+                hasFlown = true
+            } completion: {
+                showsResults = true
+            }
         }
     }
 
+    /// Where the cancel button's glass circle sits.
+    private var cancelCenter: CGPoint? {
+        guard contentFrame != .zero else { return nil }
+        if let barSlot, inBarRow(barSlot), barSlot.midX > contentFrame.midX {
+            return CGPoint(x: barSlot.midX, y: barSlot.midY)
+        }
+        let inset = DetailSearchBar.barItemInset(compact: sizeClass == .compact)
+        return CGPoint(x: contentFrame.maxX - inset - DetailSearchBar.rowHeight / 2,
+                       y: contentFrame.minY - DetailSearchBar.barHeight
+                          + DetailSearchBar.rowHeight / 2)
+    }
+
+    /// Toolbar items report a placeholder frame near the origin before they are laid out.
+    private func inBarRow(_ rect: CGRect) -> Bool {
+        rect.minX >= contentFrame.minX && rect.maxX <= contentFrame.maxX + 1
+            && rect.midY < contentFrame.minY
+    }
+
+    /// The gap between the field and the first row.
+    private static let fieldGap: CGFloat = 9
+
+    private var resultsTop: CGFloat {
+        // The field sits in the bar row and ends just above the content, so the rows start a little
+        // below its top edge. With no content region measured the field is in flow instead.
+        guard contentFrame != .zero else { return DetailSearchBar.capsuleHeight + Self.fieldGap }
+        return DetailSearchBar.capsuleHeight - DetailSearchBar.rowHeight + Self.fieldGap
+    }
+
+    // Not stacked above the results, whose size would then depend on this GeometryReader: the
+    // keyboard resizes it, and every row would be rebuilt as the keyboard animated.
     @ViewBuilder
-    private var placedStack: some View {
-        if let cancelFrame {
-            // Measured from the button's centre out: the frame reported is its glyph's, inside
-            // a glass circle the bar draws several points wider on every side.
+    private var field: some View {
+        if let cancelCenter = placedAt ?? cancelCenter {
+            // The leading margin mirrors the cancel button's own inset, so the field is concentric
+            // with the corner it sits in.
             GeometryReader { proxy in
                 let container = proxy.frame(in: .global)
                 let radius = DetailSearchBar.rowHeight / 2
-                stack(leading: max(0, container.maxX - cancelFrame.midX - radius),
-                      trailing: max(0, container.maxX - cancelFrame.midX + radius
-                                     + DetailSearchBar.cancelGap))
-                    .padding(.top, max(0, cancelFrame.midY - container.minY - radius))
+                let leading = max(0, container.maxX - cancelCenter.x - radius)
+                let trailing = max(0, container.maxX - cancelCenter.x + radius
+                                    + DetailSearchBar.cancelGap)
+                let top = max(0, cancelCenter.y - radius - container.minY)
+                bar
+                    .flying(from: sourceFrame,
+                            to: CGRect(x: container.minX + leading, y: container.minY + top,
+                                       width: max(1, container.width - leading - trailing),
+                                       height: DetailSearchBar.capsuleHeight),
+                            collapsed: !hasFlown || isClosing)
+                    .padding(.leading, leading)
+                    .padding(.trailing, trailing)
+                    .padding(.top, top)
             }
             .ignoresSafeArea(.container, edges: .top)
         } else {
-            stack(leading: 16, trailing: 16)
+            bar.padding(.horizontal, DetailSearchBar.barMargin)
         }
     }
 
-    private func stack(leading: CGFloat, trailing: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            searchBar(leading: leading, trailing: trailing)
-                // The field flies in across the results; without this it passes behind them.
-                .zIndex(1)
-            results
-        }
-    }
-
-    private func searchBar(leading: CGFloat, trailing: CGFloat) -> some View {
-        DetailSearchBar(text: $query, prompt: request.prompt,
-                        tint: request.tint, autofocus: true)
-            // The field leads on the way in and follows the button out, so the return trip
-            // happens over the page rather than under its header.
-            .matchedGeometryEffect(id: DetailSearch.morphID, in: namespace, isSource: !isClosing)
-            .padding(.leading, leading)
-            .padding(.trailing, trailing)
-            .padding(.bottom, 9)
-    }
-
-    private var results: some View {
-        ScrollView {
-            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                if matches.isEmpty {
-                    DetailSearchNoResults(query: trimmedQuery)
-                } else {
-                    ForEach(matches) { group in
-                        if request.groups.count > 1 {
-                            SectionHeader(title: group.title)
-                        }
-                        rows(for: group)
-                    }
-                }
-            }
-            .padding(.bottom, 24)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        // Otherwise the bar shows its glass edge effect as the results scroll under it.
-        .scrollEdgeEffectHidden(true, for: .top)
-    }
-
-    @ViewBuilder
-    private func rows(for group: DetailSearchGroup) -> some View {
-        switch group.content {
-        case .people(let people):
-            CastPersonList(people: people)
-        case .credits(let entries):
-            creditSections(entries)
-        }
-    }
-
-    @ViewBuilder
-    private func creditSections(_ entries: [FilmographyEntry]) -> some View {
-        let upcoming = FilmographyEntry.upcoming(in: entries)
-        let byYear = FilmographyEntry.byYear(in: entries)
-        if upcoming.isEmpty, byYear.isEmpty {
-            // No year section would show these.
-            FilmographyRows(entries: entries, lists: lists)
-        } else {
-            if !upcoming.isEmpty {
-                Section {
-                    FilmographyRows(entries: upcoming, lists: lists)
-                } header: {
-                    yearHeader("Upcoming")
-                }
-            }
-            ForEach(byYear, id: \.year) { group in
-                Section {
-                    FilmographyRows(entries: group.entries, lists: lists)
-                } header: {
-                    yearHeader(String(group.year))
-                }
-            }
-        }
-    }
-
-    private func yearHeader(_ title: String) -> some View {
-        SectionHeader(title: title, color: .appAccent)
-            .background(Color.appBackground)
+    private var bar: some View {
+        DetailSearchBar(text: $query, prompt: request.prompt, tint: request.tint,
+                        autofocus: acceptsTyping, showsPrompt: hasFlown && !isClosing)
     }
 }
 
@@ -211,12 +203,9 @@ private struct DetailSearchPreview: View {
     let request: DetailSearchRequest
     var query: String = ""
 
-    @Namespace private var namespace
-
     var body: some View {
         NavigationStack {
-            DetailSearchScreen(request: request, namespace: namespace,
-                               query: query, onClose: {})
+            DetailSearchScreen(request: request, query: query, onClose: {})
                 .detailDestinations()
                 // No host here, so no cancel button to measure: the field sits below the bar
                 // rather than in it. This previews the row, not its placement.

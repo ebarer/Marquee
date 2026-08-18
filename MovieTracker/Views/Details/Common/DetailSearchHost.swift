@@ -8,21 +8,19 @@ import SwiftUI
 /// The shared rules for searching a list on a detail screen.
 enum DetailSearch {
     static let minimumRows = 8
-    static let morphID = "detailSearchField"
-    static let crossfade = Animation.easeOut(duration: 0.22)
-
+    static let duration = 0.25
+    static let entry = Animation.easeOut(duration: duration)
+    /// The rows arriving after the field has landed.
+    static let reveal = Animation.easeOut(duration: 0.15)
+    /// A control moving between a section header and the navigation bar.
+    static let barHandoff = Animation.easeInOut(duration: 0.2)
 }
 
-/// Where a search was opened from, which decides how the field arrives.
-enum DetailSearchOrigin {
-    case body, toolbar
-}
-
-/// What a section needs to open ``DetailSearchScreen``.
+/// What a section needs to open ``DetailSearchScreen``. `open` takes the frame of the control that
+/// was tapped, which the field grows out of.
 struct DetailSearchAction {
-    let namespace: Namespace.ID
     let isPresented: Bool
-    let open: (DetailSearchRequest, DetailSearchOrigin) -> Void
+    let open: (DetailSearchRequest, CGRect?) -> Void
 }
 
 private struct DetailSearchKey: EnvironmentKey {
@@ -37,40 +35,65 @@ extension EnvironmentValues {
 }
 
 private struct DetailSearchHost: ViewModifier {
-    @Namespace private var namespace
     @State private var request: DetailSearchRequest?
-    // True while search fades out. Clearing `request` outright skips the transition entirely.
+    // True while search closes. Clearing `request` outright skips the field's return trip.
     @State private var isClosing = false
-    @State private var origin = DetailSearchOrigin.body
+    @State private var sourceFrame: CGRect?
 
-    // The field is positioned from this. Bar margins differ between a full screen and a sheet.
-    @State private var cancelFrame: CGRect?
+    // The field is positioned from these: the content region below the bar, and the trailing bar
+    // slot when a page has an item there to measure.
+    @State private var contentFrame: CGRect = .zero
+    @State private var barSlot: CGRect?
+    // The cancel button only exists while searching, so what it reports is kept for next time.
+    @State private var learnedSlot: CGRect?
+
+    @State private var pageHidden = false
+    // Separate from `isSearching` so the cancel button's arrival can animate without an animated
+    // transaction reaching the screen, which draws itself.
+    @State private var barSearching = false
 
     private var isSearching: Bool { request != nil && !isClosing }
 
     func body(content: Content) -> some View {
         ZStack {
-            // Kept mounted: unmounting the page loses its scroll position.
+            // Kept mounted: unmounting the page loses its scroll position. Stops being drawn once
+            // search has faded in over it, so the field's glass isn't re-blurring it after that.
             content
+                .opacity(pageHidden ? 0 : 1)
+                .animation(nil, value: pageHidden)
                 .allowsHitTesting(request == nil)
                 .accessibilityHidden(request != nil)
 
             if let request {
-                DetailSearchScreen(request: request, namespace: namespace, origin: origin,
-                                   cancelFrame: cancelFrame, isClosing: isClosing, onClose: close)
-                    .opacity(isClosing ? 0 : 1)
-                    // Also fires when a result is pushed over this, which ends the search.
-                    .onDisappear { self.request = nil; isClosing = false }
+                DetailSearchScreen(request: request, sourceFrame: sourceFrame, barSlot: barSlot,
+                                   contentFrame: contentFrame,
+                                   isClosing: isClosing, onClose: close)
+                    // Search animates its own arrival. A transition here would fade the whole
+                    // screen in over the page, drawing both at once.
+                    .transition(.identity)
+                    // Also fires when a result is pushed over this, which ends the search. The
+                    // cancel button has to go with it, or the page keeps it after coming back.
+                    .onDisappear {
+                        self.request = nil
+                        isClosing = false
+                        withAnimation(DetailSearch.barHandoff) { barSearching = false }
+                    }
             }
+        }
+        .onGeometryChange(for: CGRect.self) { proxy in
+            proxy.frame(in: .global)
+        } action: { contentFrame = $0 }
+        .task(id: isSearching) {
+            guard isSearching else { pageHidden = false; return }
+            try? await Task.sleep(for: .seconds(DetailSearch.duration))
+            pageHidden = true
         }
         // Don't hide the bar. That shrinks the safe area, and the movie and show headers lay
         // themselves out from it, so they jump 44pt.
         .navigationBarBackButtonHidden(isSearching)
         .toolbarBackgroundVisibility(isSearching ? .hidden : .automatic, for: .navigationBar)
         .toolbar {
-            if isSearching {
-                // Ours rather than a system item because the field's position is measured
-                // from it, which needs a glyph size we set.
+            if barSearching, request != nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: close) {
                         Image(systemName: "xmark")
@@ -79,8 +102,8 @@ private struct DetailSearchHost: ViewModifier {
                     .tint(.white)
                     .accessibilityLabel("Close Search")
                     .onGeometryChange(for: CGRect.self) { proxy in
-                        proxy.frame(in: .global)
-                    } action: { cancelFrame = $0 }
+                        DetailSearchBar.barCircle(around: proxy.frame(in: .global))
+                    } action: { report($0) }
                 }
             }
         }
@@ -88,19 +111,30 @@ private struct DetailSearchHost: ViewModifier {
     }
 
     private var action: DetailSearchAction {
-        DetailSearchAction(namespace: namespace, isPresented: isSearching) { opened, from in
+        DetailSearchAction(isPresented: isSearching) { opened, from in
             isClosing = false
-            origin = from
-            withAnimation(DetailSearch.crossfade) { request = opened }
+            sourceFrame = from
+            request = opened
+            withAnimation(DetailSearch.barHandoff) { barSearching = true }
         }
     }
 
+    /// Only the cancel button decides this. A page's own bar items aren't necessarily the trailing
+    /// one — the person page has a filter beside its search button — so their frames don't apply.
+    private func report(_ slot: CGRect) {
+        learnedSlot = slot
+        // Not while searching: moving it then drags the field mid-flight.
+        if !isSearching { barSlot = slot }
+    }
+
     private func close() {
-        withAnimation(DetailSearch.crossfade) {
+        withAnimation(DetailSearch.entry) {
             isClosing = true
+            barSearching = false
         } completion: {
             request = nil
             isClosing = false
+            barSlot = learnedSlot ?? barSlot
         }
     }
 }
@@ -116,12 +150,12 @@ struct DetailSearchButton: View {
     let request: DetailSearchRequest
 
     @Environment(\.detailSearch) private var detailSearch
+    @State private var frame: CGRect?
 
     var body: some View {
-        // Unmounted while search is up: matchedGeometryEffect needs one view per ID.
         if let detailSearch, !detailSearch.isPresented, request.isSearchable {
             Button {
-                detailSearch.open(request, .body)
+                detailSearch.open(request, frame)
             } label: {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 15, weight: .semibold))
@@ -129,7 +163,10 @@ struct DetailSearchButton: View {
                     .sectionHeaderControl()
             }
             .buttonStyle(.plain)
-            .matchedGeometryEffect(id: DetailSearch.morphID, in: detailSearch.namespace)
+            // The field grows out of this frame, so it has to be measured before the tap.
+            .onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { frame = $0 }
             .accessibilityLabel(request.prompt)
         }
     }
@@ -140,16 +177,22 @@ struct DetailSearchToolbarItem: ToolbarContent {
     let request: DetailSearchRequest
 
     @Environment(\.detailSearch) private var detailSearch
+    @State private var frame: CGRect?
 
     var body: some ToolbarContent {
         if let detailSearch, !detailSearch.isPresented, request.isSearchable {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    detailSearch.open(request, .toolbar)
+                    detailSearch.open(request, frame)
                 } label: {
                     Image(systemName: "magnifyingglass")
                 }
-                .tint(request.tint)
+                .tint(.white)
+                // The frame reported is the glyph's; the bar draws a `rowHeight` glass circle
+                // around it, which is what the field has to come out of.
+                .onGeometryChange(for: CGRect.self) { proxy in
+                    DetailSearchBar.barCircle(around: proxy.frame(in: .global))
+                } action: { frame = $0 }
                 .accessibilityLabel(request.prompt)
             }
         }

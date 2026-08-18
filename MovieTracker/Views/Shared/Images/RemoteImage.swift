@@ -48,7 +48,8 @@ struct RemoteImage<Placeholder: View>: View {
     /// Showable now, or decodable from the URL cache without a fetch.
     private var artworkOnHand: Bool {
         guard let url else { return false }
-        return RemoteImageCache.shared.image(for: url) != nil || Self.cachedData(url) != nil
+        if RemoteImageCache.shared.image(for: url) != nil { return true }
+        return URLCache.shared.cachedResponse(for: URLRequest(url: url)) != nil
     }
 
     private var fadesArrival: Bool { fadesIn && readyOnAppear == false }
@@ -68,7 +69,8 @@ struct RemoteImage<Placeholder: View>: View {
         // The animation belongs on the container: it's the arrival of the layer that fades, and
         // an opacity set in the same update a view is inserted has nothing to animate from.
         .animation(fadesArrival ? .easeInOut(duration: 0.3) : nil, value: displayed == nil)
-        .onAppear { if readyOnAppear == nil { readyOnAppear = artworkOnHand } }
+        // Only asked when it can matter: deciding it reads URLCache, a synchronous disk hit.
+        .onAppear { if fadesIn, readyOnAppear == nil { readyOnAppear = artworkOnHand } }
         .task(id: url) { await load() }
     }
 
@@ -85,14 +87,17 @@ struct RemoteImage<Placeholder: View>: View {
             loadedURL = url
             return
         }
-        let cachedBefore = Self.cachedData(url)
+        if loadedURL != url, let ui = RemoteImageCache.shared.image(for: url) {
+            apply(ui, for: url, animated: false)
+        }
+        // Before reading URLCache, which is a synchronous disk hit: a row whose artwork is decoded
+        // and already revalidated has nothing left to do, and dozens of rows appear at once.
+        if loadedURL == url, RemoteImageRevalidation.done.contains(url) { return }
 
-        if loadedURL != url {
-            if let ui = RemoteImageCache.shared.image(for: url) {
-                apply(ui, for: url, animated: false)
-            } else if let bytes = cachedBefore, let ui = await Self.decode(bytes) {
-                apply(ui, for: url, animated: false)
-            }
+        let cachedBefore = await Self.cachedData(url)
+
+        if loadedURL != url, let bytes = cachedBefore, let ui = await Self.decode(bytes) {
+            apply(ui, for: url, animated: false)
         }
         let shown = (loadedURL == url)
 
@@ -119,8 +124,12 @@ struct RemoteImage<Placeholder: View>: View {
         loadedURL = url
     }
 
-    private static func cachedData(_ url: URL) -> Data? {
-        URLCache.shared.cachedResponse(for: URLRequest(url: url))?.data
+    private static func cachedData(_ url: URL) async -> Data? {
+        // Off the main actor: reading the cache goes to disk, and a screenful of rows asking at
+        // once stalls whatever is animating.
+        await Task.detached(priority: .userInitiated) {
+            URLCache.shared.cachedResponse(for: URLRequest(url: url))?.data
+        }.value
     }
 
     private static func fetchLatest(_ url: URL) async -> Data? {

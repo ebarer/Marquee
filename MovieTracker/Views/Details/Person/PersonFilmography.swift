@@ -57,11 +57,10 @@ struct PersonFilmography: View {
             DetailSearchButton(request: searchRequest)
             if availableKinds.count > 1 {
                 CreditFilterMenu(kinds: availableKinds, filter: $filter) {
-                    Image(systemName: isFiltering
-                          ? "line.3.horizontal.decrease.circle.fill"
-                          : "line.3.horizontal.decrease")
+                    Image(systemName: "line.3.horizontal.decrease")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.appAccent)
+                        .foregroundStyle(isFiltering ? .black : Color.appAccent)
+                        .filterOnBadge(isFiltering, size: SectionHeaderControl.fill)
                         .sectionHeaderControl()
                 }
                 .buttonStyle(.plain)

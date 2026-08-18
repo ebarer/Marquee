@@ -13,18 +13,20 @@ struct FilmographyRows: View {
 
     var body: some View {
         ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-            row(entry)
+            FilmographyRow(entry: entry, lists: lists)
             if index < entries.count - 1 {
-                Rectangle()
-                    .fill(Color.appSeparator)
-                    .frame(height: 0.5)
-                    .padding(.leading, 79)
+                FilmographyRowSeparator()
             }
         }
     }
+}
 
-    @ViewBuilder
-    private func row(_ entry: FilmographyEntry) -> some View {
+/// One credit, movie or show.
+struct FilmographyRow: View {
+    let entry: FilmographyEntry
+    let lists: [MediaList]
+
+    var body: some View {
         switch entry.ref {
         case .movie(let movie): movieRow(movie)
         case .show(let show):
@@ -56,6 +58,16 @@ struct FilmographyRows: View {
         Image(systemName: "chevron.right")
             .font(.footnote.weight(.semibold))
             .foregroundStyle(.tertiary)
+    }
+}
+
+/// The hairline between credits.
+struct FilmographyRowSeparator: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.appSeparator)
+            .frame(height: 0.5)
+            .padding(.leading, 79)
     }
 }
 

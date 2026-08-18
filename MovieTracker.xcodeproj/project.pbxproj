@@ -60,6 +60,7 @@
 		CE471FFF3032E5E8000313EE /* DetailSearchHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE471FFE3032E5E8000313EE /* DetailSearchHost.swift */; };
 		CE4720013032E5FE000313EE /* DetailSearchScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4720003032E5FE000313EE /* DetailSearchScreen.swift */; };
 		CE4720033032EBAE000313EE /* DetailSearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4720023032EBAE000313EE /* DetailSearchBar.swift */; };
+		CE4720273033F5CB000313EE /* DetailSearchResults.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4720263033F5CB000313EE /* DetailSearchResults.swift */; };
 		CE56974A301C198500DF9142 /* PreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE569749301C198500DF9142 /* PreviewData.swift */; };
 		CE56974C301C199C00DF9142 /* PosterImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE56974B301C199C00DF9142 /* PosterImage.swift */; };
 		CE56974E301C199F00DF9142 /* ProfileImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE56974D301C199F00DF9142 /* ProfileImage.swift */; };
@@ -368,6 +369,7 @@
 		CE471FFE3032E5E8000313EE /* DetailSearchHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSearchHost.swift; sourceTree = "<group>"; };
 		CE4720003032E5FE000313EE /* DetailSearchScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSearchScreen.swift; sourceTree = "<group>"; };
 		CE4720023032EBAE000313EE /* DetailSearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSearchBar.swift; sourceTree = "<group>"; };
+		CE4720263033F5CB000313EE /* DetailSearchResults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailSearchResults.swift; sourceTree = "<group>"; };
 		CE569749301C198500DF9142 /* PreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewData.swift; sourceTree = "<group>"; };
 		CE56974B301C199C00DF9142 /* PosterImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PosterImage.swift; sourceTree = "<group>"; };
 		CE56974D301C199F00DF9142 /* ProfileImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileImage.swift; sourceTree = "<group>"; };
@@ -1077,6 +1079,7 @@
 				CE471FFE3032E5E8000313EE /* DetailSearchHost.swift */,
 				CE4720003032E5FE000313EE /* DetailSearchScreen.swift */,
 				CE4720023032EBAE000313EE /* DetailSearchBar.swift */,
+				CE4720263033F5CB000313EE /* DetailSearchResults.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -1683,6 +1686,7 @@
 				CE70BC64302FD41C0059F0F3 /* ListSectionLabel.swift in Sources */,
 				CE8DD38230298699006213BD /* SidebarRow.swift in Sources */,
 				CE8DD2BF302978B5006213BD /* WatchedEpisode.swift in Sources */,
+				CE4720273033F5CB000313EE /* DetailSearchResults.swift in Sources */,
 				CE4720033032EBAE000313EE /* DetailSearchBar.swift in Sources */,
 				CEFDA6FD3021E46100EFAB14 /* WatchProvider.swift in Sources */,
 				CEEAFCE83019D1D100D06E0E /* Color+ProjectColors.swift in Sources */,
@@ -2126,7 +2130,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.17.1;
+				CURRENT_PROJECT_VERSION = 2026.8.17.4;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2152,7 +2156,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.17.1;
+				CURRENT_PROJECT_VERSION = 2026.8.17.4;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -1,16 +1,14 @@
 
 Important:
-- [ ] Inline search polish:
-  - [ ] Cancel button on people page doesn't work
-  - [ ] People page has nav bar background, movies don't
-  - [ ] move search button into nav bar on scroll, beside filter button for person
-  - [ ] filter button should become glass
 - [ ] Swipe on tv season should mark that episode as watched, secondary action to mark entire season
-- [x] Person: tv show cells in credits don't show watched/in progress badge
-- [x] Person: tv show cell doesn't support orb or swipe, nor does known for
+
+Project:
+- [ ] Organize Details/Common folder
+- [ ] 
 
 Polish:
 - [ ] tv season header should be sticky until scrolling to next header
+- [ ] add polished border around all places we see a poster
 - [ ] presenting watch list should start scrolled to the (current month - 1)
 - [ ] iPad: when sorting by rating, etc. the header is too low, should be closer to nav bar
 - [ ] iPad: tapping selected list in sidebar should scroll to top
@@ -18,10 +16,10 @@ Polish:
 - [ ] Drop the `.movie` default from mediaType arguments, so a show can't pass as a movie
   - [ ] `MediaItem.init(tmdbID:mediaType:)`, `MediaItem.find(tmdbID:mediaType:)`
   - [ ] `MediaList.entry(for:_:)`, MediaList.contains(_:_:)
-- [ ] Use percent instead of out of 5
 
 Ideas:`
 - [ ] Rotten tomatoes and IMDB links/integration?
+  - [ ] Use percent instead of out of 5
 - [ ] List of trailers on long press?
 - [ ] Clean up person page
   - [ ] Center avatar, name below

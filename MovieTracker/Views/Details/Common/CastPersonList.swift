@@ -11,25 +11,43 @@ struct CastPersonList: View {
 
     var body: some View {
         LazyVStack(spacing: 0) {
-            ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
-                NavigationLink(value: person) {
-                    HStack(spacing: 8) {
-                        PersonRow(person: person)
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.rowPress)
+            CastPersonRows(people: people)
+        }
+    }
+}
 
-                if index < people.count - 1 {
-                    CastRowSeparator()
-                }
+/// The same rows without a stack of their own. A nested `LazyVStack` builds all of its rows as
+/// soon as its parent reaches it, so a caller that already has one uses this instead.
+struct CastPersonRows: View {
+    let people: [Person]
+
+    var body: some View {
+        ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
+            CastPersonRow(person: person)
+            if index < people.count - 1 {
+                CastRowSeparator()
             }
         }
+    }
+}
+
+/// One tappable person.
+struct CastPersonRow: View {
+    let person: Person
+
+    var body: some View {
+        NavigationLink(value: person) {
+            HStack(spacing: 8) {
+                PersonRow(person: person)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.rowPress)
     }
 }
 
