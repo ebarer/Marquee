@@ -26,7 +26,7 @@ struct ListsView: View {
     @State private var visibleCount: Int?
 
     var body: some View {
-        ListContentView(selection: resolvedSelection)
+        ListContentView(selection: resolvedSelection, startToken: resetToken)
             .onListVisibleCountChange { visibleCount = $0 }
             .toolbar {
                 ToolbarItem(placement: .principal) {

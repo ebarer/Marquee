@@ -14,11 +14,17 @@ struct ListGrid: View {
     let lists: [MediaList]
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+    @Environment(\.scrollTopToken) private var scrollTopToken
     @State private var pending: ListEntryConfirmation?
+    @State private var position = ScrollPosition()
+    /// Where a pinned header comes to rest, and whether anything has scrolled under it.
+    @State private var pinLine: CGFloat = 0
+    @State private var scrolled = false
 
     /// Room for a row's poster beside two lines of title and a rating.
     private static let cardWidth: CGFloat = 280
     private static let spacing: CGFloat = 16
+    private static let space = "listGrid"
 
     private var actions: ListEntryActions {
         ListEntryActions(store: store, context: context, pending: $pending)
@@ -26,23 +32,73 @@ struct ListGrid: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: Self.spacing) {
+            LazyVStack(spacing: Self.spacing, pinnedViews: [.sectionHeaders]) {
                 ForEach(sections) { section in
-                    // "Older" isn't folded here: it's one more shelf, and a shelf costs
-                    // no more room than the collapsed bookmark standing in for it would.
-                    if section.monthAndYear != nil || section.isCollapsible {
-                        shelf(for: section) {
-                            ListSectionBookmark(section: section, tint: context.listColor)
-                        }
-                    } else {
-                        stack(section)
+                    Section {
+                        content(for: section)
+                    } header: {
+                        header(for: section)
                     }
                 }
             }
-            .padding(.vertical, 20)
+            // A pinned header brings its own top inset; a shelf has none of its own.
+            .padding(.top, topPadding)
+            .padding(.bottom, 20)
         }
         .background(Color.appBackground)
+        // The header's own glass reaches the top edge, so the system's would double it.
+        .scrollEdgeEffectHidden(hasPinnedHeaders, for: .top)
+        .coordinateSpace(.named(Self.space))
+        .scrollPosition($position)
+        .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.top } action: { _, inset in
+            pinLine = inset
+        }
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top > 1
+        } action: { _, isScrolled in
+            scrolled = isScrolled
+        }
         .swipeGridContainer()
+        .onChange(of: scrollTopToken) { scrollToTop() }
+    }
+
+    private var hasPinnedHeaders: Bool {
+        sections.contains { !isShelf($0) && !$0.title.isEmpty }
+    }
+
+    /// Month buckets and the "Older" archive scroll sideways under a bookmark. "Older" isn't
+    /// folded here: a shelf costs no more room than the collapsed bookmark standing in for it.
+    private func isShelf(_ section: SectionSnapshot) -> Bool {
+        section.monthAndYear != nil || section.isCollapsible
+    }
+
+    /// A headered layout takes the header's own 10pt inset plus 2pt, which lands its title on the
+    /// sidebar's section headers — the system insets those by 12pt. A shelf has no inset of its own.
+    private var topPadding: CGFloat {
+        guard let first = sections.first, !isShelf(first), !first.title.isEmpty else { return 20 }
+        return 2
+    }
+
+    @ViewBuilder
+    private func content(for section: SectionSnapshot) -> some View {
+        if isShelf(section) {
+            shelf(for: section) {
+                ListSectionBookmark(section: section, tint: context.listColor)
+            }
+        } else {
+            grid(for: section)
+        }
+    }
+
+    /// A bucket that isn't a month — a rating or an initial — holds far more titles than a shelf
+    /// can show, so it flows under a pinned header instead. The flat layout has no header at all.
+    @ViewBuilder
+    private func header(for section: SectionSnapshot) -> some View {
+        if !isShelf(section), !section.title.isEmpty {
+            ListSectionLabel(section: section, tint: context.listColor)
+                .sectionHeaderInsets(horizontal: 20)
+                .stickyHeaderBackground(space: Self.space, pinLine: pinLine, scrolled: scrolled)
+        }
     }
 
     private func shelf(for section: SectionSnapshot,
@@ -54,16 +110,13 @@ struct ListGrid: View {
         }
     }
 
-    /// A bucket that isn't a month — a rating or an initial — holds far more titles than a shelf
-    /// can show, so it flows under a plain header instead. The flat layout has no header at all.
-    private func stack(_ section: SectionSnapshot) -> some View {
-        // Nested so the header-to-grid spacing comes from the header's insets, not the stack's.
-        VStack(spacing: 0) {
-            if !section.title.isEmpty {
-                ListSectionLabel(section: section, tint: context.listColor)
-                    .sectionHeaderInsets(horizontal: 20)
-            }
-            grid(for: section)
+    /// Scrolled by edge, not by section id, which doesn't resolve outside a long list's realised
+    /// range. Released once it lands so the edge isn't held against the next scroll.
+    private func scrollToTop() {
+        withAnimation(.easeOut(duration: 0.3)) {
+            position.scrollTo(edge: .top)
+        } completion: {
+            position = ScrollPosition()
         }
     }
 

@@ -28,3 +28,26 @@ struct SectionSnapshot: Identifiable, Sendable, Equatable {
     /// real `[.year, .month]` key.
     static let olderID = DateComponents(year: -1, month: -1)
 }
+
+extension Array where Element == SectionSnapshot {
+    /// The month section a list scrolls back to: `monthsBack` before `date`, or the nearest month
+    /// either side of it when that one has no section. Nil when no section names a month.
+    func monthSection(monthsBack: Int, from date: Date = Date(),
+                      calendar: Calendar = .current) -> SectionSnapshot? {
+        let anchor = calendar.date(byAdding: .month, value: -monthsBack, to: date) ?? date
+        guard let target = Self.monthIndex(calendar.dateComponents([.year, .month], from: anchor))
+        else { return nil }
+        return compactMap { section in
+            Self.monthIndex(section.id).map { (section: section, distance: abs($0 - target), index: $0) }
+        }
+        // Ties go to the earlier month, so a gap resolves backwards rather than into the future.
+        .min { ($0.distance, $0.index) < ($1.distance, $1.index) }?
+        .section
+    }
+
+    private static func monthIndex(_ components: DateComponents) -> Int? {
+        guard let year = components.year, let month = components.month,
+              (1...12).contains(month) else { return nil }
+        return year * 12 + month
+    }
+}

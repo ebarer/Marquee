@@ -15,8 +15,10 @@ struct FeaturedGridView: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
     @State private var model = FeaturedModel()
+    @State private var scrollPosition = ScrollPosition()
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scrollTopToken) private var scrollTopToken
 
     private var isRegularWidth: Bool { horizontalSizeClass == .regular }
 
@@ -30,45 +32,67 @@ struct FeaturedGridView: View {
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: isRegularWidth ? 24 : 16) {
-                if collection.isShow {
-                    ForEach(model.shows, id: \.id) { show in
-                        DetailLink(value: show) {
-                            ShowPosterCard(show: show)
-                        }
-                        .buttonStyle(.plain)
-                        .task {
-                            await model.loadMoreIfNeeded(currentShow: show)
-                        }
-                    }
-                } else {
-                    ForEach(model.movies, id: \.id) { movie in
-                        DetailLink(value: movie) {
-                            MoviePosterCard(movie: movie)
-                        }
-                        .buttonStyle(.plain)
-                        .movieContextMenu(for: movie, lists: lists)
-                        .task {
-                            await model.loadMoreIfNeeded(currentItem: movie)
-                        }
-                    }
-                }
+            // One grid per loaded collection, dissolving as a whole: animating the cells instead
+            // makes each new poster slide in from where it was inserted.
+            ZStack(alignment: .top) {
+                grid
+                    .id(model.loadedCollection)
+                    .transition(.opacity.animation(.easeInOut(duration: 0.3)))
             }
-            .padding(isRegularWidth ? 20 : 10)
+            .frame(maxWidth: .infinity)
         }
+        .scrollPosition($scrollPosition)
         .navigationTitle(collection.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .title) { title }
         }
         .overlay {
-            if model.isLoading && (collection.isShow ? model.shows.isEmpty : model.movies.isEmpty) {
+            if model.isLoading, model.movies.isEmpty, model.shows.isEmpty {
                 ProgressView()
             }
+        }
+        // The outgoing cards hold their place until the swap, so the top has to be taken back
+        // before it: scrolling after the crossfade would drag the new cards up through it.
+        .onChange(of: collection) { scrollPosition.scrollTo(edge: .top) }
+        .onChange(of: scrollTopToken) {
+            withAnimation(.easeOut(duration: 0.3)) { scrollPosition.scrollTo(edge: .top) }
         }
         // Idempotent for an unchanged collection, so a push → pop reappear keeps the
         // loaded movies (and scroll position) instead of reloading.
         .task(id: collection) { await model.load(collection) }
+    }
+
+    // MARK: - Cards
+
+    /// Reads the loaded collection, not the chosen one: the cards change only once the new
+    /// collection's first page has landed.
+    private var grid: some View {
+        LazyVGrid(columns: columns, spacing: isRegularWidth ? 24 : 16) {
+            if model.loadedCollection.isShow {
+                ForEach(model.shows, id: \.id) { show in
+                    DetailLink(value: show) {
+                        ShowPosterCard(show: show)
+                    }
+                    .buttonStyle(.posterPress)
+                    .task {
+                        await model.loadMoreIfNeeded(currentShow: show)
+                    }
+                }
+            } else {
+                ForEach(model.movies, id: \.id) { movie in
+                    DetailLink(value: movie) {
+                        MoviePosterCard(movie: movie)
+                    }
+                    .buttonStyle(.posterPress)
+                    .movieContextMenu(for: movie, lists: lists)
+                    .task {
+                        await model.loadMoreIfNeeded(currentItem: movie)
+                    }
+                }
+            }
+        }
+        .padding(isRegularWidth ? 20 : 10)
     }
 
     // MARK: - Title

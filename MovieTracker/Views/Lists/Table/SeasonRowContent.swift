@@ -19,6 +19,7 @@ struct SeasonRowContent: View {
                                                   size: PosterSize.w185.rawValue))
                 .frame(width: 51, height: 76)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+                .posterBorder(cornerRadius: 6)
                 .overlay {
                     if isPartial {
                         PosterSymbolBadge(symbol: "circle.tophalf.filled",

@@ -12,6 +12,9 @@ struct ListTable: View, Equatable {
     let sections: [SectionSnapshot]
     let context: ListEntryContext
     let lists: [MediaList]
+    /// Bumped by the Lists tab, tapped while already on it, which takes the Watch List to the
+    /// month it opens on.
+    var startToken: Int = 0
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
@@ -24,6 +27,7 @@ struct ListTable: View, Equatable {
     /// `lists` is excluded: comparing them would put a SwiftData read back in the render path.
     static func == (lhs: ListTable, rhs: ListTable) -> Bool {
         lhs.sections == rhs.sections && lhs.context == rhs.context
+            && lhs.startToken == rhs.startToken
     }
 
     /// ScrollViewReader target for the collapsible "Older" section.
@@ -47,7 +51,16 @@ struct ListTable: View, Equatable {
                     guard expanded else { return }
                     withAnimation { proxy.scrollTo(Self.olderAnchor, anchor: .top) }
                 }
+                .onChange(of: startToken) { scrollToOpeningMonth(proxy) }
         }
+    }
+
+    /// Back to last month in the release calendar, where what is already out sits above the line.
+    /// Animated: it only runs from the tab tap, with the rows already up.
+    private func scrollToOpeningMonth(_ proxy: ScrollViewProxy) {
+        guard context.isWatchList,
+              let start = sections.monthSection(monthsBack: 1) else { return }
+        withAnimation(.easeOut(duration: 0.35)) { proxy.scrollTo(start.id, anchor: .top) }
     }
 
     // MARK: - Sections
@@ -73,8 +86,11 @@ struct ListTable: View, Equatable {
                     Section {
                         rows(for: section.entries, hasHeader: true)
                     } header: {
+                        // The scroll target lives on the header row, not the section: a `List`
+                        // won't scroll to a section's own id.
                         ListSectionLabel(section: section, tint: context.listColor)
                             .listRowInsets(Self.headerInsets)
+                            .id(section.id)
                     }
                 }
             }

@@ -291,6 +291,45 @@ import SwiftData
         #expect(WatchedSeason.find(showTmdbID: 71, seasonNumber: 1, in: store.context) == nil)
     }
 
+    @Test func markingTheNextEpisodeAdvancesOneEpisodeAtATime() {
+        let season = airingSeason()
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 74, seasons: [season])
+
+        store.markNextEpisodeWatched(show: show, season: season)
+        #expect(store.watchedEpisodeNumbers(showID: 74, season: 1) == [1])
+        #expect(TrackedSeason.find(showTmdbID: 74, in: store.context)?.nextEpisodeDate == .utc(2024, 1, 8))
+
+        store.markNextEpisodeWatched(show: show, season: season)
+        #expect(store.watchedEpisodeNumbers(showID: 74, season: 1) == [1, 2])
+        #expect(store.isInWatchList(show))
+    }
+
+    @Test func markingTheNextEpisodeStopsAtWhatHasAired() {
+        let season = airingSeason()
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 75, seasons: [season])
+        store.markNextEpisodeWatched(show: show, season: season)
+        store.markNextEpisodeWatched(show: show, season: season)
+
+        store.markNextEpisodeWatched(show: show, season: season)   // only E3 left, unaired
+
+        #expect(store.watchedEpisodeNumbers(showID: 75, season: 1) == [1, 2])
+        #expect(WatchedSeason.find(showTmdbID: 75, seasonNumber: 1, in: store.context) == nil)
+    }
+
+    @Test func markingTheLastEpisodeCompletesTheSeason() {
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 76, seasons: [makeSeason(1, episodes: 2, airStart: .utc(2024, 1, 1))])
+        let season = show.seasons[0]
+
+        store.markNextEpisodeWatched(show: show, season: season)
+        store.markNextEpisodeWatched(show: show, season: season)
+
+        #expect(WatchedSeason.find(showTmdbID: 76, seasonNumber: 1, in: store.context) != nil)
+        #expect(TrackedSeason.find(showTmdbID: 76, in: store.context) == nil)
+    }
+
     @Test func caughtUpReadsAsCaughtUpUntilAnEpisodeIsUnwatched() async {
         let season = airingSeason()
         let store = makeInMemoryStore()

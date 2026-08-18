@@ -65,7 +65,8 @@ struct DetailSearchScreen: View {
     @State private var acceptsTyping = false
     // Latched when search opens: a placement that changes mid-flight moves the field under it.
     @State private var placedAt: CGPoint?
-    @State private var safeTop: CGFloat = 0
+    /// Where the results' own top edge sits, measured the way they are laid out.
+    @State private var resultsTop: CGFloat = 0
     @State private var fieldGlass = false
 
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -94,7 +95,8 @@ struct DetailSearchScreen: View {
 
             if showsResults, !isClosing {
                 DetailSearchResults(request: request, query: trimmedQuery, barHeight: barHeight,
-                                    onFieldGlassChange: { fieldGlass = $0 })
+                                    onFieldGlassChange: { fieldGlass = $0 },
+                                    onTopChange: { resultsTop = $0 })
                     .ignoresSafeArea(.container, edges: .top)
                     .opacity(revealsResults ? 1 : 0)
                     // Built first, faded on the following pass: building them costs a frame, and
@@ -110,14 +112,6 @@ struct DetailSearchScreen: View {
 
             fieldBackdrop
             field
-        }
-        // The screen's top edge, from which the results' top inset is measured.
-        .background(alignment: .top) {
-            Color.clear
-                .frame(height: 0)
-                .onGeometryChange(for: CGFloat.self) { proxy in
-                    proxy.frame(in: .global).minY
-                } action: { safeTop = $0 }
         }
         .onAppear {
             placedAt = cancelCenter
@@ -149,28 +143,29 @@ struct DetailSearchScreen: View {
             && rect.midY < contentFrame.minY
     }
 
-    /// The gap between the field and the first row.
-    private static let fieldGap: CGFloat = 9
-
-    private var resultsTop: CGFloat {
-        // The field sits in the bar row and ends just above the content, so the rows start a little
-        // below its top edge. With no content region measured the field is in flow instead.
-        guard contentFrame != .zero else { return DetailSearchBar.capsuleHeight + Self.fieldGap }
-        return DetailSearchBar.capsuleHeight - DetailSearchBar.rowHeight + Self.fieldGap
-    }
+    /// The gap between the field's bottom edge and the first row.
+    private static let fieldGap: CGFloat = 19
 
     /// Glass behind the field, for lists with no section header to draw it.
     private var fieldBackdrop: some View {
         Color.clear
             .frame(height: barHeight)
-            .background { DetailSearchGlass() }
+            .background { SectionHeaderGlass() }
             .clipped()
             .ignoresSafeArea(.container, edges: .top)
             .opacity(hasFlown && !isClosing && fieldGlass ? 1 : 0)
             .animation(.easeOut(duration: 0.15), value: fieldGlass)
     }
 
-    private var barHeight: CGFloat { safeTop + resultsTop }
+    /// The rows start below the field, wherever the field was placed. With no content region
+    /// measured it sits in flow at the top instead.
+    private var barHeight: CGFloat {
+        guard let center = placedAt ?? cancelCenter else {
+            return DetailSearchBar.capsuleHeight + Self.fieldGap
+        }
+        let fieldBottom = center.y - DetailSearchBar.rowHeight / 2 + DetailSearchBar.capsuleHeight
+        return max(0, fieldBottom - resultsTop + Self.fieldGap)
+    }
 
     // Not stacked above the results, whose size would then depend on this GeometryReader: the
     // keyboard resizes it, and every row would be rebuilt as the keyboard animated.

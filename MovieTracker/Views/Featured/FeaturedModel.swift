@@ -11,6 +11,9 @@ final class FeaturedModel {
     private(set) var movies: [Movie] = []
     private(set) var shows: [Show] = []
     private(set) var isLoading = false
+    /// The collection the loaded items belong to. It trails `load`'s argument until the first
+    /// page lands, which is what lets the grid cross-dissolve instead of blanking.
+    private(set) var loadedCollection: FeaturedCollection = .nowPlaying
 
     private var collection: FeaturedCollection = .nowPlaying
     private var lastPageFetched = 0
@@ -22,8 +25,6 @@ final class FeaturedModel {
         let alreadyLoaded = collection.isShow ? !shows.isEmpty : !movies.isEmpty
         guard collection != self.collection || !alreadyLoaded else { return }
         self.collection = collection
-        movies = []
-        shows = []
         lastPageFetched = 0
         totalPages = 1
         await loadNextPage()
@@ -45,22 +46,41 @@ final class FeaturedModel {
         defer { isLoading = false }
 
         let page = lastPageFetched + 1
+        // The previous collection stays on screen until this page lands, then the whole grid is
+        // replaced in one update — clearing first would blank it for the length of the fetch.
+        let replaces = page == 1
         do {
             if collection.isShow {
                 let result = try await collection.shows(page: page)
                 lastPageFetched = page
                 totalPages = result.totalPages
-                let existingIDs = Set(shows.map(\.id))
-                shows.append(contentsOf: result.items.filter { !existingIDs.contains($0.id) })
+                if replaces {
+                    replace(movies: [], shows: result.items)
+                } else {
+                    let existingIDs = Set(shows.map(\.id))
+                    shows.append(contentsOf: result.items.filter { !existingIDs.contains($0.id) })
+                }
             } else {
                 let result = try await collection.movies(page: page)
                 lastPageFetched = page
                 totalPages = result.totalPages
-                let existingIDs = Set(movies.map(\.id))
-                movies.append(contentsOf: result.items.filter { !existingIDs.contains($0.id) })
+                if replaces {
+                    replace(movies: result.items, shows: [])
+                } else {
+                    let existingIDs = Set(movies.map(\.id))
+                    movies.append(contentsOf: result.items.filter { !existingIDs.contains($0.id) })
+                }
             }
         } catch {
+            // Leaving the old items up would contradict the title, so the grid empties.
+            if replaces { replace(movies: [], shows: []) }
             print("Featured load error: \(error)")
         }
+    }
+
+    private func replace(movies: [Movie], shows: [Show]) {
+        self.movies = movies
+        self.shows = shows
+        loadedCollection = collection
     }
 }

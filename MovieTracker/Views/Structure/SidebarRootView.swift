@@ -12,13 +12,15 @@ struct SidebarRootView: View {
     @State private var presented: DetailRoot?
     /// Waits here while the outgoing modal finishes dismissing; `onDismiss` presents it.
     @State private var pending: DetailRoot?
+    @State private var scrollTopToken = 0
 
     var body: some View {
         NavigationSplitView {
-            SidebarColumn(selection: $selection)
+            SidebarColumn(selection: $selection) { scrollTopToken += 1 }
         } detail: {
             DetailColumn(selection: selection, searchModel: searchModel)
         }
+        .environment(\.scrollTopToken, scrollTopToken)
         .environment(\.openDetail, present)
         .sheet(item: $presented, onDismiss: presentPending) { root in
             NavigationStack {

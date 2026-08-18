@@ -57,14 +57,14 @@ struct PosterStrip: View {
                 MoviePosterCard(movie: movie, titleLineLimit: 3,
                                 reservesTitleSpace: false, posterWidth: 90)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.posterPress)
             .movieContextMenu(for: movie, lists: lists)
         case .show(let show):
             NavigationLink(value: destination(show)) {
                 ShowPosterCard(show: show, titleLineLimit: 3,
                                reservesTitleSpace: false, posterWidth: 90)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.posterPress)
         }
     }
 

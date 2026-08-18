@@ -7,16 +7,16 @@ import SwiftUI
 
 // MARK: - TV swipe buttons
 
-/// Leading swipe for a Watch List / custom-list season row: completes the displayed season
-/// through the id-only entry point, so reconcile then advances the row to the next one.
-struct SeasonWatchedSwipeButton: View {
+/// A full swipe fires the action and THEN springs the row back. The row keeps its identity,
+/// so hold the write until it's home or the in-place crossfade cuts the swipe short.
+private let rowSettleDelay: Duration = .milliseconds(450)
+
+/// Leading swipe for a tracked-season row: marks the season's next unwatched episode, so each
+/// swipe advances the row one episode.
+struct EpisodeWatchedSwipeButton: View {
     let showID: Int
     let seasonNumber: Int
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
-
-    /// A full swipe fires the action and THEN springs the row back. The row keeps its identity,
-    /// so hold the write until it's home or the in-place crossfade cuts the swipe short.
-    private static let rowSettleDelay: Duration = .milliseconds(450)
 
     var body: some View {
         Button {
@@ -24,13 +24,34 @@ struct SeasonWatchedSwipeButton: View {
             // Detached from this row's lifetime on purpose — the write must land even if
             // reconcile moves the row out from under us.
             Task { @MainActor in
-                try? await Task.sleep(for: Self.rowSettleDelay)
-                await store.setSeasonWatched(true, showID: showID, seasonNumber: seasonNumber)
+                try? await Task.sleep(for: rowSettleDelay)
+                await store.markNextEpisodeWatched(showID: showID, seasonNumber: seasonNumber)
             }
         } label: {
             Image(systemName: "checkmark")
         }
         .tint(.appAccent)
+    }
+}
+
+/// Secondary leading swipe for a Watch List / custom-list season row: completes the displayed
+/// season through the id-only entry point, so reconcile then advances the row to the next one.
+struct SeasonWatchedSwipeButton: View {
+    let showID: Int
+    let seasonNumber: Int
+    @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+
+    var body: some View {
+        Button {
+            guard let store else { return }
+            Task { @MainActor in
+                try? await Task.sleep(for: rowSettleDelay)
+                await store.setSeasonWatched(true, showID: showID, seasonNumber: seasonNumber)
+            }
+        } label: {
+            Image(systemName: "checkmark.rectangle.stack")
+        }
+        .tint(ListDestination.watchedColor)
     }
 }
 
@@ -74,6 +95,7 @@ struct ShowWatchedSwipeButton: View {
         List {
             ShowRow(show: .preview, showsSeasonCount: false)
                 .swipeActions(edge: .leading) {
+                    EpisodeWatchedSwipeButton(showID: Show.preview.id, seasonNumber: 1)
                     SeasonWatchedSwipeButton(showID: Show.preview.id, seasonNumber: 1)
                 }
             ShowRow(show: .preview, showsSeasonCount: false)

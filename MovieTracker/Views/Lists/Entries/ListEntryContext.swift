@@ -50,8 +50,8 @@ struct ListEntryContext: Equatable {
         // Nothing on a finished season: "add back" reads as confusing there.
         guard !isWatched else { return nil }
         guard let season = entry.seasonNumber else { return .toggleShowWatched }
-        // Completing the season would skip an episode that hasn't aired yet.
-        return entry.nextEpisodeDate?.inTheFuture == true ? nil : .completeSeason(season)
+        // Nothing to mark until the next episode has aired.
+        return entry.nextEpisodeDate?.inTheFuture == true ? nil : .trackedSeason(season)
     }
 }
 
@@ -60,6 +60,6 @@ struct ListEntryContext: Equatable {
 enum ListEntrySwipe: Equatable {
     case markWatched
     case addToWatchList
-    case completeSeason(Int)
+    case trackedSeason(Int)
     case toggleShowWatched
 }

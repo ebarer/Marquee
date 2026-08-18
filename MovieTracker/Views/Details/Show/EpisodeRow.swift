@@ -25,6 +25,7 @@ struct EpisodeRow: View {
                     PosterImage(url: episode.stillURL())
                         .frame(width: Self.stillWidth, height: Self.stillWidth * 9.0 / 16.0)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .posterBorder(cornerRadius: 6)
                         .overlay { watchedBadge }
                 }
                 .disabled(!episode.hasAired)

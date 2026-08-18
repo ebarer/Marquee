@@ -10,6 +10,7 @@ struct ListSortMenu: View {
     @Binding var ascending: Bool
     var watchedSortKey: Binding<WatchedSortKey>?
     var listSortKey: Binding<ListSortKey>?
+    var listSortKeys: [ListSortKey] = ListSortKey.allCases
     var foldOlderMovies: Binding<Bool>?
     var foldOlderShows: Binding<Bool>?
     var mediaFilter: Binding<MediaTypeFilter>?
@@ -30,10 +31,9 @@ struct ListSortMenu: View {
                 }
 
                 if let listSortKey {
-                    sortToggle(.releaseDate, selection: listSortKey)
-                    sortToggle(.dateAdded, selection: listSortKey)
-                    sortToggle(.rating, selection: listSortKey)
-                    sortToggle(.alphabetical, selection: listSortKey)
+                    ForEach(listSortKeys, id: \.self) { key in
+                        sortToggle(key, selection: listSortKey)
+                    }
                 }
             }
 

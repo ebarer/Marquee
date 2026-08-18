@@ -228,6 +228,29 @@ extension PersistenceCoordinator {
         reconcileMembership(show, episodesBySeason: [season.seasonNumber: season.episodes])
     }
 
+    /// Mark the season's next unwatched episode, then reconcile, so one swipe advances the
+    /// tracked season by an episode.
+    func markNextEpisodeWatched(show: Show, season: Season) {
+        let watched = watchedEpisodeNumbers(showID: show.id, season: season.seasonNumber)
+        guard let next = nextUnwatchedEpisode(in: season, watched: watched) else { return }
+        applyEpisode(true, showID: show.id, season: season.seasonNumber, episode: next)
+        reconcileSeason(show: show, season: season, afterLocalEdit: true)
+        reconcileMembership(show, episodesBySeason: [season.seasonNumber: season.episodes])
+    }
+
+    /// The lowest-numbered aired episode still unwatched. With no episodes loaded there are no
+    /// air dates to check, so the numbering is assumed to run 1...episodeCount.
+    private func nextUnwatchedEpisode(in season: Season, watched: Set<Int>) -> Int? {
+        guard season.episodes.isEmpty else {
+            return season.episodes
+                .filter { $0.hasAired && !watched.contains($0.episodeNumber) }
+                .map(\.episodeNumber)
+                .min()
+        }
+        guard season.episodeCount > 0 else { return nil }
+        return (1...season.episodeCount).first { !watched.contains($0) }
+    }
+
     /// Mark (or clear) an entire show, then reconcile. Marking stops at today and dates each
     /// newly-completed season to its finale; `episodesBySeason` supplies loaded episodes.
     func setShowWatched(_ watched: Bool, show: Show, episodesBySeason: [Int: [Episode]] = [:]) async {
@@ -312,6 +335,20 @@ extension PersistenceCoordinator {
               let season = show.regularSeasons.first(where: { $0.seasonNumber == seasonNumber })
         else { return }
         setSeasonWatched(watched, show: show, season: season)
+    }
+
+    /// `markNextEpisodeWatched(show:season:)` from an id-only context (a list swipe). The
+    /// season's episodes are fetched when the cached show payload carries none.
+    func markNextEpisodeWatched(showID: Int, seasonNumber: Int) async {
+        guard let show = await resolveShow(id: showID),
+              var season = show.regularSeasons.first(where: { $0.seasonNumber == seasonNumber })
+        else { return }
+        if season.episodes.isEmpty,
+           let full = try? await TMDBWrapper.getSeason(showID: showID, seasonNumber: seasonNumber) {
+            season.episodes = full.episodes
+            await MediaCacheStore.shared.cacheSeason(showID: showID, full)
+        }
+        markNextEpisodeWatched(show: show, season: season)
     }
 
     /// Mark (or clear) a whole show from an id-only context (a list swipe): resolves the

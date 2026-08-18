@@ -38,11 +38,13 @@ struct MoviePosterCard: View {
             PosterImage(url: movie.posterURL(.w342))
                 .frame(width: posterWidth, height: posterWidth * 3.0 / 2.0)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .posterBorder(cornerRadius: 8)
                 .overlay { badge }
         } else {
             PosterImage(url: movie.posterURL(.w342))
                 .aspectRatio(2.0 / 3.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .posterBorder(cornerRadius: 8)
                 .overlay { badge }
         }
     }

@@ -12,6 +12,8 @@ struct DetailSearchResults: View {
     let query: String
     var barHeight: CGFloat = 0
     var onFieldGlassChange: (Bool) -> Void = { _ in }
+    /// Reports where these rows start, which is the edge the caller measures the field against.
+    var onTopChange: (CGFloat) -> Void = { _ in }
 
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
@@ -44,6 +46,13 @@ struct DetailSearchResults: View {
         .safeAreaBar(edge: .top, spacing: 0) {
             Color.clear.frame(height: barHeight)
         }
+        // Measured from inside, where the top inset this view ignores has already been escaped.
+        .background {
+            Color.clear
+                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: {
+                    onTopChange($0)
+                }
+        }
         // The system effect blurs pinned headers along with the rows, so the glass is drawn here.
         .scrollEdgeEffectHidden(true, for: .top)
         .coordinateSpace(.named(Self.space))
@@ -68,14 +77,14 @@ struct DetailSearchResults: View {
     @ViewBuilder
     private func header(for section: ResultSection) -> some View {
         if let title = section.title {
-            ResultSectionHeader(title: title, color: section.titleColor, space: Self.space,
-                                pinLine: pinLine, scrolled: scrolled) { pinned in
-                if pinned {
-                    pinnedSections.insert(section.id)
-                } else {
-                    pinnedSections.remove(section.id)
+            SectionHeader(title: title, color: section.titleColor)
+                .stickyHeaderBackground(space: Self.space, pinLine: pinLine, scrolled: scrolled) { pinned in
+                    if pinned {
+                        pinnedSections.insert(section.id)
+                    } else {
+                        pinnedSections.remove(section.id)
+                    }
                 }
-            }
         }
     }
 
@@ -143,63 +152,6 @@ struct DetailSearchResults: View {
         entries.enumerated().map { index, entry in
             .credit(entry, separated: index < entries.count - 1)
         }
-    }
-}
-
-/// The glass shared by the field's backdrop and pinned headers.
-struct DetailSearchGlass: View {
-    /// Puts the glass's own bright edge outside the view's bounds, for the caller to clip.
-    private static let bleed: CGFloat = 24
-
-    var body: some View {
-        Color.clear
-            .glassEffect(.regular.tint(Color.appBackground.opacity(0.55)), in: .rect)
-            .padding(.vertical, -Self.bleed)
-    }
-}
-
-/// Pinned, its glass extends to the screen's top edge: two adjacent glass views leave a boundary.
-private struct ResultSectionHeader: View {
-    let title: String
-    let color: Color
-    let space: String
-    let pinLine: CGFloat
-    let scrolled: Bool
-    let onPinnedChange: (Bool) -> Void
-
-    @State private var pinned = false
-    @State private var height: CGFloat = 0
-
-    private var wearsGlass: Bool { pinned && scrolled }
-
-    var body: some View {
-        SectionHeader(title: title, color: color)
-            .background(alignment: .bottom) {
-                if wearsGlass {
-                    DetailSearchGlass().frame(height: pinLine + height)
-                } else {
-                    Color.appBackground
-                }
-            }
-            .clipShape(HeaderSlabClip(extraTop: wearsGlass ? pinLine : 0))
-            .animation(.easeOut(duration: 0.15), value: wearsGlass)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
-            .onGeometryChange(for: Bool.self) { proxy in
-                proxy.frame(in: .named(space)).minY <= pinLine + 0.5
-            } action: { isPinned in
-                pinned = isPinned
-                onPinnedChange(isPinned)
-            }
-    }
-}
-
-/// The view's bounds extended upward, so a pinned header's glass can reach the screen's top edge.
-private struct HeaderSlabClip: Shape {
-    let extraTop: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        Path(CGRect(x: rect.minX, y: rect.minY - extraTop,
-                    width: rect.width, height: rect.height + extraTop))
     }
 }
 

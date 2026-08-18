@@ -12,6 +12,8 @@ struct ListContentView: View {
     let selection: ListSelection
     var externalFilter: String? = nil
     var sortPlacement: ToolbarItemPlacement = .topBarTrailing
+    /// Bumped by the Lists tab, tapped while already on it.
+    var startToken: Int = 0
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
@@ -47,7 +49,8 @@ struct ListContentView: View {
     @ViewBuilder
     private var entries: some View {
         if showsTable {
-            ListTable(sections: sectionsModel.sections, context: entryContext, lists: lists)
+            ListTable(sections: sectionsModel.sections, context: entryContext, lists: lists,
+                      startToken: startToken)
                 .equatable()
                 .listStyle(.plain)
         } else {
@@ -93,6 +96,7 @@ struct ListContentView: View {
                     ListSortMenu(ascending: ascendingBinding,
                                  watchedSortKey: selection == .watched ? $watchedSortKey : nil,
                                  listSortKey: isRealList ? listSortKeyBinding : nil,
+                                 listSortKeys: listSortKeys,
                                  foldOlderMovies: showsFoldToggle ? $foldOlderMovies : nil,
                                  foldOlderShows: showsFoldToggle ? $foldOlderShows : nil,
                                  mediaFilter: $mediaFilter)
@@ -173,7 +177,16 @@ struct ListContentView: View {
         return false
     }
 
-    private var currentListSortKey: ListSortKey { destination.list?.sortKey ?? .releaseDate }
+    private var listSortKeys: [ListSortKey] {
+        ListSortKey.options(isWatchList: destination.list?.isWatchList == true)
+    }
+
+    /// A key the list no longer offers — a Watch List left sorted by rating — reads as the default
+    /// rather than leaving the menu with nothing ticked.
+    private var currentListSortKey: ListSortKey {
+        let stored = destination.list?.sortKey ?? .releaseDate
+        return listSortKeys.contains(stored) ? stored : .releaseDate
+    }
 
     // Folding only produces an "Older" bucket for the Watch List sorted by release
     // date; under date-added the list is flat, so the toggle would be a no-op.

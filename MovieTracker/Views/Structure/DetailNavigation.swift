@@ -29,6 +29,19 @@ extension EnvironmentValues {
     }
 }
 
+private struct ScrollTopKey: EnvironmentKey {
+    static let defaultValue = 0
+}
+
+extension EnvironmentValues {
+    /// Bumped when the sidebar's already-selected row is tapped again, which takes whatever it is
+    /// showing back to its top.
+    var scrollTopToken: Int {
+        get { self[ScrollTopKey.self] }
+        set { self[ScrollTopKey.self] = newValue }
+    }
+}
+
 private struct ModalRootKey: EnvironmentKey {
     static let defaultValue = false
 }

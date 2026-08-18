@@ -23,10 +23,7 @@ struct HeaderPoster: View {
         PosterImage(url: thumbnailURL)
             .frame(width: width, height: height)
             .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay {
-                RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(.white.opacity(0.2), lineWidth: 0.5)
-            }
+            .posterBorder(cornerRadius: 6)
             .id(identity)
             .transition(.opacity)
             .matchedTransitionSource(id: zoomID, in: zoomNamespace)

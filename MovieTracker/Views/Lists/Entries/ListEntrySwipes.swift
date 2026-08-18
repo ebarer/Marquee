@@ -18,7 +18,10 @@ struct ListEntryLeadingSwipe: View {
             WatchedSwipeButton(movie: entry.movie)
         case .addToWatchList:
             WatchListSwipeButton(movie: entry.movie)
-        case .completeSeason(let season):
+        case .trackedSeason(let season):
+            // A full swipe takes the first button, so the next episode leads and the whole season
+            // stays a deliberate second tap.
+            EpisodeWatchedSwipeButton(showID: entry.tmdbID, seasonNumber: season)
             SeasonWatchedSwipeButton(showID: entry.tmdbID, seasonNumber: season)
         case .toggleShowWatched:
             // A full swipe raises the confirmation; it doesn't sweep every episode on the spot.

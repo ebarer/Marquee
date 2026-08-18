@@ -56,9 +56,10 @@ struct RemoteImage<Placeholder: View>: View {
 
     var body: some View {
         ZStack {
-            // The placeholder stays underneath rather than cross-dissolving out: fading both
-            // at once washes the artwork out on the way in, and shows through it mid-fade.
+            // Hidden once artwork covers it: at fractional sizes it tints the image's edge
+            // pixels, ringing the poster in grey. Kept under a fading arrival, which needs it.
             placeholder()
+                .opacity(displayed == nil || fadesArrival ? 1 : 0)
             if let displayed {
                 displayed
                     .resizable()

@@ -37,6 +37,7 @@ struct ShowRow: View {
             PosterImage(url: posterOverride ?? show.posterURL(.w185))
                 .frame(width: 51, height: 76)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+                .posterBorder(cornerRadius: 6)
                 .overlay { badge }
                 .padding(.vertical, 3)
 

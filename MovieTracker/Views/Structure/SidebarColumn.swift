@@ -39,6 +39,8 @@ private struct ListRow: Identifiable {
 
 struct SidebarColumn: View {
     @Binding var selection: SidebarItem?
+    /// Called when the selected row is tapped again, whichever row it is.
+    var onReselect: () -> Void = {}
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Environment(CloudSyncMonitor.self) private var syncMonitor: CloudSyncMonitor?
@@ -66,8 +68,19 @@ struct SidebarColumn: View {
     @State private var discoverExpanded = true
     @State private var listsExpanded = true
 
+    /// A tap on the selected row writes the same value back rather than nothing, which is the
+    /// only signal that it was tapped again.
+    private var tappedSelection: Binding<SidebarItem?> {
+        Binding {
+            selection
+        } set: { tapped in
+            if let tapped, tapped == selection { onReselect() }
+            selection = tapped
+        }
+    }
+
     var body: some View {
-        List(selection: $selection) {
+        List(selection: tappedSelection) {
             Section("Discover", isExpanded: $discoverExpanded) {
                 ForEach(FeaturedCollection.allCases) { collectionRow($0) }
             }

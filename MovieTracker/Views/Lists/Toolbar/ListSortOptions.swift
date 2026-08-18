@@ -45,11 +45,16 @@ enum WatchedSortKey: String, SortKey {
     }
 }
 
-enum ListSortKey: String, SortKey {
+enum ListSortKey: String, SortKey, CaseIterable {
     case releaseDate
     case dateAdded
     case rating
     case alphabetical
+
+    /// What a list offers. Nothing on the Watch List has been watched, so nothing carries a rating.
+    static func options(isWatchList: Bool) -> [ListSortKey] {
+        isWatchList ? allCases.filter { $0 != .rating } : allCases
+    }
 
     var title: String {
         switch self {
