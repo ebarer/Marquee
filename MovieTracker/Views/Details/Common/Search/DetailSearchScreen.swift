@@ -56,13 +56,18 @@ struct DetailSearchScreen: View {
     var barSlot: CGRect?
     var contentFrame: CGRect = .zero
     let isClosing: Bool
+    @Binding var query: String
+    /// True once the interactive field has taken over in the navigation bar.
+    var fieldInBar = false
+    var focused = false
+    /// Reports where the field comes to rest, which is the width the bar's copy is given.
+    var onFieldFrame: (CGRect) -> Void = { _ in }
+    var onLanded: () -> Void = {}
     let onClose: () -> Void
 
-    @State private var query: String
     @State private var hasFlown = false
     @State private var showsResults = false
     @State private var revealsResults = false
-    @State private var acceptsTyping = false
     // Latched when search opens: a placement that changes mid-flight moves the field under it.
     @State private var placedAt: CGPoint?
     /// Where the results' own top edge sits, measured the way they are laid out.
@@ -70,18 +75,6 @@ struct DetailSearchScreen: View {
     @State private var fieldGlass = false
 
     @Environment(\.horizontalSizeClass) private var sizeClass
-
-    init(request: DetailSearchRequest, sourceFrame: CGRect? = nil, barSlot: CGRect? = nil,
-         contentFrame: CGRect = .zero, isClosing: Bool = false,
-         query: String = "", onClose: @escaping () -> Void) {
-        self.request = request
-        self.sourceFrame = sourceFrame
-        self.barSlot = barSlot
-        self.contentFrame = contentFrame
-        self.isClosing = isClosing
-        self.onClose = onClose
-        _query = State(initialValue: query)
-    }
 
     private var trimmedQuery: String { query.trimmingCharacters(in: .whitespaces) }
 
@@ -105,7 +98,7 @@ struct DetailSearchScreen: View {
                         withAnimation(DetailSearch.reveal) {
                             revealsResults = true
                         } completion: {
-                            acceptsTyping = true
+                            onLanded()
                         }
                     }
             }
@@ -181,15 +174,22 @@ struct DetailSearchScreen: View {
                 let trailing = max(0, container.maxX - cancelCenter.x + radius
                                     + DetailSearchBar.cancelGap)
                 let top = max(0, cancelCenter.y - radius - container.minY)
-                bar
-                    .flying(from: sourceFrame,
-                            to: CGRect(x: container.minX + leading, y: container.minY + top,
-                                       width: max(1, container.width - leading - trailing),
-                                       height: DetailSearchBar.capsuleHeight),
-                            collapsed: !hasFlown || isClosing)
-                    .padding(.leading, leading)
-                    .padding(.trailing, trailing)
-                    .padding(.top, top)
+                let target = CGRect(x: container.minX + leading, y: container.minY + top,
+                                    width: max(1, container.width - leading - trailing),
+                                    height: DetailSearchBar.capsuleHeight)
+                Group {
+                    // Unmounted once the bar has its own copy, rather than merely hidden: a
+                    // representable's field stays in the accessibility tree either way.
+                    if !fieldInBar {
+                        bar.flying(from: sourceFrame, to: target,
+                                   collapsed: !hasFlown || isClosing)
+                    }
+                }
+                .frame(height: DetailSearchBar.capsuleHeight)
+                .padding(.leading, leading)
+                .padding(.trailing, trailing)
+                .padding(.top, top)
+                .task(id: target) { onFieldFrame(target) }
             }
             .ignoresSafeArea(.container, edges: .top)
         } else {
@@ -197,9 +197,10 @@ struct DetailSearchScreen: View {
         }
     }
 
+    /// The flying copy. It only takes focus where there is no bar to hand the field to.
     private var bar: some View {
         DetailSearchBar(text: $query, prompt: request.prompt, tint: request.tint,
-                        autofocus: acceptsTyping, showsPrompt: hasFlown && !isClosing)
+                        focused: focused, showsPrompt: hasFlown && !isClosing)
     }
 }
 
@@ -228,9 +229,12 @@ private struct DetailSearchPreview: View {
     var query: String = ""
     var scrolled = false
 
+    @State private var typed = ""
+
     var body: some View {
         NavigationStack {
-            DetailSearchScreen(request: request, query: query, onClose: {})
+            DetailSearchScreen(request: request, isClosing: false, query: $typed, onClose: {})
+                .onAppear { typed = query }
                 .defaultScrollAnchor(scrolled ? .bottom : .top)
                 .detailDestinations()
                 // No host here, so no cancel button to measure: the field sits below the bar

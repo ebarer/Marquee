@@ -7,7 +7,8 @@ import SwiftUI
 
 /// The glass a pinned header, a search field, and a collapsed detail header share.
 struct SectionHeaderGlass: View {
-    /// Puts the glass's own bright edge outside the view's bounds, for the caller to clip.
+    /// Puts the glass's own refracting edge outside the view's bounds on all four sides, for the
+    /// caller to clip.
     private static let bleed: CGFloat = 24
 
     var tint: Color = Color.appBackground.opacity(0.55)
@@ -15,7 +16,7 @@ struct SectionHeaderGlass: View {
     var body: some View {
         Color.clear
             .glassEffect(.regular.tint(tint), in: .rect)
-            .padding(.vertical, -Self.bleed)
+            .padding(-Self.bleed)
     }
 }
 

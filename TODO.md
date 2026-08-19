@@ -1,9 +1,6 @@
 
 Next:
-- [ ] Search bug:
-  - [ ] keyboard dismisses after transition (lingers), should dismiss as oon as I hit cancel
-  - [ ] Keyboard failed to dismiss entirely one time
-  - [ ] Clear button in search field doesn't work
+- [ ] 
 
 Polish:
 - [ ] Drop the `.movie` default from mediaType arguments, so a show can't pass as a movie
@@ -11,9 +8,6 @@ Polish:
   - [ ] `MediaList.entry(for:_:)`, MediaList.contains(_:_:)
 
 Ideas:`
-- [ ] Clean up person page
-  - [ ] Center avatar, name below
-  - [ ] Collapsing header with small avatar and name
 - [ ] Filter watch list by what's streamable
   - [ ] Add support for toggling between what you subscribe to, and whether it's streamable at all
 - [ ] Add support for awards?

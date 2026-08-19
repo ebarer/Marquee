@@ -96,10 +96,12 @@ struct ShowCreditRow: View {
             LazyVStack(spacing: 0) {
                 // No episode detail behind it: TMDB's declared count.
                 ShowCreditRow(show: show(2001, "Punk'd", "Self", 1))
+                // A guest spot, split per season as the filmography splits it.
                 ShowCreditRow(show: show(2002, "The Studio", "Olivia Wilde", 1),
                               credit: EpisodeCredit(seasons: [
                                   .init(season: seasons[0], episodeNumbers: [2]),
-                              ]))
+                              ]),
+                              season: .init(season: seasons[0], episodeNumbers: [2]))
                 // A run split per season, as the filmography lists it under each year.
                 ShowCreditRow(show: show(2004, "The O.C.", "Alex Kelly", 13),
                               season: .init(season: seasons[1]))

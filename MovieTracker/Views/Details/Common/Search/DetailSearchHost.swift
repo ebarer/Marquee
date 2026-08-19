@@ -52,7 +52,18 @@ private struct DetailSearchHost: ViewModifier {
     // transaction reaching the screen, which draws itself.
     @State private var barSearching = false
 
+    @State private var query = ""
+    @State private var landed = false
+    @State private var fieldFocused = false
+    @State private var fieldFrame: CGRect = .zero
+
+    @Environment(\.closeModal) private var closeModal
+
     private var isSearching: Bool { request != nil && !isClosing }
+
+    /// A view over the navigation bar takes no touches, so the settled field is a bar item. A
+    /// modal's bar leaves with the keyboard and would take the field with it, so there it stays.
+    private var fieldInBar: Bool { landed && closeModal == nil }
 
     func body(content: Content) -> some View {
         ZStack {
@@ -66,8 +77,11 @@ private struct DetailSearchHost: ViewModifier {
 
             if let request {
                 DetailSearchScreen(request: request, sourceFrame: sourceFrame, barSlot: barSlot,
-                                   contentFrame: contentFrame,
-                                   isClosing: isClosing, onClose: close)
+                                   contentFrame: contentFrame, isClosing: isClosing,
+                                   query: $query, fieldInBar: fieldInBar,
+                                   focused: !fieldInBar && fieldFocused,
+                                   onFieldFrame: { fieldFrame = $0 },
+                                   onLanded: { landed = true }, onClose: close)
                     // Search animates its own arrival. A transition here would fade the whole
                     // screen in over the page, drawing both at once.
                     .transition(.identity)
@@ -76,6 +90,7 @@ private struct DetailSearchHost: ViewModifier {
                     .onDisappear {
                         self.request = nil
                         isClosing = false
+                        landed = false
                         withAnimation(DetailSearch.barHandoff) { barSearching = false }
                     }
             }
@@ -88,12 +103,26 @@ private struct DetailSearchHost: ViewModifier {
             try? await Task.sleep(for: .seconds(DetailSearch.duration))
             pageHidden = true
         }
+        // A focus request made in the same pass that installs the item in the bar is dropped.
+        .task(id: landed) {
+            guard landed else { fieldFocused = false; return }
+            try? await Task.sleep(for: .milliseconds(50))
+            fieldFocused = true
+        }
         // Don't hide the bar. That shrinks the safe area, and the movie and show headers lay
         // themselves out from it, so they jump 44pt.
         .navigationBarBackButtonHidden(isSearching)
         .toolbarBackgroundVisibility(isSearching ? .hidden : .automatic, for: .navigationBar)
         .toolbar {
-            if barSearching, request != nil {
+            if barSearching, let request {
+                // Sized rather than expanded: a principal item that asks for infinite width is
+                // still given only its content's.
+                ToolbarItem(placement: .principal) {
+                    DetailSearchBar(text: $query, prompt: request.prompt, tint: request.tint,
+                                    focused: fieldInBar && fieldFocused)
+                        .frame(width: max(1, fieldFrame.width))
+                        .opacity(fieldInBar ? 1 : 0)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: close) {
                         Image(systemName: "xmark")
@@ -114,6 +143,8 @@ private struct DetailSearchHost: ViewModifier {
         DetailSearchAction(isPresented: isSearching) { opened, from in
             isClosing = false
             sourceFrame = from
+            query = ""
+            landed = false
             request = opened
             withAnimation(DetailSearch.barHandoff) { barSearching = true }
         }
@@ -128,13 +159,19 @@ private struct DetailSearchHost: ViewModifier {
     }
 
     private func close() {
-        withAnimation(DetailSearch.entry) {
-            isClosing = true
-            barSearching = false
-        } completion: {
-            request = nil
-            isClosing = false
-            barSlot = learnedSlot ?? barSlot
+        // Before the animation, so the keyboard leaves with the tap rather than after the flight.
+        landed = false
+        // A pass later, or the bar's copy is still drawn when its removal is snapshotted and the
+        // flying copy has a ghost alongside it.
+        Task { @MainActor in
+            withAnimation(DetailSearch.entry) {
+                isClosing = true
+                barSearching = false
+            } completion: {
+                request = nil
+                isClosing = false
+                barSlot = learnedSlot ?? barSlot
+            }
         }
     }
 }

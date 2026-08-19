@@ -30,14 +30,8 @@ struct EpisodeCredit: Hashable, Sendable {
             isWhole || episodeNumbers.contains(number)
         }
 
-        /// How this one season reads on a filmography row, as ``Summary/label`` does for the
-        /// whole credit — the row is per season once a run spans several years.
         var label: String {
-            if isWhole { return "\(season.name) • \(EpisodeCredit.episodeCountLabel(count))" }
-            if episodeNumbers.count == 1, let number = episodeNumbers.first {
-                return "S\(season.seasonNumber) · E\(number)"
-            }
-            return EpisodeCredit.episodeCountLabel(count)
+            "\(season.name) • \(EpisodeCredit.episodeCountLabel(count))"
         }
     }
 

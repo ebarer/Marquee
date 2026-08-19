@@ -224,13 +224,23 @@ extension TMDBWrapper {
                 // Episodes named within a season are the credit — TMDB sometimes omits the
                 // season itself, so stand any missing one up from its episodes.
                 credits += listed.map { number, episodes in
-                    let season = known[number]
-                        ?? Season(id: -(number + 1), seasonNumber: number, name: "Season \(number)")
+                    let season = known[number] ?? standIn(number: number, from: episodes)
                     return EpisodeCredit.SeasonCredit(
                         season: season, episodeNumbers: Set(episodes.map(\.episodeNumber)))
                 }
 
                 return credits.sorted { $0.season.seasonNumber < $1.season.seasonNumber }
+            }
+
+            /// The air date has to come off the episodes: without one the credit falls back to
+            /// the show's premiere and every season of a long run files under the same year.
+            private func standIn(number: Int, from episodes: [EpisodeRaw]) -> Season {
+                var season = Season(id: -(number + 1), seasonNumber: number,
+                                    name: "Season \(number)")
+                season.airDate = episodes
+                    .compactMap { $0.airDateString?.toDate(format: .iso8601DAw) }
+                    .min()
+                return season
             }
         }
     }

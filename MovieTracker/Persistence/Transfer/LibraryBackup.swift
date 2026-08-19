@@ -8,11 +8,30 @@
 import Foundation
 
 struct LibraryBackup: Codable {
-    static let currentVersion = 1
+    static let currentVersion = 2
 
     var version = currentVersion
     var exportedAt = Date()
     var lists: [List]
+    /// TV watched progress, which lives outside list membership. Absent in v1 files.
+    var shows: [Progress]
+
+    enum CodingKeys: String, CodingKey {
+        case version, exportedAt, lists, shows
+    }
+
+    init(lists: [List], shows: [Progress] = []) {
+        self.lists = lists
+        self.shows = shows
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        version = try container.decode(Int.self, forKey: .version)
+        exportedAt = try container.decode(Date.self, forKey: .exportedAt)
+        lists = try container.decode([List].self, forKey: .lists)
+        shows = try container.decodeIfPresent([Progress].self, forKey: .shows) ?? []
+    }
 
     struct List: Codable {
         var uuid: UUID
@@ -77,6 +96,43 @@ struct LibraryBackup: Codable {
             } else {
                 userRating = nil
             }
+        }
+    }
+
+    /// One show's watched progress: the episode records, the completed-season snapshots, and
+    /// the season the show is tracked at.
+    struct Progress: Codable {
+        var tmdbID: Int
+        var name: String
+        var posterPath: String?
+        var isWatched: Bool?
+        var isCaughtUp: Bool?
+        var watchListOptOut: Bool?
+        var tracked: Tracked?
+        var seasons: [Season]
+        var episodes: [Episode]
+
+        struct Episode: Codable {
+            var season: Int
+            var episode: Int
+            var watchedAt: Date
+        }
+
+        struct Season: Codable {
+            var season: Int
+            var name: String
+            var posterPath: String?
+            var airDate: Date?
+            var episodeCount: Int
+            var watchedAt: Date
+            var userRating: Double?
+        }
+
+        struct Tracked: Codable {
+            var season: Int
+            var posterPath: String?
+            var episodeCount: Int
+            var nextEpisodeDate: Date?
         }
     }
 }

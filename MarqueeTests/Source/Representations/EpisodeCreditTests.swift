@@ -90,6 +90,20 @@ import Foundation
         #expect(EpisodeCredit(seasons: []).summary == nil)
     }
 
+    // MARK: - Season row label
+
+    @Test func seasonLabelNamesTheSeasonWhateverThePresence() {
+        let whole = EpisodeCredit.SeasonCredit(season: season(1, episodes: 12))
+        #expect(whole.label == "Season 1 • 12 Episodes")
+
+        let some = EpisodeCredit.SeasonCredit(season: season(2, episodes: 12),
+                                              episodeNumbers: [1, 5, 9])
+        #expect(some.label == "Season 2 • 3 Episodes")
+
+        let one = EpisodeCredit.SeasonCredit(season: unsized(3), episodeNumbers: [4])
+        #expect(one.label == "Season 3 • 1 Episode")
+    }
+
     // MARK: - Merging
 
     @Test func mergingUnionsEpisodesPerSeason() {
@@ -182,6 +196,32 @@ import Foundation
         #expect(credit.seasons[1].isWhole)
         // Specials drop out beside regular seasons, leaving the run TMDB itself counts.
         #expect(credit.total == 16)
+    }
+
+    /// Ben Miles on Andor: TMDB names season 1 but not season 2, so season 2's date has to come
+    /// off its episodes or both seasons file under the show's 2022 premiere.
+    @Test func decodingDatesAnOmittedSeasonFromItsEpisodes() throws {
+        let json = """
+        {"media": {
+            "episodes": [
+                {"id": 1, "name": "A", "season_number": 1, "episode_number": 7,
+                 "air_date": "2022-10-19"},
+                {"id": 2, "name": "B", "season_number": 2, "episode_number": 1,
+                 "air_date": "2025-04-22"},
+                {"id": 3, "name": "C", "season_number": 2, "episode_number": 3,
+                 "air_date": "2025-05-06"}
+            ],
+            "seasons": [{"id": 10, "name": "Season 1", "season_number": 1,
+                         "episode_count": 12, "air_date": "2022-09-21"}]
+        }}
+        """
+        let raw = try JSONDecoder().decode(TMDBWrapper.CreditRaw.self, from: Data(json.utf8))
+        let seasons = raw.credit().credited
+        let years = seasons.map {
+            $0.season.airDate.map { Calendar.current.component(.year, from: $0) }
+        }
+        #expect(seasons.map(\.season.seasonNumber) == [1, 2])
+        #expect(years == [2022, 2025])
     }
 
     @Test func decodesEmptyMediaAsNoCredit() throws {

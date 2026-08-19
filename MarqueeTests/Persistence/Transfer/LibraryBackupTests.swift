@@ -49,6 +49,33 @@ import SwiftData
         #expect(entry.userRating == nil)
     }
 
+    @Test func decodesArchiveWithoutShowProgress() throws {
+        let json = #"{"version":1,"exportedAt":"2011-01-01T00:00:00Z","lists":[]}"#
+        let archive = try LibraryBackup(json: Data(json.utf8))
+        #expect(archive.shows.isEmpty)
+    }
+
+    @Test func showProgressRoundTrips() throws {
+        var backup = LibraryBackup(lists: [])
+        backup.shows = [
+            .init(tmdbID: 9, name: "MobLand", posterPath: "/m.jpg", isWatched: nil,
+                  isCaughtUp: true, watchListOptOut: nil,
+                  tracked: .init(season: 2, posterPath: nil, episodeCount: 8,
+                                 nextEpisodeDate: .utc(2026, 4, 1)),
+                  seasons: [.init(season: 1, name: "Season 1", posterPath: nil,
+                                  airDate: .utc(2025, 6, 1), episodeCount: 2,
+                                  watchedAt: .utc(2025, 6, 2), userRating: 4.5)],
+                  episodes: [.init(season: 1, episode: 1, watchedAt: .utc(2025, 5, 1)),
+                             .init(season: 1, episode: 2, watchedAt: .utc(2025, 6, 2))])
+        ]
+        let restored = try LibraryBackup(json: backup.jsonData())
+        let show = try #require(restored.shows.first)
+        #expect(show.episodes.count == 2)
+        #expect(show.seasons.first?.userRating == 4.5)
+        #expect(show.tracked?.season == 2)
+        #expect(show.isCaughtUp == true)
+    }
+
     @Test func entryDecodesMissingMediaTypeAsMovie() throws {
         // Files written before shows were tracked have no media type; they held movies only.
         let json = #"{"movieID":1,"title":"A","dateAdded":"2011-01-01T00:00:00Z"}"#
@@ -105,6 +132,46 @@ import SwiftData
         _ = LibraryBackup.merge(backup, using: fresh)
         let imported = fresh.customLists.first { $0.name == "Faves" }?.entries?.first
         #expect(imported?.mediaType == .tv)
+    }
+
+    @Test func tvProgressSurvivesExportAndImport() {
+        let store = makeInMemoryStore()
+        var season = Season(id: 100, seasonNumber: 1, name: "Season 1", episodeCount: 3)
+        season.airDate = .utc(2025, 3, 30)
+        season.episodes = (1...3).map { number in
+            var episode = Episode(id: 1000 + number, seasonNumber: 1, episodeNumber: number,
+                                  name: "E\(number)")
+            episode.airDate = .utc(2025, 3, 30)
+            return episode
+        }
+        var show = Show(id: 247718, name: "MobLand")
+        show.seasons = [season]
+        store.setSeasonWatched(true, show: show, season: season)
+        store.setSeasonRating(4.5, showID: 247718, season: 1)
+
+        let backup = LibraryBackup.export(from: store.context)
+        let fresh = makeInMemoryStore()
+        _ = LibraryBackup.merge(backup, using: fresh)
+
+        #expect(fresh.watchedEpisodeNumbers(showID: 247718, season: 1) == [1, 2, 3])
+        #expect(fresh.isSeasonWatched(season, showID: 247718))
+        #expect(fresh.seasonRating(showID: 247718, season: 1) == 4.5)
+        #expect(fresh.isShowWatchedCached(showID: 247718))
+    }
+
+    @Test func reimportingProgressKeepsTheExistingRecords() {
+        let store = makeInMemoryStore()
+        let backup = LibraryBackup(lists: [], shows: [
+            .init(tmdbID: 5, name: "S", posterPath: nil, isWatched: nil, isCaughtUp: nil,
+                  watchListOptOut: nil, tracked: nil,
+                  seasons: [], episodes: [.init(season: 1, episode: 1, watchedAt: .utc(2020, 1, 1))])
+        ])
+        _ = LibraryBackup.merge(backup, using: store)
+        store.setEpisodeWatchedDate(.utc(2024, 6, 6), showID: 5, season: 1, episode: 1)
+        _ = LibraryBackup.merge(backup, using: store)
+
+        #expect(WatchedEpisode.all(showTmdbID: 5, in: store.context).count == 1)
+        #expect(store.episodeWatchedDate(showID: 5, season: 1, episode: 1) == .utc(2024, 6, 6))
     }
 
     @Test func mergeCreatesCustomListAndSetsWatchedFacts() {

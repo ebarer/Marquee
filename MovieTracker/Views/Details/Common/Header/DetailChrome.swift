@@ -24,7 +24,10 @@ private struct DetailChrome<Principal: View, Extra: ToolbarContent>: ViewModifie
             .navigationTitle(title)
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) { principal() }
+                // Two principal items resolve unpredictably: searching, the slot is the field's.
+                if !isSearching {
+                    ToolbarItem(placement: .principal) { principal() }
+                }
                 // All of these would sit over the search field and take the taps meant for its
                 // cancel, so they stand down while it holds the bar's row.
                 if let hiddenSearch, !isSearching {

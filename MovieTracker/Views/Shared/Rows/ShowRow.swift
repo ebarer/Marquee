@@ -46,19 +46,19 @@ struct ShowRow: View {
                     .font(.body)
                     .lineLimit(2)
 
-                if let role, !role.isEmpty {
-                    // Unbounded, as in ``MovieRow``: every role the person had is listed.
-                    Text(role)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
                 if let episodeSummary {
                     Text(episodeSummary)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else if yearRange != "N/A" {
                     Text(yearRange)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let role, !role.isEmpty {
+                    // Unbounded, as in ``MovieRow``: every role the person had is listed.
+                    Text(role)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

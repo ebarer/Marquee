@@ -222,10 +222,10 @@ extension TMDBWrapper {
                               pic: $0.profilePicture, type: .Cast) }
         }
 
-        /// The run that makes someone a regular, whose billing order means something. TMDB
-        /// files hundreds of one-episode guests carrying order values in the hundreds.
+        /// The run that makes someone a regular, whose billing order means something. Half the
+        /// longest run: Ben Miles is billed second on Andor for 7 of 24.
         private func regularFloor() -> Int {
-            max(2, (cast.map(\.totalEpisodeCount).max() ?? 0) / 10)
+            max(2, (cast.map(\.totalEpisodeCount).max() ?? 0) / 2)
         }
 
         /// Regulars in the show's own billing order, then the rest by how much they were in:

@@ -60,7 +60,8 @@ a title that *is* the query keeps it against a lone namesake — but not against
 notable people share.
 
 **Cast is billing order among regulars** (see `AggregateCreditsRaw.rankedCast`), not episode
-count, or a departed lead lands behind the ensemble who stayed.
+count, or a departed lead lands behind the ensemble who stayed. A regular is someone in half
+the longest run, which keeps a guest billed high in a handful of episodes out.
 
 ## Examples
 

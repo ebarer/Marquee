@@ -5,17 +5,17 @@
 
 import SwiftUI
 
-/// The search field for a detail search. Hand-built because `.searchable` installs its field in the
-/// navigation bar, where this view can neither place it nor dismiss it.
+/// The search field for a detail search. Hand-built because `.searchable` gives the caller no say
+/// over where its field is placed or when it is dismissed.
 struct DetailSearchBar: View {
     @Binding var text: String
     let prompt: String
     var tint: Color = .appAccent
-    var autofocus = false
+    var focused = false
     /// False while the field is still button-sized, where the prompt shows as a stray letter.
     var showsPrompt = true
 
-    @FocusState private var isFocused: Bool
+    @State private var isEditing = false
 
     // Measured off the system search bar on iOS 27; don't tidy these into round numbers.
     static let capsuleHeight: CGFloat = 43
@@ -53,21 +53,13 @@ struct DetailSearchBar: View {
                 .font(.system(size: 17))
                 .foregroundStyle(.white)
 
-            TextField("", text: $text, prompt: Text(prompt).foregroundStyle(Self.promptColor))
+            SearchTextField(text: $text, prompt: prompt, tint: tint, editing: $isEditing)
                 .opacity(showsPrompt ? 1 : 0)
-                .textFieldStyle(.plain)
-                .font(.system(size: 17))
-                .foregroundStyle(.white)
-                .tint(tint)
-                .focused($isFocused)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .onSubmit { isFocused = false }
 
             if !text.isEmpty {
                 Button {
                     text = ""
-                    isFocused = true
+                    isEditing = true
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 17))
@@ -79,13 +71,90 @@ struct DetailSearchBar: View {
         }
         .padding(.leading, 12)
         .padding(.trailing, 12)
+        // A navigation bar raises image scale to large, which grows these glyphs past the flying
+        // copy's as the bar takes the field over.
+        .imageScale(.medium)
         .frame(height: Self.capsuleHeight)
         .glassEffect(.regular.interactive(), in: .capsule)
         // Raising the keyboard stalls the main thread, so the caller holds it off until the field
-        // has landed and the rows are up.
-        .onChange(of: autofocus, initial: true) {
-            guard autofocus else { return }
-            isFocused = true
+        // has landed. Lowering it waits on the caller too, not on the field being unmounted.
+        .onChange(of: focused, initial: true) {
+            isEditing = focused
+        }
+    }
+}
+
+/// `@FocusState` does not reach a field hosted in the navigation bar, so the responder is driven
+/// directly.
+private struct SearchTextField: UIViewRepresentable {
+    @Binding var text: String
+    let prompt: String
+    let tint: Color
+    @Binding var editing: Bool
+
+    func makeUIView(context: Context) -> UITextField {
+        let field = UITextField()
+        field.delegate = context.coordinator
+        field.font = .systemFont(ofSize: 17)
+        field.textColor = .white
+        field.autocorrectionType = .no
+        field.spellCheckingType = .no
+        field.returnKeyType = .search
+        field.addTarget(context.coordinator, action: #selector(Coordinator.edited(_:)),
+                        for: .editingChanged)
+        return field
+    }
+
+    func updateUIView(_ field: UITextField, context: Context) {
+        context.coordinator.text = $text
+        context.coordinator.editing = $editing
+        if field.text != text { field.text = text }
+        field.tintColor = UIColor(tint)
+        field.attributedPlaceholder = NSAttributedString(
+            string: prompt,
+            attributes: [.foregroundColor: UIColor(DetailSearchBar.promptColor)])
+        if editing, !field.isFirstResponder {
+            field.becomeFirstResponder()
+        } else if !editing, field.isFirstResponder {
+            field.resignFirstResponder()
+        }
+    }
+
+    /// A text field's intrinsic width is its text's, which would leave the capsule empty.
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextField,
+                      context: Context) -> CGSize? {
+        CGSize(width: proposal.width ?? uiView.intrinsicContentSize.width,
+               height: uiView.intrinsicContentSize.height)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text, editing: $editing)
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var text: Binding<String>
+        var editing: Binding<Bool>
+
+        init(text: Binding<String>, editing: Binding<Bool>) {
+            self.text = text
+            self.editing = editing
+        }
+
+        @objc func edited(_ field: UITextField) {
+            text.wrappedValue = field.text ?? ""
+        }
+
+        func textFieldDidBeginEditing(_ field: UITextField) {
+            if !editing.wrappedValue { editing.wrappedValue = true }
+        }
+
+        func textFieldDidEndEditing(_ field: UITextField) {
+            if editing.wrappedValue { editing.wrappedValue = false }
+        }
+
+        func textFieldShouldReturn(_ field: UITextField) -> Bool {
+            field.resignFirstResponder()
+            return false
         }
     }
 }

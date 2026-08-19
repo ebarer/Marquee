@@ -94,13 +94,40 @@ import Foundation
         #expect(try decodeShow(#"{"id":1,"name":"X"}"#).certification() == nil)
     }
 
-    /// Billing order among the regulars, so a lead who left partway (30 of 70 episodes) still
-    /// leads — and a one-episode guest billed second doesn't jump any of them.
+    /// Billing order among the regulars. The lead billed first was in 30 of 70 episodes, under
+    /// half the run, so presence ranks him — still ahead of the one-episode guest billed second.
     @Test func recurringCastRanksRegularsByBillingOrderThenGuestsByPresence() throws {
         let cast = try decodeShow(fullShowJSON()).recurringCast()
-        #expect(cast.map(\.id) == [2, 1, 3, 4])
-        #expect(cast.first?.role == "Sidekick")
+        #expect(cast.map(\.id) == [1, 3, 2, 4])
+        #expect(cast.first?.role == "Hero")
         #expect(cast.allSatisfy { $0.type == .Cast })
+    }
+
+    private func castJSON(_ members: [(id: Int, order: Int, episodes: Int)]) -> String {
+        let entries = members.map {
+            """
+            {"id":\($0.id),"name":"Actor \($0.id)","order":\($0.order),\
+            "total_episode_count":\($0.episodes),"roles":[{"character":"C\($0.id)"}]}
+            """
+        }
+        return #"{"id":1,"name":"X","aggregate_credits":{"cast":["#
+            + entries.joined(separator: ",") + "]}}"
+    }
+
+    /// Ben Miles on Andor: billed second for 7 of 24 episodes. A guest that highly billed must
+    /// not displace the ensemble the show is about.
+    @Test func recurringCastDemotesAHighlyBilledGuest() throws {
+        let json = castJSON([(id: 1, order: 0, episodes: 24),
+                             (id: 2, order: 1, episodes: 7),
+                             (id: 3, order: 3, episodes: 24)])
+        #expect(try decodeShow(json).recurringCast().map(\.id) == [1, 3, 2])
+    }
+
+    /// Steve Carell left The Office 140 episodes into its 186, and still opens its billing.
+    @Test func recurringCastKeepsADepartedLeadInFront() throws {
+        let json = castJSON([(id: 1, order: 0, episodes: 140),
+                             (id: 2, order: 1, episodes: 186)])
+        #expect(try decodeShow(json).recurringCast().map(\.id) == [1, 2])
     }
 
     @Test func recurringCastEmptyWithoutAggregateCredits() throws {
