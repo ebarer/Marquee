@@ -13,7 +13,7 @@ extension TMDBWrapper {
             "/tv/\(id)",
             queryItems: [
                 URLQueryItem(name: "append_to_response",
-                             value: "aggregate_credits,content_ratings,videos,watch/providers"),
+                             value: "aggregate_credits,content_ratings,videos,watch/providers,external_ids"),
             ]
         )
         var show = translate(show: try decode(ShowRaw.self, from: data))
@@ -113,6 +113,8 @@ extension TMDBWrapper {
         show.lastAirDate = sh.lastAirDateString?.toDate(format: .iso8601DAw)
         show.nextAirDate = sh.nextEpisodeRaw?.airDateString?.toDate(format: .iso8601DAw)
         show.certification = sh.certification()
+        show.imdbID = sh.externalIDs?.imdbID
+        show.wikidataID = sh.externalIDs?.wikidataID
         show.genres = sh.genres()
         show.networks = sh.networks()
         show.originCountry = sh.originCountry

@@ -11,6 +11,7 @@ final class ShowDetailModel {
     private(set) var show: Show?
     private(set) var tint: Color = .appAccent
     private(set) var recommendations: [Show] = []
+    private(set) var extras = TitleExtras()
 
     /// Episodes fetched lazily per season number, so long-running shows don't
     /// pull every episode up front.
@@ -73,6 +74,10 @@ final class ShowDetailModel {
             interrupted = true
         }
 
+        // Wikidata is a second service; it resolves alongside the recommendation row rather
+        // than holding it up behind an awards lookup.
+        async let resolvedExtras = Self.resolveExtras(for: show)
+
         do {
             let page = try await TMDBWrapper.showRecommendations(id: id)
             recommendations = page.items.filter { $0.id != id }
@@ -81,7 +86,31 @@ final class ShowDetailModel {
             interrupted = interrupted || error.isCancellation
         }
 
+        extras = await resolvedExtras
+
         loaded = !interrupted
+    }
+
+    /// Awards and the outside links. `nonisolated` so the SPARQL response decodes off the
+    /// main actor. A failure here reports no awards and no slug; none of it is load-bearing.
+    nonisolated private static func resolveExtras(for show: Show?) async -> TitleExtras {
+        guard let show else { return TitleExtras() }
+        let imdb = ExternalLink.imdb(id: show.imdbID)
+
+        guard let qid = show.wikidataID else {
+            return TitleExtras(links: [
+                .rottenTomatoes(slug: nil, title: show.name), imdb,
+            ].compactMap { $0 }, resolved: true)
+        }
+
+        async let awardsTask = WikidataWrapper.awards(qid: qid)
+        async let slugTask = WikidataWrapper.rottenTomatoesID(qid: qid)
+        let digest = (try? await awardsTask) ?? AwardsDigest()
+        let slug = (try? await slugTask) ?? nil
+
+        return TitleExtras(awards: digest, links: [
+            .rottenTomatoes(slug: slug, title: show.name), imdb,
+        ].compactMap { $0 }, resolved: true)
     }
 
     /// The detail request, held back when a UI test needs the unknown-fields window to be
@@ -149,12 +178,14 @@ final class ShowDetailModel {
 extension ShowDetailModel {
     /// A fully-seeded model whose `load(id:)` no-ops (`loaded == true`); every season's
     /// episodes are pre-filled so the episodes section renders offline without a fetch.
-    static func preview(_ show: Show, recommendations: [Show] = [], tint: Color = .appAccent) -> ShowDetailModel {
+    static func preview(_ show: Show, recommendations: [Show] = [], tint: Color = .appAccent,
+                        extras: TitleExtras = .preview) -> ShowDetailModel {
         let model = ShowDetailModel()
         model.show = show
         model.show?.isFullDetail = true      // previews stand in for a landed payload
         model.recommendations = recommendations
         model.tint = tint
+        model.extras = extras
         for season in show.seasons {
             model.seasonEpisodes[season.seasonNumber] = season.episodes
         }

@@ -31,6 +31,7 @@ extension TMDBWrapper {
         var aggregateCreditsRaw: AggregateCreditsRaw?
         var contentRatingsRaw: ContentRatingsRaw?
         var watchRaw: MovieRaw.WatchProvidersRaw?
+        var externalIDs: ExternalIDsRaw?
 
         /// The US-style TV rating for the user's region, falling back to the US entry.
         func certification() -> String? {
@@ -106,6 +107,7 @@ extension TMDBWrapper {
             case aggregateCreditsRaw = "aggregate_credits"
             case contentRatingsRaw = "content_ratings"
             case watchRaw = "watch/providers"
+            case externalIDs = "external_ids"
         }
 
         struct NetworkRaw: Codable {

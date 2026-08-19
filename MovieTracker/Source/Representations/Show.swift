@@ -23,6 +23,8 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     var voteCount: Int?
     var certification: String?
     var imdbID: String?
+    /// The handle for awards and the Rotten Tomatoes slug (see ``WikidataWrapper``).
+    var wikidataID: String?
     var genres: [String]?
     var networks: [String]?
     /// ISO country codes the show originates in (e.g. ["US"]); used to filter search noise.

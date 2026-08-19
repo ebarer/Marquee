@@ -12,6 +12,7 @@ final class MovieDetailModel {
     private(set) var tint: Color = .appAccent
     private(set) var recommendations: [Movie] = []
     private(set) var collection: [Movie] = []
+    private(set) var extras = TitleExtras()
 
     private let posterPath: String?
     /// The payload landed; nothing left to fetch.
@@ -69,6 +70,10 @@ final class MovieDetailModel {
             interrupted = true
         }
 
+        // Wikidata is a second service; it resolves alongside the rest of the page rather
+        // than holding up the collection and recommendation rows behind it.
+        async let resolvedExtras = Self.resolveExtras(for: movie)
+
         if let franchise = movie?.collection {
             do {
                 collection = try await TMDBWrapper.getCollection(id: franchise.id)
@@ -87,7 +92,31 @@ final class MovieDetailModel {
             interrupted = interrupted || error.isCancellation
         }
 
+        extras = await resolvedExtras
+
         loaded = !interrupted
+    }
+
+    /// Awards and the outside links. `nonisolated` so the SPARQL response decodes off the
+    /// main actor. A failure here reports no awards and no slug; none of it is load-bearing.
+    nonisolated private static func resolveExtras(for movie: Movie?) async -> TitleExtras {
+        guard let movie else { return TitleExtras() }
+        let imdb = ExternalLink.imdb(id: movie.imdbID)
+
+        guard let qid = movie.wikidataID else {
+            return TitleExtras(links: [
+                .rottenTomatoes(slug: nil, title: movie.title), imdb,
+            ].compactMap { $0 }, resolved: true)
+        }
+
+        async let awardsTask = WikidataWrapper.awards(qid: qid)
+        async let slugTask = WikidataWrapper.rottenTomatoesID(qid: qid)
+        let digest = (try? await awardsTask) ?? AwardsDigest()
+        let slug = (try? await slugTask) ?? nil
+
+        return TitleExtras(awards: digest, links: [
+            .rottenTomatoes(slug: slug, title: movie.title), imdb,
+        ].compactMap { $0 }, resolved: true)
     }
 
     /// The detail request, held back when a UI test needs the unknown-fields window to be
@@ -111,13 +140,15 @@ extension MovieDetailModel {
     /// A fully-seeded model whose `load(id:)` no-ops (`loaded == true`), so previews render
     /// populated content offline instead of sticking on the loading state.
     static func preview(_ movie: Movie, collection: [Movie] = [], recommendations: [Movie] = [],
-                        tint: Color = .appAccent) -> MovieDetailModel {
+                        tint: Color = .appAccent,
+                        extras: TitleExtras = .preview) -> MovieDetailModel {
         let model = MovieDetailModel()
         model.movie = movie
         model.movie?.isFullDetail = true      // previews stand in for a landed payload
         model.collection = collection
         model.recommendations = recommendations
         model.tint = tint
+        model.extras = extras
         model.loaded = true
         return model
     }

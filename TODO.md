@@ -1,8 +1,13 @@
 
 Next:
-- [ ] 
+- [ ] People details:
+  - [ ] Filter button always visible, don't show in navbar at all
+  - [ ] Search should always be in navbar
 
 Polish:
+- [ ] Clean up all comments, organize Source/Representations
+- [ ] Improve layout of episodes list pages
+- [ ] Improve layout of awards page
 - [ ] Drop the `.movie` default from mediaType arguments, so a show can't pass as a movie
   - [ ] `MediaItem.init(tmdbID:mediaType:)`, `MediaItem.find(tmdbID:mediaType:)`
   - [ ] `MediaList.entry(for:_:)`, MediaList.contains(_:_:)
@@ -10,10 +15,7 @@ Polish:
 Ideas:`
 - [ ] Filter watch list by what's streamable
   - [ ] Add support for toggling between what you subscribe to, and whether it's streamable at all
-- [ ] Add support for awards?
 - [ ] Share lists
-- [ ] Rotten tomatoes and IMDB links/integration?
-  - [ ] Use percent instead of out of 5
 - [ ] List of trailers on long press?
 - [ ] Support landscape?
 - [ ] Settings page

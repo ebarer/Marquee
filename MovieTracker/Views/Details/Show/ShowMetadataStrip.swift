@@ -29,15 +29,25 @@ struct ShowMetadataStrip: View {
     }
 
     let fields: Fields
+    let name: String
     var tint: Color = .appAccent
     /// The detail payload is still in flight, so cells it fills read as placeholders.
     var isLoading: Bool = false
+    var awards: AwardsDigest = AwardsDigest()
+    /// Wikidata lands after the TMDB payload, so the awards cell has its own pending state.
+    var awardsResolved: Bool = true
 
-    init(show: Show, tint: Color = .appAccent, isLoading: Bool = false) {
+    init(show: Show, tint: Color = .appAccent, isLoading: Bool = false,
+         awards: AwardsDigest = AwardsDigest(), awardsResolved: Bool = true) {
         self.fields = Fields(show)
+        self.name = show.name
         self.tint = tint
         self.isLoading = isLoading
+        self.awards = awards
+        self.awardsResolved = awardsResolved
     }
+
+    @State private var showingAwards = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -78,10 +88,16 @@ struct ShowMetadataStrip: View {
                             metadataText(fields.genres)
                         }
                     }
+                    AwardsMetadataCell(awards: awards, isResolved: awardsResolved,
+                                       tint: tint) { showingAwards = true }
                 }
+                .animation(.snappy, value: awards)
             }
             .scrollBounceBehavior(.always, axes: .horizontal)
             MetadataHairline()
+        }
+        .sheet(isPresented: $showingAwards) {
+            AwardsListView(title: name, digest: awards, tint: tint)
         }
     }
 
@@ -115,9 +131,23 @@ struct ShowMetadataStrip: View {
 }
 
 #Preview {
-    ShowMetadataStrip(show: .preview)
+    ShowMetadataStrip(show: .preview, awards: .preview)
         .background(Color.appBackground)
         .preferredColorScheme(.dark)
+}
+
+// The awards cell lands a beat after TMDB's fields: pending, then a count or "None".
+#Preview("Awards cell") {
+    // A strip's dividers are vertically greedy, so these need a ScrollView to size naturally.
+    ScrollView {
+        VStack(spacing: 20) {
+            ShowMetadataStrip(show: .preview, awardsResolved: false)
+            ShowMetadataStrip(show: .preview)
+            ShowMetadataStrip(show: .preview, awards: .preview)
+        }
+    }
+    .background(Color.appBackground)
+    .preferredColorScheme(.dark)
 }
 
 // Every step of the next-episode cell: named and tinted inside the week, plain past it.

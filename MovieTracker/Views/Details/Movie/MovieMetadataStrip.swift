@@ -30,16 +30,23 @@ struct MovieMetadataStrip: View {
     var isWatched: Bool = false
     /// The detail payload is still in flight, so cells it fills read as placeholders.
     var isLoading: Bool = false
+    var awards: AwardsDigest = AwardsDigest()
+    /// Wikidata lands after the TMDB payload, so the awards cell has its own pending state.
+    var awardsResolved: Bool = true
 
-    init(movie: Movie, tint: Color = .appAccent, isWatched: Bool = false, isLoading: Bool = false) {
+    init(movie: Movie, tint: Color = .appAccent, isWatched: Bool = false, isLoading: Bool = false,
+         awards: AwardsDigest = AwardsDigest(), awardsResolved: Bool = true) {
         self.movie = movie
         self.fields = Fields(movie)
         self.tint = tint
         self.isWatched = isWatched
         self.isLoading = isLoading
+        self.awards = awards
+        self.awardsResolved = awardsResolved
     }
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+    @State private var showingAwards = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -77,11 +84,17 @@ struct MovieMetadataStrip: View {
                             metadataText(movie.genresString)
                         }
                     }
+                    AwardsMetadataCell(awards: awards, isResolved: awardsResolved,
+                                       tint: tint) { showingAwards = true }
                 }
                 .animation(.snappy, value: isWatched)
+                .animation(.snappy, value: awards)
             }
             .scrollBounceBehavior(.always, axes: .horizontal)
             MetadataHairline()
+        }
+        .sheet(isPresented: $showingAwards) {
+            AwardsListView(title: movie.title, digest: awards, tint: tint)
         }
     }
 
@@ -128,9 +141,23 @@ struct MovieMetadataStrip: View {
 }
 
 #Preview {
-    MovieMetadataStrip(movie: .preview)
+    MovieMetadataStrip(movie: .preview, awards: .preview)
         .background(Color.appBackground)
         .preferredColorScheme(.dark)
+}
+
+// The awards cell lands a beat after TMDB's fields: pending, then a count or "None".
+#Preview("Awards cell") {
+    // A strip's dividers are vertically greedy, so these need a ScrollView to size naturally.
+    ScrollView {
+        VStack(spacing: 20) {
+            MovieMetadataStrip(movie: .preview, awardsResolved: false)
+            MovieMetadataStrip(movie: .preview)
+            MovieMetadataStrip(movie: .preview, awards: .preview)
+        }
+    }
+    .background(Color.appBackground)
+    .preferredColorScheme(.dark)
 }
 
 // Two genres, one genre, nothing at all (em dashes), and still pending (bars). The four must be

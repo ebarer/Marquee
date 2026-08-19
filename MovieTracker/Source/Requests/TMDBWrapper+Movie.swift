@@ -11,7 +11,7 @@ extension TMDBWrapper {
             "/movie/\(id)",
             queryItems: [
                 URLQueryItem(name: "with_release_type", value: "3|2"),
-                URLQueryItem(name: "append_to_response", value: "videos,release_dates,credits,keywords,watch/providers"),
+                URLQueryItem(name: "append_to_response", value: "videos,release_dates,credits,keywords,watch/providers,external_ids"),
             ],
             certified: true
         )
@@ -131,7 +131,8 @@ extension TMDBWrapper {
         movie.rating = mv.rating
         movie.popularity = mv.popularity
         movie.voteCount = mv.voteCount
-        movie.imdbID = mv.imdbID
+        movie.imdbID = mv.imdbID ?? mv.externalIDs?.imdbID
+        movie.wikidataID = mv.externalIDs?.wikidataID
 
         let releaseInfo = mv.certification()
         if let releaseDate = releaseInfo.releaseDate {

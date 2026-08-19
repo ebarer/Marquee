@@ -24,6 +24,7 @@ extension TMDBWrapper {
         var genresRaw: [GenreRaw]?
         var trailersRaw: TrailersRaw?
         var imdbID: String?
+        var externalIDs: ExternalIDsRaw?
         var keywords: Keywords?
         var teamRaw: TeamRaw?
         var collectionRaw: CollectionStubRaw?
@@ -140,6 +141,7 @@ extension TMDBWrapper {
             case id, title, overview, runtime, popularity, keywords
             case voteCount = "vote_count"
             case imdbID = "imdb_id"
+            case externalIDs = "external_ids"
             case releaseDateString = "release_date"
             case poster = "poster_path"
             case background = "backdrop_path"
@@ -313,6 +315,18 @@ extension TMDBWrapper {
         var name: String
         var overview: String?
         var parts: [MovieRaw]
+    }
+
+    /// `append_to_response=external_ids`, shared by movies and TV. TMDB gives TV's `imdb_id`
+    /// only here, never at the top level of `/tv/{id}`.
+    struct ExternalIDsRaw: Codable {
+        var imdbID: String?
+        var wikidataID: String?
+
+        enum CodingKeys: String, CodingKey {
+            case imdbID = "imdb_id"
+            case wikidataID = "wikidata_id"
+        }
     }
 
     struct ProviderListRaw: Codable {
