@@ -1,6 +1,9 @@
 
 Next:
-- [ ] 
+- [ ] Search bug:
+  - [ ] keyboard dismisses after transition (lingers), should dismiss as oon as I hit cancel
+  - [ ] Keyboard failed to dismiss entirely one time
+  - [ ] Clear button in search field doesn't work
 
 Polish:
 - [ ] Drop the `.movie` default from mediaType arguments, so a show can't pass as a movie

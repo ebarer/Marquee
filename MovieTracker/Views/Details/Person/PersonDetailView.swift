@@ -18,18 +18,25 @@ struct PersonDetailView: View {
 
     @Namespace private var photoNamespace
     @State private var showPhoto = false
-    @State private var showNavTitle = false
-    @State private var navBarBottom: CGFloat = 0
+    @State private var headerPinned = false
+    // The page's top edge in window coordinates. A sheet sits inset in the window, so a bare
+    // `.global` reading would count the sheet's offset as nav-bar height.
+    @State private var pageTop: CGFloat = 0
     /// Remembered across people and launches; talk-show and courtesy credits are the default
     /// selection, so an untouched filter behaves as it always has.
     @AppStorage("personCreditFilter") private var filter = CreditFilter()
-    /// Set once the credits header scrolls off, so its controls carry on in the bar.
+    /// Set once the credits header scrolls under the pinned header, so its controls carry on
+    /// in the bar.
     @State private var hiddenSearch: DetailSearchRequest?
 
-    @Environment(\.detailSearch) private var detailSearch
-    private var isSearching: Bool { detailSearch?.isPresented == true }
+    @ScaledMetric(relativeTo: .title2) private var nameLine: CGFloat = 27
+    @ScaledMetric(relativeTo: .subheadline) private var metaLine: CGFloat = 18
 
-    private let bioHeaderID = "personBioHeader"
+    private let headerID = "personHeader"
+
+    private var headerMetrics: PersonHeaderMetrics {
+        PersonHeaderMetrics(nameLine: nameLine, metaLine: metaLine)
+    }
 
     private var current: Person { model.person ?? person }
     private var entries: [FilmographyEntry] {
@@ -39,81 +46,108 @@ struct PersonDetailView: View {
     private var isFiltering: Bool { availableKinds.contains(where: filter.hides) }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    PersonBioHeader(
-                        person: current,
-                        photoNamespace: photoNamespace,
-                        onPhotoTap: { if current.profilePicture != nil { showPhoto = true } },
-                        navBarBottom: navBarBottom,
-                        onNameHiddenChange: { hidden in
-                            withAnimation(.easeInOut(duration: 0.2)) { showNavTitle = hidden }
-                        },
-                        onBioCollapsed: {
-                            // Collapsing removes the tall bio from above the fold; bring the
-                            // header back into view rather than leaving a meaningless offset.
-                            withAnimation(.easeInOut) { proxy.scrollTo(bioHeaderID, anchor: .top) }
+        detailContent
+            .background(Color.appBackground.ignoresSafeArea())
+            // The pinned header carries the name, so the nav bar stays chromeless.
+            .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+            .detailChrome(title: current.name, hiddenSearch: hiddenSearch, extra: {
+                if availableKinds.count > 1 {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        CreditFilterMenu(kinds: availableKinds, filter: $filter) {
+                            Image(systemName: "line.3.horizontal.decrease")
+                                .foregroundStyle(isFiltering ? Color.black : .white)
                         }
-                    )
-                    .id(bioHeaderID)
-                    .padding(16)
-
-                    knownForSection
-
-                    PersonFilmography(entries: entries, lists: lists,
-                                      filter: $filter,
-                                      isResolving: model.isResolvingCredits,
-                                      navBarBottom: navBarBottom,
-                                      onHeaderHiddenChange: { request in
-                                          withAnimation(DetailSearch.barHandoff) {
-                                              hiddenSearch = request
-                                          }
-                                      })
+                        // On the menu rather than its label, so the fill is centred on the item
+                        // the bar lays out.
+                        .filterOnBadge(isFiltering, size: DetailSearchBar.barItemFill)
+                        .tint(.white)
+                    }
                 }
-                .padding(.bottom, 24)
+            })
+            .fullScreenCover(isPresented: $showPhoto) {
+                // The zoom transition is applied inside PosterDetailView, so the source profile
+                // photo morphs into the enlarged image.
+                PosterDetailView(imageURL: current.profileURL(.orig),
+                                 zoomSourceID: current.id, zoomNamespace: photoNamespace)
+            }
+            .task {
+                await model.load(id: person.id)
+            }
+    }
+
+    private var detailContent: some View {
+        GeometryReader { container in
+            // This reader sits below the nav bar, so its distance from the page's top edge is the
+            // bar's bottom edge — the offset the header's collapsed layout works from.
+            let navBarBottom = container.frame(in: .global).minY - pageTop
+            let pinLine = navBarBottom + headerMetrics.collapsedExtent
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    // First child, high zIndex: the header draws over the sections below it.
+                    // Not lazy: a LazyVStack discards the pinned header once its slot scrolls off.
+                    VStack(spacing: 0) {
+                        pageTopProbe
+
+                        PersonDetailHeader(
+                            person: current, metrics: headerMetrics,
+                            photoNamespace: photoNamespace,
+                            onPhotoTap: { if current.profilePicture != nil { showPhoto = true } },
+                            navBarBottom: navBarBottom, headerPinned: $headerPinned
+                        )
+                        .id(headerID)
+                        .zIndex(1)
+
+                        bio(scrollProxy: proxy)
+
+                        knownForSection
+
+                        PersonFilmography(entries: entries, lists: lists,
+                                          filter: $filter,
+                                          isResolving: model.isResolvingCredits,
+                                          pinLine: pinLine,
+                                          coveredBelow: container.frame(in: .global).minY
+                                              + headerMetrics.collapsedExtent,
+                                          onHeaderHiddenChange: { request in
+                                              withAnimation(DetailSearch.barHandoff) {
+                                                  hiddenSearch = request
+                                              }
+                                          })
+                    }
+                    .padding(.bottom, 24)
+                }
+                .coordinateSpace(name: "scroll")
+                .scrollEdgeEffectHidden(!headerPinned, for: .top)
+                // Also ignore horizontal safe area — otherwise the content sits inset and the
+                // background shows as a trailing gutter.
+                .ignoresSafeArea(edges: [.top, .horizontal])
             }
         }
         .swipeActionsContainerIfAvailable()
-        .background(Color.appBackground)
-        .detailChrome(title: current.name, hiddenSearch: hiddenSearch) {
-            Text(current.name)
-                .font(.headline)
-                .foregroundStyle(.white)
-                .opacity(showNavTitle && !isSearching ? 1 : 0)
-        } extra: {
-            if availableKinds.count > 1 {
-                ToolbarItem(placement: .topBarTrailing) {
-                    CreditFilterMenu(kinds: availableKinds, filter: $filter) {
-                        Image(systemName: "line.3.horizontal.decrease")
-                            .foregroundStyle(isFiltering ? Color.black : .white)
-                    }
-                    // On the menu rather than its label, so the fill is centred on the item
-                    // the bar lays out.
-                    .filterOnBadge(isFiltering, size: DetailSearchBar.barItemFill)
-                    .tint(.white)
-                }
+    }
+
+    /// Zero-height, at the top of the scroll content: window position minus scroll-space position
+    /// is where the page begins. `ignoresSafeArea` widens what the ScrollView draws, not its frame.
+    private var pageTopProbe: some View {
+        Color.clear
+            .frame(height: 0)
+            .onGeometryChange(for: CGFloat.self) {
+                $0.frame(in: .global).minY - $0.frame(in: .named("scroll")).minY
+            } action: { newValue in
+                pageTop = newValue
             }
-        }
-        .background {
-            // The scroll view sits below the nav bar, so its global top edge is the nav bar's
-            // bottom edge — the threshold the header compares against.
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear { navBarBottom = proxy.frame(in: .global).minY }
-                    .onChange(of: proxy.frame(in: .global).minY) { _, newValue in
-                        navBarBottom = newValue
-                    }
+    }
+
+    @ViewBuilder
+    private func bio(scrollProxy: ScrollViewProxy) -> some View {
+        if let bio = current.bio, !bio.isEmpty {
+            ExpandableText(text: bio, lineLimit: 5, font: .body) {
+                // Collapsing removes the tall bio from above the fold; bring the header back
+                // into view rather than leaving a meaningless offset.
+                withAnimation(.easeInOut) { scrollProxy.scrollTo(headerID, anchor: .top) }
             }
-        }
-        .fullScreenCover(isPresented: $showPhoto) {
-            // The zoom transition is applied inside PosterDetailView, so the source profile
-            // photo morphs into the enlarged image.
-            PosterDetailView(imageURL: current.profileURL(.orig),
-                             zoomSourceID: current.id, zoomNamespace: photoNamespace)
-        }
-        .task {
-            await model.load(id: person.id)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
         }
     }
 

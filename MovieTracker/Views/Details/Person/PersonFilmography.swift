@@ -14,7 +14,10 @@ struct PersonFilmography: View {
     /// True while the TV credits are still resolving — a row's year section depends on them,
     /// so the list waits rather than laying out rows it would then have to move.
     var isResolving: Bool = false
-    var navBarBottom: CGFloat = 0
+    /// Where a year header comes to rest: the bottom edge of the pinned detail header.
+    var pinLine: CGFloat = 0
+    /// Global y below which the credits header counts as covered — the pinned header's edge.
+    var coveredBelow: CGFloat = 0
     /// The request while this header is scrolled out of sight, so the page can carry its
     /// controls in the bar; nil while the header is on screen.
     var onHeaderHiddenChange: (DetailSearchRequest?) -> Void = { _ in }
@@ -28,17 +31,16 @@ struct PersonFilmography: View {
                     .padding(.vertical, 32)
             }
         } else if !visibleEntries.isEmpty {
-            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+            LazyVStack(spacing: 0) {
                 header
                 if !upcomingEntries.isEmpty {
                     UpcomingSection(entries: upcomingEntries, lists: lists)
                 }
                 ForEach(releasedByYear, id: \.year) { group in
-                    Section {
-                        FilmographyRows(entries: group.entries, lists: lists)
-                    } header: {
+                    StickySection(space: "scroll", pinLine: pinLine) {
                         SectionHeader(title: String(group.year), color: .appAccent)
-                            .background(Color.appBackground)
+                    } content: {
+                        FilmographyRows(entries: group.entries, lists: lists)
                     }
                 }
             }
@@ -68,7 +70,7 @@ struct PersonFilmography: View {
         }
         .sectionHeaderInsets()
         .onGeometryChange(for: Bool.self) { proxy in
-            proxy.frame(in: .global).maxY <= navBarBottom
+            proxy.frame(in: .global).maxY <= coveredBelow
         } action: { hidden in
             onHeaderHiddenChange(hidden ? searchRequest : nil)
         }
@@ -132,6 +134,7 @@ private struct FilmographyPreview: View {
                                       isResolving: isResolving)
                 }
             }
+            .coordinateSpace(name: "scroll")
             .detailDestinations()
             .detailSearchHost()
         }

@@ -165,7 +165,7 @@
 		CE8DD21D3029671C006213BD /* EpisodesBySeasonSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD21C3029671C006213BD /* EpisodesBySeasonSection.swift */; };
 		CE8DD22130296750006213BD /* ShowDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD22030296750006213BD /* ShowDetailView.swift */; };
 		CE8DD22C302967B2006213BD /* PersonDetailModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD22B302967B2006213BD /* PersonDetailModel.swift */; };
-		CE8DD22E302967BC006213BD /* PersonBioHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD22D302967BC006213BD /* PersonBioHeader.swift */; };
+		CE8DD22E302967BC006213BD /* PersonDetailHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD22D302967BC006213BD /* PersonDetailHeader.swift */; };
 		CE8DD230302967C9006213BD /* FilmographyRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD22F302967C9006213BD /* FilmographyRows.swift */; };
 		CE8DD232302967D3006213BD /* UpcomingSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD231302967D3006213BD /* UpcomingSection.swift */; };
 		CE8DD234302967E3006213BD /* PersonFilmography.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8DD233302967E3006213BD /* PersonFilmography.swift */; };
@@ -482,7 +482,7 @@
 		CE8DD21C3029671C006213BD /* EpisodesBySeasonSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodesBySeasonSection.swift; sourceTree = "<group>"; };
 		CE8DD22030296750006213BD /* ShowDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowDetailView.swift; sourceTree = "<group>"; };
 		CE8DD22B302967B2006213BD /* PersonDetailModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonDetailModel.swift; sourceTree = "<group>"; };
-		CE8DD22D302967BC006213BD /* PersonBioHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonBioHeader.swift; sourceTree = "<group>"; };
+		CE8DD22D302967BC006213BD /* PersonDetailHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonDetailHeader.swift; sourceTree = "<group>"; };
 		CE8DD22F302967C9006213BD /* FilmographyRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmographyRows.swift; sourceTree = "<group>"; };
 		CE8DD231302967D3006213BD /* UpcomingSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingSection.swift; sourceTree = "<group>"; };
 		CE8DD233302967E3006213BD /* PersonFilmography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonFilmography.swift; sourceTree = "<group>"; };
@@ -1223,7 +1223,7 @@
 			children = (
 				CE8DD22B302967B2006213BD /* PersonDetailModel.swift */,
 				CE8DD23730296803006213BD /* PersonDetailView.swift */,
-				CE8DD22D302967BC006213BD /* PersonBioHeader.swift */,
+				CE8DD22D302967BC006213BD /* PersonDetailHeader.swift */,
 				CE8DD233302967E3006213BD /* PersonFilmography.swift */,
 				CE8DD22F302967C9006213BD /* FilmographyRows.swift */,
 				CE8DD231302967D3006213BD /* UpcomingSection.swift */,
@@ -1800,7 +1800,7 @@
 				CEE7901B3029DCE10040DADB /* RankMoviesTool.swift in Sources */,
 				CE471FFF3032E5E8000313EE /* DetailSearchHost.swift in Sources */,
 				CE310EF2302030020092A86B /* ListSectionsModel.swift in Sources */,
-				CE8DD22E302967BC006213BD /* PersonBioHeader.swift in Sources */,
+				CE8DD22E302967BC006213BD /* PersonDetailHeader.swift in Sources */,
 				CE748BF83034ED14007EE787 /* StickySection.swift in Sources */,
 				CE8DD21B30296706006213BD /* SeasonEpisodeList.swift in Sources */,
 				CE8DD34D302984A8006213BD /* ImageSize.swift in Sources */,
@@ -2218,7 +2218,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.18.8;
+				CURRENT_PROJECT_VERSION = 2026.8.18.9;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
@@ -2245,7 +2245,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.18.8;
+				CURRENT_PROJECT_VERSION = 2026.8.18.9;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
