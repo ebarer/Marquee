@@ -40,9 +40,11 @@ struct ShowDetailView: View {
     /// Where the viewer is up to, resolved once the show loads — a part-watched show opens
     /// on the season they're in rather than season 1. Nil until then, and for a finished show.
     @State private var inProgressSeason: Int?
-    /// Set by the cast section once its header scrolls under the pinned one, so its search
-    /// button can carry on in the bar.
-    @State private var hiddenSearch: DetailSearchRequest?
+    /// Handed up by the cast section, so the bar carries its search button from the moment the
+    /// cast is known.
+    @State private var castSearch: DetailSearchRequest?
+    /// The outside page the nav bar's links menu picked, shown in an in-app Safari view.
+    @State private var openLink: ExternalLink?
 
     /// The payload once it lands, else the caller's stub.
     private var show: Show { model.show ?? seed }
@@ -53,7 +55,10 @@ struct ShowDetailView: View {
             .tint(model.tint)
             // The pinned header carries the title, so the nav bar stays chromeless.
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
-            .detailChrome(title: show.name, hiddenSearch: hiddenSearch)
+            .detailChrome(title: show.name, search: castSearch) {
+                ExternalLinksToolbarItem(links: model.extras.links) { openLink = $0 }
+            }
+            .safariSheet(link: $openLink, tint: model.tint)
             .task {
                 // Seed from the persisted facts (the show's id alone) so the controls are correct
                 // before the payload loads, rather than flipping once it's computed.
@@ -103,7 +108,9 @@ struct ShowDetailView: View {
                                      onChange: reconcileMembership)
                         .zIndex(1)
                     ShowMetadataStrip(show: show, tint: model.tint,
-                                      isLoading: !show.isDetailPayload)
+                                      isLoading: !show.isDetailPayload,
+                                      awards: model.extras.awards,
+                                      awardsResolved: model.extras.resolved)
                         .padding(.bottom, 8)
                     overview(show: show)
                         .padding(.horizontal, 16)
@@ -119,11 +126,12 @@ struct ShowDetailView: View {
                                 leadRole: "Creator",
                                 leadTitleSingular: "Creator", leadTitlePlural: "Creators",
                                 castTitle: "Top Cast", castLimit: 5,
-                                coveredBelow: container.frame(in: .global).minY
-                                    + CollapsedHeader.extent,
-                                onSearchHiddenChange: { request in
+                                searchRoster: CastSearchRoster(title: "Guests",
+                                                               people: show.guestCast ?? []),
+                                creditedShow: show,
+                                onSearchRequest: { request in
                                     withAnimation(DetailSearch.barHandoff) {
-                                        hiddenSearch = request
+                                        castSearch = request
                                     }
                                 })
                     RecommendationsSection(shows: model.recommendations, lists: lists,

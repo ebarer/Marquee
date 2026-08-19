@@ -18,6 +18,9 @@ struct Person: Hashable, Identifiable, Codable, Sendable {
     var role: String?
     /// Episodes they appear in (from a show's or season's aggregate credits). Nil elsewhere.
     var episodeCount: Int?
+    /// TMDB credit ids for their roles on one show, which resolve to the episodes they are in.
+    /// Optional so cache entries written before it existed still decode.
+    var creditIDs: [String]?
     var profilePicture: String?
     var birthday: Date?
     var placeOfBirth: String?

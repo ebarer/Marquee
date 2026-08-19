@@ -25,6 +25,11 @@ struct DetailSearchGroup: Hashable, Identifiable {
         }
     }
 
+    var peopleIDs: [Int] {
+        guard case .people(let people) = content else { return [] }
+        return people.map(\.id)
+    }
+
     func filtered(by query: String) -> DetailSearchGroup? {
         guard !query.isEmpty else { return self }
         switch content {
@@ -43,9 +48,14 @@ struct DetailSearchRequest: Hashable {
     let prompt: String
     let groups: [DetailSearchGroup]
     var tint: Color = .appAccent
+    /// TV rosters carry an episode count, so only they offer the control that hides it.
+    var countsEpisodes = false
+    /// The show these credits belong to. A hit then opens the episodes they are in rather than
+    /// their own page, which is what someone hunting a guest spot is after.
+    var creditedShow: Show?
 
     var rowCount: Int { groups.reduce(0) { $0 + $1.rowCount } }
-    var isSearchable: Bool { rowCount >= DetailSearch.minimumRows }
+    var isSearchable: Bool { rowCount > 0 }
 }
 
 /// Searches one detail section's list, covering the page it was opened from.
@@ -54,6 +64,8 @@ struct DetailSearchScreen: View {
     /// The control that opened search, in global coordinates. The field flies out of it.
     var sourceFrame: CGRect?
     var barSlot: CGRect?
+    /// How many items search puts in the trailing group, which is what the field stops short of.
+    var trailingItems: Int = 1
     var contentFrame: CGRect = .zero
     let isClosing: Bool
     @Binding var query: String
@@ -69,7 +81,7 @@ struct DetailSearchScreen: View {
     @State private var showsResults = false
     @State private var revealsResults = false
     // Latched when search opens: a placement that changes mid-flight moves the field under it.
-    @State private var placedAt: CGPoint?
+    @State private var placedAt: CGRect?
     /// Where the results' own top edge sits, measured the way they are laid out.
     @State private var resultsTop: CGFloat = 0
     @State private var fieldGlass = false
@@ -107,7 +119,7 @@ struct DetailSearchScreen: View {
             field
         }
         .onAppear {
-            placedAt = cancelCenter
+            placedAt = trailingSlot
             // Rows arrive after the field lands. Building them first spends the flight's frames on
             // layout, and the first half of it never gets drawn.
             withAnimation(DetailSearch.entry) {
@@ -118,16 +130,18 @@ struct DetailSearchScreen: View {
         }
     }
 
-    /// Where the cancel button's glass circle sits.
-    private var cancelCenter: CGPoint? {
+    /// The glass circles of search's trailing items, as one rect.
+    private var trailingSlot: CGRect? {
         guard contentFrame != .zero else { return nil }
         if let barSlot, inBarRow(barSlot), barSlot.midX > contentFrame.midX {
-            return CGPoint(x: barSlot.midX, y: barSlot.midY)
+            return barSlot
         }
         let inset = DetailSearchBar.barItemInset(compact: sizeClass == .compact)
-        return CGPoint(x: contentFrame.maxX - inset - DetailSearchBar.rowHeight / 2,
-                       y: contentFrame.minY - DetailSearchBar.barHeight
-                          + DetailSearchBar.rowHeight / 2)
+        let width = DetailSearchBar.rowHeight * CGFloat(trailingItems)
+            + DetailSearchBar.barItemGap * CGFloat(trailingItems - 1)
+        return CGRect(x: contentFrame.maxX - inset - width,
+                      y: contentFrame.minY - DetailSearchBar.barHeight,
+                      width: width, height: DetailSearchBar.rowHeight)
     }
 
     /// Toolbar items report a placeholder frame near the origin before they are laid out.
@@ -153,10 +167,10 @@ struct DetailSearchScreen: View {
     /// The rows start below the field, wherever the field was placed. With no content region
     /// measured it sits in flow at the top instead.
     private var barHeight: CGFloat {
-        guard let center = placedAt ?? cancelCenter else {
+        guard let slot = placedAt ?? trailingSlot else {
             return DetailSearchBar.capsuleHeight + Self.fieldGap
         }
-        let fieldBottom = center.y - DetailSearchBar.rowHeight / 2 + DetailSearchBar.capsuleHeight
+        let fieldBottom = slot.minY + DetailSearchBar.capsuleHeight
         return max(0, fieldBottom - resultsTop + Self.fieldGap)
     }
 
@@ -164,16 +178,14 @@ struct DetailSearchScreen: View {
     // keyboard resizes it, and every row would be rebuilt as the keyboard animated.
     @ViewBuilder
     private var field: some View {
-        if let cancelCenter = placedAt ?? cancelCenter {
-            // The leading margin mirrors the cancel button's own inset, so the field is concentric
+        if let slot = placedAt ?? trailingSlot {
+            // The leading margin mirrors the trailing items' own inset, so the field is concentric
             // with the corner it sits in.
             GeometryReader { proxy in
                 let container = proxy.frame(in: .global)
-                let radius = DetailSearchBar.rowHeight / 2
-                let leading = max(0, container.maxX - cancelCenter.x - radius)
-                let trailing = max(0, container.maxX - cancelCenter.x + radius
-                                    + DetailSearchBar.cancelGap)
-                let top = max(0, cancelCenter.y - radius - container.minY)
+                let leading = max(0, container.maxX - slot.maxX)
+                let trailing = max(0, container.maxX - slot.minX + DetailSearchBar.cancelGap)
+                let top = max(0, slot.minY - container.minY)
                 let target = CGRect(x: container.minX + leading, y: container.minY + top,
                                     width: max(1, container.width - leading - trailing),
                                     height: DetailSearchBar.capsuleHeight)

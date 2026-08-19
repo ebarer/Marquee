@@ -121,6 +121,7 @@ extension TMDBWrapper {
         show.trailers = sh.trailers()
         show.creators = sh.creators()
         show.recurringCast = sh.recurringCast()
+        show.guestCast = sh.guestCast()
         show.castEpisodeCounts = sh.castEpisodeCounts()
         show.seasons = sh.seasonsList()
         show.watchByRegion = sh.watchByRegion()

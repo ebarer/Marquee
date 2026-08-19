@@ -6,10 +6,10 @@
 import SwiftUI
 
 /// The navigation bar every detail screen shares: the page's title, the search button a section
-/// hands up once its own has scrolled out of sight, and the modal's Close after it.
+/// hands up, and the modal's Close after it.
 private struct DetailChrome<Principal: View, Extra: ToolbarContent>: ViewModifier {
     let title: String
-    let hiddenSearch: DetailSearchRequest?
+    let search: DetailSearchRequest?
     @ViewBuilder let principal: () -> Principal
     @ToolbarContentBuilder let extra: () -> Extra
 
@@ -30,8 +30,12 @@ private struct DetailChrome<Principal: View, Extra: ToolbarContent>: ViewModifie
                 }
                 // All of these would sit over the search field and take the taps meant for its
                 // cancel, so they stand down while it holds the bar's row.
-                if let hiddenSearch, !isSearching {
-                    DetailSearchToolbarItem(request: hiddenSearch)
+                if !isSearching {
+                    // Only the search button is contingent on a section hoisting one; `extra`
+                    // is the screen's own and must not wait on that.
+                    if let search {
+                        DetailSearchToolbarItem(request: search)
+                    }
                     extra()
                     // Placement spelled out: an automatic spacer doesn't land in the trailing
                     // group, so Close would share its glass with the items before it.
@@ -50,21 +54,21 @@ extension View {
     /// order they sit in. `extra` lands between the search button and Close.
     func detailChrome<Principal: View, Extra: ToolbarContent>(
         title: String,
-        hiddenSearch: DetailSearchRequest?,
+        search: DetailSearchRequest?,
         @ViewBuilder principal: @escaping () -> Principal = { Text("") },
         @ToolbarContentBuilder extra: @escaping () -> Extra
     ) -> some View {
-        modifier(DetailChrome(title: title, hiddenSearch: hiddenSearch,
+        modifier(DetailChrome(title: title, search: search,
                               principal: principal, extra: extra))
     }
 
     /// For a screen with no bar items of its own beside the search button.
     func detailChrome<Principal: View>(
         title: String,
-        hiddenSearch: DetailSearchRequest?,
+        search: DetailSearchRequest?,
         @ViewBuilder principal: @escaping () -> Principal = { Text("") }
     ) -> some View {
-        detailChrome(title: title, hiddenSearch: hiddenSearch, principal: principal) {
+        detailChrome(title: title, search: search, principal: principal) {
             ToolbarSpacer(.fixed, placement: .topBarTrailing)
         }
     }

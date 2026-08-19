@@ -37,9 +37,19 @@ struct CastPersonRows: View {
 struct CastPersonRow: View {
     let person: Person
     var showsEpisodeCount = false
+    /// Set where their episodes in one show are the better destination than their own page.
+    var episodes: ShowEpisodeCredits?
 
     var body: some View {
-        NavigationLink(value: person) {
+        if let episodes {
+            link(to: ShowCreditDestination.episodes(episodes))
+        } else {
+            link(to: person)
+        }
+    }
+
+    private func link<Value: Hashable>(to value: Value) -> some View {
+        NavigationLink(value: value) {
             HStack(spacing: 8) {
                 PersonRow(person: person, showsEpisodeCount: showsEpisodeCount)
                 Image(systemName: "chevron.right")

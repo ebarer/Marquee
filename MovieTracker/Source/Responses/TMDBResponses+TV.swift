@@ -63,6 +63,11 @@ extension TMDBWrapper {
             aggregateCreditsRaw?.regularCast() ?? []
         }
 
+        /// Every other billed credit across the run, which only search covers.
+        func guestCast() -> [Person] {
+            aggregateCreditsRaw?.guestCast() ?? []
+        }
+
         /// Episodes each cast member is in across the whole run, keyed by person id — every
         /// member, not just the ranked ones, since a season's roster is drawn from its own credits.
         func castEpisodeCounts() -> [Int: Int] {
@@ -232,13 +237,19 @@ extension TMDBWrapper {
                 .sorted {
                     ($0.order ?? .max, -$0.totalEpisodeCount) < ($1.order ?? .max, -$1.totalEpisodeCount)
                 }
-                .map { member in
-                    var person = Person(id: member.id, name: member.name,
-                                        role: member.characterName,
-                                        pic: member.profilePicture, type: .Cast)
-                    person.episodeCount = member.totalEpisodeCount
-                    return person
+                .map(\.person)
+        }
+
+        /// Everyone billed below the regulars' run — guest and one-off credits — most-seen first.
+        /// Billing order says nothing about a guest, so episode count ranks them.
+        func guestCast() -> [Person] {
+            let floor = regularFloor()
+            return cast
+                .filter { $0.totalEpisodeCount < floor }
+                .sorted {
+                    ($0.totalEpisodeCount, $1.name) > ($1.totalEpisodeCount, $0.name)
                 }
+                .map(\.person)
         }
 
         /// The run that makes someone a regular, whose billing order means something. Half the
@@ -260,6 +271,14 @@ extension TMDBWrapper {
                 roles?.compactMap { $0.character.isEmpty ? nil : $0.character }.first
             }
 
+            var person: Person {
+                var person = Person(id: id, name: name, role: characterName,
+                                    pic: profilePicture, type: .Cast)
+                person.episodeCount = totalEpisodeCount
+                person.creditIDs = (roles ?? []).map(\.creditID)
+                return person
+            }
+
             enum CodingKeys: String, CodingKey {
                 case id, name, roles, order
                 case profilePicture = "profile_path"
@@ -268,6 +287,12 @@ extension TMDBWrapper {
 
             struct RoleRaw: Codable {
                 var character: String
+                var creditID: String
+
+                enum CodingKeys: String, CodingKey {
+                    case character
+                    case creditID = "credit_id"
+                }
             }
         }
     }

@@ -44,8 +44,9 @@ private struct DetailSearchHost: ViewModifier {
     // slot when a page has an item there to measure.
     @State private var contentFrame: CGRect = .zero
     @State private var barSlot: CGRect?
-    // The cancel button only exists while searching, so what it reports is kept for next time.
-    @State private var learnedSlot: CGRect?
+    // The trailing items only exist while searching, so what they report is kept for next time.
+    @State private var cancelSlot: CGRect?
+    @State private var countsSlot: CGRect?
 
     @State private var pageHidden = false
     // Separate from `isSearching` so the cancel button's arrival can animate without an animated
@@ -57,6 +58,7 @@ private struct DetailSearchHost: ViewModifier {
     @State private var fieldFocused = false
     @State private var fieldFrame: CGRect = .zero
 
+    @AppStorage("castEpisodeCounts") private var showsEpisodeCounts = true
     @Environment(\.closeModal) private var closeModal
 
     private var isSearching: Bool { request != nil && !isClosing }
@@ -77,6 +79,7 @@ private struct DetailSearchHost: ViewModifier {
 
             if let request {
                 DetailSearchScreen(request: request, sourceFrame: sourceFrame, barSlot: barSlot,
+                                   trailingItems: request.countsEpisodes ? 2 : 1,
                                    contentFrame: contentFrame, isClosing: isClosing,
                                    query: $query, fieldInBar: fieldInBar,
                                    focused: !fieldInBar && fieldFocused,
@@ -123,6 +126,16 @@ private struct DetailSearchHost: ViewModifier {
                         .frame(width: max(1, fieldFrame.width))
                         .opacity(fieldInBar ? 1 : 0)
                 }
+                // Declared first, so it sits to the left of the button that closes search.
+                if request.countsEpisodes {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        CastCountsMenu(showsCounts: $showsEpisodeCounts, style: .bar,
+                                       tint: request.tint)
+                            .onGeometryChange(for: CGRect.self) { proxy in
+                                DetailSearchBar.barCircle(around: proxy.frame(in: .global))
+                            } action: { countsSlot = $0; syncBarSlot() }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: close) {
                         Image(systemName: "xmark")
@@ -132,7 +145,7 @@ private struct DetailSearchHost: ViewModifier {
                     .accessibilityLabel("Close Search")
                     .onGeometryChange(for: CGRect.self) { proxy in
                         DetailSearchBar.barCircle(around: proxy.frame(in: .global))
-                    } action: { report($0) }
+                    } action: { cancelSlot = $0; syncBarSlot() }
                 }
             }
         }
@@ -145,17 +158,26 @@ private struct DetailSearchHost: ViewModifier {
             sourceFrame = from
             query = ""
             landed = false
+            // Without a filter beside the close button, the slot measured with one is too wide.
+            if !opened.countsEpisodes {
+                countsSlot = nil
+                barSlot = cancelSlot
+            }
             request = opened
             withAnimation(DetailSearch.barHandoff) { barSearching = true }
         }
     }
 
-    /// Only the cancel button decides this. A page's own bar items aren't necessarily the trailing
-    /// one — the person page has a filter beside its search button — so their frames don't apply.
-    private func report(_ slot: CGRect) {
-        learnedSlot = slot
-        // Not while searching: moving it then drags the field mid-flight.
-        if !isSearching { barSlot = slot }
+    /// Where search's own trailing items sit. A page's bar items aren't necessarily the trailing
+    /// ones — the person page has a filter beside its search button — so their frames don't apply.
+    private var learnedSlot: CGRect? {
+        guard let cancelSlot else { return countsSlot }
+        return countsSlot.map { cancelSlot.union($0) } ?? cancelSlot
+    }
+
+    private func syncBarSlot() {
+        // Not while searching: moving the slot then drags the field mid-flight.
+        if !isSearching { barSlot = learnedSlot }
     }
 
     private func close() {

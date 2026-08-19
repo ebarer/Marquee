@@ -12,6 +12,25 @@ struct ShowEpisodeCredits: Hashable {
     /// Nil where the caller hasn't resolved it (Known For, or a row tapped mid-fetch), and
     /// the screen resolves it from the show's credit ids instead.
     var credit: EpisodeCredit? = nil
+    /// Set where the screen was reached from the show rather than from the person, so they head
+    /// the list instead of the show already being read.
+    var person: Person? = nil
+
+    /// A hit in a show's cast search: their own roles carry the credit ids the episodes resolve
+    /// from, and the show is stripped to what this screen reads.
+    init(person: Person, in show: Show) {
+        var subject = Show(id: show.id, name: show.name)
+        subject.poster = show.poster
+        subject.creditIDs = person.creditIDs ?? []
+        subject.creditRole = person.role
+        self.show = subject
+        self.person = person
+    }
+
+    init(show: Show, credit: EpisodeCredit? = nil) {
+        self.show = show
+        self.credit = credit
+    }
 }
 
 /// Where a filmography row goes. One value type, so the row's link keeps its identity when
@@ -40,7 +59,7 @@ struct ShowEpisodeCreditsView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                showRow
+                subjectRow
 
                 if !model.hasLoaded {
                     ProgressView()
@@ -70,8 +89,18 @@ struct ShowEpisodeCreditsView: View {
         .task { await model.load(credit) }
     }
 
-    /// The show as search presents it, so the episodes below have their subject at the top —
-    /// and a way into the show itself, which is otherwise a screen back.
+    /// The episodes' subject at the top, and a way into their page, which is otherwise a screen
+    /// back: the person when the show sent them here, else the show itself.
+    @ViewBuilder
+    private var subjectRow: some View {
+        if let person = credit.person {
+            CastPersonRow(person: person, showsEpisodeCount: person.episodeCount != nil)
+        } else {
+            showRow
+        }
+    }
+
+    /// The show as search presents it.
     private var showRow: some View {
         NavigationLink(value: credit.show) {
             HStack(spacing: 8) {

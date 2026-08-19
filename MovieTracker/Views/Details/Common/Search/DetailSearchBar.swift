@@ -25,6 +25,9 @@ struct DetailSearchBar: View {
     // A sheet's bar insets its items tighter than a compact one. Only a first search leans on this;
     // after that the cancel button's own frame is known.
     static func barItemInset(compact: Bool) -> CGFloat { compact ? barMargin : 11 }
+    // Between two items sharing the bar's glass, measured on iOS 27 and leaned on for a first
+    // search only.
+    static let barItemGap: CGFloat = 11
     // The bar is taller than the row its items sit on, which is the top `rowHeight` of it. Measured
     // on iOS 27 and the same on both idioms, so the row can't be assumed to meet the content.
     static let barHeight: CGFloat = 54

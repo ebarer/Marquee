@@ -83,6 +83,7 @@
 		CE6AF8BB3035BE1A0002656A /* TitleExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6AF8BA3035BE1A0002656A /* TitleExtras.swift */; };
 		CE6AF8BD3035BE230002656A /* AwardsMetadataCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6AF8BC3035BE230002656A /* AwardsMetadataCell.swift */; };
 		CE6AF8BF3035BE2C0002656A /* ExternalLinksMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6AF8BE3035BE2C0002656A /* ExternalLinksMenu.swift */; };
+		CE6AF8DF3035C59E0002656A /* CastCountsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6AF8DE3035C59E0002656A /* CastCountsMenu.swift */; };
 		CE70BC1E302F17DE0059F0F3 /* RecommendationsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE70BC1D302F17DE0059F0F3 /* RecommendationsSection.swift */; };
 		CE70BC20302F19940059F0F3 /* PosterTint.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE70BC1F302F19940059F0F3 /* PosterTint.swift */; };
 		CE70BC22302F1CC50059F0F3 /* LoadingParagraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE70BC21302F1CC50059F0F3 /* LoadingParagraph.swift */; };
@@ -408,6 +409,7 @@
 		CE6AF8BA3035BE1A0002656A /* TitleExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleExtras.swift; sourceTree = "<group>"; };
 		CE6AF8BC3035BE230002656A /* AwardsMetadataCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwardsMetadataCell.swift; sourceTree = "<group>"; };
 		CE6AF8BE3035BE2C0002656A /* ExternalLinksMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalLinksMenu.swift; sourceTree = "<group>"; };
+		CE6AF8DE3035C59E0002656A /* CastCountsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CastCountsMenu.swift; sourceTree = "<group>"; };
 		CE70BC1D302F17DE0059F0F3 /* RecommendationsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationsSection.swift; sourceTree = "<group>"; };
 		CE70BC1F302F19940059F0F3 /* PosterTint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PosterTint.swift; sourceTree = "<group>"; };
 		CE70BC21302F1CC50059F0F3 /* LoadingParagraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingParagraph.swift; sourceTree = "<group>"; };
@@ -1119,6 +1121,7 @@
 				CE8DD1BF302960C7006213BD /* WatchedDatePicker.swift */,
 				CE6AF8B23035B6820002656A /* InAppSafariView.swift */,
 				CE6AF8BE3035BE2C0002656A /* ExternalLinksMenu.swift */,
+				CE6AF8DE3035C59E0002656A /* CastCountsMenu.swift */,
 			);
 			path = Controls;
 			sourceTree = "<group>";
@@ -1984,6 +1987,7 @@
 				CE8DD2E630297A0D006213BD /* CSVMovieRecord.swift in Sources */,
 				CEB8A487301F1C6C002FBF31 /* ListTable.swift in Sources */,
 				CE8DD2D53029799E006213BD /* ListCoordinator.swift in Sources */,
+				CE6AF8DF3035C59E0002656A /* CastCountsMenu.swift in Sources */,
 				CE8DD29930297739006213BD /* MediaCachePrefetcher.swift in Sources */,
 				CE8688F53032540E00DFB237 /* ShowEpisodeCreditsModel.swift in Sources */,
 				CE70BC4A302FCB5B0059F0F3 /* PreviewSnapshots.swift in Sources */,
@@ -2254,7 +2258,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.19.3;
+				CURRENT_PROJECT_VERSION = 2026.8.19.4;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
@@ -2281,7 +2285,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.19.3;
+				CURRENT_PROJECT_VERSION = 2026.8.19.4;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;

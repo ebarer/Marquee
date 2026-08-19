@@ -1,0 +1,91 @@
+//
+//  CastCountsMenu.swift
+//  MovieTracker
+//
+
+import SwiftUI
+
+/// The episode-count switch a cast list carries: a tap shows or hides the counts, a long press
+/// opens the same switch as a checklist.
+struct CastCountsMenu: View {
+    @Binding var showsCounts: Bool
+    var style: Style = .sectionHeader
+    var tint: Color = .appAccent
+
+    enum Style {
+        /// Draws its own circle, opposite a section header.
+        case sectionHeader
+        /// Sits in a navigation bar, which supplies the glass the fill goes inside.
+        case bar
+    }
+
+    var body: some View {
+        Menu {
+            Toggle("Episode Counts", isOn: $showsCounts)
+        } label: {
+            label
+        } primaryAction: {
+            showsCounts.toggle()
+        }
+        .modifier(StyleChrome(style: style, showsCounts: showsCounts, tint: tint))
+        .accessibilityLabel(showsCounts ? "Hide episode counts" : "Show episode counts")
+        .accessibilityHint("Touch and hold to choose what a cast row shows")
+    }
+
+    @ViewBuilder
+    private var label: some View {
+        switch style {
+        case .sectionHeader:
+            Image(systemName: "line.3.horizontal.decrease")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(showsCounts ? tint : .black)
+                .filterOnBadge(!showsCounts, size: SectionHeaderControl.fill, color: tint)
+                .sectionHeaderControl()
+        case .bar:
+            Image(systemName: "line.3.horizontal.decrease")
+                .foregroundStyle(showsCounts ? Color.white : .black)
+        }
+    }
+}
+
+/// The bar's fill goes on the menu rather than its label, so it is centred on the item the bar
+/// lays out.
+private struct StyleChrome: ViewModifier {
+    let style: CastCountsMenu.Style
+    let showsCounts: Bool
+    let tint: Color
+
+    func body(content: Content) -> some View {
+        switch style {
+        case .sectionHeader:
+            content.buttonStyle(.plain)
+        case .bar:
+            content
+                .filterOnBadge(!showsCounts, size: DetailSearchBar.barItemFill, color: tint)
+                .tint(.white)
+        }
+    }
+}
+
+#Preview {
+    @Previewable @State var showsCounts = true
+
+    NavigationStack {
+        VStack(spacing: 24) {
+            CastCountsMenu(showsCounts: $showsCounts)
+            Text(showsCounts ? "Counts shown" : "Counts hidden")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.appBackground)
+        .navigationTitle("Top Cast")
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                CastCountsMenu(showsCounts: $showsCounts, style: .bar)
+            }
+        }
+    }
+    .preferredColorScheme(.dark)
+}

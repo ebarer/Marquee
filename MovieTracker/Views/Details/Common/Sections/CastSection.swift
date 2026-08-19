@@ -5,6 +5,12 @@
 
 import SwiftUI
 
+/// People a page doesn't list but search still reaches, under a heading of their own.
+struct CastSearchRoster {
+    let title: String
+    let people: [Person]
+}
+
 /// Cast & crew for a detail screen: lead crew credit on top, a Cast/Guests/Crew picker below.
 /// Shared by movie, show, and episode detail via its role/title parameters.
 struct CastSection: View {
@@ -22,9 +28,14 @@ struct CastSection: View {
     var castTitle: String = "Cast"
     /// How many cast members show before the "Show More" expander.
     var castLimit: Int = 10
-    /// Global y below which this section's header counts as covered — the pinned header's edge.
-    var coveredBelow: CGFloat = 0
-    var onSearchHiddenChange: (DetailSearchRequest?) -> Void = { _ in }
+    /// A roster only search covers, under its own heading: a show lists its top cast but every
+    /// guest credit is searchable.
+    var searchRoster: CastSearchRoster?
+    /// The show these credits belong to, which sends a search hit to their episodes in it.
+    var creditedShow: Show?
+    /// Set to hand the section's search request to the screen, which then owns the control in its
+    /// navigation bar. Unset, the section's own header carries it.
+    var onSearchRequest: ((DetailSearchRequest?) -> Void)?
 
     @State private var selection: CastCategory?
     @State private var castExpanded = false
@@ -93,17 +104,17 @@ struct CastSection: View {
                                        },
                                        accessory: {
                                            HStack(spacing: 8) {
-                                               DetailSearchButton(request: searchRequest)
+                                               if onSearchRequest == nil {
+                                                   DetailSearchButton(request: searchRequest)
+                                               }
                                                if hasEpisodeCounts {
                                                    CastCountsMenu(showsCounts: $showsEpisodeCounts,
                                                                   tint: tint)
                                                }
                                            }
                                        })
-                        .onGeometryChange(for: Bool.self) { proxy in
-                            proxy.frame(in: .global).maxY <= coveredBelow
-                        } action: { covered in
-                            onSearchHiddenChange(covered ? searchRequest : nil)
+                        .onChange(of: searchSignature, initial: true) { _, _ in
+                            onSearchRequest?(searchRequest)
                         }
                     categoryList(category)
                         // New identity per category so switching crossfades the list.
@@ -118,14 +129,32 @@ struct CastSection: View {
     }
 
     private var searchRequest: DetailSearchRequest {
-        let groups = [
+        var groups = [
             DetailSearchGroup(title: directors.count > 1 ? leadTitlePlural : leadTitleSingular,
                               content: .people(directors)),
             DetailSearchGroup(title: title(for: .cast), content: .people(members(for: .cast))),
             DetailSearchGroup(title: title(for: .guests), content: .people(members(for: .guests))),
             DetailSearchGroup(title: title(for: .crew), content: .people(members(for: .crew))),
-        ].filter { $0.rowCount > 0 }
-        return DetailSearchRequest(prompt: "Search Cast & Crew", groups: groups, tint: tint)
+        ]
+        if let searchRoster {
+            // A season regular can be billed below the show's own floor too, so the listed
+            // rows win and the roster supplies only what they leave out.
+            let listed = Set(groups.flatMap(\.peopleIDs))
+            groups.append(DetailSearchGroup(
+                title: searchRoster.title,
+                content: .people(searchRoster.people.filter { !listed.contains($0.id) })))
+        }
+        return DetailSearchRequest(prompt: "Search Cast & Crew",
+                                   groups: groups.filter { $0.rowCount > 0 },
+                                   tint: tint, countsEpisodes: hasEpisodeCounts,
+                                   creditedShow: creditedShow)
+    }
+
+    /// The request is rebuilt off this rather than diffed: a guest roster runs to thousands, which
+    /// is too much to compare on every layout pass.
+    private var searchSignature: [Int] {
+        [directors.count, castMembers.count, castMembers.first?.id ?? 0, guests.count,
+         crewMembers.count, searchRoster?.people.count ?? 0, hasEpisodeCounts ? 1 : 0]
     }
 
     @ViewBuilder
@@ -162,30 +191,6 @@ struct CastSection: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-}
-
-/// The cast section's filter: a tap shows or hides the episode counts, a long press opens the
-/// same switch as a checklist.
-private struct CastCountsMenu: View {
-    @Binding var showsCounts: Bool
-    let tint: Color
-
-    var body: some View {
-        Menu {
-            Toggle("Episode Counts", isOn: $showsCounts)
-        } label: {
-            Image(systemName: "line.3.horizontal.decrease")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(showsCounts ? tint : .black)
-                .filterOnBadge(!showsCounts, size: SectionHeaderControl.fill, color: tint)
-                .sectionHeaderControl()
-        } primaryAction: {
-            showsCounts.toggle()
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(showsCounts ? "Hide episode counts" : "Show episode counts")
-        .accessibilityHint("Touch and hold to choose what a cast row shows")
     }
 }
 

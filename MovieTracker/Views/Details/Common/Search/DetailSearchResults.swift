@@ -17,6 +17,7 @@ struct DetailSearchResults: View {
 
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
+    @AppStorage("castEpisodeCounts") private var showsEpisodeCounts = true
 
     @State private var pinLine: CGFloat = 0
     @State private var pinnedSections: Set<String> = []
@@ -93,7 +94,9 @@ struct DetailSearchResults: View {
     private func view(for row: ResultRow) -> some View {
         switch row {
         case .person(let person, let separated):
-            CastPersonRow(person: person)
+            CastPersonRow(person: person,
+                          showsEpisodeCount: request.countsEpisodes && showsEpisodeCounts,
+                          episodes: episodes(for: person))
             if separated { CastRowSeparator() }
         case .credit(let entry, let separated):
             FilmographyRow(entry: entry, lists: lists)
@@ -101,6 +104,13 @@ struct DetailSearchResults: View {
         case .noMatches:
             DetailSearchNoResults(query: query)
         }
+    }
+
+    /// Nil for a crew member or a roster cached before credit ids were kept, where the episode
+    /// lookup has nothing to resolve.
+    private func episodes(for person: Person) -> ShowEpisodeCredits? {
+        guard let show = request.creditedShow, !(person.creditIDs ?? []).isEmpty else { return nil }
+        return ShowEpisodeCredits(person: person, in: show)
     }
 
     private var sections: [ResultSection] {

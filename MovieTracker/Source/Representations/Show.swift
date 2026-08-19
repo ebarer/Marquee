@@ -43,6 +43,9 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     var creditIDs: [String] = []
     var creators: [Person] = []
     var recurringCast: [Person] = []
+    /// Every billed credit outside the regular run, most-seen first — what makes a one-off guest
+    /// findable in cast search. Optional so cache entries written before it existed still decode.
+    var guestCast: [Person]?
     /// Episodes each cast member is in across the run, keyed by person id. Optional so cache
     /// entries written before it existed still decode.
     var castEpisodeCounts: [Int: Int]?

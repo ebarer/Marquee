@@ -50,7 +50,7 @@ struct PersonDetailView: View {
             .background(Color.appBackground.ignoresSafeArea())
             // The pinned header carries the name, so the nav bar stays chromeless.
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
-            .detailChrome(title: current.name, hiddenSearch: hiddenSearch, extra: {
+            .detailChrome(title: current.name, search: hiddenSearch, extra: {
                 if availableKinds.count > 1 {
                     ToolbarItem(placement: .topBarTrailing) {
                         CreditFilterMenu(kinds: availableKinds, filter: $filter) {
