@@ -35,7 +35,8 @@ struct ShowCreditRow: View {
             HStack(spacing: 8) {
                 // Show-level even on a season row, so a series reads the same here as it does
                 // in search and the lists.
-                ShowRow(show: show, role: show.creditRole, showsSeasonCount: false,
+                ShowRow(show: show, role: show.creditRole,
+                        jobs: CreditJob.line(show.creditJobs), showsSeasonCount: false,
                         episodeSummary: summary, posterOverride: seasonPoster,
                         derivesStatus: true)
                 Image(systemName: "chevron.right")
@@ -81,10 +82,12 @@ struct ShowCreditRow: View {
 }
 
 #Preview {
-    func show(_ id: Int, _ name: String, _ role: String, _ count: Int) -> Show {
+    func show(_ id: Int, _ name: String, _ role: String, _ count: Int,
+              jobs: [String] = []) -> Show {
         var show = Show(id: id, name: name)
         show.poster = "preview-poster"
         show.creditRole = role
+        show.creditJobs = jobs
         show.episodeCount = count
         return show
     }
@@ -102,6 +105,10 @@ struct ShowCreditRow: View {
                                   .init(season: seasons[0], episodeNumbers: [2]),
                               ]),
                               season: .init(season: seasons[0], episodeNumbers: [2]))
+                // Acting and crew on the same show: the character keeps a line of its own.
+                ShowCreditRow(show: show(2003, "Space Force", "General Mark R. Naird", 20,
+                                         jobs: ["Writer", "Executive Producer", "Creator"]),
+                              season: .init(season: seasons[0]))
                 // A run split per season, as the filmography lists it under each year.
                 ShowCreditRow(show: show(2004, "The O.C.", "Alex Kelly", 13),
                               season: .init(season: seasons[1]))

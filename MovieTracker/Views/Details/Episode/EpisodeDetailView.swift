@@ -12,12 +12,21 @@ struct EpisodeDetailView: View {
 
     @State private var tint: Color = .appAccent
     @State private var showNavTitle = false
-    /// The show's series regulars (from the cached show), shown as the "Cast" tab alongside
-    /// the episode's Guests and Crew. Empty if the show isn't cached.
+    /// The show's series regulars, shown as the "Cast" tab alongside the episode's Guests and Crew.
     @State private var seriesCast: [Person] = []
 
     @Environment(\.detailSearch) private var detailSearch
     private var isSearching: Bool { detailSearch?.isPresented == true }
+
+    init(episode: Episode) {
+        self.episode = episode
+    }
+
+    /// Previews only: seed the series cast the screen would otherwise fetch.
+    init(preview episode: Episode, seriesCast: [Person]) {
+        self.episode = episode
+        _seriesCast = State(initialValue: seriesCast)
+    }
 
     var body: some View {
         GeometryReader { container in
@@ -34,7 +43,7 @@ struct EpisodeDetailView: View {
                         .padding(.vertical, 8)
 
                     CastSection(cast: seriesCast + episode.crew, guests: episode.guestCast,
-                                tint: tint)
+                                tint: tint, countsEpisodes: false)
                 }
                 .padding(.bottom, 24)
             }
@@ -57,20 +66,36 @@ struct EpisodeDetailView: View {
                     .opacity(showNavTitle && !isSearching ? 1 : 0)
             }
         }
-        .task { await loadTint() }
+        .task { await loadShow() }
     }
 
-    /// Use the show's poster-derived accent so the episode matches the show detail page,
-    /// rather than area-averaging the still (which yields garish tints on photographic frames).
-    private func loadTint() async {
-        guard let cached = await MediaCacheStore.shared.loadShow(id: episode.showTmdbID) else { return }
-        seriesCast = cached.show.recurringCast
-        if let color = cached.color {
-            withAnimation(.easeInOut) { tint = color }
-        } else if let url = cached.show.posterURL(.w342),
-                  let data = try? await TMDBWrapper.imageData(from: url) {
-            withAnimation(.easeInOut) { tint = Color.dominantColor(from: data) }
+    /// The cast tab and the tint both come off the show, so an uncached one is fetched: this
+    /// screen is reachable without passing through the show (a person's episode credits).
+    private func loadShow() async {
+        if let cached = await MediaCacheStore.shared.loadShow(id: episode.showTmdbID) {
+            seriesCast = cached.show.recurringCast
+            if let color = cached.color {
+                withAnimation(.easeInOut) { tint = color }
+            } else {
+                await applyPosterTint(from: cached.show)
+            }
+            return
         }
+        guard let show = try? await TMDBWrapper.getShow(id: episode.showTmdbID) else { return }
+        seriesCast = show.recurringCast
+        let color = await applyPosterTint(from: show)
+        await MediaCacheStore.shared.save(show, tint: color)
+    }
+
+    /// The show's poster accent, so the episode matches the show detail page rather than
+    /// area-averaging the still (which yields garish tints on photographic frames).
+    @discardableResult
+    private func applyPosterTint(from show: Show) async -> Color? {
+        guard let url = show.posterURL(.w342),
+              let data = try? await TMDBWrapper.imageData(from: url) else { return nil }
+        let color = Color.dominantColor(from: data)
+        withAnimation(.easeInOut) { tint = color }
+        return color
     }
 }
 
@@ -82,6 +107,42 @@ struct EpisodeDetailView: View {
             episode.crew = [Person.preview]
             return episode
         }())
+        .detailDestinations()
+    }
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+    .preferredColorScheme(.dark)
+}
+
+// A host-led show: one regular and a run of guests, so the two share a single list.
+#Preview("Guest show") {
+    let team = Person.previewTeam.filter { $0.type == .Cast }
+
+    return NavigationStack {
+        EpisodeDetailView(preview: {
+            var episode = Episode.previewEpisodes[0]
+            episode.guestCast = Array(team.dropFirst())
+            episode.crew = [Person.preview]
+            return episode
+        }(), seriesCast: [team[0]])
+        .detailDestinations()
+    }
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+    .preferredColorScheme(.dark)
+}
+
+// All three tabs: the series regulars the screen fetches, plus the episode's own guests and crew.
+#Preview("Series cast") {
+    let team = Person.previewTeam.filter { $0.type == .Cast }
+
+    return NavigationStack {
+        EpisodeDetailView(preview: {
+            var episode = Episode.previewEpisodes[0]
+            episode.guestCast = Array(team.suffix(3))
+            episode.crew = [Person.preview]
+            return episode
+        }(), seriesCast: Show.preview.recurringCast)
         .detailDestinations()
     }
     .modelContainer(previewModelContainer)

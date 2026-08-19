@@ -119,43 +119,80 @@ import Foundation
 /// Collapsing the several jobs TMDB lists a person under on one title into a single credit.
 @Suite struct CreditMergeTests {
 
-    @Test func everyRoleIsListedMostProminentFirst() {
-        let merged = CreditKind.merge([(.producing, "Producer"),
-                                       (.writing, "Screenplay"),
-                                       (.directing, "Director")])
+    @Test func everyJobIsListedMostProminentFirst() {
+        let merged = CreditKind.merge([(.producing, "Producer", false),
+                                       (.writing, "Screenplay", false),
+                                       (.directing, "Director", false)])
         #expect(merged.kind == .directing)
-        #expect(merged.role == "Director, Screenplay, Producer")
+        #expect(merged.character == nil)
+        #expect(merged.jobs == ["Director", "Screenplay", "Producer"])
     }
 
     /// Equal-ranking jobs keep TMDB's own order rather than being re-sorted.
     @Test func tiesKeepTheOrderTheyArrivedIn() {
-        let merged = CreditKind.merge([(.writing, "Story"),
-                                       (.writing, "Screenplay"),
-                                       (.writing, "Writer")])
-        #expect(merged.role == "Story, Screenplay, Writer")
+        let merged = CreditKind.merge([(.writing, "Story", false),
+                                       (.writing, "Screenplay", false),
+                                       (.writing, "Writer", false)])
+        #expect(merged.jobs == ["Story", "Screenplay", "Writer"])
     }
 
     @Test func aSingleRoleIsUnchanged() {
-        let merged = CreditKind.merge([(.acting, "Cobb")])
+        let merged = CreditKind.merge([(.acting, "Cobb", true)])
         #expect(merged.kind == .acting)
-        #expect(merged.role == "Cobb")
+        #expect(merged.character == "Cobb")
+        #expect(merged.jobs.isEmpty)
     }
 
     @Test func repeatedRolesAreListedOnce() {
-        let merged = CreditKind.merge([(.producing, "Producer"), (.producing, "Producer")])
-        #expect(merged.role == "Producer")
+        let merged = CreditKind.merge([(.producing, "Producer", false),
+                                       (.producing, "Producer", false)])
+        #expect(merged.jobs == ["Producer"])
     }
 
     @Test func rolelessCreditsCollapseToNothing() {
-        #expect(CreditKind.merge([]).role == nil)
-        #expect(CreditKind.merge([(.crew, nil), (.crew, "")]).role == nil)
+        #expect(CreditKind.merge([]).character == nil)
+        let empty = CreditKind.merge([(.crew, nil, false), (.crew, "", false)])
+        #expect(empty.character == nil)
+        #expect(empty.jobs.isEmpty)
     }
 
     /// Acting outranks crew work: someone who acted in a show and directed some of it is
-    /// known for the part, so that's what the credit files and reads as.
-    @Test func actingOutranksCrewWorkOnTheSameTitle() {
-        let merged = CreditKind.merge([(.directing, "Director"), (.acting, "Hal")])
+    /// known for the part, so that's what the credit files as — on a line of its own.
+    @Test func actingAndCrewWorkSplitIntoTwoLines() {
+        let merged = CreditKind.merge([(.directing, "Director", false), (.acting, "Hal", true)])
         #expect(merged.kind == .acting)
-        #expect(merged.role == "Hal, Director")
+        #expect(merged.character == "Hal")
+        #expect(merged.jobs == ["Director"])
+    }
+
+    /// Several characters on one title still read as one line.
+    @Test func severalCharactersJoinOneLine() {
+        let merged = CreditKind.merge([(.acting, "Sam", true), (.acting, "Dean", true)])
+        #expect(merged.character == "Sam, Dean")
+    }
+}
+
+/// Shortening the long job titles TMDB uses.
+@Suite struct CreditJobTests {
+
+    @Test func longTitlesAreAbbreviated() {
+        #expect(CreditJob.short("Executive Producer") == "EP")
+        #expect(CreditJob.short("Director of Photography") == "DP")
+        #expect(CreditJob.short("Original Music Composer") == "Composer")
+    }
+
+    /// Matched as a substring, so a compound title keeps the rest of itself.
+    @Test func compoundTitlesKeepTheirPrefix() {
+        #expect(CreditJob.short("Co-Executive Producer") == "Co-EP")
+    }
+
+    @Test func otherTitlesAreLeftAlone() {
+        #expect(CreditJob.short("Director") == "Director")
+        #expect(CreditJob.short("Screenplay") == "Screenplay")
+    }
+
+    @Test func theLineJoinsEveryJob() {
+        #expect(CreditJob.line(["Writer", "Executive Producer"]) == "Writer, EP")
+        #expect(CreditJob.line([]) == nil)
     }
 }

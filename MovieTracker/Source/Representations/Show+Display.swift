@@ -52,7 +52,13 @@ extension Show {
         regularSeasons.reduce(0) { $0 + $1.episodeCount }
     }
 
-    var isExtraneousCredit: Bool { CreditKind.isExtraneous(creditRole) }
+    /// Every role on the title as one string: the character, then the jobs.
+    var creditRoleSummary: String? {
+        let parts = ([creditRole] + (creditJobs ?? [])).compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
+
+    var isExtraneousCredit: Bool { CreditKind.isExtraneous(creditRoleSummary) }
 
     var primaryTrailer: MediaTrailer? {
         trailers?

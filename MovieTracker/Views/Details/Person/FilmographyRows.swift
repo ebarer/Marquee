@@ -37,7 +37,8 @@ struct FilmographyRow: View {
     private func movieRow(_ movie: Movie) -> some View {
         NavigationLink(value: movie) {
             HStack(spacing: 8) {
-                MovieRow(movie: movie, role: movie.creditRole, derivesStatus: true)
+                MovieRow(movie: movie, role: movie.creditRole,
+                         jobs: CreditJob.line(movie.creditJobs), derivesStatus: true)
                 chevron
             }
             .padding(.horizontal, 16)

@@ -29,6 +29,8 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     var originCountry: [String]?
     var trailers: [MediaTrailer]?
     var creditRole: String?
+    /// Optional so cache entries written before it existed still decode.
+    var creditJobs: [String]?
     /// What `creditRole` is (from a person's TV credits). Nil outside that context.
     var creditKind: CreditKind?
     /// Episodes the credited person appeared in (from a person's TV credits); shown in
@@ -39,6 +41,9 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     var creditIDs: [String] = []
     var creators: [Person] = []
     var recurringCast: [Person] = []
+    /// Episodes each cast member is in across the run, keyed by person id. Optional so cache
+    /// entries written before it existed still decode.
+    var castEpisodeCounts: [Int: Int]?
     var seasons: [Season] = []
     var watchByRegion: [String: WatchAvailability]?
     /// A transient navigation hint: which season the detail should open on (e.g. tapping

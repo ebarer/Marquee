@@ -8,6 +8,8 @@ import SwiftUI
 struct PersonRow: View {
     let person: Person
     var showRole = true
+    /// Show how many episodes they are in, where the credit carries a count (TV).
+    var showsEpisodeCount = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -23,6 +25,13 @@ struct PersonRow: View {
                     Text(role)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                if showsEpisodeCount, let count = person.episodeCount, count > 0 {
+                    Text(EpisodeCredit.episodeCountLabel(count))
+                        .font(.footnote)
+                        .foregroundStyle(.tertiary)
                         .lineLimit(1)
                 }
             }

@@ -29,7 +29,14 @@ extension Show {
             creator.type = .Crew
             return creator
         }()]
-        show.recurringCast = Person.previewTeam.filter { $0.type == .Cast }
+        // Counts across the run, as aggregate credits carry them.
+        show.recurringCast = Person.previewTeam.filter { $0.type == .Cast }.enumerated().map {
+            var member = $0.element
+            member.episodeCount = 62 - $0.offset * 5
+            return member
+        }
+        show.castEpisodeCounts = Dictionary(uniqueKeysWithValues:
+            show.recurringCast.map { ($0.id, $0.episodeCount ?? 0) })
         show.seasons = Season.previewSeasons
         show.watchByRegion = [
             Region.device: WatchAvailability(

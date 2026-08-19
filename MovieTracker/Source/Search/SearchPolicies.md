@@ -59,7 +59,7 @@ the namesake must clear a popularity floor (else "Line Friends" outranks Jennife
 a title that *is* the query keeps it against a lone namesake — but not against a name several
 notable people share.
 
-**Cast is billing order among regulars** (see `AggregateCreditsRaw.rankedCast`), not episode
+**Cast is billing order among regulars** (see `AggregateCreditsRaw.regularCast`), not episode
 count, or a departed lead lands behind the ensemble who stayed. A regular is someone in half
 the longest run, which keeps a guest billed high in a handful of episodes out.
 

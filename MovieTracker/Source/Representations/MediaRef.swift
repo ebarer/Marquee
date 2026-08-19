@@ -53,10 +53,10 @@ enum MediaRef: Hashable, Identifiable, Sendable {
         }
     }
 
-    var creditRole: String? {
+    var creditRoleSummary: String? {
         switch self {
-        case .movie(let movie): return movie.creditRole
-        case .show(let show): return show.creditRole
+        case .movie(let movie): return movie.creditRoleSummary
+        case .show(let show): return show.creditRoleSummary
         }
     }
 

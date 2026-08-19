@@ -9,6 +9,8 @@ struct MovieRow: View {
     let movie: Movie
     var subtitle: String? = nil
     var role: String? = nil
+    /// Non-acting jobs on the title, on a line of their own so the character keeps one.
+    var jobs: String? = nil
     var showsSubtitle: Bool = true
     var duration: String? = nil
     var rating: Double? = nil
@@ -39,9 +41,15 @@ struct MovieRow: View {
                 }
 
                 if let role, !role.isEmpty {
-                    // Unbounded: a person credited several ways on one title lists every role,
-                    // and on a short they did themselves that runs to a few lines.
                     Text(role)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let jobs, !jobs.isEmpty {
+                    // Unbounded: a person credited several ways on one title lists every job,
+                    // and on a short they did themselves that runs to a few lines.
+                    Text(jobs)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

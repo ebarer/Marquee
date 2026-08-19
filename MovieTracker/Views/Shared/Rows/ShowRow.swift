@@ -11,6 +11,8 @@ struct ShowRow: View {
     let show: Show
     /// A credit role (character/job) shown under the name, e.g. in a person's credits.
     var role: String? = nil
+    /// Non-acting jobs on the title, on a line of their own so the character keeps one.
+    var jobs: String? = nil
     /// Credits pass `false` to skip the lazy per-row season-count fetch.
     var showsSeasonCount: Bool = true
     /// When set (a person's TV credits), replaces the year range — "S7 · E5", "Season 1",
@@ -57,8 +59,14 @@ struct ShowRow: View {
                 }
 
                 if let role, !role.isEmpty {
-                    // Unbounded, as in ``MovieRow``: every role the person had is listed.
                     Text(role)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let jobs, !jobs.isEmpty {
+                    // Unbounded, as in ``MovieRow``: every job the person had is listed.
+                    Text(jobs)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

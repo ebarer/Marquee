@@ -44,7 +44,7 @@ struct FilmographyEntry: Identifiable, Hashable {
     }
 
     func matches(query: String) -> Bool {
-        ref.title.matches(query: query) || (ref.creditRole?.matches(query: query) ?? false)
+        ref.title.matches(query: query) || (ref.creditRoleSummary?.matches(query: query) ?? false)
     }
 
     /// Expands credits into rows, newest first: films as they are, a resolved TV credit split

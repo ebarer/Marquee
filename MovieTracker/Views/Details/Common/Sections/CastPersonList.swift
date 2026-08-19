@@ -8,10 +8,11 @@ import SwiftUI
 /// The tappable list of people (rows + separators) used by every cast category.
 struct CastPersonList: View {
     let people: [Person]
+    var showsEpisodeCounts = false
 
     var body: some View {
         LazyVStack(spacing: 0) {
-            CastPersonRows(people: people)
+            CastPersonRows(people: people, showsEpisodeCounts: showsEpisodeCounts)
         }
     }
 }
@@ -20,10 +21,11 @@ struct CastPersonList: View {
 /// soon as its parent reaches it, so a caller that already has one uses this instead.
 struct CastPersonRows: View {
     let people: [Person]
+    var showsEpisodeCounts = false
 
     var body: some View {
         ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
-            CastPersonRow(person: person)
+            CastPersonRow(person: person, showsEpisodeCount: showsEpisodeCounts)
             if index < people.count - 1 {
                 CastRowSeparator()
             }
@@ -34,11 +36,12 @@ struct CastPersonRows: View {
 /// One tappable person.
 struct CastPersonRow: View {
     let person: Person
+    var showsEpisodeCount = false
 
     var body: some View {
         NavigationLink(value: person) {
             HStack(spacing: 8) {
-                PersonRow(person: person)
+                PersonRow(person: person, showsEpisodeCount: showsEpisodeCount)
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.tertiary)

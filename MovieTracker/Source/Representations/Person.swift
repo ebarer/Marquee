@@ -16,6 +16,8 @@ struct Person: Hashable, Identifiable, Codable, Sendable {
     var popularity: Float = 0.0
     var type: PersonType?
     var role: String?
+    /// Episodes they appear in (from a show's or season's aggregate credits). Nil elsewhere.
+    var episodeCount: Int?
     var profilePicture: String?
     var birthday: Date?
     var placeOfBirth: String?

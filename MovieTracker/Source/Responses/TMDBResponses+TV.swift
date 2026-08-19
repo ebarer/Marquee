@@ -57,9 +57,19 @@ extension TMDBWrapper {
             }
         }
 
-        /// Cast ranked by episodes appeared in, so the enduring regulars surface first.
-        func recurringCast(limit: Int = 15) -> [Person] {
-            aggregateCreditsRaw?.rankedCast(limit: limit) ?? []
+        /// The series regulars, in billing order.
+        func recurringCast() -> [Person] {
+            aggregateCreditsRaw?.regularCast() ?? []
+        }
+
+        /// Episodes each cast member is in across the whole run, keyed by person id — every
+        /// member, not just the ranked ones, since a season's roster is drawn from its own credits.
+        func castEpisodeCounts() -> [Int: Int] {
+            var counts: [Int: Int] = [:]
+            for member in aggregateCreditsRaw?.cast ?? [] {
+                counts[member.id] = max(counts[member.id] ?? 0, member.totalEpisodeCount)
+            }
+            return counts
         }
 
         func trailers() -> [MediaTrailer]? {
@@ -146,7 +156,7 @@ extension TMDBWrapper {
             season.episodes = (episodes ?? [])
                 .map { $0.episode() }
                 .sorted { $0.episodeNumber < $1.episodeNumber }
-            season.cast = aggregateCreditsRaw?.rankedCast(limit: 15) ?? []
+            season.cast = aggregateCreditsRaw?.regularCast() ?? []
             return season
         }
 
@@ -211,29 +221,28 @@ extension TMDBWrapper {
     struct AggregateCreditsRaw: Codable {
         var cast: [AggregateCastRaw]
 
-        /// Cast ranked so the people the show is about come first, capped at `limit`.
-        /// Shared by the show's recurring cast and a season's cast.
-        func rankedCast(limit: Int) -> [Person] {
+        /// The regulars — anyone in at least half the longest run — in billing order. Presence
+        /// decides membership: a fixed count cut a long ensemble short and padded a small one.
+        func regularCast() -> [Person] {
             let floor = regularFloor()
             return cast
-                .sorted { rank($0, floor: floor) < rank($1, floor: floor) }
-                .prefix(limit)
-                .map { Person(id: $0.id, name: $0.name, role: $0.characterName,
-                              pic: $0.profilePicture, type: .Cast) }
+                .filter { $0.totalEpisodeCount >= floor }
+                .sorted {
+                    ($0.order ?? .max, -$0.totalEpisodeCount) < ($1.order ?? .max, -$1.totalEpisodeCount)
+                }
+                .map { member in
+                    var person = Person(id: member.id, name: member.name,
+                                        role: member.characterName,
+                                        pic: member.profilePicture, type: .Cast)
+                    person.episodeCount = member.totalEpisodeCount
+                    return person
+                }
         }
 
         /// The run that makes someone a regular, whose billing order means something. Half the
         /// longest run: Ben Miles is billed second on Andor for 7 of 24.
         private func regularFloor() -> Int {
             max(2, (cast.map(\.totalEpisodeCount).max() ?? 0) / 2)
-        }
-
-        /// Regulars in the show's own billing order, then the rest by how much they were in:
-        /// ranking on episodes alone buries a departed lead under the ensemble who stayed.
-        private func rank(_ member: AggregateCastRaw, floor: Int) -> (Int, Int, Int) {
-            member.totalEpisodeCount >= floor
-                ? (0, member.order ?? .max, -member.totalEpisodeCount)
-                : (1, -member.totalEpisodeCount, member.order ?? .max)
         }
 
         struct AggregateCastRaw: Codable {

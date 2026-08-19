@@ -26,7 +26,7 @@ extension TMDBWrapper {
             guard let creditsRaw = self.creditsRaw else { return [] }
 
             var byID = [Int: Movie]()
-            var roles = [Int: [(kind: CreditKind, role: String?)]]()
+            var roles = [Int: [(kind: CreditKind, role: String?, isCast: Bool)]]()
             for (isCast, collection) in [(true, creditsRaw.cast), (false, creditsRaw.crew)] {
                 for movie in collection {
                     var credit = Movie(id: movie.id, title: movie.title)
@@ -40,7 +40,8 @@ extension TMDBWrapper {
                     if let releaseDateString = movie.releaseDateString, !releaseDateString.isEmpty {
                         credit.releaseDate = releaseDateString.toDate(format: .iso8601DAw)
                     }
-                    roles[movie.id, default: []].append((credit.creditKind ?? .crew, movie.role))
+                    roles[movie.id, default: []].append((credit.creditKind ?? .crew, movie.role,
+                                                        isCast))
                     if let kept = byID[movie.id], rank(kept.creditKind) <= rank(credit.creditKind) {
                         continue
                     }
@@ -61,7 +62,7 @@ extension TMDBWrapper {
             guard let raw = tvCreditsRaw else { return [] }
 
             var byID = [Int: Show]()
-            var roles = [Int: [(kind: CreditKind, role: String?)]]()
+            var roles = [Int: [(kind: CreditKind, role: String?, isCast: Bool)]]()
             var creditIDs = [Int: [String]]()
             for (isCast, collection) in [(true, raw.cast), (false, raw.crew)] {
                 for item in collection {
@@ -76,7 +77,8 @@ extension TMDBWrapper {
                     if let airDateString = item.firstAirDateString, !airDateString.isEmpty {
                         credit.firstAirDate = airDateString.toDate(format: .iso8601DAw)
                     }
-                    roles[item.id, default: []].append((credit.creditKind ?? .crew, item.role))
+                    roles[item.id, default: []].append((credit.creditKind ?? .crew, item.role,
+                                                       isCast))
                     if let creditID = item.creditID {
                         creditIDs[item.id, default: []].append(creditID)
                     }
@@ -103,19 +105,21 @@ extension TMDBWrapper {
         private func rank(_ kind: CreditKind?) -> Int { (kind ?? .crew).rank }
 
         private func merging(_ credit: Movie,
-                             roles: [(kind: CreditKind, role: String?)]) -> Movie {
+                             roles: [(kind: CreditKind, role: String?, isCast: Bool)]) -> Movie {
             var credit = credit
             let merged = CreditKind.merge(roles)
-            credit.creditRole = merged.role
+            credit.creditRole = merged.character
+            credit.creditJobs = merged.jobs
             credit.creditKind = merged.kind
             return credit
         }
 
         private func merging(_ credit: Show,
-                             roles: [(kind: CreditKind, role: String?)]) -> Show {
+                             roles: [(kind: CreditKind, role: String?, isCast: Bool)]) -> Show {
             var credit = credit
             let merged = CreditKind.merge(roles)
-            credit.creditRole = merged.role
+            credit.creditRole = merged.character
+            credit.creditJobs = merged.jobs
             credit.creditKind = merged.kind
             return credit
         }

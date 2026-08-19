@@ -118,7 +118,7 @@ struct ShowDetailView: View {
                     CastSection(cast: show.creators + seasonCast(for: show), tint: model.tint,
                                 leadRole: "Creator",
                                 leadTitleSingular: "Creator", leadTitlePlural: "Creators",
-                                castTitle: "Cast", castLimit: 5,
+                                castTitle: "Top Cast", castLimit: 5,
                                 coveredBelow: container.frame(in: .global).minY
                                     + CollapsedHeader.extent,
                                 onSearchHiddenChange: { request in
@@ -207,7 +207,14 @@ struct ShowDetailView: View {
               let cast = model.seasonCast[resolved], !cast.isEmpty else {
             return show.recurringCast
         }
-        return cast
+        // The roster is the season's, but the list stands for the show, so the counts are the
+        // run's. A season's own credits count that season alone, which understates a regular.
+        return cast.map { person in
+            guard let total = show.castEpisodeCounts?[person.id] else { return person }
+            var person = person
+            person.episodeCount = total
+            return person
+        }
     }
 }
 
