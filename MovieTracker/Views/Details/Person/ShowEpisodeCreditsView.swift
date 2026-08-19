@@ -46,6 +46,9 @@ struct ShowEpisodeCreditsView: View {
     @State private var model = ShowEpisodeCreditsModel()
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
+    private static let subjectPoster = CGSize(width: EpisodeRow.stillWidth,
+                                             height: EpisodeRow.stillWidth * 3 / 2)
+
     init(credit: ShowEpisodeCredits) {
         self.credit = credit
     }
@@ -94,17 +97,19 @@ struct ShowEpisodeCreditsView: View {
     @ViewBuilder
     private var subjectRow: some View {
         if let person = credit.person {
-            CastPersonRow(person: person, showsEpisodeCount: person.episodeCount != nil)
+            CastPersonRow(person: person, showsEpisodeCount: person.episodeCount != nil,
+                          imageSize: EpisodeRow.stillWidth)
         } else {
             showRow
         }
     }
 
-    /// The show as search presents it.
+    /// The show as search presents it, its poster as wide as the stills below so every line of
+    /// text on the screen starts at the same edge.
     private var showRow: some View {
         NavigationLink(value: credit.show) {
             HStack(spacing: 8) {
-                ShowRow(show: credit.show, derivesStatus: true)
+                ShowRow(show: credit.show, derivesStatus: true, posterSize: Self.subjectPoster)
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.tertiary)
@@ -150,6 +155,30 @@ struct ShowEpisodeCreditsView: View {
             preview: credit,
             model: .preview(show: show, groups: [
                 .init(season: seasons[1], episodes: [guestSpot]),
+                .init(season: seasons[0], episodes: [episodes[2], episodes[0]]),
+            ])
+        )
+        .detailDestinations()
+    }
+    .modelContainer(detailPreviewContainer)
+    .environment(PersistenceCoordinator(detailPreviewContainer.mainContext))
+    .preferredColorScheme(.dark)
+}
+
+// Reached from a show's cast search, where the person heads the list instead of the show.
+#Preview("Person") {
+    let seasons = Season.previewSeasons
+    let episodes = Episode.previewEpisodes
+    var person = Person.preview
+    person.role = "Alex Kelly"
+    person.episodeCount = 2
+    var show = Show.preview
+    show.creditRole = person.role
+
+    return NavigationStack {
+        ShowEpisodeCreditsView(
+            preview: ShowEpisodeCredits(person: person, in: show),
+            model: .preview(show: show, groups: [
                 .init(season: seasons[0], episodes: [episodes[2], episodes[0]]),
             ])
         )

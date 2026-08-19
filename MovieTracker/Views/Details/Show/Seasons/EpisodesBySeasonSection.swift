@@ -11,7 +11,8 @@ struct EpisodesBySeasonSection: View {
     let show: Show
     let model: ShowDetailModel
     var tint: Color = .appAccent
-    /// A season to open on (e.g. from a Watched-list season row); nil starts at season 1.
+    /// The season to open on. Nil means the screen hasn't resolved it yet, and the section waits
+    /// rather than opening on season 1 and flipping when it lands.
     var initialSeason: Int? = nil
     /// Where the season header comes to rest: the bottom edge of the pinned detail header.
     var pinLine: CGFloat = 0
@@ -26,10 +27,9 @@ struct EpisodesBySeasonSection: View {
         if let selectedSeason, seasons.contains(where: { $0.seasonNumber == selectedSeason }) {
             return selectedSeason
         }
-        if let initialSeason, seasons.contains(where: { $0.seasonNumber == initialSeason }) {
-            return initialSeason
-        }
-        return seasons.first?.seasonNumber
+        guard let initialSeason else { return nil }
+        return seasons.contains(where: { $0.seasonNumber == initialSeason })
+            ? initialSeason : seasons.first?.seasonNumber
     }
 
     private var episodes: [Episode]? {
@@ -87,7 +87,7 @@ struct EpisodesBySeasonSection: View {
     }
 
     var body: some View {
-        if !seasons.isEmpty {
+        if !seasons.isEmpty, currentSeason != nil {
             StickySection(space: "scroll", pinLine: pinLine) {
                 SeasonHeader(
                     seasons: seasons, currentSeason: currentSeason,
@@ -147,7 +147,7 @@ struct EpisodesBySeasonSection: View {
 #Preview {
     @Previewable @State var selectedSeason: Int?
     ScrollView {
-        EpisodesBySeasonSection(show: .preview, model: ShowDetailModel(),
+        EpisodesBySeasonSection(show: .preview, model: ShowDetailModel(), initialSeason: 1,
                                 selectedSeason: $selectedSeason)
     }
     .coordinateSpace(name: "scroll")

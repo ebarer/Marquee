@@ -35,6 +35,9 @@ final class ShowEpisodeCreditsModel {
         if resolved == nil {
             resolved = await EpisodeCreditStore.shared.credit(for: credit.show)
         }
+        if resolved == nil, let person = credit.person {
+            resolved = await EpisodeCreditStore.shared.credit(person: person.id, in: credit.show)
+        }
         guard let resolved else { return }
 
         var loaded: [Group] = []

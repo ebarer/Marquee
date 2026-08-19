@@ -25,9 +25,9 @@ struct PersonDetailView: View {
     /// Remembered across people and launches; talk-show and courtesy credits are the default
     /// selection, so an untouched filter behaves as it always has.
     @AppStorage("personCreditFilter") private var filter = CreditFilter()
-    /// Set once the credits header scrolls under the pinned header, so its controls carry on
-    /// in the bar.
-    @State private var hiddenSearch: DetailSearchRequest?
+    /// Handed up by the credits section, so the bar carries its search button from the moment the
+    /// filmography is known.
+    @State private var creditSearch: DetailSearchRequest?
 
     @ScaledMetric(relativeTo: .title2) private var nameLine: CGFloat = 27
     @ScaledMetric(relativeTo: .subheadline) private var metaLine: CGFloat = 18
@@ -42,28 +42,13 @@ struct PersonDetailView: View {
     private var entries: [FilmographyEntry] {
         FilmographyEntry.entries(for: current.allCredits, episodeCredits: model.episodeCredits)
     }
-    private var availableKinds: [CreditKind] { CreditKind.present(in: current.allCredits) }
-    private var isFiltering: Bool { availableKinds.contains(where: filter.hides) }
 
     var body: some View {
         detailContent
             .background(Color.appBackground.ignoresSafeArea())
             // The pinned header carries the name, so the nav bar stays chromeless.
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
-            .detailChrome(title: current.name, search: hiddenSearch, extra: {
-                if availableKinds.count > 1 {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        CreditFilterMenu(kinds: availableKinds, filter: $filter) {
-                            Image(systemName: "line.3.horizontal.decrease")
-                                .foregroundStyle(isFiltering ? Color.black : .white)
-                        }
-                        // On the menu rather than its label, so the fill is centred on the item
-                        // the bar lays out.
-                        .filterOnBadge(isFiltering, size: DetailSearchBar.barItemFill)
-                        .tint(.white)
-                    }
-                }
-            })
+            .detailChrome(title: current.name, search: creditSearch)
             .fullScreenCover(isPresented: $showPhoto) {
                 // The zoom transition is applied inside PosterDetailView, so the source profile
                 // photo morphs into the enlarged image.
@@ -106,11 +91,9 @@ struct PersonDetailView: View {
                                           filter: $filter,
                                           isResolving: model.isResolvingCredits,
                                           pinLine: pinLine,
-                                          coveredBelow: container.frame(in: .global).minY
-                                              + headerMetrics.collapsedExtent,
-                                          onHeaderHiddenChange: { request in
+                                          onSearchRequest: { request in
                                               withAnimation(DetailSearch.barHandoff) {
-                                                  hiddenSearch = request
+                                                  creditSearch = request
                                               }
                                           })
                     }
@@ -176,6 +159,7 @@ private extension View {
 #Preview {
     NavigationStack {
         PersonDetailView(person: .preview)
+            .detailSearchHost()
             .detailDestinations()
     }
     .modelContainer(previewModelContainer)

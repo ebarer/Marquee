@@ -39,6 +39,7 @@ struct CastPersonRow: View {
     var showsEpisodeCount = false
     /// Set where their episodes in one show are the better destination than their own page.
     var episodes: ShowEpisodeCredits?
+    var imageSize: CGFloat = 44
 
     var body: some View {
         if let episodes {
@@ -51,7 +52,8 @@ struct CastPersonRow: View {
     private func link<Value: Hashable>(to value: Value) -> some View {
         NavigationLink(value: value) {
             HStack(spacing: 8) {
-                PersonRow(person: person, showsEpisodeCount: showsEpisodeCount)
+                PersonRow(person: person, showsEpisodeCount: showsEpisodeCount,
+                          imageSize: imageSize)
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.tertiary)

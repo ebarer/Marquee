@@ -35,10 +35,10 @@ struct ShowDetailView: View {
     /// `.global` reading would count that offset as nav-bar height.
     @State private var pageTop: CGFloat = 0
     /// The season chosen in the episodes picker, lifted here so the header poster can
-    /// swap to match. Nil until the user picks one (falls back to `openingSeason`/first).
+    /// swap to match. Nil until the user picks one, which falls back to `openingSeason`.
     @State private var selectedSeason: Int?
-    /// Where the viewer is up to, resolved once the show loads — a part-watched show opens
-    /// on the season they're in rather than season 1. Nil until then, and for a finished show.
+    /// Where the viewer is up to, resolved as soon as the seasons are known. Nil until then, which
+    /// holds the episodes section back rather than let it open on season 1 and flip.
     @State private var inProgressSeason: Int?
     /// Handed up by the cast section, so the bar carries its search button from the moment the
     /// cast is known.
@@ -58,7 +58,7 @@ struct ShowDetailView: View {
             .detailChrome(title: show.name, search: castSearch) {
                 ExternalLinksToolbarItem(links: model.extras.links) { openLink = $0 }
             }
-            .safariSheet(link: $openLink, tint: model.tint)
+            .safariSheet(link: $openLink)
             .task {
                 // Seed from the persisted facts (the show's id alone) so the controls are correct
                 // before the payload loads, rather than flipping once it's computed.
@@ -78,9 +78,9 @@ struct ShowDetailView: View {
                 await model.reconcileMembership(using: store)
                 refreshProgress()
             }
-            // Resolve the opening season as soon as seasons arrive — off the CACHED show, before
-            // the network payload lands, or the screen sits on season 1 and jumps once it does.
-            .onChange(of: model.show?.seasons.count) { refreshInProgressSeason() }
+            // Also on the first pass: a re-opened page already holds the CACHED show's seasons, and
+            // waiting for the payload leaves the section sitting on season 1 until it lands.
+            .onChange(of: model.show?.seasons.count, initial: true) { refreshInProgressSeason() }
             // Keep the controls live when episodes are toggled in the episodes section: unwatching
             // one pulls a finished show back onto the Watch List, so the bookmark must follow.
             .onChange(of: store?.revision) { refreshProgress() }
@@ -178,9 +178,13 @@ struct ShowDetailView: View {
         }
     }
 
+    /// Resolves to the first season once every season is watched, so a resolved value is never
+    /// nil — nil is what the episodes section reads as "not resolved yet".
     private func refreshInProgressSeason() {
-        guard let show = model.show else { return }
-        inProgressSeason = store?.firstIncompleteSeason(show)?.seasonNumber
+        guard let show = model.show, let first = show.regularSeasons.first?.seasonNumber else {
+            return
+        }
+        inProgressSeason = store?.firstIncompleteSeason(show)?.seasonNumber ?? first
     }
 
     private func refreshProgress() {

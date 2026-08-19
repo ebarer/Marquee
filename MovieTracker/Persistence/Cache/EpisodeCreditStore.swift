@@ -24,6 +24,17 @@ final class EpisodeCreditStore {
         return EpisodeCredit.merging(parts)
     }
 
+    /// The same credit for a person whose roster entry carries no ids — a roster cached before
+    /// ids were kept — since their own TV credits name the ids TMDB filed them under.
+    func credit(person id: Int, in show: Show) async -> EpisodeCredit? {
+        guard let person = try? await TMDBWrapper.getPerson(id: id),
+              let credit = (person.tvCredits ?? []).first(where: { $0.id == show.id }),
+              !credit.creditIDs.isEmpty else { return nil }
+        var subject = show
+        subject.creditIDs = credit.creditIDs
+        return await self.credit(for: subject)
+    }
+
     private func credit(id: String) async -> EpisodeCredit? {
         if let cached = resolved[id] { return cached }
         if let inFlight = tasks[id] { return await inFlight.value }

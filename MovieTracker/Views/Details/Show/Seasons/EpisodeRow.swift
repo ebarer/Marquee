@@ -15,8 +15,9 @@ struct EpisodeRow: View {
     var role: String? = nil
     var onToggleWatched: () -> Void
 
-    // Matches the poster width in the Recommendations strip for column alignment.
-    private static let stillWidth: CGFloat = 90
+    // Matches the poster width in the Recommendations strip for column alignment. A screen
+    // heading these rows with a poster or portrait lines that up against this too.
+    static let stillWidth: CGFloat = 90
 
     var body: some View {
         DetailLink(value: episode) {

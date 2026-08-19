@@ -18,6 +18,7 @@ struct DetailSearchResults: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
     @AppStorage("castEpisodeCounts") private var showsEpisodeCounts = true
+    @AppStorage("personCreditFilter") private var creditFilter = CreditFilter()
 
     @State private var pinLine: CGFloat = 0
     @State private var pinnedSections: Set<String> = []
@@ -42,6 +43,10 @@ struct DetailSearchResults: View {
                 }
             }
             .padding(.bottom, 24)
+            // `@AppStorage` publishes outside a `withAnimation`, so the rows animate their own
+            // change of height as the counts come and go.
+            .animation(.easeInOut, value: showsEpisodeCounts)
+            .animation(.easeInOut, value: creditFilter.active)
         }
         // A bar inset rather than padding, so content scrolls under the field.
         .safeAreaBar(edge: .top, spacing: 0) {
@@ -106,15 +111,28 @@ struct DetailSearchResults: View {
         }
     }
 
-    /// Nil for a crew member or a roster cached before credit ids were kept, where the episode
-    /// lookup has nothing to resolve.
+    /// Nil for a crew member whose roster carries no credit ids, leaving nothing to resolve. A
+    /// cast member always has episodes, which the screen resolves even from an id-less roster.
     private func episodes(for person: Person) -> ShowEpisodeCredits? {
-        guard let show = request.creditedShow, !(person.creditIDs ?? []).isEmpty else { return nil }
+        guard let show = request.creditedShow else { return nil }
+        guard person.type == .Cast || !(person.creditIDs ?? []).isEmpty else { return nil }
         return ShowEpisodeCredits(person: person, in: show)
     }
 
+    /// Credit rows drop by kind as the filter in the bar changes, so search shows what the page
+    /// itself would.
+    private var visibleGroups: [DetailSearchGroup] {
+        guard !request.filterKinds.isEmpty else { return request.groups }
+        return request.groups.compactMap { group in
+            guard case .credits(let entries) = group.content else { return group }
+            let kept = entries.filter { !creditFilter.hides($0.ref.creditKind) }
+            return kept.isEmpty ? nil : DetailSearchGroup(title: group.title,
+                                                          content: .credits(kept))
+        }
+    }
+
     private var sections: [ResultSection] {
-        let matches = request.groups.compactMap { $0.filtered(by: query) }
+        let matches = visibleGroups.compactMap { $0.filtered(by: query) }
         guard !matches.isEmpty else {
             return [ResultSection(id: "no-matches", rows: [.noMatches])]
         }

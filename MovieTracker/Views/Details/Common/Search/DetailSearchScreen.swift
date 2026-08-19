@@ -50,12 +50,21 @@ struct DetailSearchRequest: Hashable {
     var tint: Color = .appAccent
     /// TV rosters carry an episode count, so only they offer the control that hides it.
     var countsEpisodes = false
+    /// The credit kinds this list has. Set, the credits filter travels into search and the rows
+    /// carry every kind, so turning it off there reveals the rest.
+    var filterKinds: [CreditKind] = []
     /// The show these credits belong to. A hit then opens the episodes they are in rather than
     /// their own page, which is what someone hunting a guest spot is after.
     var creditedShow: Show?
 
     var rowCount: Int { groups.reduce(0) { $0 + $1.rowCount } }
     var isSearchable: Bool { rowCount > 0 }
+
+    /// What search puts in the bar's trailing group: its own close button, plus the controls the
+    /// request brings with it.
+    var trailingItems: Int {
+        1 + (countsEpisodes ? 1 : 0) + (filterKinds.isEmpty ? 0 : 1)
+    }
 }
 
 /// Searches one detail section's list, covering the page it was opened from.
@@ -282,6 +291,7 @@ extension DetailSearchRequest {
         let entries = FilmographyEntry.entries(for: Person.preview.allCredits, episodeCredits: [:])
         return DetailSearchRequest(prompt: "Search Credits",
                                    groups: [DetailSearchGroup(title: "Credits",
-                                                              content: .credits(entries))])
+                                                              content: .credits(entries))],
+                                   filterKinds: CreditKind.present(in: entries.map(\.ref)))
     }
 }

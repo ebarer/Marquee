@@ -25,6 +25,9 @@ struct ShowRow: View {
     var status: PosterStatus? = nil
     /// Derive the badge from watched progress / Watch List membership (lists, search).
     var derivesStatus: Bool = false
+    /// The poster's size. A row heading a list of episode stills passes their width, so its text
+    /// lines up with theirs.
+    var posterSize = CGSize(width: 51, height: 76)
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
@@ -37,7 +40,7 @@ struct ShowRow: View {
     var body: some View {
         HStack(spacing: 12) {
             PosterImage(url: posterOverride ?? show.posterURL(.w185))
-                .frame(width: 51, height: 76)
+                .frame(width: posterSize.width, height: posterSize.height)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .posterBorder(cornerRadius: 6)
                 .overlay { badge }

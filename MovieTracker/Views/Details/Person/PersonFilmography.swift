@@ -16,11 +16,9 @@ struct PersonFilmography: View {
     var isResolving: Bool = false
     /// Where a year header comes to rest: the bottom edge of the pinned detail header.
     var pinLine: CGFloat = 0
-    /// Global y below which the credits header counts as covered — the pinned header's edge.
-    var coveredBelow: CGFloat = 0
-    /// The request while this header is scrolled out of sight, so the page can carry its
-    /// controls in the bar; nil while the header is on screen.
-    var onHeaderHiddenChange: (DetailSearchRequest?) -> Void = { _ in }
+    /// Set to hand the section's search request to the screen, which then owns the control in its
+    /// navigation bar. Unset, this header carries it.
+    var onSearchRequest: ((DetailSearchRequest?) -> Void)?
 
     var body: some View {
         if isResolving {
@@ -56,7 +54,9 @@ struct PersonFilmography: View {
                 .font(.headline)
                 .foregroundStyle(.white)
             Spacer(minLength: 8)
-            DetailSearchButton(request: searchRequest)
+            if onSearchRequest == nil {
+                DetailSearchButton(request: searchRequest)
+            }
             if availableKinds.count > 1 {
                 CreditFilterMenu(kinds: availableKinds, filter: $filter) {
                     Image(systemName: "line.3.horizontal.decrease")
@@ -69,11 +69,15 @@ struct PersonFilmography: View {
             }
         }
         .sectionHeaderInsets()
-        .onGeometryChange(for: Bool.self) { proxy in
-            proxy.frame(in: .global).maxY <= coveredBelow
-        } action: { hidden in
-            onHeaderHiddenChange(hidden ? searchRequest : nil)
+        .onChange(of: searchSignature, initial: true) { _, _ in
+            onSearchRequest?(isResolving ? nil : searchRequest)
         }
+    }
+
+    /// The request is rebuilt off this rather than diffed: a filmography runs to hundreds of
+    /// entries, which is too much to compare on every layout pass.
+    private var searchSignature: [Int] {
+        [entries.count, visibleEntries.count, filterKinds.count, isResolving ? 1 : 0]
     }
 
     private var availableKinds: [CreditKind] { CreditKind.present(in: entries.map(\.ref)) }
@@ -84,10 +88,19 @@ struct PersonFilmography: View {
         entries.filter { !filter.hides($0.ref.creditKind) }
     }
 
+    /// The kinds the filter offers, which is nothing to choose from below two.
+    private var filterKinds: [CreditKind] {
+        availableKinds.count > 1 ? availableKinds : []
+    }
+
     private var searchRequest: DetailSearchRequest {
-        DetailSearchRequest(prompt: "Search Credits",
-                            groups: [DetailSearchGroup(title: "Credits",
-                                                       content: .credits(visibleEntries))])
+        // Every entry once the filter travels with search, so turning it off there reveals the
+        // rest; only the visible ones when there is no filter to turn off.
+        let rows = filterKinds.isEmpty ? visibleEntries : entries
+        return DetailSearchRequest(prompt: "Search Credits",
+                                   groups: [DetailSearchGroup(title: "Credits",
+                                                              content: .credits(rows))],
+                                   filterKinds: filterKinds)
     }
 
     private var upcomingEntries: [FilmographyEntry] { FilmographyEntry.upcoming(in: visibleEntries) }

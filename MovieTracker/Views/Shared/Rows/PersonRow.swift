@@ -10,11 +10,14 @@ struct PersonRow: View {
     var showRole = true
     /// Show how many episodes they are in, where the credit carries a count (TV).
     var showsEpisodeCount = false
+    /// The portrait's size. A row heading a list of episode stills passes their width, so its
+    /// text lines up with theirs.
+    var imageSize: CGFloat = 44
 
     var body: some View {
         HStack(spacing: 12) {
             ProfileImage(url: person.profileURL())
-                .frame(width: 44, height: 44)
+                .frame(width: imageSize, height: imageSize)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(person.name)

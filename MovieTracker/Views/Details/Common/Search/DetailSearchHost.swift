@@ -47,6 +47,7 @@ private struct DetailSearchHost: ViewModifier {
     // The trailing items only exist while searching, so what they report is kept for next time.
     @State private var cancelSlot: CGRect?
     @State private var countsSlot: CGRect?
+    @State private var filterSlot: CGRect?
 
     @State private var pageHidden = false
     // Separate from `isSearching` so the cancel button's arrival can animate without an animated
@@ -59,13 +60,22 @@ private struct DetailSearchHost: ViewModifier {
     @State private var fieldFrame: CGRect = .zero
 
     @AppStorage("castEpisodeCounts") private var showsEpisodeCounts = true
+    @AppStorage("personCreditFilter") private var creditFilter = CreditFilter()
     @Environment(\.closeModal) private var closeModal
 
     private var isSearching: Bool { request != nil && !isClosing }
 
-    /// A view over the navigation bar takes no touches, so the settled field is a bar item. A
-    /// modal's bar leaves with the keyboard and would take the field with it, so there it stays.
-    private var fieldInBar: Bool { landed && closeModal == nil }
+    /// Whether a kind these rows actually have is hidden — what the filter glyph reflects.
+    private var hidesCredits: Bool {
+        request?.filterKinds.contains(where: creditFilter.hides) == true
+    }
+
+    /// A modal's bar leaves with the keyboard and would take the field with it, so the flying copy
+    /// is the real field there and the only one that ever takes focus.
+    private var fieldStaysInPlace: Bool { closeModal != nil }
+
+    /// A view over the navigation bar takes no touches, so elsewhere the settled field is a bar item.
+    private var fieldInBar: Bool { landed && !fieldStaysInPlace }
 
     func body(content: Content) -> some View {
         ZStack {
@@ -79,23 +89,15 @@ private struct DetailSearchHost: ViewModifier {
 
             if let request {
                 DetailSearchScreen(request: request, sourceFrame: sourceFrame, barSlot: barSlot,
-                                   trailingItems: request.countsEpisodes ? 2 : 1,
+                                   trailingItems: request.trailingItems,
                                    contentFrame: contentFrame, isClosing: isClosing,
                                    query: $query, fieldInBar: fieldInBar,
-                                   focused: !fieldInBar && fieldFocused,
+                                   focused: fieldStaysInPlace && fieldFocused,
                                    onFieldFrame: { fieldFrame = $0 },
                                    onLanded: { landed = true }, onClose: close)
                     // Search animates its own arrival. A transition here would fade the whole
                     // screen in over the page, drawing both at once.
                     .transition(.identity)
-                    // Also fires when a result is pushed over this, which ends the search. The
-                    // cancel button has to go with it, or the page keeps it after coming back.
-                    .onDisappear {
-                        self.request = nil
-                        isClosing = false
-                        landed = false
-                        withAnimation(DetailSearch.barHandoff) { barSearching = false }
-                    }
             }
         }
         .onGeometryChange(for: CGRect.self) { proxy in
@@ -136,6 +138,21 @@ private struct DetailSearchHost: ViewModifier {
                             } action: { countsSlot = $0; syncBarSlot() }
                     }
                 }
+                if !request.filterKinds.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        CreditFilterMenu(kinds: request.filterKinds, filter: $creditFilter) {
+                            Image(systemName: "line.3.horizontal.decrease")
+                                .foregroundStyle(hidesCredits ? Color.black : .white)
+                        }
+                        // On the menu rather than its label, so the fill is centred on the item
+                        // the bar lays out.
+                        .filterOnBadge(hidesCredits, size: DetailSearchBar.barItemFill)
+                        .tint(.white)
+                        .onGeometryChange(for: CGRect.self) { proxy in
+                            DetailSearchBar.barCircle(around: proxy.frame(in: .global))
+                        } action: { filterSlot = $0; syncBarSlot() }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: close) {
                         Image(systemName: "xmark")
@@ -158,21 +175,22 @@ private struct DetailSearchHost: ViewModifier {
             sourceFrame = from
             query = ""
             landed = false
-            // Without a filter beside the close button, the slot measured with one is too wide.
-            if !opened.countsEpisodes {
-                countsSlot = nil
-                barSlot = cancelSlot
-            }
+            // A slot measured with a control this request doesn't bring is too wide for it.
+            if !opened.countsEpisodes { countsSlot = nil }
+            if opened.filterKinds.isEmpty { filterSlot = nil }
+            barSlot = learnedSlot ?? barSlot
             request = opened
             withAnimation(DetailSearch.barHandoff) { barSearching = true }
         }
     }
 
     /// Where search's own trailing items sit. A page's bar items aren't necessarily the trailing
-    /// ones — the person page has a filter beside its search button — so their frames don't apply.
+    /// ones — a detail screen adds its own beside the search button — so their frames don't apply.
     private var learnedSlot: CGRect? {
-        guard let cancelSlot else { return countsSlot }
-        return countsSlot.map { cancelSlot.union($0) } ?? cancelSlot
+        [cancelSlot, countsSlot, filterSlot].compactMap { $0 }
+            .reduce(into: CGRect?.none) { union, slot in
+                union = union?.union(slot) ?? slot
+            }
     }
 
     private func syncBarSlot() {
@@ -181,7 +199,8 @@ private struct DetailSearchHost: ViewModifier {
     }
 
     private func close() {
-        // Before the animation, so the keyboard leaves with the tap rather than after the flight.
+        // Cleared before the animation, so the keyboard leaves with the tap, not after the flight.
+        fieldFocused = false
         landed = false
         // A pass later, or the bar's copy is still drawn when its removal is snapshotted and the
         // flying copy has a ghost alongside it.

@@ -61,7 +61,7 @@ struct MovieDetailView: View {
             .detailChrome(title: movie.title, search: castSearch) {
                 ExternalLinksToolbarItem(links: model.extras.links) { openLink = $0 }
             }
-            .safariSheet(link: $openLink, tint: model.tint)
+            .safariSheet(link: $openLink)
             .task {
                 isSeen = seen   // Pin it, so later body passes stop querying the store.
                 await model.load(id: seed.id)
