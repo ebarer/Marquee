@@ -24,6 +24,10 @@ struct WatchedDateButton: View {
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
+    /// Release and air dates arrive at UTC midnight, while the picker works in `Calendar.current`:
+    /// a quick-set day would land the evening before west of UTC without this.
+    private static func localDay(_ date: Date?) -> Date? { date.map(MediaItem.localDay) }
+
     init(key: MediaKey, watchedDate: Date?, tint: Color, font: Font? = nil) {
         self.target = .movie(key)
         self.tint = tint
@@ -31,7 +35,7 @@ struct WatchedDateButton: View {
         self.initialDate = watchedDate.map(MediaItem.localDay)
             ?? Calendar.current.startOfDay(for: Date())
         self.quickSetTitle = "Release Date"
-        self.quickSetDate = key.releaseDate
+        self.quickSetDate = Self.localDay(key.releaseDate)
     }
 
     init(movie: Movie, watchedDate: Date?, tint: Color, font: Font? = nil) {
@@ -45,7 +49,7 @@ struct WatchedDateButton: View {
         self.font = font
         self.initialDate = watchedDate ?? Calendar.current.startOfDay(for: Date())
         self.quickSetTitle = "Last Episode Date"
-        self.quickSetDate = lastEpisodeDate
+        self.quickSetDate = Self.localDay(lastEpisodeDate)
     }
 
     init(showID: Int, seasonNumber: Int, episodeNumber: Int, watchedDate: Date?,
@@ -55,7 +59,7 @@ struct WatchedDateButton: View {
         self.font = font
         self.initialDate = watchedDate ?? Calendar.current.startOfDay(for: Date())
         self.quickSetTitle = "Air Date"
-        self.quickSetDate = airDate
+        self.quickSetDate = Self.localDay(airDate)
     }
 
     var body: some View {

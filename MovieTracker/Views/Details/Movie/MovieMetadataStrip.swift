@@ -46,14 +46,14 @@ struct MovieMetadataStrip: View {
             MetadataHairline()
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 0) {
-                    if let store, isWatched {
+                    if store != nil, isWatched {
                         HStack(alignment: .top, spacing: 0) {
                             MetadataCell(header: "MY RATING") {
-                                StarRating(movie: movie, rating: store.rating(for: movie) ?? 0, tint: tint)
+                                StarRating(movie: movie, rating: userRating, tint: tint)
                             }
                             MetadataDivider()
                             MetadataCell(header: "WATCHED", minWidth: 80) {
-                                WatchedDateButton(movie: movie, watchedDate: store.dateWatched(for: movie), tint: tint)
+                                WatchedDateButton(movie: movie, watchedDate: watchedDate, tint: tint)
                             }
                             MetadataDivider()
                         }
@@ -83,6 +83,20 @@ struct MovieMetadataStrip: View {
             .scrollBounceBehavior(.always, axes: .horizontal)
             MetadataHairline()
         }
+    }
+
+    // A fact read takes no observation dependency, so `revision` is what re-renders these cells
+    // once a write lands — a re-mark restoring a remembered date arrives a turn after the tap.
+    private var watchedDate: Date? {
+        guard let store else { return nil }
+        _ = store.revision
+        return store.dateWatched(for: movie)
+    }
+
+    private var userRating: Double {
+        guard let store else { return 0 }
+        _ = store.revision
+        return store.rating(for: movie) ?? 0
     }
 
     /// A value the caller's stub can't know yet stands in as a bar, not as an empty one.

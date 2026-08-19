@@ -300,6 +300,7 @@ extension PersistenceCoordinator {
             context.delete(episode)
         }
         if let snapshot = WatchedSeason.find(showTmdbID: showID, seasonNumber: seasonNumber, in: context) {
+            watchedMemory.remember(snapshot)
             context.delete(snapshot)
         }
         // Clearing a season leaves aired episodes unwatched, so neither flag can still hold.
@@ -498,8 +499,8 @@ extension PersistenceCoordinator {
         }
     }
 
-    /// Upsert or remove the season's Watched-list snapshot; only *completed* seasons appear.
-    /// `completedAt` seeds a new snapshot only — an existing date is never clobbered.
+    /// Upsert or remove the season's Watched-list snapshot; only *completed* seasons appear. A new
+    /// one takes a remembered date over `completedAt`; an existing snapshot's date is never touched.
     private func reconcileSeason(show: Show, season: Season, completedAt: Date? = nil,
                                  afterLocalEdit: Bool = false) {
         let watchedCount = watchedEpisodeNumbers(showID: show.id, season: season.seasonNumber).count
@@ -510,6 +511,9 @@ extension PersistenceCoordinator {
             // A snapshot carries a watched date and rating nothing else can re-derive, and its
             // delete syncs. Drop it only on a local unwatch, or once the season has outgrown it.
             if let existing, afterLocalEdit || existing.episodeCount < season.episodeCount {
+                // Only a user's un-mark is worth remembering; a season that merely outgrew its
+                // snapshot gets re-dated when its new episodes are watched.
+                if afterLocalEdit { watchedMemory.remember(existing) }
                 context.delete(existing)
             }
             return
@@ -524,11 +528,15 @@ extension PersistenceCoordinator {
             existing.airDate = anchor
             existing.episodeCount = season.episodeCount
         } else {
-            context.insert(WatchedSeason(
+            let remembered = watchedMemory.takeSeason(showID: show.id,
+                                                      seasonNumber: season.seasonNumber)
+            let snapshot = WatchedSeason(
                 showTmdbID: show.id, seasonNumber: season.seasonNumber,
                 showName: show.name, seasonName: season.name,
                 posterPath: poster, airDate: anchor, episodeCount: season.episodeCount,
-                watchedAt: completedAt ?? Date()))
+                watchedAt: remembered?.watchedAt ?? completedAt ?? Date())
+            snapshot.userRating = remembered?.userRating
+            context.insert(snapshot)
         }
     }
 

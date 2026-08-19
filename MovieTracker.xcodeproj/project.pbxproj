@@ -108,6 +108,8 @@
 		CE73B02A3020290200FA5FD6 /* ImportExportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE73B0293020290200FA5FD6 /* ImportExportCoordinator.swift */; };
 		CE748BF83034ED14007EE787 /* StickySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE748BF73034ED14007EE787 /* StickySection.swift */; };
 		CE748C5A30350CB3007EE787 /* DetailChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE748C5930350CB3007EE787 /* DetailChrome.swift */; };
+		CE748C9830352A8E007EE787 /* WatchedMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE748C9730352A8E007EE787 /* WatchedMemory.swift */; };
+		CE748C9A30352B2C007EE787 /* WatchedMemoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE748C9930352B2C007EE787 /* WatchedMemoryTests.swift */; };
 		CE7D8EF3302F1275004A9407 /* RowPressButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE7D8EF2302F1275004A9407 /* RowPressButtonStyle.swift */; };
 		CE8041A7301D441300F5D6F2 /* EmojiField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8041A6301D441300F5D6F2 /* EmojiField.swift */; };
 		CE822F4C301D13DF0070F69B /* ListManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE822F4B301D13DF0070F69B /* ListManagerView.swift */; };
@@ -422,6 +424,8 @@
 		CE73B0293020290200FA5FD6 /* ImportExportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportCoordinator.swift; sourceTree = "<group>"; };
 		CE748BF73034ED14007EE787 /* StickySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickySection.swift; sourceTree = "<group>"; };
 		CE748C5930350CB3007EE787 /* DetailChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailChrome.swift; sourceTree = "<group>"; };
+		CE748C9730352A8E007EE787 /* WatchedMemory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedMemory.swift; sourceTree = "<group>"; };
+		CE748C9930352B2C007EE787 /* WatchedMemoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedMemoryTests.swift; sourceTree = "<group>"; };
 		CE78BD4F20C087F2001E6DB6 /* Marquee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marquee.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE7D8EF2302F1275004A9407 /* RowPressButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RowPressButtonStyle.swift; sourceTree = "<group>"; };
 		CE8041A6301D441300F5D6F2 /* EmojiField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiField.swift; sourceTree = "<group>"; };
@@ -710,6 +714,7 @@
 				C9C55F7E3864EA07275D9F56 /* ShowPersistenceTests.swift */,
 				678D050B8159F9AC5F2C44BE /* ShowProgressTests.swift */,
 				A421A88E3DD72705190CEBD2 /* WatchListOptOutTests.swift */,
+				CE748C9930352B2C007EE787 /* WatchedMemoryTests.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -1278,6 +1283,7 @@
 				CE8DD2D03029795D006213BD /* MediaSnapshot.swift */,
 				CED641083031C2990057509D /* MediaBadgeIndex.swift */,
 				CED6410A3031C8B20057509D /* ShowProgress.swift */,
+				CE748C9730352A8E007EE787 /* WatchedMemory.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -1716,6 +1722,7 @@
 				4EB0F910AB95D43FC1F4CF37 /* DateFormatterTests.swift in Sources */,
 				26FC77C962FE4BAB26245D79 /* StringExtensionTests.swift in Sources */,
 				F0A701F6504693C2709850E6 /* FeaturedModelTests.swift in Sources */,
+				CE748C9A30352B2C007EE787 /* WatchedMemoryTests.swift in Sources */,
 				7D30A8E9061E866A3A28CD3A /* ListEntrySubtitleTests.swift in Sources */,
 				3D97266F86B4C32B8067575A /* ListEntrySwipeChoiceTests.swift in Sources */,
 				D88C479DDFC19C21B22C6229 /* ListSectionsModelTests.swift in Sources */,
@@ -1952,6 +1959,7 @@
 				CEB8A46F301F17B1002FBF31 /* SectionHeader.swift in Sources */,
 				CE8DD32230298156006213BD /* Show+Display.swift in Sources */,
 				CE72A0EA302C3EA900AB2597 /* SeasonRowContent.swift in Sources */,
+				CE748C9830352A8E007EE787 /* WatchedMemory.swift in Sources */,
 				CE8DD3283029816A006213BD /* Person.swift in Sources */,
 				CE569750301C19A600DF9142 /* MoviePosterCard.swift in Sources */,
 				CE8DD230302967C9006213BD /* FilmographyRows.swift in Sources */,
@@ -2210,7 +2218,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.18.7;
+				CURRENT_PROJECT_VERSION = 2026.8.18.8;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
@@ -2237,7 +2245,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.18.7;
+				CURRENT_PROJECT_VERSION = 2026.8.18.8;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;

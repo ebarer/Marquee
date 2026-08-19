@@ -21,6 +21,9 @@ final class PersistenceCoordinator {
 
     private(set) var revision = 0
 
+    /// Session-only: watched dates parked by an un-mark, restored if it's re-marked.
+    let watchedMemory = WatchedMemory()
+
     private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PersistenceCoordinator",
                                     category: "Persistence")
 

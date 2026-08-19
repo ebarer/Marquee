@@ -20,7 +20,21 @@ extension PersistenceCoordinator {
 
     func isWatched(key: MediaKey) -> Bool { MediaItem.isWatched(key: key, in: context) }
     func setWatched(_ watched: Bool, forKey key: MediaKey) {
-        MediaItem.setWatched(watched, for: key, in: context); save()
+        applyWatched(watched, forKey: key); save()
+    }
+
+    /// Un-marking parks the watched date and re-marking restores it, so an accidental toggle
+    /// costs nothing. With none remembered, marking watched dates to today as usual.
+    private func applyWatched(_ watched: Bool, forKey key: MediaKey) {
+        guard watched else {
+            watchedMemory.remember(MediaItem.dateWatched(for: key, in: context), for: key)
+            MediaItem.setWatched(false, for: key, in: context)
+            return
+        }
+        MediaItem.setWatched(true, for: key, in: context)
+        if let remembered = watchedMemory.takeDate(for: key) {
+            MediaItem.setDateWatched(remembered, for: key, in: context)
+        }
     }
 
     /// Watched movies plus watched TV seasons (which track separately). Memoised against
@@ -44,7 +58,7 @@ extension PersistenceCoordinator {
     // MARK: - Fact writes
 
     func setWatched(_ watched: Bool, for movie: Movie) {
-        MediaItem.setWatched(watched, for: movie, in: context); save()
+        applyWatched(watched, forKey: movie.mediaKey); save()
     }
     func setRating(_ stars: Double?, for movie: Movie) {
         MediaItem.setRating(stars, for: movie, in: context); save()
@@ -57,7 +71,7 @@ extension PersistenceCoordinator {
     }
 
     func setWatched(_ watched: Bool, for show: Show) {
-        MediaItem.setWatched(watched, for: show.mediaKey, in: context); save()
+        applyWatched(watched, forKey: show.mediaKey); save()
     }
     func setRating(_ stars: Double?, for show: Show) {
         MediaItem.setRating(stars, for: show.mediaKey, in: context); save()
@@ -100,7 +114,12 @@ extension PersistenceCoordinator {
 
     // MARK: - Clearing derived state
 
-    func unwatch(_ item: MediaItem) { item.watchedAt = nil; item.pruneIfEmpty(); save() }
+    func unwatch(_ item: MediaItem) {
+        watchedMemory.remember(item.watchedAt, tmdbID: item.tmdbID, mediaType: item.mediaType)
+        item.watchedAt = nil
+        item.pruneIfEmpty()
+        save()
+    }
     func removeFromViewed(_ item: MediaItem) { item.lastViewedAt = nil; item.pruneIfEmpty(); save() }
 
     func unwatch(_ id: PersistentIdentifier) {

@@ -28,13 +28,18 @@ extension PersistenceCoordinator {
 
     func toggle(_ movie: Movie, in list: MediaList) { list.toggle(movie); save() }
     func add(_ movie: Movie, to list: MediaList) { list.add(movie); save() }
-    func toggleWatchList(_ movie: Movie) { watchList.toggle(movie); save() }
-    func addToWatchList(_ movie: Movie) { watchList.add(movie); save() }
+    func toggleWatchList(_ movie: Movie) { parkWatchedDate(movie.mediaKey); watchList.toggle(movie); save() }
+    func addToWatchList(_ movie: Movie) { parkWatchedDate(movie.mediaKey); watchList.add(movie); save() }
 
     func toggle(_ show: Show, in list: MediaList) { list.toggle(key: show.mediaKey); save() }
     func add(_ show: Show, to list: MediaList) { list.add(key: show.mediaKey); save() }
     func toggleWatchList(_ show: Show) { watchList.toggle(key: show.mediaKey); save() }
     func addToWatchList(_ show: Show) { watchList.add(key: show.mediaKey); save() }
+
+    /// The Watch List un-marks Watched, so park the date first: re-marking watched restores it.
+    private func parkWatchedDate(_ key: MediaKey) {
+        watchedMemory.remember(MediaItem.dateWatched(for: key, in: context), for: key)
+    }
 
     /// Unlike `watchList`, never creates the list — safe to call from a view body.
     func isInWatchList(_ movie: Movie) -> Bool {
@@ -44,7 +49,7 @@ extension PersistenceCoordinator {
         MediaList.watchList(in: context)?.contains(show.id, .tv) ?? false
     }
 
-    func addToWatchList(forKey key: MediaKey) { watchList.add(key: key); save() }
+    func addToWatchList(forKey key: MediaKey) { parkWatchedDate(key); watchList.add(key: key); save() }
 
     // MARK: - Deletion
 

@@ -8,6 +8,7 @@ import SwiftUI
 /// The shared date-picker sheet behind the watched-date buttons: "Today" plus one optional
 /// quick-set (release / last episode date). Persistence is delegated via `onChange`.
 struct WatchedDatePicker: View {
+    let initialDate: Date
     let tint: Color
     var font: Font? = nil
     let quickSetTitle: String?
@@ -20,6 +21,7 @@ struct WatchedDatePicker: View {
     init(initialDate: Date, tint: Color, font: Font? = nil,
          quickSetTitle: String? = nil, quickSetDate: Date? = nil,
          onChange: @escaping (Date) -> Void) {
+        self.initialDate = initialDate
         self.tint = tint
         self.font = font
         self.quickSetTitle = quickSetTitle
@@ -33,6 +35,9 @@ struct WatchedDatePicker: View {
             label
         }
         .buttonStyle(.plain)
+        // The stored date can change under the view — a re-mark restoring a remembered date —
+        // and state seeded in `init` would keep showing the value it was built with.
+        .onChange(of: initialDate) { _, newValue in date = newValue }
         .sheet(isPresented: $showPicker) {
             NavigationStack {
                 DatePicker("Date Watched", selection: $date, in: ...Date(),
