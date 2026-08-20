@@ -67,7 +67,7 @@ struct DetailHeaderBar<Actions: View>: View {
 
                 if showsSubtitle {
                     // Scales with the header and fades out, its slot collapsing to 0. Never clipped: opacity hits 0
-            // before the shrinking slot reveals overflow.
+                    // before the shrinking slot reveals overflow.
                     subtitleLine
                         .font(.subheadline)
                         .foregroundStyle(tint)
@@ -80,7 +80,7 @@ struct DetailHeaderBar<Actions: View>: View {
 
                 actions()
                     // Top anchor keeps the buttons' top edge where layout puts it, 8pt below the title, so the
-            // compact title-to-buttons gap matches the title-to-label gap.
+                    // compact title-to-buttons gap matches the title-to-label gap.
                     .fixedSize(horizontal: false, vertical: true)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { actionsHeight = $0 }
                     .scaleEffect(actionsScale, anchor: .topLeading)
@@ -89,9 +89,10 @@ struct DetailHeaderBar<Actions: View>: View {
             }
             .frame(width: columnWidth, alignment: .leading)
             .offset(y: -columnLift)
-
-            Spacer(minLength: 0)
         }
+        // Not a trailing Spacer: as a third child it takes a second `spacing` gap, so the bar
+        // measures 12pt over the width it was given and shifts the header's backdrop off centre.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Self.padding)
     }
 

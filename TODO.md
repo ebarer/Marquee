@@ -3,8 +3,6 @@ Next:
 - [ ] 
 
 Polish:
-- [ ] Clean up all comments, organize Source/Representations
-- [ ] Improve layout of episodes list pages
 - [ ] Improve layout of awards page
 
 Ideas:`
