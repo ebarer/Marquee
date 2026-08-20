@@ -217,7 +217,7 @@ extension TMDBWrapper {
                     .map { EpisodeCredit.SeasonCredit(season: $0.value) }
 
                 // Episodes named within a season are the credit. TMDB sometimes omits the season itself, so stand
-            // any missing one up from its episodes.
+                // any missing one up from its episodes.
                 credits += listed.map { number, episodes in
                     let season = known[number] ?? standIn(number: number, from: episodes)
                     return EpisodeCredit.SeasonCredit(

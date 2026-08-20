@@ -169,7 +169,7 @@ struct ShowMetadataStrip: View {
 }
 
 // A stub straight off a list row, with the payload still pending: bars, not em dashes. Must match
-    // the filled strip's height, since it sits under the header and can't grow as cells fill in.
+// the filled strip's height, since it sits under the header and can't grow as cells fill in.
 #Preview("Height across states") {
     let bare = Show(id: 1, name: "Unknown")
 

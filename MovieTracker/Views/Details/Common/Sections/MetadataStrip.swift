@@ -32,7 +32,7 @@ struct MetadataCell<Content: View>: View {
                 // Centred in the reserved space; the header above stays pinned to the top.
                 .frame(minHeight: Self.valueHeight, alignment: .center)
                 // Placeholders are hidden from accessibility, so this element existing means the cell has
-            // disclosed a value, which is what the UI tests assert on.
+                // disclosed a value, which is what the UI tests assert on.
                 .accessibilityIdentifier("metadata-value-\(header)")
         }
         .fixedSize()

@@ -65,7 +65,7 @@ struct ShowActionBar: View {
     }
 
     // An in-progress show is auto-kept on the Watch List, so removing it takes a confirmation and
-        // sticks. Adding it back is a plain tap that re-tracks the next-episode season.
+    // sticks. Adding it back is a plain tap that re-tracks the next-episode season.
     private func handleBookmarkTap() {
         guard let store else { return }
         if progress.isTracked, progress.hasProgress {

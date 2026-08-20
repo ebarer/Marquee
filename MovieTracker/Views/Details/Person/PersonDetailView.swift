@@ -59,7 +59,7 @@ struct PersonDetailView: View {
     private var detailContent: some View {
         GeometryReader { container in
             // This reader sits below the nav bar, so its distance from the page's top edge is the bar's
-        // bottom edge: the offset the header's collapsed layout works from.
+            // bottom edge: the offset the header's collapsed layout works from.
             let navBarBottom = container.frame(in: .global).minY - pageTop
             let pinLine = navBarBottom + headerMetrics.collapsedExtent
 
@@ -99,7 +99,7 @@ struct PersonDetailView: View {
                 .coordinateSpace(name: "scroll")
                 .scrollEdgeEffectHidden(!headerPinned, for: .top)
                 // Also ignore horizontal safe area, or the content sits inset and the background shows as a
-            // trailing gutter.
+                // trailing gutter.
                 .ignoresSafeArea(edges: [.top, .horizontal])
                 .onScrollGeometryChange(for: CGFloat.self) { geo in
                     max(0, -(geo.contentOffset.y + geo.contentInsets.top))

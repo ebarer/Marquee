@@ -45,7 +45,7 @@ struct DetailRootView: View {
     let root: DetailRoot
 
     // Whatever this renders is what the modal opened on. Nothing is pushed over it yet, so its Close
-        // button owns the leading side.
+    // button owns the leading side.
     var body: some View {
         destination
             .environment(\.isModalRoot, true)

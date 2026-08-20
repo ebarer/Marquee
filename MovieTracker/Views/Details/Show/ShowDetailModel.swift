@@ -44,7 +44,7 @@ final class ShowDetailModel {
             show = cached.show
             hydrateEpisodes(from: cached.show)
             // The show poster's colour, kept for other surfaces. Taking it here would repaint the page off the
-        // wrong artwork, since the header is showing a season's poster.
+            // wrong artwork, since the header is showing a season's poster.
             MediaMemoryCache.store(cached.show, tint: cached.color)
         }
 
@@ -57,7 +57,7 @@ final class ShowDetailModel {
             show = full
             invalidateGrownSeasons(against: full)
             // Cached for other surfaces only. The visible tint comes from `applyTint`, which follows the
-        // poster on screen, so assigning it here too would race with that.
+            // poster on screen, so assigning it here too would race with that.
             let showTint = await PosterTint.resolve(forPath: full.poster) ?? tint
             MediaMemoryCache.store(full, tint: showTint)
             await MediaCacheStore.shared.save(full, tint: showTint)

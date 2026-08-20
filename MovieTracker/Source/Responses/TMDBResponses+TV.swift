@@ -195,7 +195,7 @@ extension TMDBWrapper {
                 .map { Person(id: $0.id, name: $0.name, role: $0.role,
                               pic: $0.profilePicture, type: .Cast) }
             // Directors first so `CastSection` surfaces them on top. Dedupe by id, since a person may hold
-        // several jobs, to keep list identity stable.
+            // several jobs, to keep list identity stable.
             let directors = (crew ?? []).filter { $0.role == "Director" }
             let others = (crew ?? []).filter { $0.role != "Director" }
             var seen = Set<Int>()

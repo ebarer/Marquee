@@ -72,7 +72,7 @@ private enum DominantHue {
             guard pixel.saturation >= minSaturation, pixel.brightness >= minBrightness else { continue }
 
             // Cubed saturation lets a vivid minority beat a muted majority. Brightness discounts shadow only
-        // linearly; squared, a lit accent beat a large dark backdrop.
+            // linearly; squared, a lit accent beat a large dark backdrop.
             let weight = pow(pixel.saturation, 3) * pixel.brightness
             let bin = min(binCount - 1, Int(pixel.hue * Double(binCount)))
             let angle = pixel.hue * 2 * .pi

@@ -47,7 +47,7 @@ extension TMDBWrapper {
             }
 
             // TMDB lists re-releases as additional Theatrical entries in no order, so `dates[0]` can surface
-        // one over the original.
+            // one over the original.
             guard let earliest = release.min(by: { $0.releaseDate < $1.releaseDate }) else {
                 return (nil, nil)
             }

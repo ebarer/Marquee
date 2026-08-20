@@ -95,7 +95,7 @@ final class SearchModel {
             guard !Task.isCancelled else { return }
 
             // TMDB's incremental search is erratic and the real match can drop mid-type, so re-run the last
-        // strong anchor while the query still leads to it.
+            // strong anchor while the query still leads to it.
             let originalStrong = isStrong(result)
             if !originalStrong,
                SearchMatching.shouldTryAnchorRecovery(query: query,

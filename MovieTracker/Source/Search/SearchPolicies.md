@@ -35,6 +35,38 @@ TMDB gives two measures and they disagree often enough to matter:
 - **popularity** — what's trending this week. Volatile; a 152-vote 1960s series can out-popularity
   a film with 39,000 votes. Never rank one title against another on popularity alone.
 
+Popularity is only comparable against a benchmark, because TMDB rescales the number periodically.
+`PopularityBenchmark` takes the **median of `/movie/popular` page 1** — roughly the tenth most
+popular title anywhere — and caches it for six hours. That is the bar "a phenomenon" means, and
+deriving it survives a rescaling that a hardcoded threshold would not. Offline it is unavailable,
+and ranking falls back to vote count alone.
+
+`notability` is therefore `voteCount × (1 + popularity / benchmark)`: accumulated attention,
+scaled by how much of a phenomenon the title is *today*, so a back catalogue's years of votes
+can't bury a current hit.
+
+## Ranking the list
+
+`SearchMatching.interlaced` scores every movie and show as `notability × matchWeight(relevance)`.
+
+**Relevance is a step scale, lower is stronger:** 0 exact title, 1 title prefix, 2 word prefix,
+3 contains, 4 no match. Both sides are article-stripped, so "The Office" and "office" agree.
+
+**Each step below a title prefix costs a factor of 8** (`relevanceDiscount`). Exact and title-prefix
+carry equal weight — `matchWeight` is `8 ^ -max(0, relevance - 1)` — so the scale only starts
+charging at a word-prefix match. It is deliberately a discount and not a sort key: relevance decides
+between peers, but can't bury a phenomenon. "House of the Dragon" is only a word match for `dragon`,
+and still beats an obscure film whose title the query prefixes outright.
+
+**A franchise sibling is never on a stronger footing than the seed that pulled it in.** Its
+relevance is `min(seed's relevance, its own literal match)`.
+
+**A title in release now can top its tier outright.** Within `inReleaseDays` (90, roughly a
+theatrical run) the most-popular title of a tier is lifted above that tier's ceiling — it is too
+new to have the votes, but it is what the query means today. Two guards keep this from running
+away: it must clear the popularity benchmark *and* a vote floor, so a fresh sequel can't displace
+its own classic.
+
 ## Policies
 
 **The results list is the source of truth for order.** The People strip doesn't rank titles
@@ -63,7 +95,39 @@ notable people share.
 count, or a departed lead lands behind the ensemble who stayed. A regular is someone in half
 the longest run, which keeps a guest billed high in a handful of episodes out.
 
+**A name matches whole segments only.** `office` must not claim someone called "Officer", and a
+partly-typed name waits until it is a name. Below three characters, nothing matches by name.
+
+**The strip's inline prefix ends at the first person who isn't prominent.** A cast match always
+counts as prominent; a name match counts only if it clears `inlinePopularityFloor` *and* has a
+photo. The rest fold under "More". With nothing prominent at all the strip still shows
+`minInlinePeople` (3) rather than a bare "More" button — a pure obscure-name search should show
+its best few. A photoless entry that clears the floor on popularity alone ("AI-D\*300") folds.
+
+**Franchise expansion is a general rule, never a hardcoded franchise list.** Take the notable
+titles that *do* match the query, look up the TMDB collection each belongs to, and merge in its
+siblings at the seed's relevance. `batman` reaches The Dark Knight through "Batman Begins";
+`superman` reaches "Man of Steel" through "Batman v Superman", which the query only word-matches.
+
+**TV noise is trimmed by origin, not by relevance alone.** `ShowFilterTool` keeps US-aired shows
+that are established (votes) or trending (popularity) — plus *any* exact title match, so a
+directly-searched foreign show ("Squid Game") still appears.
+
+**Spelling variants exist because TMDB's title search is literal.** A compressed hero name
+("ironman") or a separator title ("wall e") finds only obscure films, and an interpunct title
+matches only its own spelling. `SpellingVariantTool` re-queries the alternates and merges them in;
+whatever noise they add sinks under `RankMoviesTool`.
+
+**Recall recovery covers TMDB dropping the real match mid-type.** Incremental search is erratic:
+typing one more character can lose the film that was leading a keystroke ago. The model keeps the
+last query whose own results were strong as an *anchor*, and when the current query returns nothing
+strong but still extends or prefixes that anchor, it re-runs the anchor and takes those results
+instead. The anchor only advances on a query that was strong in its own right, so recovery never
+re-runs a recovered result.
+
 ## Examples
+
+What the **People strip** opens on:
 
 | Query | Leads with | Why |
 |---|---|---|
@@ -74,6 +138,16 @@ the longest run, which keeps a guest billed high in a handful of episodes out.
 | `dune` | Chalamet, Zendaya | Title holds the query against one obscure namesake |
 | `carrie` | Carrie-Anne Moss, Coon, Fisher | Several notable namesakes take it back off the film |
 | `friends` | Aniston, Cox, Kudrow | Namesake noise ("Line Friends") is below the floor |
+
+What the **results list** opens on:
+
+| Query | Leads with | Why |
+|---|---|---|
+| `dragon` | House of the Dragon | The phenomenon outweighs an 8× relevance discount |
+| `batman` | The Dark Knight | Collection sibling, inheriting "Batman Begins"'s relevance |
+| `superman` | Man of Steel | Sibling of a title the query only word-matches |
+| `squid game` | Squid Game | Exact title match escapes the US-origin TV filter |
+| `ironman` | Iron Man | Spaced variant; the literal query finds only obscure films |
 
 ## Changing any of this
 

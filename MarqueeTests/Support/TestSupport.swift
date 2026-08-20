@@ -10,7 +10,7 @@ import SwiftData
 @testable import Marquee
 
 // A temp file because `#Predicate` fetches crash in-memory, and a plain `ModelContext` because
-    // `mainContext` traps under Swift Testing's concurrency.
+// `mainContext` traps under Swift Testing's concurrency.
 @MainActor
 func makeInMemoryStore() -> PersistenceCoordinator {
     let url = URL.temporaryDirectory.appending(path: "MarqueeTests-\(UUID().uuidString).store")

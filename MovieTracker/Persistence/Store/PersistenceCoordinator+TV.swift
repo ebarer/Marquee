@@ -161,7 +161,7 @@ extension PersistenceCoordinator {
             await MediaCacheStore.shared.save(show, tint: tint)
 
             // Re-read: the save merges cached episodes back in, and reconciling needs them to date the tracked
-        // season by its next unwatched episode.
+            // season by its next unwatched episode.
             let merged = await MediaCacheStore.shared.loadShow(id: id)?.show ?? show
             reconcileSeasons(for: merged)
             reconcileMembership(merged)
@@ -447,7 +447,7 @@ extension PersistenceCoordinator {
         let complete = season.episodeCount > 0 && watchedCount >= season.episodeCount
         guard complete else {
             // A snapshot carries a watched date and rating nothing else can re-derive, and its delete syncs.
-        // Drop it only on a local unwatch, or once the season has outgrown it.
+            // Drop it only on a local unwatch, or once the season has outgrown it.
             if let existing, afterLocalEdit || existing.episodeCount < season.episodeCount {
                 // Only a user's un-mark is worth remembering; a season that merely outgrew its snapshot is re-dated.
                 if afterLocalEdit { watchedMemory.remember(existing) }

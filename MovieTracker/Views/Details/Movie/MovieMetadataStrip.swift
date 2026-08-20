@@ -96,7 +96,7 @@ struct MovieMetadataStrip: View {
     }
 
     // A fact read takes no observation dependency, so `revision` is what re-renders these cells once
-        // a write lands. A re-mark restoring a remembered date arrives a turn after the tap.
+    // a write lands. A re-mark restoring a remembered date arrives a turn after the tap.
     private var watchedDate: Date? {
         guard let store else { return nil }
         _ = store.revision

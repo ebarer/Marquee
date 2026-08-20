@@ -81,11 +81,11 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                     Color.appBackground
 
                     // `maxWidth: .infinity` rather than `proxy.size.width`, which is the safe-area-inset width here.
-            // Overlay centers; a bare `scaledToFill` would left-align.
+                    // Overlay centers; a bare `scaledToFill` would left-align.
                     Color.clear
                         .headerLayer(imageNow)
                         // Bare `RemoteImage` rather than `PosterImage`, whose film-glyph placeholder would sit in the
-            // middle of the backdrop until the artwork lands.
+                        // middle of the backdrop until the artwork lands.
                         .overlay { RemoteImage(url: backgroundURL, fadesIn: true) { Color.clear } }
                         .clipped()
                         .blur(radius: Backdrop.glassBlur * reveal)

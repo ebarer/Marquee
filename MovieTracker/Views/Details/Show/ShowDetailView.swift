@@ -77,7 +77,7 @@ struct ShowDetailView: View {
     private func detailContent(show: Show) -> some View {
         GeometryReader { container in
             // The reader sits below the nav bar, so its distance from the page's top edge is the bar's bottom
-        // edge. `pageTop`, not 0, because a sheet sits inset in the window.
+            // edge. `pageTop`, not 0, because a sheet sits inset in the window.
             let navBarBottom = container.frame(in: .global).minY - pageTop
             let fullHeight = container.size.height + navBarBottom
             let imageHeight = fullHeight * 0.45

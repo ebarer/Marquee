@@ -44,7 +44,7 @@ struct SeasonHeader: View {
     }
 
     // A styled label backed by an embedded Picker: the menu keeps the standard checkmark gutter while
-        // the season reads as a section title on the left.
+    // the season reads as a section title on the left.
     private var seasonPicker: some View {
         Menu {
             Picker("Season", selection: seasonSelection) {

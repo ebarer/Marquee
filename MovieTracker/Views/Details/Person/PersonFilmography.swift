@@ -37,7 +37,7 @@ struct PersonFilmography: View {
                 }
             }
             // Declared here so every route into the filter animates alike. A `withAnimation` around the
-        // mutation misses, since `@AppStorage` publishes outside it.
+            // mutation misses, since `@AppStorage` publishes outside it.
             .animation(.easeInOut, value: filter.active)
         }
     }

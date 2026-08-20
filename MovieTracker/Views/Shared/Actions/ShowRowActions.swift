@@ -8,7 +8,7 @@ import SwiftUI
 // MARK: - TV swipe buttons
 
 // A full swipe fires the action and then springs the row back. The row keeps its identity, so hold
-    // the write until it is home or the in-place crossfade cuts the swipe short.
+// the write until it is home or the in-place crossfade cuts the swipe short.
 private let rowSettleDelay: Duration = .milliseconds(450)
 
 /// Leading swipe for a tracked-season row: marks the next unwatched episode, advancing the row by one.
@@ -21,7 +21,7 @@ struct EpisodeWatchedSwipeButton: View {
         Button {
             guard let store else { return }
             // Detached from this row's lifetime on purpose: the write must land even if reconcile moves the
-        // row out from under us.
+            // row out from under us.
             Task { @MainActor in
                 try? await Task.sleep(for: rowSettleDelay)
                 await store.markNextEpisodeWatched(showID: showID, seasonNumber: seasonNumber)

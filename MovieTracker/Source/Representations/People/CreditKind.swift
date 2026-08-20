@@ -41,7 +41,7 @@ enum CreditKind: String, Codable, CaseIterable, Identifiable, Sendable {
         guard let role = role?.lowercased() else { return false }
         if role.contains("thanks") || role == "idea" { return true }
         // Hand-entered, so "Self" gets a character of slack for typos. First word only and no longer:
-    // "Herself" and "Selfish Man" are parts someone played.
+        // "Herself" and "Selfish Man" are parts someone played.
         let firstWord = role.prefix { !" -–/,(".contains($0) }
         return firstWord.hasPrefix("self") && firstWord.count <= "self".count + 1
     }

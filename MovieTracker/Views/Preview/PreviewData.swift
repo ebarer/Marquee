@@ -221,7 +221,7 @@ extension Person {
 // MARK: - Sample SwiftData container
 
 // Everything is inserted, never fetched: a fresh in-memory store has no connection until SwiftUI
-    // attaches it, so fetching here crashes with "No eligible connection available".
+// attaches it, so fetching here crashes with "No eligible connection available".
 @MainActor
 let previewModelContainer: ModelContainer = {
     let configuration = ModelConfiguration(isStoredInMemoryOnly: true)

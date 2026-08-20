@@ -63,7 +63,7 @@ extension TMDBWrapper {
 
     static func showsOnTheAir(page: Int) async throws -> PagedResult<Show> {
         // `/tv/on_the_air` is curated and ignores every filter, so an air-date window on discover stands in,
-            // wide enough that a weekly series doesn't drop out.
+        // wide enough that a weekly series doesn't drop out.
         try await discoverShows(page: page, extra: [
             URLQueryItem(name: "sort_by", value: "popularity.desc"),
             URLQueryItem(name: "air_date.gte", value: dateParam(daysFromNow: -14)),

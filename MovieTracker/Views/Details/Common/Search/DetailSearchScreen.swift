@@ -196,7 +196,7 @@ struct DetailSearchScreen: View {
             GeometryReader { proxy in
                 let container = proxy.frame(in: .global)
                 // Latched, not read live: a push or pop slides the container while the slot stays where it was
-        // measured, and a mid-transition size shoves the trailing items off the edge.
+                // measured, and a mid-transition size shoves the trailing items off the edge.
                 let place = placement ?? FieldPlacement(of: slot, in: container)
                 let target = CGRect(x: container.minX + place.leading,
                                     y: container.minY + place.top,

@@ -101,7 +101,7 @@ struct ShowPosterCard: View {
 }
 
 // Badges rendered directly: seeding a live store in a preview trips CloudKit's "No eligible
-    // connection".
+// connection".
 #Preview("Status badges") {
     HStack(spacing: 16) {
         ForEach([PosterStatus.watched, .watchList], id: \.symbol) { status in

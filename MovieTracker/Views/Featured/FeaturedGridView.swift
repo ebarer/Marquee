@@ -58,7 +58,7 @@ struct FeaturedGridView: View {
             withAnimation(.easeOut(duration: 0.3)) { scrollPosition.scrollTo(edge: .top) }
         }
         // Idempotent for an unchanged collection, so leaving and returning keeps the loaded movies and
-            // scroll position instead of reloading.
+        // scroll position instead of reloading.
         .task(id: collection) { await model.load(collection) }
     }
 
