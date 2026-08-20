@@ -57,7 +57,7 @@ private struct DetailSearchHost: ViewModifier {
     @State private var query = ""
     @State private var landed = false
     @State private var fieldFocused = false
-    @State private var fieldFrame: CGRect = .zero
+    @State private var fieldWidth: CGFloat = 0
 
     @AppStorage("castEpisodeCounts") private var showsEpisodeCounts = true
     @AppStorage("personCreditFilter") private var creditFilter = CreditFilter()
@@ -93,7 +93,7 @@ private struct DetailSearchHost: ViewModifier {
                                    contentFrame: contentFrame, isClosing: isClosing,
                                    query: $query, fieldInBar: fieldInBar,
                                    focused: fieldStaysInPlace && fieldFocused,
-                                   onFieldFrame: { fieldFrame = $0 },
+                                   onFieldWidth: { fieldWidth = $0 },
                                    onLanded: { landed = true }, onClose: close)
                     // Search animates its own arrival. A transition here would fade the whole
                     // screen in over the page, drawing both at once.
@@ -125,7 +125,7 @@ private struct DetailSearchHost: ViewModifier {
                 ToolbarItem(placement: .principal) {
                     DetailSearchBar(text: $query, prompt: request.prompt, tint: request.tint,
                                     focused: fieldInBar && fieldFocused)
-                        .frame(width: max(1, fieldFrame.width))
+                        .frame(width: max(1, fieldWidth))
                         .opacity(fieldInBar ? 1 : 0)
                 }
                 // Declared first, so it sits to the left of the button that closes search.

@@ -15,11 +15,18 @@ struct SearchMovieRow<Leading: View, Trailing: View>: View {
     @ViewBuilder var trailingActions: () -> Trailing
 
     var body: some View {
-        // Opt out of selection so a value already on the path doesn't stray-highlight.
-        NavigationLink(value: movie) {
-            // Search always derives the badge from the store: a result carries no membership.
-            MovieRow(movie: movie, derivesStatus: true)
+        // The chevron is drawn here rather than by the list: a result pushes as a button, so no
+        // disclosure indicator comes for free. See ``DetailLink``.
+        DetailLink(value: movie) {
+            HStack(spacing: 8) {
+                // Search always derives the badge from the store: a result carries no membership.
+                MovieRow(movie: movie, derivesStatus: true)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
         }
+        // Opt out of selection so a value already on the path doesn't stray-highlight.
         .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
         .swipeActions(edge: .leading, allowsFullSwipe: true, content: leadingActions)

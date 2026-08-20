@@ -105,6 +105,68 @@ import SwiftUI
         await store.clear()
     }
 
+    // MARK: - Season freshness
+
+    private func makeShowWithSeason(id: Int, seasonNumber: Int = 1) -> (Show, Season) {
+        var season = Season(id: seasonNumber * 100, seasonNumber: seasonNumber,
+                            name: "Season \(seasonNumber)", episodeCount: 2)
+        season.episodes = (1...2).map {
+            Episode(id: seasonNumber * 1000 + $0, seasonNumber: seasonNumber,
+                    episodeNumber: $0, name: "E\($0)")
+        }
+        var show = Show(id: id, name: "Show \(id)")
+        show.seasons = [season]
+        return (show, season)
+    }
+
+    @Test func aSeasonIsStaleUntilItIsCachedAndOnceItsTTLPasses() async {
+        let store = MediaCacheStore(directoryName: "MediaCacheTests-season", maxEntries: 10)
+        await store.clear()
+        let (show, season) = makeShowWithSeason(id: 8)
+        await store.save(show, tint: nil)
+        // Cached with the show's season list, but the season itself was never fetched.
+        #expect(await store.isSeasonFresh(showID: 8, seasonNumber: 1, ttl: 3600) == false)
+
+        await store.cacheSeason(showID: 8, season)
+        #expect(await store.isSeasonFresh(showID: 8, seasonNumber: 1, ttl: 3600))
+        #expect(await store.isSeasonFresh(showID: 8, seasonNumber: 1, ttl: 0) == false)
+        #expect(await store.isSeasonFresh(showID: 8, seasonNumber: 2, ttl: 3600) == false)
+        await store.clear()
+    }
+
+    @Test func refreshingTheShowKeepsItsSeasonStamps() async {
+        let store = MediaCacheStore(directoryName: "MediaCacheTests-stamps", maxEntries: 10)
+        await store.clear()
+        let (show, season) = makeShowWithSeason(id: 9)
+        await store.save(show, tint: nil)
+        await store.cacheSeason(showID: 9, season)
+
+        // A show refresh carries cached episodes forward, so it must carry their stamps too.
+        await store.save(show, tint: nil)
+        #expect(await store.isSeasonFresh(showID: 9, seasonNumber: 1, ttl: 3600))
+        await store.clear()
+    }
+
+    @Test func anEntryStampedByAnotherSchemaVersionReadsAsAMiss() async {
+        let name = "MediaCacheTests-version"
+        let store = MediaCacheStore(directoryName: name, maxEntries: 10)
+        await store.clear()
+        await store.save(makeMovie(id: 7), tint: nil)
+        #expect(await store.load(id: 7) != nil)
+
+        // Rewrite the entry the way a release before the stamp existed would have.
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let unstamped = CachedMedia(movie: makeMovie(id: 7), tint: nil, cachedAt: Date())
+        let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(name, isDirectory: true)
+            .appendingPathComponent("media-7.json")
+        try? encoder.encode(unstamped).write(to: url, options: .atomic)
+
+        #expect(await store.load(id: 7) == nil)
+        await store.clear()
+    }
+
     @Test func cachedMediaColorRequiresFourComponents() {
         let ok = CachedMedia(movie: makeMovie(id: 1), tint: [0.1, 0.2, 0.3, 1.0], cachedAt: Date())
         #expect(ok.color != nil)

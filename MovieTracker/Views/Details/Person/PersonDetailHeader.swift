@@ -10,6 +10,11 @@ import SwiftUI
 struct PersonHeaderMetrics {
     static let avatar: CGFloat = 120
     static let collapsedAvatar: CGFloat = 60
+    /// The photo grows with a pull-down, up to this much of its resting size.
+    static let maxPhotoPull: CGFloat = 1.4
+    /// The pull that reaches that cap, as a fraction of the page: a third of the screen, so the
+    /// photo grows gradually and maxing it out takes a deliberate drag.
+    static let photoPullSpan: CGFloat = 0.35
     static let nameScale: CGFloat = 0.7
     static let padding: CGFloat = 16
     static let avatarGap: CGFloat = 12
@@ -58,6 +63,10 @@ struct PersonDetailHeader: View {
     var photoNamespace: Namespace.ID
     var onPhotoTap: () -> Void = {}
     let navBarBottom: CGFloat
+    /// How far the page is pulled past its top edge. The photo grows into that space.
+    var overscroll: CGFloat = 0
+    /// The page's height, which sets how far a pull has to go to grow the photo fully.
+    var pageHeight: CGFloat = 0
     @Binding var headerPinned: Bool
     /// Previews only: holds the collapse at a fixed progress, which scroll geometry can't supply.
     var previewProgress: CGFloat? = nil
@@ -75,6 +84,9 @@ struct PersonDetailHeader: View {
             let scrolled = max(0, -proxy.frame(in: .named("scroll")).minY)
             let progress = override ?? min(1, scrolled / collapse)
             let shrink = collapse * progress
+            let span = max(1, pageHeight * PersonHeaderMetrics.photoPullSpan)
+            let pull = PersonHeaderMetrics.avatar * (PersonHeaderMetrics.maxPhotoPull - 1)
+                * min(1, overscroll / span)
             // Glass is held off until the last stretch, so the header only crossfades into it
             // as it sticks.
             let reveal = min(1, max(0, (progress - (1 - Pinning.glassSpan)) / Pinning.glassSpan))
@@ -87,13 +99,15 @@ struct PersonDetailHeader: View {
                 SectionHeaderGlass(tint: Pinning.glassTint)
                     .opacity(reveal * Pinning.glassPeak)
 
-                column(progress: progress)
+                column(progress: progress, pull: pull)
             }
-            .frame(maxWidth: .infinity, minHeight: rest - shrink, maxHeight: rest - shrink,
-                   alignment: .bottom)
+            // Grown upward by the pull — bottom-aligned, so the column stays where it is and the
+            // photo has room past the frame the header occupies at rest.
+            .frame(maxWidth: .infinity, minHeight: rest - shrink + pull,
+                   maxHeight: rest - shrink + pull, alignment: .bottom)
             .clipped()
             // Counters the scroll, so the shrinking header's top edge stays at the page's top.
-            .offset(y: shrink)
+            .offset(y: shrink - pull)
             .onChange(of: scrolled >= collapse) { _, pinned in
                 withAnimation(.easeInOut(duration: 0.2)) { headerPinned = pinned }
             }
@@ -107,7 +121,7 @@ struct PersonDetailHeader: View {
         }
     }
 
-    private func column(progress: CGFloat) -> some View {
+    private func column(progress: CGFloat, pull: CGFloat) -> some View {
         let avatar = PersonHeaderMetrics.avatar
             - (PersonHeaderMetrics.avatar - PersonHeaderMetrics.collapsedAvatar) * progress
         let nameScale = 1 - (1 - PersonHeaderMetrics.nameScale) * progress
@@ -119,6 +133,8 @@ struct PersonDetailHeader: View {
         return VStack(spacing: 0) {
             ProfileImage(url: person.profileURL())
                 .frame(width: avatar, height: avatar)
+                // Scaled rather than sized, so the pull never re-lays out the column below it.
+                .scaleEffect((avatar + pull) / avatar, anchor: .bottom)
                 .matchedTransitionSource(id: person.id, in: photoNamespace)
                 .onTapGesture { onPhotoTap() }
 
@@ -203,6 +219,7 @@ struct PersonDetailHeader: View {
 
 private struct HeaderPreview: View {
     var progress: CGFloat?
+    var overscroll: CGFloat = 0
     var person: Person = .preview
 
     @Namespace private var namespace
@@ -210,19 +227,22 @@ private struct HeaderPreview: View {
     @ScaledMetric(relativeTo: .subheadline) private var metaLine: CGFloat = 18
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                PersonDetailHeader(
-                    person: person,
-                    metrics: PersonHeaderMetrics(nameLine: nameLine, metaLine: metaLine),
-                    photoNamespace: namespace, navBarBottom: 100,
-                    headerPinned: .constant(progress == 1), previewProgress: progress
-                )
-                Color.appSeparator.frame(height: 1200)
+        GeometryReader { container in
+            ScrollView {
+                VStack(spacing: 0) {
+                    PersonDetailHeader(
+                        person: person,
+                        metrics: PersonHeaderMetrics(nameLine: nameLine, metaLine: metaLine),
+                        photoNamespace: namespace, navBarBottom: 100, overscroll: overscroll,
+                        pageHeight: container.size.height,
+                        headerPinned: .constant(progress == 1), previewProgress: progress
+                    )
+                    Color.appSeparator.frame(height: 1200)
+                }
             }
+            .coordinateSpace(name: "scroll")
+            .ignoresSafeArea(edges: [.top, .horizontal])
         }
-        .coordinateSpace(name: "scroll")
-        .ignoresSafeArea(edges: [.top, .horizontal])
         .background(Color.appBackground)
         .preferredColorScheme(.dark)
     }
@@ -234,6 +254,15 @@ private struct HeaderPreview: View {
 
 #Preview("Pinned") {
     HeaderPreview(progress: 1)
+}
+
+// A pull of a fifth of the page: what a flick reaches, and most of what anyone will see.
+#Preview("Pulled down") {
+    HeaderPreview(overscroll: 180)
+}
+
+#Preview("Pulled down, maxed") {
+    HeaderPreview(overscroll: 400)
 }
 
 #Preview("No birth details") {

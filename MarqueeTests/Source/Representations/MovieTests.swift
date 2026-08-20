@@ -21,10 +21,18 @@ import Foundation
         #expect(movie.duration == nil)
         movie.runtime = 125
         #expect(movie.duration == "2 hr 5 min")
-        movie.runtime = 45
-        #expect(movie.duration == "0 hr 45 min")
+        movie.runtime = 45                      // under an hour: minutes only
+        #expect(movie.duration == "45 min")
         movie.runtime = 0                       // unknown (e.g. unreleased) — not "0 hr 0 min"
         #expect(movie.duration == nil)
+    }
+
+    @Test func shortsAreUnderTenMinutes() {
+        #expect(RuntimeLabel.isShort(minutes: 4))
+        #expect(RuntimeLabel.isShort(minutes: 9))
+        #expect(!RuntimeLabel.isShort(minutes: 10))
+        #expect(!RuntimeLabel.isShort(minutes: 0))
+        #expect(!RuntimeLabel.isShort(minutes: nil))
     }
 
     @Test func genresStringShortensAndJoins() {

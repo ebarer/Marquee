@@ -137,9 +137,15 @@ final class ShowDetailModel {
         store.reconcileMembership(show, episodesBySeason: seasonEpisodes)
     }
 
+    /// Hydrated episodes stay on screen while a stale season refetches behind them, so the
+    /// refresh costs no spinner and a failure offline leaves the cached roster in place.
     func loadSeason(showID: Int, seasonNumber: Int) async {
-        guard seasonEpisodes[seasonNumber] == nil,
-              !loadingSeasons.contains(seasonNumber) else { return }
+        guard !loadingSeasons.contains(seasonNumber) else { return }
+        if seasonEpisodes[seasonNumber] != nil,
+           await MediaCacheStore.shared.isSeasonFresh(showID: showID, seasonNumber: seasonNumber,
+                                                     ttl: MediaCacheStore.seasonRefreshTTL) {
+            return
+        }
         loadingSeasons.insert(seasonNumber)
         defer { loadingSeasons.remove(seasonNumber) }
         do {

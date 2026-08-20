@@ -14,6 +14,10 @@ struct SearchView: View {
 
     @Environment(\.openDetail) private var openDetail
 
+    /// The docked search field's height plus its bottom margin. The field floats over the list
+    /// without insetting it, so the last row lands behind the field.
+    @ScaledMetric(relativeTo: .body) private var searchFieldClearance: CGFloat = 56
+
     var body: some View {
         searchList
         .listStyle(.plain)
@@ -87,10 +91,16 @@ struct SearchView: View {
         }
     }
 
-    /// A pushing link, so the row gets the system's press highlight and selection.
+    /// The chevron is drawn here rather than by the list: a result pushes as a button, so no
+    /// disclosure indicator comes for free. See ``DetailLink``.
     private func showRow(_ show: Show) -> some View {
         DetailLink(value: show) {
-            ShowRow(show: show, derivesStatus: true)
+            HStack(spacing: 8) {
+                ShowRow(show: show, derivesStatus: true)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
         }
     }
 
@@ -154,6 +164,8 @@ struct SearchView: View {
             // The headers' insets set the spacing; section spacing would add to it.
             List { listContent }
                 .listSectionSpacing(0)
+                .contentMargins(.bottom, openDetail == nil ? searchFieldClearance : 0,
+                                for: .scrollContent)
         }
     }
 

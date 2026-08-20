@@ -10,6 +10,7 @@ struct CachedMedia: Codable {
     var movie: Movie
     var tint: [Double]?
     var cachedAt: Date
+    var version: Int?
 
     var color: Color? {
         guard let components = tint, components.count == 4 else { return nil }
@@ -22,6 +23,10 @@ struct CachedShow: Codable {
     var show: Show
     var tint: [Double]?
     var cachedAt: Date
+    var version: Int?
+    /// When each season's episodes and cast were fetched, by season number. `cachedAt` covers
+    /// the show payload only, which never carries either.
+    var seasonsCachedAt: [Int: Date]?
 
     var color: Color? {
         guard let components = tint, components.count == 4 else { return nil }
@@ -34,6 +39,14 @@ struct CachedShow: Codable {
 /// Each entry carries a `MediaCachePriority` that ranks it for eviction ahead of recency.
 actor MediaCacheStore {
     static let shared = MediaCacheStore()
+
+    /// Bump when the shape or the derivation of a cached payload changes: entries stamped with
+    /// another version read as misses, so they refetch rather than render superseded data.
+    static let schemaVersion = 1
+
+    /// How long a cached season's episodes and cast stand before a refetch. Episode count alone
+    /// can't spot a credits correction, so a completed season needs a clock to ever refresh.
+    static let seasonRefreshTTL: TimeInterval = 60 * 60 * 24 * 14
 
     private let maxEntries: Int
     private let directoryName: String
@@ -74,8 +87,10 @@ actor MediaCacheStore {
 
     /// Stale entries are still returned (usable offline); freshness only gates re-fetch.
     func load(id: Int) -> CachedMedia? {
-        guard let data = try? Data(contentsOf: fileURL(id: id)) else { return nil }
-        return try? decoder.decode(CachedMedia.self, from: data)
+        guard let data = try? Data(contentsOf: fileURL(id: id)),
+              let entry = try? decoder.decode(CachedMedia.self, from: data),
+              entry.version == Self.schemaVersion else { return nil }
+        return entry
     }
 
     func isFresh(id: Int, ttl: TimeInterval) -> Bool {
@@ -85,7 +100,7 @@ actor MediaCacheStore {
 
     func save(_ movie: Movie, tint: Color?, priority: MediaCachePriority = .browsed) {
         let entry = CachedMedia(movie: movie, tint: tint.flatMap(Self.rgba(from:)),
-                                cachedAt: Date())
+                                cachedAt: Date(), version: Self.schemaVersion)
         guard let data = try? encoder.encode(entry) else { return }
         try? data.write(to: fileURL(id: movie.id), options: .atomic)
         retain(fileName(id: movie.id, mediaType: .movie), at: priority)
@@ -93,8 +108,10 @@ actor MediaCacheStore {
     }
 
     func loadShow(id: Int) -> CachedShow? {
-        guard let data = try? Data(contentsOf: fileURL(id: id, mediaType: .tv)) else { return nil }
-        return try? decoder.decode(CachedShow.self, from: data)
+        guard let data = try? Data(contentsOf: fileURL(id: id, mediaType: .tv)),
+              let entry = try? decoder.decode(CachedShow.self, from: data),
+              entry.version == Self.schemaVersion else { return nil }
+        return entry
     }
 
     func isShowFresh(id: Int, ttl: TimeInterval) -> Bool {
@@ -102,11 +119,20 @@ actor MediaCacheStore {
         return Date().timeIntervalSince(cached.cachedAt) < ttl
     }
 
+    /// A season the cache still holds, but stamped longer ago than `ttl`. An unstamped season
+    /// counts as stale: it predates the stamp, so its cast has never been revisited.
+    func isSeasonFresh(showID: Int, seasonNumber: Int, ttl: TimeInterval) -> Bool {
+        guard let stamped = loadShow(id: showID)?.seasonsCachedAt?[seasonNumber] else { return false }
+        return Date().timeIntervalSince(stamped) < ttl
+    }
+
     func save(_ show: Show, tint: Color?, priority: MediaCachePriority = .browsed) {
         // The /tv/{id} payload behind `show` carries only the season list, not episodes —
         // preserve any per-season episodes already cached so a refresh doesn't wipe them.
         let entry = CachedShow(show: mergingCachedEpisodes(into: show),
-                               tint: tint.flatMap(Self.rgba(from:)), cachedAt: Date())
+                               tint: tint.flatMap(Self.rgba(from:)), cachedAt: Date(),
+                               version: Self.schemaVersion,
+                               seasonsCachedAt: loadShow(id: show.id)?.seasonsCachedAt)
         guard let data = try? encoder.encode(entry) else { return }
         try? data.write(to: fileURL(id: show.id, mediaType: .tv), options: .atomic)
         retain(fileName(id: show.id, mediaType: .tv), at: priority)
@@ -122,6 +148,8 @@ actor MediaCacheStore {
               }) else { return }
         cached.show.seasons[index].episodes = season.episodes
         if !season.cast.isEmpty { cached.show.seasons[index].cast = season.cast }
+        cached.seasonsCachedAt = (cached.seasonsCachedAt ?? [:])
+            .merging([season.seasonNumber: Date()]) { _, new in new }
         guard let data = try? encoder.encode(cached) else { return }
         try? data.write(to: fileURL(id: showID, mediaType: .tv), options: .atomic)
     }

@@ -45,11 +45,7 @@ struct Episode: Hashable, Identifiable, Codable, Sendable {
         return !airDate.isInTheFuture(asOf: reference)
     }
 
-    var duration: String? {
-        guard let runtime else { return nil }
-        guard runtime >= 60 else { return "\(runtime) min" }
-        return "\(runtime / 60) hr \(runtime % 60) min"
-    }
+    var duration: String? { RuntimeLabel.duration(minutes: runtime) }
 
     func stillURL(_ size: BackgroundSize = .w300) -> URL? {
         TMDBWrapper.imageURL(path: still, size: size.rawValue)

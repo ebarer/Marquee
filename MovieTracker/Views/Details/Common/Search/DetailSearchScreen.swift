@@ -67,6 +67,19 @@ struct DetailSearchRequest: Hashable {
     }
 }
 
+/// Where the field sits inside its container, as insets rather than a frame.
+private struct FieldPlacement: Equatable {
+    var leading: CGFloat
+    var trailing: CGFloat
+    var top: CGFloat
+
+    init(of slot: CGRect, in container: CGRect) {
+        leading = max(0, container.maxX - slot.maxX)
+        trailing = max(0, container.maxX - slot.minX + DetailSearchBar.cancelGap)
+        top = max(0, slot.minY - container.minY)
+    }
+}
+
 /// Searches one detail section's list, covering the page it was opened from.
 struct DetailSearchScreen: View {
     let request: DetailSearchRequest
@@ -81,8 +94,8 @@ struct DetailSearchScreen: View {
     /// True once the interactive field has taken over in the navigation bar.
     var fieldInBar = false
     var focused = false
-    /// Reports where the field comes to rest, which is the width the bar's copy is given.
-    var onFieldFrame: (CGRect) -> Void = { _ in }
+    /// Reports the width the field comes to rest at, which is what the bar's copy is given.
+    var onFieldWidth: (CGFloat) -> Void = { _ in }
     var onLanded: () -> Void = {}
     let onClose: () -> Void
 
@@ -91,6 +104,8 @@ struct DetailSearchScreen: View {
     @State private var revealsResults = false
     // Latched when search opens: a placement that changes mid-flight moves the field under it.
     @State private var placedAt: CGRect?
+    @State private var hasPlaced = false
+    @State private var placement: FieldPlacement?
     /// Where the results' own top edge sits, measured the way they are laid out.
     @State private var resultsTop: CGFloat = 0
     @State private var fieldGlass = false
@@ -128,7 +143,12 @@ struct DetailSearchScreen: View {
             field
         }
         .onAppear {
-            placedAt = trailingSlot
+            // Once only: popping a pushed screen fires this again, with the page still off-window,
+            // where the slot measures off-screen and takes the field with it.
+            if !hasPlaced, let slot = trailingSlot {
+                hasPlaced = true
+                placedAt = slot
+            }
             // Rows arrive after the field lands. Building them first spends the flight's frames on
             // layout, and the first half of it never gets drawn.
             withAnimation(DetailSearch.entry) {
@@ -192,11 +212,13 @@ struct DetailSearchScreen: View {
             // with the corner it sits in.
             GeometryReader { proxy in
                 let container = proxy.frame(in: .global)
-                let leading = max(0, container.maxX - slot.maxX)
-                let trailing = max(0, container.maxX - slot.minX + DetailSearchBar.cancelGap)
-                let top = max(0, slot.minY - container.minY)
-                let target = CGRect(x: container.minX + leading, y: container.minY + top,
-                                    width: max(1, container.width - leading - trailing),
+                // Latched, not read live: a push or pop slides the container while the slot stays
+                // where it was measured, and comparing the two mid-transition sizes the field to
+                // the whole bar, which shoves the trailing items off the edge.
+                let place = placement ?? FieldPlacement(of: slot, in: container)
+                let target = CGRect(x: container.minX + place.leading,
+                                    y: container.minY + place.top,
+                                    width: max(1, container.width - place.leading - place.trailing),
                                     height: DetailSearchBar.capsuleHeight)
                 Group {
                     // Unmounted once the bar has its own copy, rather than merely hidden: a
@@ -207,10 +229,16 @@ struct DetailSearchScreen: View {
                     }
                 }
                 .frame(height: DetailSearchBar.capsuleHeight)
-                .padding(.leading, leading)
-                .padding(.trailing, trailing)
-                .padding(.top, top)
-                .task(id: target) { onFieldFrame(target) }
+                .padding(.leading, place.leading)
+                .padding(.trailing, place.trailing)
+                .padding(.top, place.top)
+                // Keyed off the container's size, never its origin, so only a real layout change
+                // re-measures. A rotation lands here; a transition does not.
+                .task(id: [container.width, container.height,
+                           slot.minX, slot.maxX, slot.minY]) {
+                    placement = FieldPlacement(of: slot, in: container)
+                }
+                .task(id: target.width) { onFieldWidth(target.width) }
             }
             .ignoresSafeArea(.container, edges: .top)
         } else {

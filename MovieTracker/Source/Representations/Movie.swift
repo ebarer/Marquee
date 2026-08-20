@@ -57,11 +57,7 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
     static func == (lhs: Movie, rhs: Movie) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 
-    var duration: String? {
-        // A 0 runtime means unknown (e.g. an unreleased film) — show nothing, not "0 hr 0 min".
-        guard let runtime, runtime > 0 else { return nil }
-        return "\(runtime / 60) hr \(runtime % 60) min"
-    }
+    var duration: String? { RuntimeLabel.duration(minutes: runtime) }
 
     var primaryTrailer: MediaTrailer? {
         trailers?

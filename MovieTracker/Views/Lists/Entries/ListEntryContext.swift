@@ -42,8 +42,8 @@ struct ListEntryContext: Equatable {
     }
 
     func duration(for entry: MediaSnapshot) -> String? {
-        guard isWatchList, let runtime = entry.runtime, runtime > 0 else { return nil }
-        return "\(runtime / 60) hr \(runtime % 60) min"
+        guard isWatchList else { return nil }
+        return RuntimeLabel.duration(minutes: entry.runtime)
     }
 
     /// The leading swipe an entry offers, or nil for none.

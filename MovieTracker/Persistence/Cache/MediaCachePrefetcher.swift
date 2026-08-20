@@ -58,7 +58,10 @@ enum MediaCachePrefetcher {
         for season in show.regularSeasons.suffix(target.seasonDepth) {
             if Task.isCancelled { return true }
             // Already whole in the cache; a newly aired episode raises `episodeCount` past it.
-            if !season.episodes.isEmpty, season.episodes.count >= season.episodeCount { continue }
+            let whole = !season.episodes.isEmpty && season.episodes.count >= season.episodeCount
+            if whole, await MediaCacheStore.shared.isSeasonFresh(
+                showID: show.id, seasonNumber: season.seasonNumber,
+                ttl: MediaCacheStore.seasonRefreshTTL) { continue }
             guard let full = try? await TMDBWrapper.getSeason(showID: show.id,
                                                              seasonNumber: season.seasonNumber)
             else { return false }

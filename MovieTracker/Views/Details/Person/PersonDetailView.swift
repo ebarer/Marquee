@@ -19,6 +19,7 @@ struct PersonDetailView: View {
     @Namespace private var photoNamespace
     @State private var showPhoto = false
     @State private var headerPinned = false
+    @State private var overscroll: CGFloat = 0
     // The page's top edge in window coordinates. A sheet sits inset in the window, so a bare
     // `.global` reading would count the sheet's offset as nav-bar height.
     @State private var pageTop: CGFloat = 0
@@ -78,7 +79,8 @@ struct PersonDetailView: View {
                             person: current, metrics: headerMetrics,
                             photoNamespace: photoNamespace,
                             onPhotoTap: { if current.profilePicture != nil { showPhoto = true } },
-                            navBarBottom: navBarBottom, headerPinned: $headerPinned
+                            navBarBottom: navBarBottom, overscroll: overscroll,
+                            pageHeight: container.size.height, headerPinned: $headerPinned
                         )
                         .id(headerID)
                         .zIndex(1)
@@ -104,6 +106,11 @@ struct PersonDetailView: View {
                 // Also ignore horizontal safe area — otherwise the content sits inset and the
                 // background shows as a trailing gutter.
                 .ignoresSafeArea(edges: [.top, .horizontal])
+                .onScrollGeometryChange(for: CGFloat.self) { geo in
+                    max(0, -(geo.contentOffset.y + geo.contentInsets.top))
+                } action: { _, newValue in
+                    overscroll = newValue
+                }
             }
         }
         .swipeActionsContainerIfAvailable()

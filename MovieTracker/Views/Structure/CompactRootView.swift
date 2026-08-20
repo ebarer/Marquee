@@ -37,6 +37,9 @@ struct CompactRootView: View {
             Tab("Search", systemImage: "magnifyingglass", value: RootTab.search, role: .search) {
                 NavigationStack(path: $searchPath) {
                     SearchView(model: searchModel)
+                        // Only the results defer their push; screens pushed over them keep their
+                        // own links.
+                        .environment(\.searchPush, pushResult)
                         .detailDestinations()
                         // Declared on the content inside the stack: on the NavigationStack
                         // itself, a push with the field focused skipped its animation.
@@ -58,6 +61,23 @@ struct CompactRootView: View {
         }
         .tabViewSearchActivation(.searchTabSelection)
         .tint(tabTints[selectedTab] ?? .appAccent)
+    }
+
+    /// A search result pushes a pass after the tap: straight out of the focused search field, the
+    /// stack skips the push animation.
+    private func pushResult(_ value: AnyHashable) {
+        guard let root = DetailRoot(value) else { return }
+        Task { @MainActor in
+            switch root {
+            case .movie(let movie): searchPath.append(movie)
+            case .show(let show): searchPath.append(show)
+            case .episode(let episode): searchPath.append(episode)
+            case .person(let person): searchPath.append(person)
+            case .people(let list): searchPath.append(list)
+            case .episodeCredits(let credit):
+                searchPath.append(ShowCreditDestination.episodes(credit))
+            }
+        }
     }
 
     private var tabSelection: Binding<RootTab> {

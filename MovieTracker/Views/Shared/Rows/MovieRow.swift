@@ -19,6 +19,7 @@ struct MovieRow: View {
     var derivesStatus: Bool = false
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
+    @State private var fetchedRuntime: Int?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -30,7 +31,7 @@ struct MovieRow: View {
                 .padding(.vertical, 3)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(movie.title)
+                Text(titleText)
                     .font(.body)
                     .lineLimit(2)
 
@@ -69,6 +70,16 @@ struct MovieRow: View {
 
             Spacer()
         }
+        // Search and credit payloads omit runtime, so a short can only be named once it resolves.
+        .task(id: movie.id) {
+            guard movie.runtime == nil else { return }
+            fetchedRuntime = await MovieRuntimeStore.shared.runtime(for: movie.id)
+        }
+    }
+
+    private var titleText: String {
+        guard RuntimeLabel.isShort(minutes: movie.runtime ?? fetchedRuntime) else { return movie.title }
+        return "\(movie.title) (Short)"
     }
 
     @ViewBuilder
@@ -94,7 +105,8 @@ struct MovieRow: View {
     List {
         MovieRow(movie: .preview, status: .watched)
         MovieRow(movie: .preview, status: .watchList)
-        MovieRow(movie: .preview)
+        MovieRow(movie: .preview, duration: Movie.preview.duration)
+        MovieRow(movie: .previewShort, duration: Movie.previewShort.duration)
     }
     .listStyle(.plain)
     .preferredColorScheme(.dark)

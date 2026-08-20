@@ -21,6 +21,12 @@ extension TMDBWrapper {
         return movie
     }
 
+    /// Runtime alone, for cells built from a payload that omits it (search, a person's credits).
+    static func movieRuntime(id: Int) async throws -> Int? {
+        let data = try await fetch("/movie/\(id)")
+        return try decode(MovieRaw.self, from: data).runtime
+    }
+
     static func getCollection(id: Int) async throws -> [Movie] {
         let data = try await fetch("/collection/\(id)", certified: true)
         let collection = try decode(CollectionRaw.self, from: data)

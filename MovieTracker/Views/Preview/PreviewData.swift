@@ -56,6 +56,15 @@ extension Movie {
         ]
     }
 
+    /// Under ten minutes, so its cell carries the "(Short)" tag.
+    static var previewShort: Movie {
+        var movie = Movie(id: 7, title: "Peter's To-Do List")
+        movie.releaseDate = DateComponents(calendar: .current, year: 2019, month: 9, day: 17).date
+        movie.runtime = 4
+        movie.poster = "preview-poster-alt"
+        return movie
+    }
+
     /// A movie that belongs to a franchise — drives the "Related" strip in the detail.
     static var previewSeries: Movie {
         var movie = Movie(id: 3, title: "Spider-Man: Brand New Day")

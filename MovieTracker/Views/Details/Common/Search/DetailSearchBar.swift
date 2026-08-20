@@ -95,8 +95,8 @@ private struct SearchTextField: UIViewRepresentable {
     let tint: Color
     @Binding var editing: Bool
 
-    func makeUIView(context: Context) -> UITextField {
-        let field = UITextField()
+    func makeUIView(context: Context) -> SearchField {
+        let field = SearchField()
         field.delegate = context.coordinator
         field.font = .systemFont(ofSize: 17)
         field.textColor = .white
@@ -108,7 +108,7 @@ private struct SearchTextField: UIViewRepresentable {
         return field
     }
 
-    func updateUIView(_ field: UITextField, context: Context) {
+    func updateUIView(_ field: SearchField, context: Context) {
         context.coordinator.text = $text
         context.coordinator.editing = $editing
         if field.text != text { field.text = text }
@@ -116,15 +116,16 @@ private struct SearchTextField: UIViewRepresentable {
         field.attributedPlaceholder = NSAttributedString(
             string: prompt,
             attributes: [.foregroundColor: UIColor(DetailSearchBar.promptColor)])
-        if editing, !field.isFirstResponder {
-            field.becomeFirstResponder()
-        } else if !editing, field.isFirstResponder {
+        field.wantsFocus = editing
+        if editing {
+            field.focusWhenSettled()
+        } else if field.isFirstResponder {
             field.resignFirstResponder()
         }
     }
 
     /// A text field's intrinsic width is its text's, which would leave the capsule empty.
-    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextField,
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: SearchField,
                       context: Context) -> CGSize? {
         CGSize(width: proposal.width ?? uiView.intrinsicContentSize.width,
                height: uiView.intrinsicContentSize.height)
@@ -159,6 +160,39 @@ private struct SearchTextField: UIViewRepresentable {
             field.resignFirstResponder()
             return false
         }
+    }
+}
+
+/// Takes the keyboard only once the navigation transition it arrives in has ended. Raising it
+/// mid-pop stalls the main thread, hitching the transition and drawing the keyboard clipped.
+private final class SearchField: UITextField {
+    var wantsFocus = false
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if wantsFocus { focusWhenSettled() }
+    }
+
+    func focusWhenSettled() {
+        guard window != nil, !isFirstResponder else { return }
+        guard let transition = owningController?.transitionCoordinator else {
+            becomeFirstResponder()
+            return
+        }
+        let deferred = transition.animate(alongsideTransition: nil) { [weak self] _ in
+            guard let self, wantsFocus, window != nil else { return }
+            becomeFirstResponder()
+        }
+        if !deferred { becomeFirstResponder() }
+    }
+
+    private var owningController: UIViewController? {
+        var responder = next
+        while let current = responder {
+            if let controller = current as? UIViewController { return controller }
+            responder = current.next
+        }
+        return nil
     }
 }
 

@@ -17,6 +17,19 @@ extension EnvironmentValues {
     }
 }
 
+private struct SearchPushKey: EnvironmentKey {
+    static let defaultValue: ((AnyHashable) -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    /// Set on search results only. A push made straight out of the focused search field skips its
+    /// animation, so a row hands its value here and the stack takes it a pass later.
+    var searchPush: ((AnyHashable) -> Void)? {
+        get { self[SearchPushKey.self] }
+        set { self[SearchPushKey.self] = newValue }
+    }
+}
+
 private struct CloseModalKey: EnvironmentKey {
     static let defaultValue: (() -> Void)? = nil
 }
