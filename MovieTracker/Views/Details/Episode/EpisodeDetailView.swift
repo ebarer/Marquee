@@ -5,14 +5,12 @@
 
 import SwiftUI
 
-/// Full detail for one episode: a still that extends under the nav bar (``EpisodeDetailHeader``),
-/// the complete synopsis, and guest cast + crew (reusing ``CastSection``).
+/// Full detail for one episode: still, synopsis, and guest cast plus crew.
 struct EpisodeDetailView: View {
     let episode: Episode
 
     @State private var tint: Color = .appAccent
     @State private var showNavTitle = false
-    /// The show's series regulars, shown as the "Cast" tab alongside the episode's Guests and Crew.
     @State private var seriesCast: [Person] = []
 
     @Environment(\.detailSearch) private var detailSearch
@@ -22,7 +20,6 @@ struct EpisodeDetailView: View {
         self.episode = episode
     }
 
-    /// Previews only: seed the series cast the screen would otherwise fetch.
     init(preview episode: Episode, seriesCast: [Person]) {
         self.episode = episode
         _seriesCast = State(initialValue: seriesCast)
@@ -69,8 +66,7 @@ struct EpisodeDetailView: View {
         .task { await loadShow() }
     }
 
-    /// The cast tab and the tint both come off the show, so an uncached one is fetched: this
-    /// screen is reachable without passing through the show (a person's episode credits).
+    // Reachable without passing through the show, so an uncached one is fetched for the cast tab and tint.
     private func loadShow() async {
         if let cached = await MediaCacheStore.shared.loadShow(id: episode.showTmdbID) {
             seriesCast = cached.show.recurringCast
@@ -87,8 +83,7 @@ struct EpisodeDetailView: View {
         await MediaCacheStore.shared.save(show, tint: color)
     }
 
-    /// The show's poster accent, so the episode matches the show detail page rather than
-    /// area-averaging the still (which yields garish tints on photographic frames).
+    // The show's poster accent: area-averaging the still yields garish tints on photographic frames.
     @discardableResult
     private func applyPosterTint(from show: Show) async -> Color? {
         guard let url = show.posterURL(.w342),

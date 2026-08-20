@@ -5,18 +5,14 @@
 
 import SwiftUI
 
-/// Episodes grouped by season, with a picker (``SeasonHeader``) above a lazily-loaded
-/// episode list (``SeasonEpisodeList``).
+/// Episodes grouped by season, with a picker above a lazily-loaded episode list.
 struct EpisodesBySeasonSection: View {
     let show: Show
     let model: ShowDetailModel
     var tint: Color = .appAccent
-    /// The season to open on. Nil means the screen hasn't resolved it yet, and the section waits
-    /// rather than opening on season 1 and flipping when it lands.
+    // Nil means unresolved: the section waits rather than opening on season 1 and flipping.
     var initialSeason: Int? = nil
-    /// Where the season header comes to rest: the bottom edge of the pinned detail header.
     var pinLine: CGFloat = 0
-    /// Owned by the detail screen so the header poster can follow the chosen season.
     @Binding var selectedSeason: Int?
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -41,7 +37,6 @@ struct EpisodesBySeasonSection: View {
         return embedded.isEmpty ? nil : embedded
     }
 
-    /// The current season with its loaded episodes attached, for watched writes/reconcile.
     private var currentSeasonModel: Season? {
         guard let current = currentSeason,
               var season = seasons.first(where: { $0.seasonNumber == current }) else { return nil }
@@ -62,8 +57,7 @@ struct EpisodesBySeasonSection: View {
         !currentEpisodes.isEmpty && currentEpisodes.allSatisfy { watchedNumbers.contains($0.episodeNumber) }
     }
 
-    /// Marking stops at today, so a still-airing season settles here rather than at
-    /// `allWatched` — the toggle shows it as caught up instead of complete.
+    // Marking stops at today, so a still-airing season settles here rather than at `allWatched`.
     private var allAiredWatched: Bool {
         let aired = currentEpisodes.filter(\.hasAired)
         return !aired.isEmpty && aired.allSatisfy { watchedNumbers.contains($0.episodeNumber) }

@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// A show poster card mirroring ``MoviePosterCard``, with the season count beneath the name
-/// so a tile reads as a series. The air year stands in until that count is fetched.
+/// A show poster card with the season count beneath the name; the air year stands in until it is fetched.
 struct ShowPosterCard: View {
     let show: Show
     var titleLineLimit: Int = 2
@@ -48,8 +47,7 @@ struct ShowPosterCard: View {
         }
     }
 
-    /// A blank caption at full height. Reserving the space here rather than on the name keeps
-    /// cards a common height without opening a gap between a short name and the season count.
+    // Reserving the space here rather than on the name keeps cards a common height without opening a gap.
     private var captionReserve: some View {
         VStack(spacing: 1) {
             Text(" ")
@@ -87,7 +85,6 @@ struct ShowPosterCard: View {
     }
 }
 
-// A one-line name beside a two-line one: the season count stays put under both.
 #Preview {
     HStack(alignment: .top, spacing: 16) {
         ShowPosterCard(show: .preview, posterWidth: 110)
@@ -103,8 +100,8 @@ struct ShowPosterCard: View {
     .preferredColorScheme(.dark)
 }
 
-// Badges rendered directly (like MoviePosterCard's preview) — seeding a live store in a
-// preview trips CloudKit's "No eligible connection".
+// Badges rendered directly: seeding a live store in a preview trips CloudKit's "No eligible
+    // connection".
 #Preview("Status badges") {
     HStack(spacing: 16) {
         ForEach([PosterStatus.watched, .watchList], id: \.symbol) { status in

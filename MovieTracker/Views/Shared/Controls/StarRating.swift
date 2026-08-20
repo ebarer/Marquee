@@ -6,13 +6,10 @@
 import SwiftUI
 import SwiftData
 
-/// Five stars showing a title's personal rating. Editable forms take a tap for whole stars
-/// and a sweep for halves; the `display` form is the same stars, inert, for rows and headers.
+/// Five stars showing a title's personal rating; the `display` form is the same stars, inert.
 struct StarRating: View {
-    /// Where a committed rating goes; `nil` for the read-only display.
     private enum Commit {
         case key(MediaKey)
-        /// Per-season ratings aren't keyed by `MediaKey`, so the caller persists them.
         case closure((Double?) -> Void)
     }
 
@@ -23,14 +20,11 @@ struct StarRating: View {
     private let spacing: CGFloat
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
-    /// The value the user has set here; `nil` until they interact, so a read-only
-    /// display always tracks the rating passed in.
     @State private var draft: Double?
     // The rating when the gesture began, so a stationary tap toggles against the
     // pre-gesture value rather than the one `onChanged` previewed.
     @State private var dragStartRating: Double?
 
-    /// Editable, writing through the `MediaItem` for `key`.
     init(key: MediaKey, rating: Double, tint: Color) {
         self.rating = rating
         self.commit = .key(key)
@@ -43,7 +37,6 @@ struct StarRating: View {
         self.init(key: movie.mediaKey, rating: rating, tint: tint)
     }
 
-    /// Editable with caller-driven persistence (e.g. a season).
     init(rating: Double, tint: Color, onCommit: @escaping (Double?) -> Void) {
         self.rating = rating
         self.commit = .closure(onCommit)
@@ -52,7 +45,6 @@ struct StarRating: View {
         self.spacing = 3
     }
 
-    /// Read-only stars sized for a row or section header.
     init(display rating: Double, size: CGFloat = 13, spacing: CGFloat = 2, tint: Color = .appAccent) {
         self.rating = rating
         self.commit = nil
@@ -115,8 +107,6 @@ struct StarRating: View {
         return min(5, Double(Int(x / slot) + 1))
     }
 
-    /// The half-step value under a horizontal offset (for sweeps): the left half of
-    /// a star gives x.5, the right half a whole star.
     private func halfStars(at x: CGFloat) -> Double {
         guard x >= 0 else { return 0 }
         let slot = starSize + spacing
@@ -127,7 +117,6 @@ struct StarRating: View {
     }
 }
 
-// Editable: rated (4 stars) and unrated.
 #Preview("Editable") {
     VStack(spacing: 24) {
         StarRating(movie: Movie.previewList[1], rating: 4, tint: .appAccent)

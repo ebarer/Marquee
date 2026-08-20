@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// The Liquid Glass controls beside the poster: bookmark, checkmark, custom lists, trailer.
-/// Marking Watched absorbs the bookmark into a pill spanning both slots.
+/// The Liquid Glass controls beside the poster. Marking Watched absorbs the bookmark into a pill spanning both slots.
 struct MovieActionBar: View {
     let movie: Movie
     let lists: [MediaList]
@@ -99,8 +98,6 @@ struct MovieActionBar: View {
     }
 }
 
-// Interactive (tap bookmark/watched/list to drive the glass morph live, backed by the
-// in-memory store) plus a resting Seen state showing the spanning pill.
 #Preview {
     @Previewable @State var isSeen = false
     let context = previewModelContainer.mainContext

@@ -60,7 +60,6 @@ struct ListEditorView: View {
         Binding(get: { selectedColor }, set: { customColor = $0 })
     }
 
-    /// A brand-new list with any user input; blocks accidental drag-to-dismiss.
     private var hasUnsavedInput: Bool {
         guard existing == nil else { return false }
         return !trimmedName.isEmpty
@@ -163,7 +162,7 @@ struct ListEditorView: View {
         .padding(.vertical, 4)
     }
 
-    /// Its native ~28pt swatch is scaled up to match the 36pt palette circles.
+    // Native swatch is ~28pt, scaled up to match the 36pt palette circles.
     private var customColorCell: some View {
         ColorPicker(selection: customColorBinding, supportsOpacity: false) {
             EmptyView()

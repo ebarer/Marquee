@@ -5,14 +5,10 @@
 
 import Foundation
 
-/// One row of a person's filmography. A TV credit becomes an entry per season they were in,
-/// so a long run appears under each year it aired rather than only under its premiere.
+/// One row of a person's filmography; a TV credit becomes one entry per season they were in.
 struct FilmographyEntry: Identifiable, Hashable {
     let ref: MediaRef
-    /// The season this entry stands for; nil for a film, or a TV credit with no episode
-    /// detail behind it.
     var season: EpisodeCredit.SeasonCredit? = nil
-    /// The whole credit behind a TV entry, so opening it doesn't re-resolve what's known.
     var credit: EpisodeCredit? = nil
 
     var id: String {
@@ -20,7 +16,6 @@ struct FilmographyEntry: Identifiable, Hashable {
         return "\(ref.id)-s\(season.season.seasonNumber)"
     }
 
-    /// The season aired where there's a season, else the title's own date.
     var date: Date? { season?.season.airDate ?? ref.date }
 
     static func upcoming(in entries: [FilmographyEntry], now: Date = Date()) -> [FilmographyEntry] {
@@ -47,8 +42,7 @@ struct FilmographyEntry: Identifiable, Hashable {
         ref.title.matches(query: query) || (ref.creditRoleSummary?.matches(query: query) ?? false)
     }
 
-    /// Expands credits into rows, newest first: films as they are, a resolved TV credit split
-    /// per season. Ties keep their incoming order, which is TMDB's own.
+    // Ties keep their incoming order, which is TMDB's.
     static func entries(for credits: [MediaRef],
                         episodeCredits: [Int: EpisodeCredit]) -> [FilmographyEntry] {
         credits

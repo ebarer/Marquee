@@ -16,14 +16,12 @@ import UIKit
 @Suite(.serialized) struct MovieDetailModelTests {
     private let cache = MediaCacheStore.shared
 
-    /// A solid-color PNG, so `Color.dominantColor` yields a predictable tint.
     private func png(_ color: UIColor) -> Data {
         UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).pngData { ctx in
             color.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 4, height: 4))
         }
     }
 
-    /// Routes image-host requests to `image`, everything else (the API) to `json`.
     private func install(json: String, image: Data) {
         URLProtocolStub.install { req in
             if req.url?.host == "image.tmdb.org" { return (image, 200) }
@@ -67,8 +65,6 @@ import UIKit
         #expect(model.movie?.poster == "/c.jpg")
     }
 
-    /// The caller's poster is already decoded from the screen it was tapped on, so the tint is
-    /// in place before `load` runs — no accent-then-colour flip.
     @Test func cachedPosterTintsBeforeLoad() {
         let path = "/blue-before-load.jpg"
         let url = TMDBWrapper.imageURL(path: path, size: PosterSize.w342.rawValue)!

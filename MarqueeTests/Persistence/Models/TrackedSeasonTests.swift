@@ -111,8 +111,6 @@ import SwiftData
         #expect(tracked?.nextEpisodeDate == .utc(2024, 1, 8))
     }
 
-    /// `refreshWatchedShows` reconciles against a `/tv/{id}` payload, whose seasons carry no
-    /// episodes — that must not reset the anchor to the season premiere and re-bucket the row.
     @Test func reconcilingWithoutEpisodesKeepsTheKnownNextEpisodeDate() {
         let store = makeInMemoryStore()
         var season = Season(id: 100, seasonNumber: 1, name: "Season 1", episodeCount: 3)
@@ -133,7 +131,6 @@ import SwiftData
         #expect(TrackedSeason.find(showTmdbID: 7, in: store.context)?.nextEpisodeDate == .utc(2024, 1, 8))
     }
 
-    /// A new tracked season has no date to keep, so the premiere is still the best guess.
     @Test func reconcilingWithoutEpisodesFallsBackToThePremiere() {
         let store = makeInMemoryStore()
         var season = Season(id: 100, seasonNumber: 1, name: "Season 1", episodeCount: 3)
@@ -146,7 +143,6 @@ import SwiftData
         #expect(TrackedSeason.find(showTmdbID: 8, in: store.context)?.nextEpisodeDate == .utc(2024, 1, 1))
     }
 
-    /// Advancing to a new season must take that season's date, not carry the old one over.
     @Test func advancingTheTrackedSeasonWithoutEpisodesTakesTheNewPremiere() {
         let store = makeInMemoryStore()
         let first = makeSeason(1, episodes: 2, airStart: .utc(2024, 1, 1))
@@ -258,7 +254,6 @@ import SwiftData
 
     // MARK: - Marking stops at today
 
-    /// A season part-way through airing: E1/E2 out, E3 still to come.
     private func airingSeason() -> Season {
         var season = Season(id: 700, seasonNumber: 1, name: "Season 1", episodeCount: 3)
         season.airDate = .utc(2024, 1, 1)
@@ -361,7 +356,6 @@ import SwiftData
 
     // MARK: - Next-to-watch season
 
-    /// What the detail screen opens on, and what the tracked-season row renders.
     @Test func firstIncompleteSeasonIsTheNextToWatch() {
         let store = makeInMemoryStore()
         let show = makeShow(id: 80, seasons: [makeSeason(1, episodes: 2), makeSeason(2, episodes: 2)])

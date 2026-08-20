@@ -17,8 +17,7 @@ enum CastCategory: CaseIterable {
     }
 }
 
-/// The category heading for a cast section — a Menu when more than one category exists,
-/// otherwise a plain title — with room for a trailing control opposite it.
+/// The category heading for a cast section: a Menu when more than one category exists, else a plain title.
 struct CastCategoryPicker<Accessory: View>: View {
     let categories: [CastCategory]
     let current: CastCategory

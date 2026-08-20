@@ -51,7 +51,6 @@ struct ListDestination {
         }
     }
 
-    /// Rows this destination holds — movies, shows and tracked seasons alike.
     @MainActor
     func mediaCount(using store: PersistenceCoordinator?) -> Int {
         switch selection {

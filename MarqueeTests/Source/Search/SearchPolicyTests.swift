@@ -166,8 +166,6 @@ import Foundation
 
     // MARK: - People strip order
 
-    /// A stub of the two titles "office" finds: a film of that name, and the show that
-    /// outranks it several times over.
     private func officeStub() -> StubProvider {
         var stub = StubProvider()
         var film = movie(1_358_005, "Office Romance", votes: 354, pop: 14.7)
@@ -193,8 +191,6 @@ import Foundation
                                                  "Jennifer Lopez", "Brett Goldstein"])
     }
 
-    /// The Batman case: a series can out-*popularity* a far more notable film, so the strip
-    /// has to follow the ranking (which weighs votes) rather than popularity on its own.
     @Test func theStripFollowsTheResultsWhenAFilmWins() async {
         var stub = officeStub()
         var film = movie(414_906, "The Batman", votes: 12_324, pop: 31.9)
@@ -215,9 +211,6 @@ import Foundation
                                                  "Adam West", "Burt Ward"])
     }
 
-    /// The guaranteed leads come from the film the *results list* leads with, which isn't the
-    /// same as the search's rank order: "The Batman" is the exact title match, but The Dark
-    /// Knight has the votes to head the list, so Ledger is the one who joins Bale up front.
     @Test func theGuaranteedLeadsComeFromTheFilmTheListLeadsWith() async {
         var stub = StubProvider()
         var begins = movie(272, "Batman Begins", votes: 22_896, pop: 30, collectionID: 263)
@@ -247,8 +240,6 @@ import Foundation
 
     // MARK: - Name queries
 
-    /// Someone's name leads with them, even when a title shares the word. The strip is the
-    /// model's `featuredPeople`, which merges the policy's named hits with title cast.
     private func strip(query: String, using stub: StubProvider,
                        titleOwnsQuery: Bool = false) async -> [String] {
         let result = await SearchPolicy.standard.run(query: query, using: stub)
@@ -279,8 +270,6 @@ import Foundation
         #expect(!strip.contains("John Newland"))
     }
 
-    /// A show has to be notable to speak for a search, not merely trending: popularity alone
-    /// let an 8-vote 1950s anthology fill every visible slot for "robert".
     @Test func anObscureShowContributesNobodyHoweverPopular() async {
         var stub = StubProvider()
         var anthology = show(2_120, "Robert Montgomery Presents", votes: 8, pop: 44)
@@ -292,8 +281,6 @@ import Foundation
         #expect(result.castPeople.isEmpty)
     }
 
-    /// Namesake noise must not outrank a title's cast: "Line Friends" and "Ross From Friends"
-    /// carry the word in their names but are nobody, and used to lead ahead of Jennifer Aniston.
     @Test func namesakeNoiseDoesNotOutrankTheCast() async {
         var stub = StubProvider()
         var series = show(1_668, "Friends", votes: 9_293, pop: 60)
@@ -323,8 +310,6 @@ import Foundation
         #expect(await strip(query: "scarlett", using: stub) == ["Scarlett Johansson"])
     }
 
-    /// A lone namesake loses to the title that *is* the query: "dune" means the film, not the
-    /// one obscure actor christened Dune — who still appears, just behind the cast.
     @Test func aTitleHoldsItsQueryAgainstASingleNamesake() async {
         var stub = StubProvider()
         var film = movie(438_631, "Dune", votes: 11_000, pop: 60)
@@ -339,8 +324,6 @@ import Foundation
         #expect(strip.contains("Dune Streeter"))
     }
 
-    /// A name several notable people share takes the query back off the title, so "carrie"
-    /// leads with the Carries and the film's cast follows.
     @Test func aNameThatCollidesWithAFilmTitleKeepsBoth() async {
         var stub = StubProvider()
         var film = movie(11_252, "Carrie", votes: 5_000, pop: 40)
@@ -358,8 +341,6 @@ import Foundation
         #expect(strip.contains("Sissy Spacek"))   // the film still contributes
     }
 
-    /// "avengers" is a team name, so nobody is credited as it and the character-match path
-    /// can't fire. The films the query names have to fill the strip themselves.
     @Test func aTitleNameFillsTheStripFromEveryFilmItNames() async {
         var stub = StubProvider()
         var first = movie(24, "The Avengers", votes: 39_244, pop: 77.5)

@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// One list entry as a tappable link: a TV entry opens the show at the season it's showing, a
-/// movie opens the movie. Shared so the grid can't route a show to a movie screen.
+/// One list entry as a tappable link; a TV entry opens the show at the season it is showing.
 struct ListEntryLink<Content: View>: View {
     let entry: MediaSnapshot
     @ViewBuilder var content: () -> Content

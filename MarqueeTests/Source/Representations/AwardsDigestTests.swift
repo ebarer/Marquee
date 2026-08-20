@@ -75,7 +75,6 @@ import Foundation
             .shortCategory == "Program of the Year")
     }
 
-    /// A label with no " for " has nothing to strip and must survive whole.
     @Test func categoryWithoutAForClauseIsLeftAlone() {
         let category = "National Board of Review: Top Ten Films"
         #expect(award(category, series: nil, isWin: true).shortCategory == category)
@@ -123,7 +122,6 @@ import Foundation
                 == "https://www.rottentomatoes.com/search?search=Some%20Obscure%20Film")
     }
 
-    /// The menu shows these verbatim, so the brand casing lives here.
     @Test func siteNamesAreTheMenuLabels() {
         #expect(ExternalLink.Site.rottenTomatoes.rawValue == "Rotten Tomatoes")
         #expect(ExternalLink.Site.imdb.rawValue == "IMDb")

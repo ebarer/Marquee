@@ -5,19 +5,15 @@
 
 import SwiftUI
 
-/// The bottom-anchored bar of a detail header: poster, title, subtitle, actions. `progress`
-/// (0 → 1, from ``CollapsingBackdropHeader``) compacts it as the header pins.
+/// The bottom-anchored bar of a detail header; `progress` compacts it as the header pins.
 struct DetailHeaderBar<Actions: View>: View {
     let posterThumbURL: URL?
     let posterFullURL: URL?
     let tint: Color
     let zoomID: Int
-    /// Poster identity for the show's per-season crossfade; nil for movies.
     var posterIdentity: String? = nil
     let title: String
     let subtitle: String
-    /// The subtitle's trailing field — a movie's runtime, a show's network — is still unknown,
-    /// so it stands in as a bar rather than flashing in a moment later.
     var pendingDetail: Bool = false
     let progress: CGFloat
     let width: CGFloat
@@ -32,8 +28,8 @@ struct DetailHeaderBar<Actions: View>: View {
     private static var padding: CGFloat { 16 }
 
     var body: some View {
-        // The text column keeps a FIXED width (full-size poster) so the title never re-wraps as
-        // the poster shrinks — that reflow vibrated. Clamped: pass one proposes width 0 (→ negative).
+        // The text column keeps a fixed width so the title never re-wraps as the poster shrinks; that
+        // reflow vibrated. Clamped, because one pass proposes width 0.
         let columnWidth = max(0, width - Self.padding * 2 - Self.posterWidth - 12)
         let titleScale = 1 - 0.25 * progress
         let actionsScale = 1 - 0.2 * progress
@@ -70,8 +66,8 @@ struct DetailHeaderBar<Actions: View>: View {
                     .frame(height: titleHeight * titleScale, alignment: .bottom)
 
                 if showsSubtitle {
-                    // Scales with the header and fades out, its slot collapsing to 0. Never
-                    // clipped — opacity hits 0 before the shrinking slot reveals overflow.
+                    // Scales with the header and fades out, its slot collapsing to 0. Never clipped: opacity hits 0
+            // before the shrinking slot reveals overflow.
                     subtitleLine
                         .font(.subheadline)
                         .foregroundStyle(tint)
@@ -83,8 +79,8 @@ struct DetailHeaderBar<Actions: View>: View {
                 }
 
                 actions()
-                    // Top anchor keeps the buttons' top edge where layout puts it (8pt below
-                    // the title), so the compact title→buttons gap matches the title→label gap.
+                    // Top anchor keeps the buttons' top edge where layout puts it, 8pt below the title, so the
+            // compact title-to-buttons gap matches the title-to-label gap.
                     .fixedSize(horizontal: false, vertical: true)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { actionsHeight = $0 }
                     .scaleEffect(actionsScale, anchor: .topLeading)

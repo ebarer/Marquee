@@ -48,20 +48,13 @@ struct DetailSearchRequest: Hashable {
     let prompt: String
     let groups: [DetailSearchGroup]
     var tint: Color = .appAccent
-    /// TV rosters carry an episode count, so only they offer the control that hides it.
     var countsEpisodes = false
-    /// The credit kinds this list has. Set, the credits filter travels into search and the rows
-    /// carry every kind, so turning it off there reveals the rest.
     var filterKinds: [CreditKind] = []
-    /// The show these credits belong to. A hit then opens the episodes they are in rather than
-    /// their own page, which is what someone hunting a guest spot is after.
     var creditedShow: Show?
 
     var rowCount: Int { groups.reduce(0) { $0 + $1.rowCount } }
     var isSearchable: Bool { rowCount > 0 }
 
-    /// What search puts in the bar's trailing group: its own close button, plus the controls the
-    /// request brings with it.
     var trailingItems: Int {
         1 + (countsEpisodes ? 1 : 0) + (filterKinds.isEmpty ? 0 : 1)
     }
@@ -83,18 +76,14 @@ private struct FieldPlacement: Equatable {
 /// Searches one detail section's list, covering the page it was opened from.
 struct DetailSearchScreen: View {
     let request: DetailSearchRequest
-    /// The control that opened search, in global coordinates. The field flies out of it.
     var sourceFrame: CGRect?
     var barSlot: CGRect?
-    /// How many items search puts in the trailing group, which is what the field stops short of.
     var trailingItems: Int = 1
     var contentFrame: CGRect = .zero
     let isClosing: Bool
     @Binding var query: String
-    /// True once the interactive field has taken over in the navigation bar.
     var fieldInBar = false
     var focused = false
-    /// Reports the width the field comes to rest at, which is what the bar's copy is given.
     var onFieldWidth: (CGFloat) -> Void = { _ in }
     var onLanded: () -> Void = {}
     let onClose: () -> Void
@@ -106,7 +95,6 @@ struct DetailSearchScreen: View {
     @State private var placedAt: CGRect?
     @State private var hasPlaced = false
     @State private var placement: FieldPlacement?
-    /// Where the results' own top edge sits, measured the way they are laid out.
     @State private var resultsTop: CGFloat = 0
     @State private var fieldGlass = false
 
@@ -159,7 +147,6 @@ struct DetailSearchScreen: View {
         }
     }
 
-    /// The glass circles of search's trailing items, as one rect.
     private var trailingSlot: CGRect? {
         guard contentFrame != .zero else { return nil }
         if let barSlot, inBarRow(barSlot), barSlot.midX > contentFrame.midX {
@@ -173,16 +160,14 @@ struct DetailSearchScreen: View {
                       width: width, height: DetailSearchBar.rowHeight)
     }
 
-    /// Toolbar items report a placeholder frame near the origin before they are laid out.
+    // Toolbar items report a placeholder frame near the origin before they are laid out.
     private func inBarRow(_ rect: CGRect) -> Bool {
         rect.minX >= contentFrame.minX && rect.maxX <= contentFrame.maxX + 1
             && rect.midY < contentFrame.minY
     }
 
-    /// The gap between the field's bottom edge and the first row.
     private static let fieldGap: CGFloat = 19
 
-    /// Glass behind the field, for lists with no section header to draw it.
     private var fieldBackdrop: some View {
         Color.clear
             .frame(height: barHeight)
@@ -193,8 +178,6 @@ struct DetailSearchScreen: View {
             .animation(.easeOut(duration: 0.15), value: fieldGlass)
     }
 
-    /// The rows start below the field, wherever the field was placed. With no content region
-    /// measured it sits in flow at the top instead.
     private var barHeight: CGFloat {
         guard let slot = placedAt ?? trailingSlot else {
             return DetailSearchBar.capsuleHeight + Self.fieldGap
@@ -212,9 +195,8 @@ struct DetailSearchScreen: View {
             // with the corner it sits in.
             GeometryReader { proxy in
                 let container = proxy.frame(in: .global)
-                // Latched, not read live: a push or pop slides the container while the slot stays
-                // where it was measured, and comparing the two mid-transition sizes the field to
-                // the whole bar, which shoves the trailing items off the edge.
+                // Latched, not read live: a push or pop slides the container while the slot stays where it was
+        // measured, and a mid-transition size shoves the trailing items off the edge.
                 let place = placement ?? FieldPlacement(of: slot, in: container)
                 let target = CGRect(x: container.minX + place.leading,
                                     y: container.minY + place.top,
@@ -246,7 +228,6 @@ struct DetailSearchScreen: View {
         }
     }
 
-    /// The flying copy. It only takes focus where there is no bar to hand the field to.
     private var bar: some View {
         DetailSearchBar(text: $query, prompt: request.prompt, tint: request.tint,
                         focused: focused, showsPrompt: hasFlown && !isClosing)
@@ -286,8 +267,6 @@ private struct DetailSearchPreview: View {
                 .onAppear { typed = query }
                 .defaultScrollAnchor(scrolled ? .bottom : .top)
                 .detailDestinations()
-                // No host here, so no cancel button to measure: the field sits below the bar
-                // rather than in it. This previews the row, not its placement.
                 .navigationBarBackButtonHidden()
                 .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         }

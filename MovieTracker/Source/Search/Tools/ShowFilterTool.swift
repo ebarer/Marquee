@@ -2,8 +2,7 @@
 //  ShowFilterTool.swift
 //  MovieTracker
 //
-//  Trims TMDB's noisy TV relevance to US-aired/established (or exactly-named)
-//  series, then orders most-popular first.
+//  Trims TMDB's noisy TV relevance to US-aired or exactly-named series, most popular first.
 //
 
 import Foundation

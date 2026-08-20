@@ -5,15 +5,13 @@
 
 import SwiftUI
 
-/// A section whose header pins at `pinLine` until the section's own bottom edge carries it off.
-/// For scroll views that can't use `pinnedViews`, because a custom header owns their top inset.
+/// A section whose header pins at `pinLine`, for scroll views that can't use `pinnedViews`.
 struct StickySection<Header: View, Content: View>: View {
     let space: String
     var pinLine: CGFloat = 0
     @ViewBuilder let header: () -> Header
     @ViewBuilder let content: () -> Content
 
-    /// The content's height: how far the header may travel before its bottom meets the section's.
     @State private var travel: CGFloat = 0
 
     var body: some View {

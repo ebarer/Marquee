@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// A user-facing list of titles owning `ListEntry` children. CloudKit-friendly:
-/// properties default or optional, no unique constraints, relationships have inverses.
+/// A list of titles owning `ListEntry` children. CloudKit-friendly: defaults or optionals, no unique constraints, inverses.
 @Model
 final class MediaList {
     var uuid: UUID = UUID()
@@ -52,8 +51,7 @@ final class MediaList {
 
     // MARK: Membership
 
-    /// Fetched rather than walked: `entries` is a relationship, so scanning it faults every row
-    /// of the list — and this sits in every membership read and write.
+    // `entries` is a relationship, so scanning it faults every row of the list. Fetch instead.
     func entry(for tmdbID: Int, _ mediaType: MediaType = .movie) -> ListEntry? {
         let raw = mediaType.rawValue
         guard let context = modelContext else {
@@ -70,7 +68,7 @@ final class MediaList {
         entry(for: tmdbID, mediaType) != nil
     }
 
-    /// Adding to the Watch List un-marks Watched — the two are mutually exclusive.
+    // Watched and the Watch List are mutually exclusive, so adding here un-marks Watched.
     func add(key: MediaKey) {
         guard let context = modelContext else { return }
         if entry(for: key.tmdbID, key.mediaType) == nil {
@@ -131,7 +129,7 @@ extension MediaList {
         all(in: context).filter { !$0.isWatchList }
     }
 
-    /// Must match the de-dup winner so adds never target a soon-to-be-merged duplicate.
+    // Must match the de-dup winner so adds never target a soon-to-be-merged duplicate.
     static func watchList(in context: ModelContext) -> MediaList? {
         ((try? context.fetch(FetchDescriptor<MediaList>())) ?? [])
             .filter { $0.isWatchList && !$0.isDeduplicated }
@@ -147,8 +145,8 @@ extension MediaList {
         return list
     }
 
-    /// Collapse duplicate entries in *every* list. Two devices adding the same title to the
-    /// same list is the common case, and no list-level merge covers it. Run after the merge.
+    // Two devices adding the same title to one list is the common case, and no list-level merge
+    // covers it. Run after the merge.
     @discardableResult
     static func deduplicateEntries(in context: ModelContext) -> Bool {
         var changed = false
@@ -158,11 +156,11 @@ extension MediaList {
         return changed
     }
 
-    /// Grace before a merged-away duplicate is deleted, so its entry re-parent syncs first.
+    // Grace before a merged-away duplicate is deleted, so its entry re-parent syncs first.
     private static let deduplicationGracePeriod: TimeInterval = 30
 
-    /// Two-phase: re-parent duplicates' entries onto the winner, then delete only once empty
-    /// and past the grace period — a sooner delete could land before the re-parent syncs.
+    // Two-phase: re-parent the duplicates' entries onto the winner, then delete once empty and past
+    // the grace period. A sooner delete could land before the re-parent syncs.
     @discardableResult
     static func deduplicateWatchList(in context: ModelContext) -> Bool {
         let watchLists = ((try? context.fetch(FetchDescriptor<MediaList>())) ?? [])

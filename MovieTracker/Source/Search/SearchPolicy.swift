@@ -2,17 +2,13 @@
 //  SearchPolicy.swift
 //  MovieTracker
 //
-//  Declares how a search runs: fetch the base movie/TV/people hits, apply an
-//  ordered set of SearchTools that augment them, then interlace movies + TV into
-//  the ranked list the UI shows. New behaviour = add/adjust a tool here, not
-//  thread another special case through the model.
+//  Declares how a search runs: fetch base hits, apply an ordered set of tools, then interlace.
 //
 
 import Foundation
 
 struct SearchPolicy: Sendable {
     struct Ranking: Sendable {
-        /// Votes a new release needs before its popularity can carry it to the top.
         var voteFloor: Int = 100
     }
 
@@ -23,8 +19,7 @@ struct SearchPolicy: Sendable {
         let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !query.isEmpty else { return .empty }
 
-        // Each side degrades to empty on its own, so one endpoint's failure never
-        // discards another's results.
+        // Each side degrades to empty on its own, so one endpoint's failure never discards another's results.
         async let movies = provider.movies(matching: query)
         async let shows = provider.shows(matching: query)
         async let people = provider.people(matching: query)
@@ -45,8 +40,6 @@ struct SearchPolicy: Sendable {
                              castPeople: castPeople(context, results: results))
     }
 
-    /// The strip follows the ranked results rather than ranking titles again: characters first,
-    /// then the film the list leads with, then the other named films', then the show's.
     private func castPeople(_ context: SearchContext, results: [MediaRef]) -> [Person] {
         let leadingFilmID = results.first { $0.isMovie }.flatMap { ref -> Int? in
             guard case .movie(let movie) = ref else { return nil }
@@ -62,8 +55,8 @@ struct SearchPolicy: Sendable {
             .filter { seen.insert($0.id).inserted }
     }
 
-    /// The default pipeline. Order matters: variants augment the movie set, then rank it, then
-    /// hydrate the top movies ONCE so the franchise and cast tools reuse that single fan-out.
+    // Order matters: variants augment the movie set, then rank it, then hydrate the top movies once
+    // so the franchise and cast tools share that single fan-out.
     static let standard = SearchPolicy(
         tools: [
             SpellingVariantTool(),

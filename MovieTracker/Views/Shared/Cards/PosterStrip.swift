@@ -11,7 +11,6 @@ struct PosterStrip: View {
     let media: [MediaRef]
     let lists: [MediaList]
     var showsYear: Bool = false
-    /// Set by a person's Known For, where a show opens their episodes rather than the show.
     var showsEpisodeCredits: Bool = false
 
     init(media: [MediaRef], lists: [MediaList], showsYear: Bool = false,
@@ -68,7 +67,6 @@ struct PosterStrip: View {
         }
     }
 
-    /// A credit with no ids behind it has no episodes to list, so it opens the show.
     private func destination(_ show: Show) -> ShowCreditDestination {
         showsEpisodeCredits && !show.creditIDs.isEmpty
             ? .episodes(ShowEpisodeCredits(show: show))
@@ -96,8 +94,6 @@ struct PosterStrip: View {
         .preferredColorScheme(.dark)
 }
 
-// The show scrolls in after the movies: its season count must not be clipped by a height
-// the strip measured from the shorter cards on screen first.
 #Preview("Show behind movies") {
     let media = (Movie.previewList + Movie.previewSeriesCollection).map(MediaRef.movie)
         + [MediaRef.show(Show.previewList[1])]

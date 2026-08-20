@@ -14,8 +14,7 @@ struct SearchView: View {
 
     @Environment(\.openDetail) private var openDetail
 
-    /// The docked search field's height plus its bottom margin. The field floats over the list
-    /// without insetting it, so the last row lands behind the field.
+    // The field floats over the list without insetting it, so the last row lands behind the field.
     @ScaledMetric(relativeTo: .body) private var searchFieldClearance: CGFloat = 56
 
     var body: some View {
@@ -61,7 +60,6 @@ struct SearchView: View {
         }
     }
 
-    /// The shared header metrics rather than the list's defaults.
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.headline)
@@ -91,8 +89,7 @@ struct SearchView: View {
         }
     }
 
-    /// The chevron is drawn here rather than by the list: a result pushes as a button, so no
-    /// disclosure indicator comes for free. See ``DetailLink``.
+    // A result pushes as a button, so no disclosure indicator comes for free.
     private func showRow(_ show: Show) -> some View {
         DetailLink(value: show) {
             HStack(spacing: 8) {
@@ -154,7 +151,6 @@ struct SearchView: View {
         !trimmedQuery.isEmpty
     }
 
-    /// iPhone lists the results as rows that push; iPad lays them out as cards, like its lists.
     @ViewBuilder
     private var searchList: some View {
         if openDetail != nil, isSearching {

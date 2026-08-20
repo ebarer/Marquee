@@ -12,8 +12,6 @@ extension PersistenceCoordinator {
 
     func seedWatchList() { _ = watchList; save() }
 
-    /// Converges duplicate Watch Lists, list entries, MediaItems, and TV-progress records a
-    /// CloudKit import produced.
     func deduplicate() {
         MediaList.deduplicateWatchList(in: context)
         // After the merge, so entries re-parented onto the surviving list get collapsed too.
@@ -26,16 +24,14 @@ extension PersistenceCoordinator {
     }
 
     func bootstrap() async {
-        // The driving `.task` can re-fire (e.g. a size-class change at launch);
-        // run the launch sequence — and start only one remote-change loop — once.
+        // The driving `.task` can re-fire, as on a size-class change at launch, so run the sequence once.
         guard claimLaunchRoutine() else {
             SyncLog.logger.log("🌱 bootstrap already ran — skipping duplicate launch task")
             return
         }
         SyncLog.snapshot("launch", in: context)
 
-        // Fresh local store: wait for the Watch List to sync before seeding, so we
-        // adopt the existing list instead of creating a duplicate.
+        // Fresh local store: wait for the Watch List to sync before seeding, or a duplicate is created.
         if MediaList.watchList(in: context) == nil {
             SyncLog.logger.log("🌱 empty local store — waiting up to 6s for the Watch List to sync before seeding")
             let arrived = await waitForWatchList(timeout: .seconds(6))
@@ -51,7 +47,6 @@ extension PersistenceCoordinator {
         Task.detached(priority: .utility) {
             await MediaCachePrefetcher.prefetch(targets)
         }
-        // Poll in-progress shows for newly-aired seasons (reconciles on the main actor).
         Task { await self.refreshWatchedShows() }
 
         await observeRemoteChanges {
@@ -61,8 +56,7 @@ extension PersistenceCoordinator {
         }
     }
 
-    /// Polls for the Watch List: CloudKit imports the whole zone with no per-type
-    /// ordering, so there's nothing to prioritize — we just wait for the one record.
+    // CloudKit imports the whole zone with no per-type ordering, so there is nothing to do but wait.
     private func waitForWatchList(timeout: Duration) async -> Bool {
         let start = ContinuousClock.now
         while ContinuousClock.now - start < timeout {

@@ -9,8 +9,6 @@ import SwiftUI
 @Observable
 final class PersonDetailModel {
     private(set) var person: Person?
-    /// Episode-level detail per show id, which is what lets a TV credit sit under each year
-    /// it aired. Empty until `isResolvingCredits` finishes.
     private(set) var episodeCredits: [Int: EpisodeCredit] = [:]
     private(set) var isResolvingCredits = false
 
@@ -28,8 +26,8 @@ final class PersonDetailModel {
         }
     }
 
-    /// A row's year section is decided before it's laid out, and the season air dates that
-    /// decide it aren't in the person payload — so every credit resolves up front, together.
+    // A row's year section is decided before layout, and the season air dates that decide it aren't
+    // in the person payload.
     private func resolveEpisodeCredits(for person: Person) async {
         let shows = (person.tvCredits ?? []).filter { !$0.creditIDs.isEmpty }
         guard !shows.isEmpty else { return }
@@ -49,8 +47,6 @@ final class PersonDetailModel {
         episodeCredits = resolved.compactMapValues { $0 }
     }
 
-    /// Previews only: a model already holding its person and credits, so the screen renders
-    /// its populated state offline.
     static func preview(person: Person, episodeCredits: [Int: EpisodeCredit] = [:]) -> PersonDetailModel {
         let model = PersonDetailModel()
         model.person = person

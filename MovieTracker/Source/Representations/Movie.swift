@@ -8,8 +8,7 @@
 
 import Foundation
 
-/// A transient movie hydrated from TMDB (not persisted). Identity is the TMDB id,
-/// so it works as a navigation value and de-duplicates in a Set.
+/// A transient movie hydrated from TMDB. Identity is the TMDB id, so it works as a navigation value.
 struct Movie: Hashable, Identifiable, Codable, Sendable {
     var id: Int
     var title: String
@@ -23,30 +22,23 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
     var voteCount: Int?
     var certification: String?
     var imdbID: String?
-    /// The handle for awards and the Rotten Tomatoes slug (see ``WikidataWrapper``).
     var wikidataID: String?
     var genres: [String]?
     var trailers: [MediaTrailer]?
     var bonusCredits = Credits(during: false, after: false)
     var team: [Person] = []
     var creditRole: String?
-    /// Optional so cache entries written before it existed still decode.
     var creditJobs: [String]?
-    /// What `creditRole` is (from a person's movie credits). Nil outside that context.
     var creditKind: CreditKind?
-    /// Billing position in the cast (from a person's movie credits), where 0 is top-billed.
-    /// Nil for crew credits and outside that context.
     var creditOrder: Int?
     var collection: MovieCollection?
     var watchByRegion: [String: WatchAvailability]?
-    /// Set only by ``TMDBWrapper/getMovie(id:)``. Optional so cache entries written before it
-    /// existed decode as unknown, which is the safe answer.
+    // Optional so cache entries written before it existed still decode.
     var isFullDetail: Bool?
 
     func watch(for region: String) -> WatchAvailability? { watchByRegion?[region] }
 
-    /// Whether every field is accounted for, so a nil one means "none" rather than "not yet".
-    /// Can't be inferred from the fields: list and search records land with the same shape.
+    // Can't be inferred from the fields: list and search records land with the same shape.
     var isDetailPayload: Bool { isFullDetail == true }
 
     init(id: Int, title: String) {
@@ -70,7 +62,6 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
             }
     }
 
-    /// Every role on the title as one string: the character, then the jobs.
     var creditRoleSummary: String? {
         let parts = ([creditRole] + (creditJobs ?? [])).compactMap { $0 }.filter { !$0.isEmpty }
         return parts.isEmpty ? nil : parts.joined(separator: ", ")
@@ -78,8 +69,6 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
 
     var isExtraneousCredit: Bool { CreditKind.isExtraneous(creditRoleSummary) }
 
-    /// Genres for the metadata strip: the first two, which is all the cell has room for.
-    /// Dropping the lot past two read as the movie having no genres at all.
     var genresString: String {
         let chosen = (genres ?? []).prefix(2).map { $0.shorten() }
         switch chosen.count {

@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The list switcher behind the navigation title: Watch List and Watched, then custom
-/// lists, then Viewed — each with its live count.
+/// The list switcher behind the navigation title, each entry with its live count.
 struct ListTitleMenu: View {
     @Binding var selection: ListSelection
     let watchList: MediaList?
@@ -65,7 +64,6 @@ struct ListTitleMenu: View {
         }
     }
 
-    /// The list name with its count trailing.
     private func titleText(_ name: String, _ count: Int) -> Text {
         Text("\(name) (\(count))")
     }

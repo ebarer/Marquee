@@ -9,16 +9,13 @@
 import Foundation
 import SwiftData
 
-/// `.automatic` materializes a CloudKit field only when a record writes it, and only in
-/// Development — so one fully-populated record per `@Model` primes the schema before a deploy.
+/// CloudKit materializes a field only when a record writes it, so one populated record per `@Model` primes the schema.
 enum SchemaPrimer {
-    /// Negative so it can't collide with a real TMDB id. No such show exists, so leaving
-    /// primers in place makes `refreshWatchedShows` bail early — purge once deployed.
+    // Negative so it can't collide with a real TMDB id. Purge once the schema is deployed.
     static let sentinelID = -999_001
     static let sentinelTitle = "CloudKit Schema Primer"
 
-    /// Run once from a Debug build signed into iCloud, wait for `☁️ export finished … ok`,
-    /// deploy Development→Production, then `purge`.
+    // Run once from a Debug build signed into iCloud, deploy Development to Production, then `purge`.
     @MainActor
     static func prime(using store: PersistenceCoordinator) {
         let context = store.context
@@ -38,8 +35,8 @@ enum SchemaPrimer {
         item.watchListOptOut = true
         context.insert(item)
 
-        // Marked de-duplicated purely to keep it out of `MediaList.all`, which filters those.
-        // The pruner only ever collects watch lists, so this one can't be deleted behind us.
+        // Marked de-duplicated purely to keep it out of `MediaList.all`, which filters those. The pruner
+        // only collects watch lists, so this one can't be deleted behind us.
         let list = MediaList(name: sentinelTitle, symbol: "ladybug", sortOrder: 0, colorIndex: 1)
         list.customColorHex = "#FF00FF"
         list.sortAscending = false
@@ -71,7 +68,6 @@ enum SchemaPrimer {
         SyncLog.snapshot("after prime", in: context)
     }
 
-    /// Whether primer records are currently in the store.
     @MainActor
     static func isPrimed(using store: PersistenceCoordinator) -> Bool {
         let id = sentinelID
@@ -80,7 +76,6 @@ enum SchemaPrimer {
         return !fetch(descriptor, store.context).isEmpty
     }
 
-    /// Delete every primer record. Safe to run repeatedly.
     @MainActor
     static func purge(using store: PersistenceCoordinator) {
         let context = store.context

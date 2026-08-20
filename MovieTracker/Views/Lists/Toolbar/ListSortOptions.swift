@@ -9,7 +9,6 @@ import Foundation
 protocol SortKey: Equatable {
     var title: String { get }
     var symbol: String { get }
-    /// The order applied when this key is picked: latest/highest first for dates and ratings, A→Z for titles.
     var defaultAscending: Bool { get }
 }
 
@@ -51,7 +50,6 @@ enum ListSortKey: String, SortKey, CaseIterable {
     case rating
     case alphabetical
 
-    /// What a list offers. Nothing on the Watch List has been watched, so nothing carries a rating.
     static func options(isWatchList: Bool) -> [ListSortKey] {
         isWatchList ? allCases.filter { $0 != .rating } : allCases
     }

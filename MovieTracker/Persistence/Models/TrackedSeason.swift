@@ -6,18 +6,14 @@
 import Foundation
 import SwiftData
 
-/// A show's first incomplete season — what it renders and sorts as in every list except
-/// Watched, so an in-progress show buckets near "now" instead of its premiere.
+/// A show's first incomplete season: what it renders and sorts as in every list except Watched.
 @Model
 final class TrackedSeason {
     var showTmdbID: Int = 0
     var seasonNumber: Int = 0
     var showName: String = ""
     var posterPath: String?
-    /// Total episodes in the tracked season (for "x of y"); not otherwise persisted.
     var episodeCount: Int = 0
-    /// Sort/bucket anchor: the first unwatched episode's air date (or the season's start
-    /// when episodes aren't loaded yet).
     var nextEpisodeDate: Date?
     var updatedAt: Date = Date()
     var addedAt: Date = Date()
@@ -51,7 +47,7 @@ extension TrackedSeason {
         (try? context.fetch(FetchDescriptor<TrackedSeason>())) ?? []
     }
 
-    /// CloudKit has no unique constraint, so sync can create duplicates to collapse.
+    // CloudKit has no unique constraint, so sync can create duplicates to collapse.
     @discardableResult
     static func deduplicate(in context: ModelContext) -> Bool {
         let all = (try? context.fetch(FetchDescriptor<TrackedSeason>())) ?? []

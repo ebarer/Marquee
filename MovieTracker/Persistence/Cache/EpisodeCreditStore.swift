@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// Session memo for `/credit/{id}` lookups. Filmography rows resolve lazily as they scroll,
-/// so repeat and concurrent lookups for the same credit have to collapse into one request.
+/// Session memo for /credit/{id}; repeat and concurrent lookups collapse into one request.
 @MainActor
 final class EpisodeCreditStore {
     static let shared = EpisodeCreditStore()
@@ -14,8 +13,6 @@ final class EpisodeCreditStore {
     private var resolved: [String: EpisodeCredit] = [:]
     private var tasks: [String: Task<EpisodeCredit?, Never>] = [:]
 
-    /// The merged credit across every id TMDB filed the person under for `show`, or nil
-    /// when the show carries no credit ids or none resolve.
     func credit(for show: Show) async -> EpisodeCredit? {
         var parts: [EpisodeCredit] = []
         for id in show.creditIDs {
@@ -24,8 +21,7 @@ final class EpisodeCreditStore {
         return EpisodeCredit.merging(parts)
     }
 
-    /// The same credit for a person whose roster entry carries no ids — a roster cached before
-    /// ids were kept — since their own TV credits name the ids TMDB filed them under.
+    // A roster cached before credit ids were kept carries none, so fall back to the person's own TV credits.
     func credit(person id: Int, in show: Show) async -> EpisodeCredit? {
         guard let person = try? await TMDBWrapper.getPerson(id: id),
               let credit = (person.tvCredits ?? []).first(where: { $0.id == show.id }),

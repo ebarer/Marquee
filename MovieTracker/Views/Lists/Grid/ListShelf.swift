@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// One section's cards, scrolling horizontally under a pinned bookmark and fading out as they
-/// reach it. The fade opens up with the scroll, so a card at rest keeps the plain gutter.
+/// One section's cards, scrolling horizontally under a pinned bookmark and fading out as they reach it.
 struct ListShelf<Bookmark: View, Cards: View>: View {
     let spacing: CGFloat
     private let bookmark: Bookmark
@@ -95,7 +94,6 @@ extension View {
     .preferredColorScheme(.dark)
 }
 
-// The scrolled states a static shelf can't show: the ramp part-open, then at full width.
 #Preview("Mid-scroll fade") {
     let context = ListEntryContext(selection: .list(UUID()), isWatchList: true,
                                    watchListIDs: [], listColor: .appAccent)
@@ -103,7 +101,6 @@ extension View {
                                   entries: (1...5).map { .preview(id: $0, title: "Title \($0)") },
                                   isCollapsible: false)
 
-    // The cards slide under a mask that stays put, exactly as the shelf scrolls them.
     VStack(spacing: 24) {
         ForEach([CGFloat(0), 24, 64, 200], id: \.self) { scrolled in
             ZStack(alignment: .leading) {

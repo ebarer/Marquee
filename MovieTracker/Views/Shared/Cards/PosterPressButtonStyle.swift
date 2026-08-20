@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// Press feedback for a poster card: the card dips and dims, since a grid cell has no row
-/// highlight to fall back on.
+/// Press feedback for a poster card, since a grid cell has no row highlight to fall back on.
 struct PosterPressButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

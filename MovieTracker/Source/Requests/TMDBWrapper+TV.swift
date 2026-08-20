@@ -7,8 +7,8 @@ import Foundation
 
 extension TMDBWrapper {
     static func getShow(id: Int) async throws -> Show {
-        // Content ratings return every region (not gated by `certification_country`),
-        // so no `certified:` flag here — the region pick happens in `certification()`.
+        // Content ratings return every region, not gated by `certification_country`, so the region pick
+        // happens in `certification()`.
         let data = try await fetch(
             "/tv/\(id)",
             queryItems: [
@@ -28,8 +28,7 @@ extension TMDBWrapper {
             queryItems: [URLQueryItem(name: "append_to_response", value: "aggregate_credits")]
         )
         var season = try decode(SeasonRaw.self, from: data).season()
-        // Stamp the show id onto each episode (TMDB omits it) so a standalone episode
-        // can address its watched record.
+        // TMDB omits the show id on an episode, so stamp it here for a standalone episode's watched record.
         season.episodes = season.episodes.map {
             var episode = $0
             episode.showTmdbID = showID
@@ -38,8 +37,7 @@ extension TMDBWrapper {
         return season
     }
 
-    /// A cheap `/tv/{id}` hit carrying the season list, last-air date and status that
-    /// list/search payloads omit, so cards can lazily upgrade from a single call.
+    // List and search payloads omit the season list, last-air date and status; /tv/{id} carries them.
     static func showSummary(id: Int) async throws -> Show {
         let data = try await fetch("/tv/\(id)")
         return translate(show: try decode(ShowRaw.self, from: data))
@@ -64,14 +62,13 @@ extension TMDBWrapper {
     }
 
     static func showsOnTheAir(page: Int) async throws -> PagedResult<Show> {
-        // `/tv/on_the_air` is curated and ignores every filter, so an air-date window on
-        // discover stands in for it — wide enough that a weekly series doesn't drop out.
+        // `/tv/on_the_air` is curated and ignores every filter, so an air-date window on discover stands in,
+            // wide enough that a weekly series doesn't drop out.
         try await discoverShows(page: page, extra: [
             URLQueryItem(name: "sort_by", value: "popularity.desc"),
             URLQueryItem(name: "air_date.gte", value: dateParam(daysFromNow: -14)),
             URLQueryItem(name: "air_date.lte", value: dateParam(daysFromNow: 7)),
-            // News strips like TMZ, talk, soaps and reality, cut by genre *and* by type
-            // because TMDB tags a given show under only one of the two.
+            // News, talk, soaps and reality, cut by genre and by type because TMDB tags a show under only one.
             URLQueryItem(name: "without_genres", value: "10763,10767,10766,10764"),
             URLQueryItem(name: "with_type", value: "0|2|4"),
             // Low enough that a week-one premiere still ranks.

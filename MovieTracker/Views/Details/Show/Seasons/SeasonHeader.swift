@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The header above a season's episodes: the picker, a "year • N episodes" line, an optional
-/// watched-date + rating column (once complete), and a ``SeasonWatchedToggle``.
+/// The header above a season's episodes: picker, episode count, optional watched date and rating, watched toggle.
 struct SeasonHeader: View {
     let seasons: [Season]
     let currentSeason: Int?
@@ -14,7 +13,6 @@ struct SeasonHeader: View {
     let startYear: Int?
     let episodeCount: Int
     let allWatched: Bool
-    /// Every aired episode watched, which is what the toggle reads as caught up.
     var allAiredWatched: Bool = false
     let canToggle: Bool
     let showID: Int
@@ -45,8 +43,8 @@ struct SeasonHeader: View {
         .sectionHeaderInsets()
     }
 
-    // A styled label backed by an embedded Picker — the menu keeps the standard checkmark
-    // gutter while the season reads as a section title on the left.
+    // A styled label backed by an embedded Picker: the menu keeps the standard checkmark gutter while
+        // the season reads as a section title on the left.
     private var seasonPicker: some View {
         Menu {
             Picker("Season", selection: seasonSelection) {

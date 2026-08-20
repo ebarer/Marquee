@@ -5,12 +5,11 @@
 
 import SwiftUI
 
-/// How many titles a list screen is showing, published up out of the content view so a shell
-/// that owns the navigation title can put it there. Narrowed by the media filter and the search.
+/// How many titles a list screen is showing, published up so a shell that owns the title can put it there.
 struct ListVisibleCountKey: PreferenceKey {
     static let defaultValue: Int? = nil
 
-    /// A nil never erases a count — a sibling that publishes nothing can't blank the title.
+    // A nil never erases a count: a sibling that publishes nothing can't blank the title.
     static func reduce(value: inout Int?, nextValue: () -> Int?) {
         value = nextValue() ?? value
     }

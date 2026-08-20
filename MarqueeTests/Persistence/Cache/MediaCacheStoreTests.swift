@@ -50,7 +50,6 @@ import SwiftUI
 
     // MARK: - Priority
 
-    /// Its own directory + cap, so eviction is testable without touching the app's cache.
     private func makeBoundedStore(_ name: String, maxEntries: Int) -> MediaCacheStore {
         MediaCacheStore(directoryName: "MediaCacheTests-\(name)", maxEntries: maxEntries)
     }

@@ -10,7 +10,6 @@ struct SeasonEpisodeList: View {
     let episodes: [Episode]
     let watchedNumbers: Set<Int>
     var tint: Color = .appAccent
-    /// Set by a person's episode list; see ``EpisodeRowText``.
     var role: String? = nil
     let onToggle: (Episode) -> Void
 

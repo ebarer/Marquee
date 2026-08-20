@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The credit rows (movie or show) for one filmography group, with separators between them.
-/// Movies carry watch/watched swipe actions and a context menu.
+/// The credit rows for one filmography group, with separators between them.
 struct FilmographyRows: View {
     let entries: [FilmographyEntry]
     let lists: [MediaList]

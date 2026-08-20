@@ -12,8 +12,7 @@ extension Color {
         return dominantColor(from: uiImage)
     }
 
-    /// The artwork's most prominent vivid colour, used to tint a detail screen. Vividness counts
-    /// for more than area, so a small saturated block (a title, a logo) beats a muted sky.
+    // Vividness counts for more than area, so a small saturated block beats a muted sky.
     static func dominantColor(from uiImage: UIImage) -> Color {
         guard let found = DominantHue.find(in: uiImage) else { return .appAccent }
         let vivid = max(0.5, found.saturation)
@@ -23,8 +22,7 @@ extension Color {
     }
 }
 
-/// Caps saturation so every tint clears the same perceived lightness. A fully saturated red or
-/// blue is barely half as light as a yellow, and reads as a muddy dark patch without this.
+// Caps saturation so every tint clears the same perceived lightness; a saturated red otherwise reads as a muddy dark patch.
 private enum TintLightness {
     private static let minLightness = 0.58
 
@@ -49,16 +47,12 @@ private enum TintLightness {
     }
 }
 
-/// Picks the winning hue from a weighted histogram of a downscaled copy of the image.
 private enum DominantHue {
-    /// 10° buckets: wide enough that a gradient lands in one bucket, narrow enough to keep red
-    /// from merging into orange.
+    // 10-degree buckets: wide enough that a gradient lands in one, narrow enough to keep red from orange.
     private static let binCount = 36
-    /// Averaging the artwork down to this width is the blur step — it merges neighbouring pixels
-    /// into blocks of colour while leaving hues intact.
+    // Averaging down to this width is the blur step: it merges neighbouring pixels but leaves hues intact.
     private static let sampleWidth = 128
-    /// Below these, a pixel is a grey or near-black and carries no usable hue. The brightness bar
-    /// stays low: a dim green backdrop is still the colour the poster reads as.
+    // Below these a pixel is grey or near-black and carries no usable hue.
     private static let minSaturation = 0.2
     private static let minBrightness = 0.1
 
@@ -77,8 +71,8 @@ private enum DominantHue {
                             blue: Double(sample[index + 2]) / 255)
             guard pixel.saturation >= minSaturation, pixel.brightness >= minBrightness else { continue }
 
-            // Cubed saturation lets a vivid minority beat a muted majority; brightness discounts
-            // shadow, but only linearly — squared, a lit accent beat a large dark backdrop.
+            // Cubed saturation lets a vivid minority beat a muted majority. Brightness discounts shadow only
+        // linearly; squared, a lit accent beat a large dark backdrop.
             let weight = pow(pixel.saturation, 3) * pixel.brightness
             let bin = min(binCount - 1, Int(pixel.hue * Double(binCount)))
             let angle = pixel.hue * 2 * .pi

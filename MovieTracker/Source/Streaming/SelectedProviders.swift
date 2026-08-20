@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// The user's chosen services; empty means "not configured" — show every service.
+/// The user's chosen services; empty means "not configured", so every service shows.
 struct SelectedProviders: RawRepresentable, Equatable {
     var ids: Set<Int>
 

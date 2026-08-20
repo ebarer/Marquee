@@ -26,8 +26,7 @@ import SwiftData
         return show
     }
 
-    /// A store as CloudKit leaves it part-way through an import: the completed season's snapshot
-    /// (rated, so the loss would be unrecoverable) and the show's flag are here, 1 of 3 episodes is.
+    // A store as CloudKit leaves it part-way through an import: the season snapshot present, its episodes not.
     private func partiallyImported() -> PersistenceCoordinator {
         let store = makeInMemoryStore()
         let context = store.context
@@ -44,8 +43,6 @@ import SwiftData
         return store
     }
 
-    /// Opening the show is what used to destroy the snapshot — and its delete syncs, so the
-    /// rating went with it on every device.
     @Test func openingAShowMidImportKeepsTheSyncedSeason() {
         let store = partiallyImported()
         let show = makeShow()
@@ -69,8 +66,7 @@ import SwiftData
         #expect(TrackedSeason.find(showTmdbID: 42, in: store.context) == nil)
     }
 
-    /// The one thing that does disprove a snapshot without the user acting: TMDB adding an
-    /// episode to a season they'd finished, which must pull the show back onto the Watch List.
+    // The one thing that disproves a snapshot without the user acting: TMDB adding an episode to a finished season.
     @Test func aSeasonThatOutgrewItsSnapshotLosesIt() {
         let store = partiallyImported()
         let grown = makeShow(episodeCount: 4)
@@ -83,8 +79,6 @@ import SwiftData
         #expect(store.isInWatchList(showID: 42))
     }
 
-    /// The other one: the user unwatching an episode. Missing records prove an unwatch only for
-    /// the season they just edited, so this must still demote.
     @Test func unwatchingAnEpisodeStillDropsTheSnapshot() {
         let store = makeInMemoryStore()
         let show = makeShow()
@@ -100,8 +94,6 @@ import SwiftData
         #expect(store.isInWatchList(showID: 42))
     }
 
-    /// A reconcile that isn't about the edited season must leave that season's snapshot alone,
-    /// or one episode toggle would still clear a whole mid-import library.
     @Test func editingOneSeasonSparesTheOthers() {
         let store = partiallyImported()
         var show = makeShow()

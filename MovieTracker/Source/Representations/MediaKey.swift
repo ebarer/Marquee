@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// A type-tagged key plus display snapshot that both `Movie` and `Show` produce, letting the
-/// persistence layer store and dedupe either kind on the (tmdbID, mediaType) composite.
+/// A type-tagged key plus display snapshot, so persistence can store and dedupe a movie or show alike.
 struct MediaKey {
     let tmdbID: Int
     let mediaType: MediaType
@@ -14,8 +13,6 @@ struct MediaKey {
     let posterPath: String?
     let releaseDate: Date?
     let runtime: Int?
-    /// Timeline anchor for list sorting when it should differ from `releaseDate` (a show's
-    /// most-recent air date vs. its premiere). Nil for movies — they sort by `releaseDate`.
     let sortDate: Date?
 }
 

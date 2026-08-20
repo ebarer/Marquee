@@ -10,14 +10,12 @@ enum ActionBarMetrics {
     static let spacing: CGFloat = 12
 }
 
-/// The `.fill` variant of a symbol when one exists, else the base name.
 func filledSymbol(_ base: String) -> String {
     let candidate = base + ".fill"
     return UIImage(systemName: candidate) != nil ? candidate : base
 }
 
-/// A single Liquid Glass control shared by the detail action bars. Callers attach
-/// `.glassEffectID`/`.glassEffectTransition` to the returned view when needed.
+/// The Liquid Glass control shared by the detail action bars.
 struct GlassActionButton<S: Shape>: View {
     let systemName: String
     let isOn: Bool
@@ -35,8 +33,7 @@ struct GlassActionButton<S: Shape>: View {
     }
 }
 
-/// ``GlassActionButton`` that opens a menu instead of firing an action. Shares the button's
-/// styling exactly — the two sit side by side in an action bar and must be indistinguishable.
+/// `GlassActionButton` that opens a menu. The two sit side by side, so the styling must match exactly.
 struct GlassActionMenu<S: Shape, Content: View>: View {
     let systemName: String
     let isOn: Bool
@@ -68,8 +65,8 @@ private struct GlassActionLabel: View {
         Image(systemName: systemName)
             .font(.system(size: 20, weight: .semibold))
             .foregroundStyle(isOn ? .appBackground : tint)
-            // A disabled control keeps its slot in the bar, dimmed — `.plain` styling won't
-            // show the state on its own.
+            // A disabled control keeps its slot in the bar, dimmed. `.plain` styling won't show the state
+            // on its own.
             .opacity(isEnabled ? 1 : 0.3)
             .frame(width: width, height: ActionBarMetrics.size)
             .contentShape(Rectangle())

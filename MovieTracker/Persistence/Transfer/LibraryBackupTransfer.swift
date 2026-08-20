@@ -17,7 +17,6 @@ extension LibraryBackup {
         case viewed = 3
     }
 
-    /// Watched is emitted as a v1 pseudo-list carrying dates/ratings, so old backups still import.
     static func export(from context: ModelContext) -> LibraryBackup {
         var lists = MediaList.all(in: context).map { list in
             LibraryBackup.List(
@@ -52,8 +51,7 @@ extension LibraryBackup {
         return LibraryBackup(lists: lists, shows: progress(in: context))
     }
 
-    /// TV progress lives in models of its own, so it exports separately from list membership;
-    /// without it every imported show reads as zero episodes watched.
+    // TV progress lives in models of its own, so without this every imported show reads as zero watched.
     private static func progress(in context: ModelContext) -> [LibraryBackup.Progress] {
         let episodes = (try? context.fetch(FetchDescriptor<WatchedEpisode>())) ?? []
         let seasons = (try? context.fetch(FetchDescriptor<WatchedSeason>())) ?? []
@@ -100,7 +98,6 @@ extension LibraryBackup {
         }
     }
 
-    /// Merges an archive additively; nothing existing is modified.
     @MainActor
     @discardableResult
     static func merge(_ archive: LibraryBackup, using store: PersistenceCoordinator) -> ImportSummary {
@@ -142,8 +139,7 @@ extension LibraryBackup {
         return summary
     }
 
-    /// Restore TV progress additively: a record already present wins, so a re-import is a no-op
-    /// and never re-dates an episode or season the user has since edited.
+    // Additive: a record already present wins, so a re-import never re-dates something since edited.
     @MainActor
     private static func mergeProgress(_ shows: [LibraryBackup.Progress],
                                       using store: PersistenceCoordinator) {
@@ -181,12 +177,11 @@ extension LibraryBackup {
         }
     }
 
-    /// The cached show-level flags, so badges read right before the show is next reconciled.
     private static func applyShowFlags(_ show: LibraryBackup.Progress, in context: ModelContext) {
         guard show.isWatched == true || show.isCaughtUp == true || show.watchListOptOut == true
         else { return }
-        // Not `upsert`: the archive carries no release date or runtime, and a snapshot refresh
-        // would clear whichever of those a list entry's import already established.
+        // Not `upsert`: the archive carries no release date or runtime, and a snapshot refresh would clear
+        // whichever of those the list entry's import established.
         let item: MediaItem
         if let existing = MediaItem.find(tmdbID: show.tmdbID, mediaType: .tv, in: context) {
             item = existing

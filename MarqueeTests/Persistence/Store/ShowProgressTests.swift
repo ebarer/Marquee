@@ -13,8 +13,6 @@ import SwiftData
 
 @MainActor
 @Suite struct ShowProgressTests {
-    /// `aired` episodes are dated in the past, the rest a week out — so a show can be caught up
-    /// (everything aired is watched) without being finished.
     private func makeShow(id: Int = 1, seasons: Int = 1, episodes: Int = 3, aired: Int = 3) -> Show {
         var show = Show(id: id, name: "Show \(id)")
         show.seasons = (1...seasons).map { number in
@@ -33,8 +31,6 @@ import SwiftData
         return show
     }
 
-    /// The stub a list row pushes: a title and id, no seasons. Deriving state from this is what
-    /// used to read as "unwatched" until detail loaded.
     private func stub(_ show: Show) -> Show { Show(id: show.id, name: show.name) }
 
     @Test func untrackedShowHasNoProgress() {
@@ -76,7 +72,6 @@ import SwiftData
         #expect(!store.showProgress(showID: show.id).isCaughtUp)
     }
 
-    /// The regression this whole change exists for: state must survive being read from a stub.
     @Test func progressSurvivesAPayloadLessReconcile() {
         let store = makeInMemoryStore()
         let show = makeShow(episodes: 4, aired: 2)

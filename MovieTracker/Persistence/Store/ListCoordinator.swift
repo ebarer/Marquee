@@ -6,8 +6,7 @@
 import Foundation
 import SwiftData
 
-/// Off-main reader for the Lists screen: a list's rows, their anchor dates, and its `SectionLayout`.
-/// Not a `@ModelActor` — that ran on main for main-actor callers; callers use `Task.detached`.
+/// Off-main reader for the Lists screen. Not a `@ModelActor`: that ran on main for main-actor callers.
 final class ListCoordinator {
     let modelContext: ModelContext
 
@@ -15,17 +14,14 @@ final class ListCoordinator {
         modelContext = ModelContext(container)
     }
 
-    /// Asserted by FrameBudgetTests: everything here assumes it isn't on the main thread.
     func runsOnMainThread() -> Bool { Thread.isMainThread }
 
-    /// Rebuild the badge snapshot away from the main actor — it scans every watched title,
-    /// Watch List entry, and watched episode, which is far more than a frame's worth.
+    // Scans every watched title, Watch List entry and watched episode: far more than a frame's worth.
     func badgeIndex() -> MediaBadgeIndex {
         MediaBadgeIndex(context: modelContext)
     }
 
-    /// Fetch *and* group in one hop. Formatting sorts every row and runs a `DateFormatter` per
-    /// section, so it belongs here rather than on the main actor the caller is suspended on.
+    // Formatting sorts every row and runs a `DateFormatter` per section, so it stays off the main actor.
     func sections(request: ListRequest, ascending: Bool, filter: String,
                   mediaFilter: MediaTypeFilter = .all) -> [SectionSnapshot] {
         SectionFormatter.sections(from: load(request: request, filter: filter,
@@ -46,7 +42,6 @@ final class ListCoordinator {
         return applyMediaFilter(result, mediaFilter)
     }
 
-    /// Drop rows that don't match the media-type filter, so empty sections never form.
     private func applyMediaFilter(_ result: ListResult, _ mediaFilter: MediaTypeFilter) -> ListResult {
         guard mediaFilter != .all else { return result }
         return ListResult(rows: result.rows.filter { mediaFilter.matches($0.snapshot.mediaType) },
@@ -56,8 +51,7 @@ final class ListCoordinator {
     // MARK: List membership (ListEntry)
 
     private func loadList(_ listID: UUID, sort: ListSortKey, foldOlder: OlderFold, filter: String) -> ListResult {
-        // Only the Watch List folds a stale backlog into "Older", and only under release-date
-        // sort; by-date-added is a flat list, and rating/title bucket on the row itself.
+        // Only the Watch List folds a stale backlog into "Older", and only under release-date sort.
         func layout(isWatchList: Bool) -> SectionLayout {
             switch sort {
             case .dateAdded: return .flat
@@ -73,8 +67,7 @@ final class ListCoordinator {
             return ListResult(rows: [], layout: layout(isWatchList: false))
         }
 
-        // Only the Watch List represents a show by its tracked season; custom lists show the
-        // whole show (seasons belong to the Watch List / Watched).
+        // Only the Watch List represents a show by its tracked season; custom lists show the whole show.
         let isWatchList = entries.first?.list?.isWatchList ?? false
 
         let items = (try? modelContext.fetch(FetchDescriptor<MediaItem>())) ?? []
@@ -85,8 +78,7 @@ final class ListCoordinator {
         let filtered = filter.isEmpty ? entries
             : entries.filter { $0.title.localizedCaseInsensitiveContains(filter) }
 
-        // The Watch List represents a show by its tracked (next-incomplete) season, keyed by
-        // show id. Empty for custom lists.
+        // The Watch List represents a show by its next-incomplete season, keyed by show id. Empty elsewhere.
         var trackedByShow: [Int: TrackedSeason] = [:]
         if isWatchList {
             for tracked in (try? modelContext.fetch(FetchDescriptor<TrackedSeason>())) ?? [] {
@@ -99,7 +91,6 @@ final class ListCoordinator {
             let facts = factsByKey["\(entry.tmdbID)-\(entry.mediaTypeRaw)"]
             if entry.mediaType == .tv, let tracked = trackedByShow[entry.tmdbID] {
                 let watched = watchedBySeason["\(entry.tmdbID)-\(tracked.seasonNumber)"] ?? 0
-                // The tracked season buckets by its next unwatched episode's air date.
                 let date = byDateAdded ? entry.addedAt
                     : (tracked.nextEpisodeDate ?? entry.sortDate ?? entry.releaseDate ?? .distantFuture)
                 return DatedRow(date: date,
@@ -115,7 +106,6 @@ final class ListCoordinator {
                                                         runtime: entry.runtime,
                                                         dateWatched: facts?.watched, userRating: facts?.rating))
             }
-            // Movies, and untracked shows (no progress / fully watched), keep the whole-title snapshot.
             let date = byDateAdded ? entry.addedAt : (entry.sortDate ?? entry.releaseDate ?? .distantFuture)
             return DatedRow(date: date,
                             snapshot: MediaSnapshot(persistentID: entry.persistentModelID,
@@ -135,8 +125,7 @@ final class ListCoordinator {
         let byWatchedDate = sort == .dateWatched
         var rows: [DatedRow] = []
 
-        // Movies track watched at the item level; TV at the season level, so pull only movie
-        // MediaItems here and add watched seasons below.
+        // Movies track watched at the item level and TV at the season level, so pull only movie items here.
         let movieType = MediaType.movie.rawValue
         let itemDescriptor = FetchDescriptor<MediaItem>(
             predicate: #Predicate { $0.watchedAt != nil && $0.mediaTypeRaw == movieType })
@@ -147,7 +136,6 @@ final class ListCoordinator {
             rows.append(DatedRow(date: date, snapshot: snapshot(from: item)))
         }
 
-        // Watched counts derive from the episode source of truth, keyed by show+season.
         let watchedBySeason = watchedEpisodeCounts()
         for season in (try? modelContext.fetch(FetchDescriptor<WatchedSeason>())) ?? []
         where filter.isEmpty || season.showName.localizedCaseInsensitiveContains(filter) {
@@ -157,7 +145,6 @@ final class ListCoordinator {
             rows.append(DatedRow(date: date, snapshot: snapshot(from: season, watched: watched)))
         }
 
-        // Rating buckets by star count and title by first letter; the date sorts group by month.
         let layout: SectionLayout
         switch sort {
         case .rating: layout = .ratingStars
@@ -182,7 +169,6 @@ final class ListCoordinator {
 
     // MARK: Row helpers
 
-    /// Watched-episode counts keyed `"showID-season"`, from the `WatchedEpisode` source of truth.
     private func watchedEpisodeCounts() -> [String: Int] {
         var map: [String: Int] = [:]
         for episode in (try? modelContext.fetch(FetchDescriptor<WatchedEpisode>())) ?? [] {

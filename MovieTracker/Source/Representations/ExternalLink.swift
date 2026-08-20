@@ -21,7 +21,6 @@ struct ExternalLink: Identifiable, Hashable, Sendable {
 
     var site: Site
     var url: URL
-    /// The Rotten Tomatoes fallback lands on a search, so the row can say so.
     var isExact: Bool = true
 
     var id: String { site.rawValue }
@@ -34,8 +33,7 @@ extension ExternalLink {
         return ExternalLink(site: .imdb, url: url)
     }
 
-    /// Rotten Tomatoes has no id in TMDB; the slug comes from Wikidata. A slug guessed from the
-    /// title yields dead links often enough ("m/sinners_2025") that search is the better fallback.
+    // TMDB carries no Rotten Tomatoes id, and a slug guessed from the title often 404s, so search is the fallback.
     static func rottenTomatoes(slug: String?, title: String) -> ExternalLink? {
         if let slug, !slug.isEmpty,
            let url = URL(string: "https://www.rottentomatoes.com/\(slug)") {

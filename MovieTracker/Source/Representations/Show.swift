@@ -5,14 +5,12 @@
 
 import Foundation
 
-/// A transient TV show hydrated from TMDB (not persisted). Identity is the TMDB id,
-/// so it works as a navigation value and de-duplicates in a Set.
+/// A transient TV show hydrated from TMDB. Identity is the TMDB id, so it works as a navigation value.
 struct Show: Hashable, Identifiable, Codable, Sendable {
     var id: Int
     var name: String
     var firstAirDate: Date?
     var lastAirDate: Date?
-    /// Air date of the episode TMDB has scheduled next; nil unless the show is still airing.
     var nextAirDate: Date?
     var status: String?
     var overview: String?
@@ -23,45 +21,33 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     var voteCount: Int?
     var certification: String?
     var imdbID: String?
-    /// The handle for awards and the Rotten Tomatoes slug (see ``WikidataWrapper``).
     var wikidataID: String?
     var genres: [String]?
     var networks: [String]?
-    /// ISO country codes the show originates in (e.g. ["US"]); used to filter search noise.
     var originCountry: [String]?
     var trailers: [MediaTrailer]?
     var creditRole: String?
-    /// Optional so cache entries written before it existed still decode.
     var creditJobs: [String]?
-    /// What `creditRole` is (from a person's TV credits). Nil outside that context.
     var creditKind: CreditKind?
-    /// Episodes the credited person appeared in (from a person's TV credits); shown in
-    /// their filmography instead of the year range. Nil outside that context.
     var episodeCount: Int?
-    /// TMDB credit ids behind that count — a person can be filed under several for one show.
-    /// They're the handle for resolving which episodes (see ``EpisodeCredit``).
+    // TMDB can file one person under several credit ids for the same show.
     var creditIDs: [String] = []
     var creators: [Person] = []
     var recurringCast: [Person] = []
-    /// Every billed credit outside the regular run, most-seen first — what makes a one-off guest
-    /// findable in cast search. Optional so cache entries written before it existed still decode.
+    // Optional so cache entries written before it existed still decode.
     var guestCast: [Person]?
-    /// Episodes each cast member is in across the run, keyed by person id. Optional so cache
-    /// entries written before it existed still decode.
+    // Optional so cache entries written before it existed still decode.
     var castEpisodeCounts: [Int: Int]?
     var seasons: [Season] = []
     var watchByRegion: [String: WatchAvailability]?
-    /// A transient navigation hint: which season the detail should open on (e.g. tapping
-    /// a season row in the Watched list). Not part of identity.
+    // A navigation hint, not part of identity.
     var initialSeason: Int?
-    /// Set only by ``TMDBWrapper/getShow(id:)``. Optional so cache entries written before it
-    /// existed decode as unknown, which is the safe answer.
+    // Optional so cache entries written before it existed still decode.
     var isFullDetail: Bool?
 
     func watch(for region: String) -> WatchAvailability? { watchByRegion?[region] }
 
-    /// Whether every field is accounted for, so a nil one means "none" rather than "not yet".
-    /// Can't be inferred from the fields: list and search records land with the same shape.
+    // Can't be inferred from the fields: list and search records land with the same shape.
     var isDetailPayload: Bool { isFullDetail == true }
 
     init(id: Int, name: String) {
@@ -69,8 +55,8 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
         self.name = name
     }
 
-    // `initialSeason` participates so that the same show opened at different seasons are
-    // distinct navigation values — otherwise a List highlights the wrong season's row.
+    // `initialSeason` participates so the same show opened at different seasons are distinct navigation
+    // values; otherwise a List highlights the wrong season's row.
     static func == (lhs: Show, rhs: Show) -> Bool {
         lhs.id == rhs.id && lhs.initialSeason == rhs.initialSeason
     }
@@ -85,15 +71,12 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
 extension Show {
     private static let endedStatuses: Set<String> = ["ended", "canceled", "cancelled"]
 
-    /// True only when TMDB affirmatively reports the show in production — list and search
-    /// payloads omit `status`, and an unknown status must not claim "Present".
+    // List and search payloads omit `status`, and an unknown status must not claim "Present".
     var isOngoing: Bool {
         guard let status = status?.lowercased() else { return false }
         return !Self.endedStatuses.contains(status)
     }
 
-    /// "2019", "2019–2023", or "2021–Present". Falls back to just the start year when we
-    /// lack the status/last-air data to decide (e.g. search results); "N/A" with no dates.
     var yearRange: String {
         guard let start = firstAirDate?.year else { return "N/A" }
         if isOngoing { return "\(start)–Present" }
@@ -101,7 +84,6 @@ extension Show {
         return "\(start)–\(end)"
     }
 
-    /// Seasons excluding "Specials" (season 0) and unaired placeholders (0 episodes), ordered — the default browsing set.
     var regularSeasons: [Season] {
         seasons.filter { !$0.isSpecials && $0.episodeCount > 0 }.sorted { $0.seasonNumber < $1.seasonNumber }
     }

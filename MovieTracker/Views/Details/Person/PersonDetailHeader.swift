@@ -5,23 +5,18 @@
 
 import SwiftUI
 
-/// The person header's geometry: what it occupies at rest, and where it comes to rest pinned.
-/// Text slots are caller-scaled, so the same numbers drive the header and the pin lines below it.
+/// The person header's geometry at rest and pinned; the same numbers drive the pin lines below it.
 struct PersonHeaderMetrics {
     static let avatar: CGFloat = 120
     static let collapsedAvatar: CGFloat = 60
-    /// The photo grows with a pull-down, up to this much of its resting size.
     static let maxPhotoPull: CGFloat = 1.4
-    /// The pull that reaches that cap, as a fraction of the page: a third of the screen, so the
-    /// photo grows gradually and maxing it out takes a deliberate drag.
+    // A third of the page, so the photo grows gradually and maxing it out takes a deliberate drag.
     static let photoPullSpan: CGFloat = 0.35
     static let nameScale: CGFloat = 0.7
     static let padding: CGFloat = 16
     static let avatarGap: CGFloat = 12
     static let collapsedAvatarGap: CGFloat = 10
-    /// Separates the name from the birth details, and those two lines from each other.
     static let metaGap: CGFloat = 6
-    /// The bar's item row — the back button — starts this far above the content's top edge.
     static let barRow: CGFloat = DetailSearchBar.barHeight
 
     let nameLine: CGFloat
@@ -49,26 +44,22 @@ struct PersonHeaderMetrics {
 /// The last of the collapse, over which the header crossfades into glass.
 private enum Pinning {
     static let glassSpan: CGFloat = 0.3
-    /// Where the pinned glass settles. Full opacity reads as a grey pane rather than glass.
+    // Full opacity reads as a grey pane rather than glass.
     static let glassPeak: CGFloat = 0.80
     static let dimsPage: CGFloat = 0.25
     static let glassTint = Color.black.opacity(0.35)
 }
 
-/// The person header: profile photo, name, and birth details, centred in a column that collapses
-/// and pins as glass over the page, matching the movie and show detail headers.
+/// The person header: photo, name and birth details, collapsing and pinning as glass over the page.
 struct PersonDetailHeader: View {
     let person: Person
     let metrics: PersonHeaderMetrics
     var photoNamespace: Namespace.ID
     var onPhotoTap: () -> Void = {}
     let navBarBottom: CGFloat
-    /// How far the page is pulled past its top edge. The photo grows into that space.
     var overscroll: CGFloat = 0
-    /// The page's height, which sets how far a pull has to go to grow the photo fully.
     var pageHeight: CGFloat = 0
     @Binding var headerPinned: Bool
-    /// Previews only: holds the collapse at a fixed progress, which scroll geometry can't supply.
     var previewProgress: CGFloat? = nil
 
     private var metaLines: Int { [birthdayString, birthplace].compactMap { $0 }.count }
@@ -101,8 +92,8 @@ struct PersonDetailHeader: View {
 
                 column(progress: progress, pull: pull)
             }
-            // Grown upward by the pull — bottom-aligned, so the column stays where it is and the
-            // photo has room past the frame the header occupies at rest.
+            // Grown upward by the pull and bottom-aligned, so the column stays where it is and the photo has
+            // room past the frame the header occupies at rest.
             .frame(maxWidth: .infinity, minHeight: rest - shrink + pull,
                    maxHeight: rest - shrink + pull, alignment: .bottom)
             .clipped()
@@ -186,7 +177,6 @@ struct PersonDetailHeader: View {
         .multilineTextAlignment(.center)
     }
 
-    /// Countries whose second-level division is the more telling half of a birthplace.
     private static let regionalCountries: Set<String> = [
         "USA", "US", "United States", "United States of America", "Canada",
     ]
@@ -256,7 +246,6 @@ private struct HeaderPreview: View {
     HeaderPreview(progress: 1)
 }
 
-// A pull of a fifth of the page: what a flick reaches, and most of what anyone will see.
 #Preview("Pulled down") {
     HeaderPreview(overscroll: 180)
 }

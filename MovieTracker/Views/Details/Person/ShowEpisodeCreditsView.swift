@@ -5,19 +5,12 @@
 
 import SwiftUI
 
-/// A person's episodes within one show — where every TV credit of theirs goes, since the
-/// show alone never says which episodes they were in.
+/// A person's episodes within one show, since the show alone never says which episodes they were in.
 struct ShowEpisodeCredits: Hashable {
     let show: Show
-    /// Nil where the caller hasn't resolved it (Known For, or a row tapped mid-fetch), and
-    /// the screen resolves it from the show's credit ids instead.
     var credit: EpisodeCredit? = nil
-    /// Set where the screen was reached from the show rather than from the person, so they head
-    /// the list instead of the show already being read.
     var person: Person? = nil
 
-    /// A hit in a show's cast search: their own roles carry the credit ids the episodes resolve
-    /// from, and the show is stripped to what this screen reads.
     init(person: Person, in show: Show) {
         var subject = Show(id: show.id, name: show.name)
         subject.poster = show.poster
@@ -33,8 +26,7 @@ struct ShowEpisodeCredits: Hashable {
     }
 }
 
-/// Where a filmography row goes. One value type, so the row's link keeps its identity when
-/// the credit resolves under it — swapping the link itself would drop a tap in flight.
+/// One value type, so the row's link keeps its identity when the credit resolves and a tap in flight isn't dropped.
 enum ShowCreditDestination: Hashable {
     case show(Show)
     case episodes(ShowEpisodeCredits)
@@ -53,7 +45,6 @@ struct ShowEpisodeCreditsView: View {
         self.credit = credit
     }
 
-    /// Previews only: inject a pre-seeded model so the screen renders populated state offline.
     init(preview credit: ShowEpisodeCredits, model: ShowEpisodeCreditsModel) {
         self.credit = credit
         _model = State(initialValue: model)
@@ -92,8 +83,6 @@ struct ShowEpisodeCreditsView: View {
         .task { await model.load(credit) }
     }
 
-    /// The episodes' subject at the top, and a way into their page, which is otherwise a screen
-    /// back: the person when the show sent them here, else the show itself.
     @ViewBuilder
     private var subjectRow: some View {
         if let person = credit.person {
@@ -104,8 +93,7 @@ struct ShowEpisodeCreditsView: View {
         }
     }
 
-    /// The show as search presents it, its poster as wide as the stills below so every line of
-    /// text on the screen starts at the same edge.
+    // Poster as wide as the stills below, so every line of text on the screen starts at the same edge.
     private var showRow: some View {
         NavigationLink(value: credit.show) {
             HStack(spacing: 8) {

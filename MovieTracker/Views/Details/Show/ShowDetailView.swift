@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// The show detail screen. It opens on whatever the caller already had — name, poster, air
-/// date — and the rest of the payload faults in around it.
+/// The show detail screen. It opens on what the caller already had, and the payload faults in around it.
 struct ShowDetailView: View {
     private let seed: Show
 
@@ -16,7 +15,6 @@ struct ShowDetailView: View {
         _model = State(initialValue: ShowDetailModel(seed: show))
     }
 
-    /// Previews only: inject a pre-seeded model so the screen renders populated state offline.
     init(preview show: Show, model: ShowDetailModel) {
         seed = show
         _model = State(initialValue: model)
@@ -27,26 +25,16 @@ struct ShowDetailView: View {
     private var lists: [MediaList]
     @State private var model = ShowDetailModel()
     @State private var headerPinned = false
-    /// The action bar's tracked/watched/caught-up facts, owned here so they're already right
-    /// on the first frame the bar draws.
     @State private var progress = ShowProgress()
     @State private var overscroll: CGFloat = 0
-    /// The page's top edge in window coordinates — a sheet sits inset in the window, so a bare
-    /// `.global` reading would count that offset as nav-bar height.
+    // A sheet sits inset in the window, so a bare `.global` reading counts that offset as nav-bar height.
     @State private var pageTop: CGFloat = 0
-    /// The season chosen in the episodes picker, lifted here so the header poster can
-    /// swap to match. Nil until the user picks one, which falls back to `openingSeason`.
     @State private var selectedSeason: Int?
-    /// Where the viewer is up to, resolved as soon as the seasons are known. Nil until then, which
-    /// holds the episodes section back rather than let it open on season 1 and flip.
+    // Nil holds the episodes section back rather than let it open on season 1 and flip.
     @State private var inProgressSeason: Int?
-    /// Handed up by the cast section, so the bar carries its search button from the moment the
-    /// cast is known.
     @State private var castSearch: DetailSearchRequest?
-    /// The outside page the nav bar's links menu picked, shown in an in-app Safari view.
     @State private var openLink: ExternalLink?
 
-    /// The payload once it lands, else the caller's stub.
     private var show: Show { model.show ?? seed }
 
     var body: some View {
@@ -78,8 +66,8 @@ struct ShowDetailView: View {
                 await model.reconcileMembership(using: store)
                 refreshProgress()
             }
-            // Also on the first pass: a re-opened page already holds the CACHED show's seasons, and
-            // waiting for the payload leaves the section sitting on season 1 until it lands.
+            // Also on the first pass: a re-opened page already holds the cached show's seasons, and waiting for
+            // the payload leaves the section on season 1 until it lands.
             .onChange(of: model.show?.seasons.count, initial: true) { refreshInProgressSeason() }
             // Keep the controls live when episodes are toggled in the episodes section: unwatching
             // one pulls a finished show back onto the Watch List, so the bookmark must follow.
@@ -88,8 +76,8 @@ struct ShowDetailView: View {
 
     private func detailContent(show: Show) -> some View {
         GeometryReader { container in
-            // The reader sits below the nav bar, so its distance from the page's top edge is the
-            // bar's bottom edge — `pageTop`, not 0, because a sheet sits inset in the window.
+            // The reader sits below the nav bar, so its distance from the page's top edge is the bar's bottom
+        // edge. `pageTop`, not 0, because a sheet sits inset in the window.
             let navBarBottom = container.frame(in: .global).minY - pageTop
             let fullHeight = container.size.height + navBarBottom
             let imageHeight = fullHeight * 0.45
@@ -154,8 +142,8 @@ struct ShowDetailView: View {
         }
     }
 
-    /// Zero-height, at the top of the scroll content: window position minus scroll-space position
-    /// is where the page begins. `ignoresSafeArea` widens what the ScrollView draws, not its frame.
+    // Window position minus scroll-space position is where the page begins.
+    // `ignoresSafeArea` widens what the ScrollView draws, not its frame.
     private var pageTopProbe: some View {
         Color.clear
             .frame(height: 0)
@@ -178,8 +166,7 @@ struct ShowDetailView: View {
         }
     }
 
-    /// Resolves to the first season once every season is watched, so a resolved value is never
-    /// nil — nil is what the episodes section reads as "not resolved yet".
+    // Resolves to the first season once every season is watched; nil reads as "not resolved yet".
     private func refreshInProgressSeason() {
         guard let show = model.show, let first = show.regularSeasons.first?.seasonNumber else {
             return
@@ -191,8 +178,6 @@ struct ShowDetailView: View {
         progress = store?.showProgress(showID: seed.id) ?? ShowProgress()
     }
 
-    /// Refresh list membership after an action-bar mutation (advance the tracked season,
-    /// re-derive the show-level watched state for the checkmark).
     private func reconcileMembership() {
         Task {
             await model.reconcileMembership(using: store)
@@ -200,12 +185,10 @@ struct ShowDetailView: View {
         }
     }
 
-    /// The season the screen opens on: the one the caller asked for (a Watched-list row names
-    /// its season), else the one the viewer is part-way through.
     private var openingSeason: Int? { seed.initialSeason ?? inProgressSeason }
 
-    // The season the detail is showing (picker selection, else the opened season, else the
-    // first) — drives both the header poster and the cast list.
+    // The season the detail is showing: picker selection, else the opened season, else the first.
+    // Drives both the header poster and the cast list.
     private func resolvedSeason(for show: Show) -> Int? {
         selectedSeason ?? openingSeason ?? show.regularSeasons.first?.seasonNumber
     }
@@ -241,7 +224,6 @@ struct ShowDetailView: View {
     .preferredColorScheme(.dark)
 }
 
-// Season 1 partially watched (2/3) — mid-progress, so it stays on the Watch List.
 #Preview("Season partial") {
     NavigationStack {
         ShowDetailView(preview: .previewPartial, model: .preview(.previewPartial))
@@ -251,8 +233,6 @@ struct ShowDetailView: View {
     .preferredColorScheme(.dark)
 }
 
-// How the page looks on push from a list row: name, poster and first-air date are all it has,
-// with the rest of the payload still in flight.
 #Preview("Faulting in") {
     let stub = Show.previewStub
     NavigationStack {

@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// How far a pinned ``CollapsingBackdropHeader`` reaches below the navigation bar. Not nested in
-/// it: a generic type's statics can't be reached without naming its parameter.
+/// Not nested in the header: a generic type's statics can't be reached without naming its parameter.
 enum CollapsedHeader {
     static let posterHeight: CGFloat = 150
     static let padding: CGFloat = 16
@@ -15,31 +14,24 @@ enum CollapsedHeader {
 
 /// The backdrop's zoom-down, and the glass it crossfades into as the header pins.
 private enum Backdrop {
-    /// The floor the image shrinks to: a 16:9 crop at 1.25× the page width, so it stays filled.
+    // A 16:9 crop at 1.25x the page width, so the image stays filled as it shrinks.
     static let zoom: CGFloat = 1.25
     static let aspect: CGFloat = 9.0 / 16.0
-    /// Where the image's own fade to clear begins, as a fraction of its height.
     static let fadeStart: CGFloat = 0.55
-    /// The gradient grounding the header's lower edge, at rest.
     static let groundingHeight: CGFloat = 220
-    /// The last of the collapse, over which the backdrop crossfades into glass.
     static let glassSpan: CGFloat = 0.3
-    /// Where the pinned glass settles. Full opacity reads as a grey pane rather than glass.
+    // Full opacity reads as a grey pane rather than glass.
     static let glassPeak: CGFloat = 0.80
-    /// How much of the backdrop copy beneath the pinned glass fades away.
     static let glassDimsBackdrop: CGFloat = 0.25
     static let glassTint = Color.black.opacity(0.35)
     static let glassBlur: CGFloat = 20
 }
 
-/// A collapsing, pinning backdrop header shared by the movie and show detail screens. It owns
-/// all the scroll geometry; the caller supplies the bar via `bar(progress, width)`.
+/// A collapsing, pinning backdrop header owning all the scroll geometry; the caller supplies the bar.
 struct CollapsingBackdropHeader<Bar: View>: View {
     let backgroundURL: URL?
     let navBarBottom: CGFloat
-    /// Backdrop height at rest; the header extends a little past it (solid + gradient).
     let imageHeight: CGFloat
-    /// Header height at rest — the total the header occupies before any scrolling.
     let headerRest: CGFloat
     var overscroll: CGFloat = 0
     @Binding var headerPinned: Bool
@@ -47,14 +39,12 @@ struct CollapsingBackdropHeader<Bar: View>: View {
 
     private var minHeader: CGFloat { navBarBottom + CollapsedHeader.extent }
 
-    /// Scroll distance over which the header collapses from full to pinned.
     private var collapseDistance: CGFloat { max(1, headerRest - minHeader) }
 
-    /// The solid extension below the image: constant, so the bar rises with the shrinking image.
+    // Constant, so the bar rises with the shrinking image.
     private var solidExtent: CGFloat { headerRest - imageHeight }
 
-    /// Fades the backdrop's bottom to clear. Applied as a mask so the fade lives IN the image
-    /// — no hard image edge peeks through at any crossfade opacity.
+    // Applied as a mask so the fade lives in the image; a hard edge otherwise shows at some crossfade opacities.
     private var backdropFade: LinearGradient {
         LinearGradient(stops: [
             .init(color: .white, location: 0),
@@ -73,8 +63,8 @@ struct CollapsingBackdropHeader<Bar: View>: View {
             // Linear compaction: 100% at the top, transient through the collapse, clamped
             // (static) once complete.
             let progress = min(1, scrolled / collapse)
-            // Zoom-down is a FRAME-HEIGHT shrink, not a scaleEffect (which gaps below fill):
-            // scaledToFill eases the image out. `overscroll` grows it on pull-down.
+            // A frame-height shrink rather than a `scaleEffect`, which would gap below; `scaledToFill` eases
+            // the image out and `overscroll` grows it on pull-down.
             let shrink = min(scrolled, max(0, imageHeight - width * Backdrop.zoom * Backdrop.aspect))
             let imageNow = imageHeight + overscroll - shrink
             let headerNow = imageNow + solidExtent
@@ -90,12 +80,12 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                 ZStack {
                     Color.appBackground
 
-                    // maxWidth: .infinity, NOT proxy.size.width — that's the safe-area-inset
-                    // width here. Overlay centers; a bare scaledToFill would left-align.
+                    // `maxWidth: .infinity` rather than `proxy.size.width`, which is the safe-area-inset width here.
+            // Overlay centers; a bare `scaledToFill` would left-align.
                     Color.clear
                         .headerLayer(imageNow)
-                        // Bare RemoteImage, not PosterImage: its film-glyph placeholder would
-                        // sit in the middle of the backdrop until the artwork lands.
+                        // Bare `RemoteImage` rather than `PosterImage`, whose film-glyph placeholder would sit in the
+            // middle of the backdrop until the artwork lands.
                         .overlay { RemoteImage(url: backgroundURL, fadesIn: true) { Color.clear } }
                         .clipped()
                         .blur(radius: Backdrop.glassBlur * reveal)
@@ -107,8 +97,7 @@ struct CollapsingBackdropHeader<Bar: View>: View {
                 .headerLayer(headerNow, alignment: .top)
                 .opacity(backdrop)
 
-                // Liquid Glass base — the real refractive nav-bar glass, NOT a frosted grey
-                // `Material`, which only ever thins to grey and never to clear.
+                // Liquid Glass, the real refractive nav-bar glass. A frosted `Material` only ever thins to grey.
                 SectionHeaderGlass(tint: Backdrop.glassTint)
                     .headerLayer(headerNow)
                     .opacity(glass)
@@ -143,7 +132,6 @@ struct CollapsingBackdropHeader<Bar: View>: View {
 }
 
 private extension View {
-    /// Full width at a definite height — the shape every layer of the header takes.
     func headerLayer(_ height: CGFloat, alignment: Alignment = .center) -> some View {
         frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: alignment)
     }

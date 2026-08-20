@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// One list entry as a `List` row: a movie, a completed season, a list's next-incomplete season,
-/// or an untracked show. Only the container differs from the grid's card.
+/// One list entry as a `List` row. Only the container differs from the grid's card.
 struct ListEntryRow: View {
     let entry: MediaSnapshot
     let context: ListEntryContext
@@ -17,8 +16,8 @@ struct ListEntryRow: View {
         ListEntryLink(entry: entry) {
             ListEntryContent(entry: entry, context: context)
         }
-        // A row can push a value already on the path — two seasons of one show are equal `Show`
-        // values. Opt out of selection so tapping one doesn't stray-highlight the other.
+        // A row can push a value already on the path: two seasons of one show are equal `Show` values.
+        // Opt out of selection so tapping one doesn't stray-highlight the other.
         .selectionDisabled()
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
         .listEntryContextMenu(for: entry, lists: lists)

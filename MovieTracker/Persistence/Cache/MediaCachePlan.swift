@@ -6,13 +6,10 @@
 import Foundation
 import SwiftData
 
-/// Buckets everything worth keeping offline into `MediaCachePriority` tiers, in the order the
-/// prefetcher works through them.
+/// Buckets everything worth keeping offline into `MediaCachePriority` tiers, in prefetch order.
 enum MediaCachePlan {
-    /// Latest seasons pulled for a Watch List show — what you'd plausibly open next, without
-    /// dragging a long-running show's whole back catalogue offline.
+    // Enough to open next without dragging a long-running show's whole back catalogue offline.
     static let watchListSeasonDepth = 3
-    /// How far down each Discovery shelf to cache.
     static let discoveryDepth = 20
 
     @MainActor
@@ -32,8 +29,7 @@ enum MediaCachePlan {
                 tmdbID: item.tmdbID, mediaType: item.mediaType,
                 priority: watchedAt >= yearStart ? .recentlyWatched : .watched))
         }
-        // Watched TV lives in WatchedSeason snapshots — a show can be in the Watched list
-        // through those alone, with no MediaItem of its own.
+        // A show can be in the Watched list through `WatchedSeason` snapshots alone, with no `MediaItem`.
         for season in (try? context.fetch(FetchDescriptor<WatchedSeason>())) ?? [] {
             targets.append(MediaCacheTarget(
                 tmdbID: season.showTmdbID, mediaType: .tv,
@@ -49,8 +45,6 @@ enum MediaCachePlan {
         return targets
     }
 
-    /// The top of every Discovery shelf, derived from the same collections the Browse tab
-    /// offers. A shelf that fails to fetch simply contributes nothing.
     static func discovery(depth: Int = discoveryDepth) async -> [MediaCacheTarget] {
         var targets: [MediaCacheTarget] = []
         for collection in FeaturedCollection.allCases {
@@ -69,7 +63,6 @@ enum MediaCachePlan {
         return targets
     }
 
-    /// One entry per title, at its strongest tier and deepest season pull, ordered best-first.
     static func merged(_ targets: [MediaCacheTarget]) -> [MediaCacheTarget] {
         var best: [MediaCacheTarget.Identity: MediaCacheTarget] = [:]
         for target in targets {

@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// A section's header content: filled stars for the rating-sorted sections, otherwise its title.
-/// The rows pin it; the grid stacks it. The content is the same either way.
+/// A section's header content: filled stars for rating-sorted sections, otherwise its title.
 struct ListSectionLabel: View {
     let section: SectionSnapshot
     let tint: Color

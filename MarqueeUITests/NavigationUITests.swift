@@ -8,7 +8,6 @@ import XCTest
 final class NavigationUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
-    /// One launch for the whole tab bar: a launch per tab costs ~10s each and proves nothing extra.
     @MainActor
     func testEveryTabIsReachable() {
         let app = XCUIApplication()

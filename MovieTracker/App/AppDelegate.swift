@@ -11,7 +11,6 @@ import UIKit
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    /// Permits landscape while set, so a trailer can play fullscreen; else portrait-only on iPhone.
     static var isPlayingTrailer = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {

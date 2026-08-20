@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// A detail header's poster thumbnail, tapping to morph into ``PosterDetailView``. Changing
-/// `identity` (the show header passes the season poster path) crossfades the art.
+/// A detail header's poster thumbnail, morphing into `PosterDetailView`. Changing `identity` crossfades the art.
 struct HeaderPoster: View {
     let thumbnailURL: URL?
     let fullURL: URL?

@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// Pushes within a `NavigationStack`, or opens the detail modal when `openDetail` is set
-/// (the iPad shell). Callers use it just like a `NavigationLink`.
+/// Pushes within a `NavigationStack`, or opens the detail modal when `openDetail` is set.
 struct DetailLink<Value: Hashable, Label: View>: View {
     let value: Value
     @ViewBuilder var label: () -> Label

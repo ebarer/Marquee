@@ -35,8 +35,7 @@ import Foundation
         #expect(episode(air: Date().addingTimeInterval(60 * 60 * 24 * 30)).hasAired == false)
     }
 
-    /// TMDB sends UTC midnight, which is the previous evening west of UTC — an episode airing
-    /// tomorrow must stay unmarkable all of today. See DateFormatterTests for the hour sweep.
+    // TMDB sends UTC midnight, which is the previous evening west of UTC.
     @Test func anEpisodeAiringTomorrowHasNotAired() {
         let today = Calendar.current.startOfDay(for: Date())
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
@@ -48,8 +47,7 @@ import Foundation
         #expect(episode(air: MediaItem.floatingDay(from: today)).hasAired)
     }
 
-    /// The episode becomes markable the moment the local clock reaches its air day — not at
-    /// UTC midnight, which lands during the previous evening in timezones behind UTC.
+    // Markable the moment the local clock reaches the air day, not at UTC midnight.
     @Test func becomesAiredWhenTheLocalClockReachesMidnight() {
         let calendar = Calendar.current
         let airDay = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: Date()))!

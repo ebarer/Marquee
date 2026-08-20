@@ -8,8 +8,7 @@ import SwiftUI
 /// A cell appended inside a metadata strip's `HStack`.
 struct AwardsMetadataCell: View {
     let awards: AwardsDigest
-    /// Wikidata has answered. While it hasn't, the cell shows a placeholder: "None" then would
-    /// claim a title won nothing and flip to a count a beat later.
+    // Until Wikidata answers, "None" would claim the title won nothing and flip to a count a beat later.
     var isResolved: Bool = true
     var tint: Color = .appAccent
     var onTap: () -> Void

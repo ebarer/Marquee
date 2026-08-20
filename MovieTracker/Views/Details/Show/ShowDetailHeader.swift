@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// Show adapter over the shared ``CollapsingBackdropHeader``; the only differences are the
-/// show action bar and a poster that follows the season chosen in the episodes picker.
+/// Show adapter over the shared `CollapsingBackdropHeader`, with a poster that follows the chosen season.
 struct ShowDetailHeader: View {
     let show: Show
     let tint: Color
@@ -16,10 +15,7 @@ struct ShowDetailHeader: View {
     let imageHeight: CGFloat
     let headerRest: CGFloat
     var overscroll: CGFloat = 0
-    /// Poster path for the selected season (falls back to the show poster when nil).
     var seasonPosterPath: String? = nil
-    /// Loaded episodes per season, forwarded to the action bar so "mark whole show watched"
-    /// can date each season to its finale.
     var episodesBySeason: [Int: [Episode]] = [:]
     @Binding var headerPinned: Bool
     @Binding var progress: ShowProgress
@@ -48,7 +44,6 @@ struct ShowDetailHeader: View {
         }
     }
 
-    /// The selected season's poster at `size`, falling back to the show poster.
     private func posterURL(_ size: PosterSize) -> URL? {
         if let seasonPosterPath {
             return TMDBWrapper.imageURL(path: seasonPosterPath, size: size.rawValue)
@@ -63,7 +58,6 @@ struct ShowDetailHeader: View {
         return parts.joined(separator: "  •  ")
     }
 
-    /// The network rides in on the detail payload, so a list or search record doesn't have it yet.
     private var pendingNetwork: Bool { show.networks == nil && !show.isDetailPayload }
 }
 

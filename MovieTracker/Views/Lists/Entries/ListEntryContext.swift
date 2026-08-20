@@ -5,15 +5,12 @@
 
 import SwiftUI
 
-/// What a list entry needs to know about the selection it's in, resolved once and passed as
-/// values: deriving any of it from `MediaList` per entry would re-render on every store tick.
+/// Resolved once and passed as values: deriving any of it per entry would re-render on every store tick.
 struct ListEntryContext: Equatable {
     let selection: ListSelection
     let isWatchList: Bool
-    /// tmdbIDs on the Watch List, for the custom-list poster badge.
     let watchListIDs: Set<Int>
     let listColor: Color
-    /// Shows whose every aired episode is watched, so their swipe would have nothing to mark.
     var caughtUpShowIDs: Set<Int> = []
 
     var isViewed: Bool { selection == .viewed }
@@ -23,8 +20,6 @@ struct ListEntryContext: Equatable {
         return false
     }
 
-    /// The watched date, on the Watched list only. A season is *finished* rather than watched —
-    /// the show it belongs to may still be running.
     func subtitle(for entry: MediaSnapshot) -> String? {
         guard isWatched, let date = entry.dateWatched else { return nil }
         let verb = entry.seasonNumber == nil ? "Watched" : "Finished"
@@ -46,7 +41,6 @@ struct ListEntryContext: Equatable {
         return RuntimeLabel.duration(minutes: entry.runtime)
     }
 
-    /// The leading swipe an entry offers, or nil for none.
     func leadingSwipe(for entry: MediaSnapshot) -> ListEntrySwipe? {
         guard entry.mediaType == .tv else { return isWatched ? .addToWatchList : .markWatched }
         // Nothing on a finished season: "add back" reads as confusing there.
@@ -59,8 +53,6 @@ struct ListEntryContext: Equatable {
     }
 }
 
-/// The leading swipe for one list entry, chosen from the selection rather than the container:
-/// the rows and the grid offer the same action.
 enum ListEntrySwipe: Equatable {
     case markWatched
     case addToWatchList

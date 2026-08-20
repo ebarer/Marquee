@@ -5,13 +5,10 @@
 
 import SwiftUI
 
-/// The show's Watched checkmark, confirm-first since a mark touches every season. Marking
-/// covers only *aired* episodes, so a show still on air reads as caught up, not finished.
+/// The show's Watched checkmark, confirm-first. Marking covers only aired episodes, so an airing show reads as caught up.
 struct ShowWatchedButton: View {
     let isSeen: Bool
-    /// Every aired episode watched, but unaired ones remain.
     var isCaughtUp: Bool = false
-    /// A show still on air only gets its aired episodes marked, so the prompt says so.
     var isOngoing: Bool = false
     let tint: Color
     var glassNamespace: Namespace.ID

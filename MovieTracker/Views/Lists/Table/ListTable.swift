@@ -6,31 +6,25 @@
 import SwiftUI
 import SwiftData
 
-/// The iPhone presentation: the selection's entries as month/year grouped `List` sections. No
-/// SwiftData in `body`, and `Equatable`: a store tick mid-push would cost the row its selection.
+/// The iPhone presentation. No SwiftData in `body`, and `Equatable`: a store tick mid-push costs the row its selection.
 struct ListTable: View, Equatable {
     let sections: [SectionSnapshot]
     let context: ListEntryContext
     let lists: [MediaList]
-    /// Bumped by the Lists tab, tapped while already on it, which takes the Watch List to the
-    /// month it opens on.
     var startToken: Int = 0
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
-    /// The "Older" archive bucket starts collapsed each visit.
     @State private var olderExpanded = false
-    /// One per screen: a row carries only a single presentation of a kind — two would cancel
-    /// each other out.
+    // One per screen: two presentations of a kind would cancel each other out.
     @State private var pending: ListEntryConfirmation?
 
-    /// `lists` is excluded: comparing them would put a SwiftData read back in the render path.
+    // `lists` is excluded: comparing them would put a SwiftData read back in the render path.
     static func == (lhs: ListTable, rhs: ListTable) -> Bool {
         lhs.sections == rhs.sections && lhs.context == rhs.context
             && lhs.startToken == rhs.startToken
     }
 
-    /// ScrollViewReader target for the collapsible "Older" section.
     private static let olderAnchor = "older-section"
 
     private static let headerInsets = SectionHeaderMetrics.listRowInsets
@@ -55,8 +49,6 @@ struct ListTable: View, Equatable {
         }
     }
 
-    /// Back to last month in the release calendar, where what is already out sits above the line.
-    /// Animated: it only runs from the tab tap, with the rows already up.
     private func scrollToOpeningMonth(_ proxy: ScrollViewProxy) {
         guard context.isWatchList,
               let start = sections.monthSection(monthsBack: 1) else { return }
@@ -97,8 +89,7 @@ struct ListTable: View, Equatable {
         }
     }
 
-    /// Tappable header for the collapsible "Older" bucket. Stays a section header so it pins
-    /// like the month headers.
+    // Stays a section header so it pins like the month headers.
     private func olderHeader(count: Int) -> some View {
         Button {
             withAnimation { olderExpanded.toggle() }
@@ -167,7 +158,6 @@ struct ListTable: View, Equatable {
 }
 
 #Preview("Custom list — grouped by title") {
-    // Mirrors SectionFormatter.byInitial output: one section per letter, "#" leading.
     let sections = [
         SectionSnapshot(id: DateComponents(year: 8035), title: "#",
                         entries: [.preview(id: 1, title: "1917")], isCollapsible: false),
@@ -190,7 +180,6 @@ struct ListTable: View, Equatable {
 }
 
 #Preview("Watched — grouped by stars") {
-    // Mirrors SectionFormatter.byRating output: one section per star count, unrated last.
     let sections = [
         SectionSnapshot(id: DateComponents(year: 9010), title: "5 Stars",
                         entries: [.preview(id: 1, title: "Masterpiece", dateWatched: .now, userRating: 5)],

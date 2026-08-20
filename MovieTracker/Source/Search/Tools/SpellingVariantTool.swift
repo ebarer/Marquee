@@ -2,17 +2,13 @@
 //  SpellingVariantTool.swift
 //  MovieTracker
 //
-//  TMDB's title search is spelling-sensitive: a compressed hero name ("ironman")
-//  or a separator title ("wall e") finds only obscure films. This tool re-queries
-//  alternate spellings and merges the (more relevant) matches in; noise they add
-//  sinks under RankMoviesTool.
+//  TMDB's title search is spelling-sensitive, so re-query alternate spellings and merge the matches.
 //
 
 import Foundation
 
 struct SpellingVariantTool: SearchTool {
-    /// Below this leading popularity, the plain query looks weak enough to also try
-    /// the spaced hero variant ("ironman" → "iron man").
+    // Below this leading popularity, also try the spaced hero variant ("ironman" to "iron man").
     var weakPopularity: Double = 5
 
     func apply(to context: SearchContext, using provider: SearchProvider) async -> SearchContext {

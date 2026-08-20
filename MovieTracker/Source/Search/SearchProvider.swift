@@ -2,8 +2,7 @@
 //  SearchProvider.swift
 //  MovieTracker
 //
-//  The network surface a SearchPolicy and its tools draw on. Abstracting TMDB
-//  behind this protocol lets policies/tools run against canned data in tests.
+//  The network surface a `SearchPolicy` draws on, so policies can run against canned data in tests.
 //
 
 import Foundation
@@ -13,12 +12,8 @@ protocol SearchProvider: Sendable {
     func shows(matching query: String) async -> [Show]
     func people(matching query: String) async -> [Person]
     func collection(id: Int) async -> [Movie]
-    /// Light detail (base fields + credits) for a movie: one call yields both the
-    /// collection (franchise expansion) and the cast (People strip).
     func movieDetail(id: Int) async -> Movie?
     func show(id: Int) async -> Show?
-    /// The popularity a new release must reach before it can lead a query. Nil leaves
-    /// ranking on vote count alone.
     func popularityBenchmark() async -> Double?
 }
 
@@ -26,8 +21,7 @@ extension SearchProvider {
     func popularityBenchmark() async -> Double? { nil }
 }
 
-/// Live implementation backed by TMDBWrapper. Each call degrades to empty/nil on
-/// failure so one endpoint's error never discards another's results.
+/// Live implementation backed by `TMDBWrapper`; each call degrades to empty on failure.
 struct TMDBSearchProvider: SearchProvider {
     func movies(matching query: String) async -> [Movie] {
         (try? await TMDBWrapper.searchForMovies(query: query).items) ?? []
@@ -58,8 +52,7 @@ struct TMDBSearchProvider: SearchProvider {
     }
 }
 
-/// What a title clears to count as a phenomenon: the median of TMDB's popular list, ~the
-/// tenth most popular title anywhere. Derived so it survives a rescaling of `popularity`.
+/// The median of TMDB's popular list, so the benchmark survives a rescaling of `popularity`.
 private actor PopularityBenchmark {
     static let shared = PopularityBenchmark()
 

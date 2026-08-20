@@ -6,8 +6,7 @@
 import Foundation
 import SwiftData
 
-/// A single watched episode — the source of truth for TV progress; season and show
-/// watched states derive from these. CloudKit duplicates converge via `deduplicate`.
+/// A single watched episode, the source of truth for TV progress; season and show states derive from these.
 @Model
 final class WatchedEpisode {
     var showTmdbID: Int = 0
@@ -44,7 +43,6 @@ extension WatchedEpisode {
         return (try? context.fetch(descriptor))?.first
     }
 
-    /// Episode numbers watched for a given show + season.
     static func watchedNumbers(showTmdbID: Int, seasonNumber: Int,
                                in context: ModelContext) -> Set<Int> {
         let descriptor = FetchDescriptor<WatchedEpisode>(
@@ -52,7 +50,7 @@ extension WatchedEpisode {
         return Set(((try? context.fetch(descriptor)) ?? []).map(\.episodeNumber))
     }
 
-    /// CloudKit has no unique constraint, so sync can create duplicates to collapse.
+    // CloudKit has no unique constraint, so sync can create duplicates to collapse.
     @discardableResult
     static func deduplicate(in context: ModelContext) -> Bool {
         let all = (try? context.fetch(FetchDescriptor<WatchedEpisode>())) ?? []

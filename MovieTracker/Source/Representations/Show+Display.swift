@@ -8,20 +8,17 @@
 import Foundation
 
 extension Show {
-    /// Genres for the metadata strip: at most two, but a compound TMDB genre ("Sci-Fi &
-    /// Fantasy") already reads as two, so it fills both slots on its own.
+    // A compound TMDB genre ("Sci-Fi & Fantasy") already reads as two, so it fills both slots.
     var genresString: String {
         let chosen = Self.displayGenres(genres ?? [])
         switch chosen.count {
-        // A lone compound genre wraps at its ampersand ("Sci-Fi &\nFantasy") so it reads
-        // on two lines like a real two-genre pair.
+        // A lone compound genre wraps at its ampersand so it reads on two lines like a real pair.
         case 1: return chosen[0].shorten().replacingOccurrences(of: " & ", with: " &\n")
         case 2: return "\(chosen[0].shorten()) &\n\(chosen[1].shorten())"
         default: return "N/A"
         }
     }
 
-    /// Picks genres greedily up to two "visual" slots, where an ampersand genre costs two.
     static func displayGenres(_ genres: [String]) -> [String] {
         var chosen: [String] = []
         var slots = 0
@@ -35,7 +32,6 @@ extension Show {
         return chosen
     }
 
-    /// Regular (non-specials) season count, and its "3 Seasons" label for rows/cards.
     var seasonCount: Int { regularSeasons.count }
 
     var seasonCountLabel: String? {
@@ -43,16 +39,12 @@ extension Show {
         return seasonCount == 1 ? "1 Season" : "\(seasonCount) Seasons"
     }
 
-    /// Places a show on a release timeline by its most recent air date, not its premiere, so
-    /// an ongoing show sorts near "now". Falls back to the premiere when last-air is unknown.
     var timelineDate: Date? { lastAirDate ?? firstAirDate }
 
-    /// Total episodes across regular seasons (specials excluded).
     var totalEpisodes: Int {
         regularSeasons.reduce(0) { $0 + $1.episodeCount }
     }
 
-    /// Every role on the title as one string: the character, then the jobs.
     var creditRoleSummary: String? {
         let parts = ([creditRole] + (creditJobs ?? [])).compactMap { $0 }.filter { !$0.isEmpty }
         return parts.isEmpty ? nil : parts.joined(separator: ", ")

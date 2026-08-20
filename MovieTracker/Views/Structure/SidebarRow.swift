@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// A sidebar list row: icon, title, and a trailing count badge. `.tag` is applied last so
-/// `List(selection:)` sees it — a trailing `.badge` shadows it and kills selection.
+/// A sidebar list row. `.tag` is applied last: a trailing `.badge` shadows it and kills selection.
 struct SidebarRow<Icon: View>: View {
     let title: String
     let tag: SidebarItem

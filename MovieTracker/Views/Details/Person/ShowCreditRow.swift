@@ -5,14 +5,10 @@
 
 import SwiftUI
 
-/// One TV credit in a person's filmography. "3 Episodes" says nothing you can act on, so the
-/// row resolves the count into the episode itself, the season, or a pushable episode list.
+/// One TV credit in a filmography. "3 Episodes" says nothing actionable, so the row resolves it further.
 struct ShowCreditRow: View {
     let show: Show
-    /// Resolved by the person screen before the rows are laid out, since a row's year
-    /// section depends on it.
     var credit: EpisodeCredit? = nil
-    /// The one season this row stands for, where the credit spans several years.
     var season: EpisodeCredit.SeasonCredit? = nil
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -50,8 +46,6 @@ struct ShowCreditRow: View {
         .buttonStyle(.rowPress)
     }
 
-    /// The season this row can complete, mirroring the lists: nothing on a finished season, a
-    /// caught-up show, or a season still airing, which would be completed early.
     private var completableSeason: Int? {
         guard let season, let store else { return nil }
         let number = season.season.seasonNumber
@@ -62,18 +56,13 @@ struct ShowCreditRow: View {
         return number
     }
 
-    /// Every TV credit opens the episode list, since the show can't say which episodes they
-    /// were in — bar a credit with no ids behind it, which has no episodes to list.
     private var destination: ShowCreditDestination {
         guard !show.creditIDs.isEmpty else { return .show(show) }
         return .episodes(ShowEpisodeCredits(show: show, credit: credit))
     }
 
-    /// A season stood up from its episodes alone carries no art, so the show's stands in.
     private var seasonPoster: URL? { season?.season.posterURL(.w185) }
 
-    /// The season where the row stands for one, else the whole credit; TMDB's declared count
-    /// is the fallback for a credit with no episode detail behind it.
     private var summary: String? {
         if let label = season?.label ?? credit?.summary?.label { return label }
         guard let count = show.episodeCount, count > 0 else { return nil }
@@ -161,8 +150,6 @@ struct ShowCreditRow: View {
     .preferredColorScheme(.dark)
 }
 
-// Interactive: only the second row swipes. A finished season offers nothing, and neither does a
-// caught-up show, whose every aired episode is already watched.
 #Preview("Swipes") {
     func show(_ id: Int, _ name: String, _ role: String) -> Show {
         var show = Show(id: id, name: name)

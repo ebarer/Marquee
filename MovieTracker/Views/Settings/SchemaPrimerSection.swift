@@ -12,7 +12,7 @@ import SwiftUI
 struct SchemaPrimerSection: View {
     let store: PersistenceCoordinator?
 
-    /// A fetch, not an observed property, so touch `revision` to re-read it after a write.
+    // A fetch, not an observed property. Touch `revision` to re-read it after a write.
     private var isPrimed: Bool {
         guard let store else { return false }
         _ = store.revision

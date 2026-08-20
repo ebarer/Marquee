@@ -100,7 +100,7 @@ import Foundation
         #expect(result.map(\.id) == ["movie-1", "movie-2"])
     }
 
-    /// The bar a new release clears to lead — TMDB's popular-list median in production.
+    // The bar a new release clears to lead: TMDB's popular-list median in production.
     private let leadFloor: Double = 250
 
     private func dated(_ id: Int, _ title: String, votes: Int, pop: Double,

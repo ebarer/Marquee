@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// Watch List and Watched, then the custom lists — the order the list switcher and sidebar use.
-/// The menu stays open across taps, so several lists can be set in one visit.
+/// Watch List and Watched, then the custom lists. The menu stays open across taps.
 struct ListMembershipMenu: View {
     let movie: Movie
     let watchList: MediaList?
@@ -36,8 +35,7 @@ struct ListMembershipMenu: View {
     }
 }
 
-/// Its own view so the checkmark tracks the store: watched state comes from a fetch, which
-/// — unlike the list rows' `contains` — nothing observes on the caller's behalf.
+/// Its own view so the checkmark tracks the store: watched state comes from a fetch, which nothing observes.
 private struct WatchedMenuToggle: View {
     let movie: Movie
     let onChange: () -> Void

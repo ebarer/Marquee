@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The navigation bar every detail screen shares: the page's title, the search button a section
-/// hands up, and the modal's Close after it.
+/// The navigation bar every detail screen shares: title, the search button a section hands up, then Close.
 private struct DetailChrome<Principal: View, Extra: ToolbarContent>: ViewModifier {
     let title: String
     let search: DetailSearchRequest?
@@ -50,8 +49,6 @@ private struct DetailChrome<Principal: View, Extra: ToolbarContent>: ViewModifie
 }
 
 extension View {
-    /// Applied by every detail screen, so none of them has to re-derive the bar's contents or the
-    /// order they sit in. `extra` lands between the search button and Close.
     func detailChrome<Principal: View, Extra: ToolbarContent>(
         title: String,
         search: DetailSearchRequest?,
@@ -62,7 +59,6 @@ extension View {
                               principal: principal, extra: extra))
     }
 
-    /// For a screen with no bar items of its own beside the search button.
     func detailChrome<Principal: View>(
         title: String,
         search: DetailSearchRequest?,

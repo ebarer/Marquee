@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// The iPad search results: the same cards, columns and spacing as ``ListGrid``, with the people
-/// strip above them. The iPhone keeps `SearchView`'s plain rows.
+/// The iPad search results: the same cards and columns as `ListGrid`, with the people strip above them.
 struct SearchResultsGrid: View {
     let results: [MediaRef]
     let people: [Person]

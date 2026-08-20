@@ -11,16 +11,14 @@ final class FeaturedModel {
     private(set) var movies: [Movie] = []
     private(set) var shows: [Show] = []
     private(set) var isLoading = false
-    /// The collection the loaded items belong to. It trails `load`'s argument until the first
-    /// page lands, which is what lets the grid cross-dissolve instead of blanking.
+    // Trails `load`'s argument until the first page lands, which lets the grid cross-dissolve instead of blanking.
     private(set) var loadedCollection: FeaturedCollection = .nowPlaying
 
     private var collection: FeaturedCollection = .nowPlaying
     private var lastPageFetched = 0
     private var totalPages = 1
 
-    /// Idempotent for the showing collection so a re-fired `.task` doesn't wipe and
-    /// reload (which would reset scroll position); a different collection still reloads.
+    // Idempotent for the showing collection: a re-fired `.task` would otherwise wipe and reload, resetting scroll.
     func load(_ collection: FeaturedCollection) async {
         let alreadyLoaded = collection.isShow ? !shows.isEmpty : !movies.isEmpty
         guard collection != self.collection || !alreadyLoaded else { return }
@@ -46,8 +44,8 @@ final class FeaturedModel {
         defer { isLoading = false }
 
         let page = lastPageFetched + 1
-        // The previous collection stays on screen until this page lands, then the whole grid is
-        // replaced in one update — clearing first would blank it for the length of the fetch.
+        // The previous collection stays on screen until this page lands, then the whole grid is replaced
+        // in one update. Clearing first would blank it for the length of the fetch.
         let replaces = page == 1
         do {
             if collection.isShow {

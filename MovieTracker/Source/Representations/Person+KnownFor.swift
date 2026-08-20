@@ -2,14 +2,13 @@
 //  Person+KnownFor.swift
 //  MovieTracker
 //
-//  Ranks a person's credits by what they are actually known for.
+//  Ranks a person's credits by what they are known for.
 //
 
 import Foundation
 
 extension Person {
-    /// Credits ranked by the title's notability, discounted by how small the part was —
-    /// a cameo in a blockbuster out-votes a lead in anything, so votes alone read as noise.
+    // Votes alone read as noise, so a title's notability is discounted by how small the part was.
     var knownFor: [MediaRef] {
         let cutoff = Calendar.current.date(byAdding: .month, value: -Self.recentMonths, to: .now)
         func recent(_ date: Date?) -> Bool {
@@ -37,21 +36,18 @@ extension Person {
             .map(\.element.ref)
     }
 
-    /// Notability is log-scaled so a 20× vote gap can't swamp the role weighting, then
-    /// nudged for recent work — vote counts accrue over years, so new titles under-read.
+    // Log-scaled so a 20x vote gap can't swamp the role weighting, then nudged for recent work.
     private static func score(votes: Int?, weight: Double, isRecent: Bool) -> Double {
         log10(Double(votes ?? 0) + 10) * weight + (isRecent ? recencyBonus : 0)
     }
 
-    /// TMDB's billing order, where the top-billed few share full weight and everything
-    /// below decays — the difference between 1st and 4th billing isn't meaningful.
+    // The top-billed few share full weight: the gap between 1st and 4th billing isn't meaningful.
     private static func billingWeight(_ order: Int?) -> Double {
         guard let order else { return crewWeight }
         guard order > topBilled else { return 1 }
         return 1 / (1 + Double(order - topBilled) / billingFalloff)
     }
 
-    /// Episode count stands in for billing on TV: a series regular against a guest spot.
     private static func castWeight(_ episodes: Int?) -> Double {
         max(guestFloor, min(1, Double(episodes ?? 0) / regularRunEpisodes))
     }

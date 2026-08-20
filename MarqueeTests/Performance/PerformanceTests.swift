@@ -51,8 +51,7 @@ final class PerformanceTests: XCTestCase {
         }
     }
 
-    /// Formatting is the half that used to run on the main actor, so it's measured on its own:
-    /// this is the budget a store tick spends before the Lists screen can draw a frame.
+    // Formatting used to run on the main actor, so it is measured on its own.
     @MainActor
     func testWatchedSectionFormattingPerformance() {
         let store = makeInMemoryStore()
@@ -87,8 +86,7 @@ final class PerformanceTests: XCTestCase {
         measure { _ = SectionFormatter.sections(from: rows, ascending: false) }
     }
 
-    /// A screenful of cards derives its badges every time the store ticks. Measured against the
-    /// per-title store lookups they used to run in `body`.
+    // A screenful of cards derives its badges on every store tick.
     @MainActor
     func testBadgeDerivationPerformance() {
         let store = badgeFixture()
@@ -112,8 +110,7 @@ final class PerformanceTests: XCTestCase {
         }
     }
 
-    /// The index rebuilds on the first badge read after each save, on the main actor — so the
-    /// rebuild itself has to fit inside a frame.
+    // The index rebuilds on the first badge read after each save, on the main actor, so it must fit a frame.
     @MainActor
     func testBadgeIndexRebuildPerformance() {
         let store = badgeFixture()
@@ -122,7 +119,6 @@ final class PerformanceTests: XCTestCase {
         measure { _ = MediaBadgeIndex(context: store.context) }
     }
 
-    /// 800 watched movies, 400 on the Watch List, 200 shows with watched episodes.
     @MainActor
     private func badgeFixture() -> PersistenceCoordinator {
         let store = makeInMemoryStore()

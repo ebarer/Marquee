@@ -8,8 +8,6 @@ import Foundation
 @MainActor
 @Observable
 final class ShowEpisodeCreditsModel {
-    /// One season's worth of the credit: the full season (watched writes reconcile against
-    /// it) paired with only the episodes the person appears in.
     struct Group: Identifiable {
         let season: Season
         let episodes: [Episode]
@@ -17,11 +15,9 @@ final class ShowEpisodeCreditsModel {
     }
 
     private(set) var groups: [Group] = []
-    /// The fuller show, resolved for its season list — the credit stub carries none, and
-    /// membership reconciliation reads it on every watched toggle.
+    // The credit stub carries no season list, and membership reconciliation reads it on every watched toggle.
     private(set) var show: Show?
     private(set) var isLoading = false
-    /// Distinguishes "still fetching" from "fetched, and the person has no episodes here".
     private(set) var hasLoaded = false
 
     func load(_ credit: ShowEpisodeCredits) async {
@@ -53,7 +49,6 @@ final class ShowEpisodeCreditsModel {
         groups = loaded.sorted { $0.season.seasonNumber > $1.season.seasonNumber }
     }
 
-    /// Previews only: a model already holding its groups, so the screen renders offline.
     static func preview(show: Show, groups: [Group]) -> ShowEpisodeCreditsModel {
         let model = ShowEpisodeCreditsModel()
         model.show = show

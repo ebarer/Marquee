@@ -36,7 +36,6 @@ import SwiftUI
         #expect(reduce(nil, nil) == nil)
     }
 
-    /// A stack's worth of children: root publishes, middles publish nothing, top publishes.
     @Test func frontmostPageWinsAcrossQuietSiblings() {
         var value: Color? = nil
         for next in [Color.green, nil, nil, Color.red, nil] {

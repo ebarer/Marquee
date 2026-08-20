@@ -5,19 +5,16 @@
 
 import Foundation
 
-/// A person's credit on one show as TMDB's `/credit` endpoint reports it: which seasons they
-/// appear in, and — unless they're in the whole season — which episodes within each.
+/// A person's credit on one show as TMDB's /credit endpoint reports it: which seasons, and which episodes within each.
 struct EpisodeCredit: Hashable, Sendable {
-    /// Ordered by season number.
     var seasons: [SeasonCredit]
 
     struct SeasonCredit: Hashable, Sendable {
         let season: Season
-        /// An empty set means every episode of the season — TMDB's shape for a regular.
+        // An empty set means every episode of the season, which is TMDB's shape for a regular.
         var episodeNumbers: Set<Int> = []
 
-        /// A season stood up from its episodes alone has no count to compare against, so
-        /// only an outright empty set claims the whole run.
+        // A season built from episodes alone has no count to compare against, so only an empty set claims the run.
         var isWhole: Bool {
             episodeNumbers.isEmpty
                 || (season.episodeCount > 0 && episodeNumbers.count >= season.episodeCount)
@@ -25,7 +22,6 @@ struct EpisodeCredit: Hashable, Sendable {
 
         var count: Int { isWhole ? season.episodeCount : episodeNumbers.count }
 
-        /// Whether the credit covers `number` within this season.
         func covers(episode number: Int) -> Bool {
             isWhole || episodeNumbers.contains(number)
         }
@@ -37,16 +33,12 @@ struct EpisodeCredit: Hashable, Sendable {
 
     /// How the credit reads in a filmography row.
     enum Summary: Hashable, Sendable {
-        /// A one-off appearance, worth naming outright.
         case episode(season: Int, number: Int)
-        /// Every episode of a single season.
         case season(Season)
-        /// Too many to name — the row offers the episode list instead.
         case spread(Int)
     }
 
-    /// Specials are dropped whenever the person also appears in regular seasons: TMDB's own
-    /// episode count does the same, and the app browses shows without season 0.
+    // Specials are dropped when the person also appears in regular seasons, matching TMDB's own count.
     var credited: [SeasonCredit] {
         let counted = seasons.filter { $0.count > 0 }
         let regular = counted.filter { !$0.season.isSpecials }
@@ -67,14 +59,11 @@ struct EpisodeCredit: Hashable, Sendable {
         return .spread(only.count)
     }
 
-    /// True when the credit is best explored as a list rather than by opening the show.
     var needsEpisodeList: Bool {
         if case .spread = summary { return true }
         return false
     }
 
-    /// Folds the credits TMDB files separately for one show (cast and crew, or several
-    /// characters) into a single per-season view.
     static func merging(_ parts: [EpisodeCredit]) -> EpisodeCredit? {
         guard !parts.isEmpty else { return nil }
         var bySeason: [Int: SeasonCredit] = [:]
@@ -97,7 +86,6 @@ struct EpisodeCredit: Hashable, Sendable {
 // MARK: - Row text
 
 extension EpisodeCredit.Summary {
-    /// The line a filmography row shows in place of the show's year range.
     var label: String {
         switch self {
         case .episode(let season, let number): return "S\(season) · E\(number)"
@@ -109,8 +97,6 @@ extension EpisodeCredit.Summary {
 }
 
 extension EpisodeCredit {
-    /// The unresolved fallback: TMDB's declared count, shown until (or unless) the
-    /// episode-level credit arrives.
     static func episodeCountLabel(_ count: Int) -> String {
         "\(count) Episode\(count == 1 ? "" : "s")"
     }

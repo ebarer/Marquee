@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// Toggle rows for a set of lists, to drop into a `Menu`. Membership and toggling arrive as
-/// closures so movies and shows share one set of rows.
+/// Toggle rows for a set of lists. Membership and toggling arrive as closures so movies and shows share them.
 struct ListMembershipToggles: View {
     let lists: [MediaList]
     let isMember: (MediaList) -> Bool

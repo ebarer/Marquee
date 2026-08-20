@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// The movie detail screen. It opens on whatever the caller already had — title, poster,
-/// date — and the rest of the payload faults in around it.
+/// The movie detail screen. It opens on what the caller already had, and the payload faults in around it.
 struct MovieDetailView: View {
     private let seed: Movie
 
@@ -16,7 +15,6 @@ struct MovieDetailView: View {
         _model = State(initialValue: MovieDetailModel(seed: movie))
     }
 
-    /// Previews only: inject a pre-seeded model so the screen renders populated state offline.
     init(preview movie: Movie, model: MovieDetailModel) {
         seed = movie
         _model = State(initialValue: model)
@@ -27,25 +25,19 @@ struct MovieDetailView: View {
     private var lists: [MediaList]
     @State private var model = MovieDetailModel()
     @State private var headerPinned = false
-    /// Nil until asked for, then whatever the user last set. Resolving this in `.task` instead
-    /// let the strip's watched cells animate themselves in mid-push.
+    // Resolving this in `.task` let the strip's watched cells animate themselves in mid-push.
     @State private var isSeen: Bool?
-    // Top over-scroll (rubber-band) distance, from the scroll geometry — drives the
-    // backdrop's elastic stretch. frame(in:) doesn't report top bounce reliably.
+    // Top over-scroll distance from the scroll geometry, driving the backdrop's elastic stretch.
+    // `frame(in:)` doesn't report top bounce reliably.
     @State private var overscroll: CGFloat = 0
     // The page's top edge in window coordinates. A sheet sits inset in the window, so a bare
     // `.global` reading would count the sheet's offset as nav-bar height.
     @State private var pageTop: CGFloat = 0
-    /// Handed up by the cast section, so the bar carries its search button from the moment the
-    /// cast is known.
     @State private var castSearch: DetailSearchRequest?
-    /// The outside page the nav bar's links menu picked, shown in an in-app Safari view.
     @State private var openLink: ExternalLink?
 
-    /// The payload once it lands, else the caller's stub.
     private var movie: Movie { model.movie ?? seed }
 
-    /// Read on the first body pass, so the page's first frame already knows.
     private var seen: Bool { isSeen ?? store?.isWatched(seed) ?? false }
 
     private var seenBinding: Binding<Bool> {
@@ -73,8 +65,8 @@ struct MovieDetailView: View {
 
     private func detailContent(movie: Movie) -> some View {
         GeometryReader { container in
-            // This reader sits below the nav bar, so its distance from the page's top edge is
-            // the bar's bottom edge — the offset the header's collapsed layout works from.
+            // This reader sits below the nav bar, so its distance from the page's top edge is the bar's
+        // bottom edge: the offset the header's collapsed layout works from.
             let navBarBottom = container.frame(in: .global).minY - pageTop
             let fullHeight = container.size.height + navBarBottom
             let imageHeight = fullHeight * 0.45
@@ -131,8 +123,8 @@ struct MovieDetailView: View {
             }
             .coordinateSpace(name: "scroll")
             .scrollEdgeEffectHidden(!headerPinned, for: .top)
-            // Also ignore horizontal safe area — otherwise the content sits inset and the
-            // background shows as a trailing gutter.
+            // Also ignore horizontal safe area, or the content sits inset and the background shows as a
+            // trailing gutter.
             .ignoresSafeArea(edges: [.top, .horizontal])
             .onScrollGeometryChange(for: CGFloat.self) { geo in
                 max(0, -(geo.contentOffset.y + geo.contentInsets.top))
@@ -142,8 +134,8 @@ struct MovieDetailView: View {
         }
     }
 
-    /// Zero-height, at the top of the scroll content: window position minus scroll-space position
-    /// is where the page begins. `ignoresSafeArea` widens what the ScrollView draws, not its frame.
+    // Window position minus scroll-space position is where the page begins.
+    // `ignoresSafeArea` widens what the ScrollView draws, not its frame.
     private var pageTopProbe: some View {
         Color.clear
             .frame(height: 0)
@@ -197,8 +189,6 @@ struct MovieDetailView: View {
     .preferredColorScheme(.dark)
 }
 
-// How the page looks on push from a list row: title, poster, date and runtime are all it has,
-// with the rest of the payload still in flight.
 #Preview("Faulting in") {
     var stub = Movie(id: Movie.preview.id, title: Movie.preview.title)
     stub.poster = Movie.preview.poster

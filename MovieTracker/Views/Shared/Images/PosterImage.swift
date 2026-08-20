@@ -23,8 +23,6 @@ struct PosterImage: View {
 }
 
 extension View {
-    /// The hairline every poster carries, lifting its edge off the background. Pass the same
-    /// radius the poster is clipped to.
     func posterBorder(cornerRadius: CGFloat) -> some View {
         overlay {
             RoundedRectangle(cornerRadius: cornerRadius)

@@ -6,13 +6,11 @@
 import SwiftUI
 import SwiftData
 
-/// Renders the rows, sort/clear toolbar, and filter for a single `ListSelection`.
-/// `externalFilter` nil (iPhone) means this view owns its search field; non-nil (iPad) the host supplies it.
+/// Rows, toolbar and filter for one `ListSelection`. A nil `externalFilter` means this view owns its search field.
 struct ListContentView: View {
     let selection: ListSelection
     var externalFilter: String? = nil
     var sortPlacement: ToolbarItemPlacement = .topBarTrailing
-    /// Bumped by the Lists tab, tapped while already on it.
     var startToken: Int = 0
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -35,7 +33,6 @@ struct ListContentView: View {
 
     private var filterText: String { externalFilter ?? localFilter }
 
-    /// The host supplies the search field only in the grid layout, so this picks the presentation.
     private var showsTable: Bool { externalFilter == nil }
 
     var body: some View {
@@ -121,14 +118,11 @@ struct ListContentView: View {
         .listVisibleCount(visibleCount)
     }
 
-    /// What the screen is actually showing. Equal to `mediaCount` until the media filter or the
-    /// search narrows the rows; the list's own size while a rebuild is in flight.
     private var visibleCount: Int {
         guard sectionsModel.loadedInput == sectionsInput else { return mediaCount }
         return sectionsModel.sections.reduce(0) { $0 + $1.entries.count }
     }
 
-    /// "30 Titles", or "3 of 30 Titles" while something is filtered out.
     private var countLabel: Text {
         visibleCount == mediaCount
             ? Text("^[\(mediaCount) Title](inflect: true)")
@@ -139,14 +133,12 @@ struct ListContentView: View {
 
     private var destination: ListDestination { .resolve(selection, lists: lists) }
 
-    /// The one place the per-selection facts are resolved: both presentations render from it.
     private var entryContext: ListEntryContext {
         ListEntryContext(selection: selection, isWatchList: destination.list?.isWatchList == true,
                          watchListIDs: watchListIDs, listColor: activeColor,
                          caughtUpShowIDs: caughtUpShowIDs)
     }
 
-    /// Read from the badge index once per pass, so no row queries the store for its swipe.
     private var caughtUpShowIDs: Set<Int> {
         guard let store else { return [] }
         return Set(sectionsModel.sections.flatMap(\.entries)
@@ -154,7 +146,7 @@ struct ListContentView: View {
             .map(\.tmdbID))
     }
 
-    /// Resolved here so the rows get a value and never query the store themselves.
+    // Resolved here so the rows get a value and never query the store themselves.
     private var watchListIDs: Set<Int> {
         guard isCustomList else { return [] }
         let watchList = lists.first { $0.isWatchList }
@@ -191,8 +183,6 @@ struct ListContentView: View {
         ListSortKey.options(isWatchList: destination.list?.isWatchList == true)
     }
 
-    /// A key the list no longer offers — a Watch List left sorted by rating — reads as the default
-    /// rather than leaving the menu with nothing ticked.
     private var currentListSortKey: ListSortKey {
         let stored = destination.list?.sortKey ?? .releaseDate
         return listSortKeys.contains(stored) ? stored : .releaseDate

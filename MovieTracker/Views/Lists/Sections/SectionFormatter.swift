@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// Arranges a `ListResult` (raw dated rows + a layout) into the Lists screen's titled sections:
-/// month/year grouping, the collapsed "Older" fold, rating stars, and title initials. Pure — no store.
+/// Arranges a `ListResult` into the Lists screen's titled sections. Pure, with no store access.
 enum SectionFormatter {
     static func sections(from list: ListResult, ascending: Bool) -> [SectionSnapshot] {
         switch list.layout {
@@ -33,8 +32,6 @@ enum SectionFormatter {
 
     // MARK: Rating buckets
 
-    /// Buckets rows by half-star steps (0…10). Each distinct rating is one section, ordered by
-    /// stars; within a bucket the newest anchor date leads.
     private static func byRating(_ rows: [DatedRow], ascending: Bool) -> [SectionSnapshot] {
         var buckets: [Int: [DatedRow]] = [:]
         for row in rows {
@@ -63,8 +60,7 @@ enum SectionFormatter {
 
     // MARK: Initial-letter buckets
 
-    /// Buckets rows by their sort title's first letter, A…Z with "#" leading. Bucketing rather than
-    /// grouping a sorted run keeps one section per letter however the collation orders titles.
+    // Bucketing rather than grouping a sorted run keeps one section per letter however collation orders titles.
     private static func byInitial(_ rows: [DatedRow], ascending: Bool) -> [SectionSnapshot] {
         var buckets: [String: [(key: String, row: DatedRow)]] = [:]
         for row in rows {
@@ -85,11 +81,9 @@ enum SectionFormatter {
         }
     }
 
-    /// Leading words a title is filed under rather than sorted by, so "The Matrix" lands in M.
     private static let leadingArticles: Set<String> = ["a", "an", "the"]
 
-    /// A title's sort form: its leading article dropped. A title that is only an article keeps it,
-    /// so "The" still sorts (and files) as itself.
+    // A title that is only an article keeps it, so "The" still sorts and files as itself.
     static func sortTitle(_ title: String) -> String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let space = trimmed.firstIndex(where: \.isWhitespace),
@@ -98,8 +92,6 @@ enum SectionFormatter {
         return rest.isEmpty ? trimmed : rest
     }
 
-    /// A title's index letter: the first letter stripped of case and diacritics, or "#" when the
-    /// title starts with a digit or symbol.
     private static func initial(of title: String) -> String {
         guard let first = title.first(where: { !$0.isWhitespace }), first.isLetter else { return "#" }
         return String(first)
@@ -109,13 +101,11 @@ enum SectionFormatter {
 
     // MARK: Month/year grouping (+ "Older" fold)
 
-    /// See `grouped`: only fold when enough rows stay on screen (>= `foldMinRecent`) and the
-    /// backlog is large enough to be worth hiding (>= `foldMinOlder`).
+    // Only fold when enough rows stay on screen and the backlog is large enough to be worth hiding.
     private static let foldMinRecent = 2
     private static let foldMinOlder = 3
 
-    /// Start of last month; entries dated before it fold into "Older". Relative to now, so the
-    /// window slides forward each month.
+    // Relative to now, so the window slides forward each month.
     private static func olderCutoff() -> Date {
         let calendar = Calendar.current
         let now = Date()
@@ -123,8 +113,6 @@ enum SectionFormatter {
         return calendar.date(byAdding: .month, value: -1, to: startOfMonth) ?? startOfMonth
     }
 
-    /// Groups by month/year. Entries before the cutoff whose media type folds are pulled out into
-    /// one collapsible "Older" bucket at the bottom (top when ascending — it reads as an archive).
     private static func grouped(_ rows: [DatedRow], ascending: Bool, foldOlder: OlderFold) -> [SectionSnapshot] {
         var recent = rows
         var older: [MediaSnapshot] = []
@@ -181,8 +169,7 @@ enum SectionFormatter {
 // MARK: - Convenience
 
 extension PersistenceCoordinator {
-    /// Load and format in one call — the entry point the Lists screen and tests use. Both halves
-    /// run off the main thread, so nothing lands on the main actor but the finished sections.
+    // Both halves run off the main thread, so nothing lands on the main actor but the finished sections.
     func sections(for request: ListRequest, ascending: Bool, filter: String,
                   mediaFilter: MediaTypeFilter = .all) async -> [SectionSnapshot] {
         await readingOffMain {

@@ -5,19 +5,13 @@
 
 import SwiftUI
 
-/// The person's movie + TV credits grouped into per-year sections (``FilmographyRows``),
-/// with upcoming work in a collapsible ``UpcomingSection``.
+/// The person's credits grouped into per-year sections, with upcoming work in a collapsible section.
 struct PersonFilmography: View {
     let entries: [FilmographyEntry]
     let lists: [MediaList]
     @Binding var filter: CreditFilter
-    /// True while the TV credits are still resolving — a row's year section depends on them,
-    /// so the list waits rather than laying out rows it would then have to move.
     var isResolving: Bool = false
-    /// Where a year header comes to rest: the bottom edge of the pinned detail header.
     var pinLine: CGFloat = 0
-    /// Set to hand the section's search request to the screen, which then owns the control in its
-    /// navigation bar. Unset, this header carries it.
     var onSearchRequest: ((DetailSearchRequest?) -> Void)?
 
     var body: some View {
@@ -42,8 +36,8 @@ struct PersonFilmography: View {
                     }
                 }
             }
-            // Declared here so every route into the filter animates alike — a `withAnimation`
-            // around the mutation misses, since `@AppStorage` publishes outside it.
+            // Declared here so every route into the filter animates alike. A `withAnimation` around the
+        // mutation misses, since `@AppStorage` publishes outside it.
             .animation(.easeInOut, value: filter.active)
         }
     }
@@ -74,8 +68,7 @@ struct PersonFilmography: View {
         }
     }
 
-    /// The request is rebuilt off this rather than diffed: a filmography runs to hundreds of
-    /// entries, which is too much to compare on every layout pass.
+    // The request is rebuilt off this rather than diffed: a filmography runs to hundreds of entries.
     private var searchSignature: [Int] {
         [entries.count, visibleEntries.count, filterKinds.count, isResolving ? 1 : 0]
     }
@@ -88,7 +81,6 @@ struct PersonFilmography: View {
         entries.filter { !filter.hides($0.ref.creditKind) }
     }
 
-    /// The kinds the filter offers, which is nothing to choose from below two.
     private var filterKinds: [CreditKind] {
         availableKinds.count > 1 ? availableKinds : []
     }
@@ -126,7 +118,6 @@ private struct FilmographyPreview: View {
     @State var filter: CreditFilter
     var isResolving = false
 
-    /// A run spanning three years, so the preview shows the same show under each of them.
     private var entries: [FilmographyEntry] {
         let seasons = Season.previewSeasons
         let credits: [Int: EpisodeCredit] = [

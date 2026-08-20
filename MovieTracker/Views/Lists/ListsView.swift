@@ -22,7 +22,6 @@ struct ListsView: View {
     @State private var selection: ListSelection?
     @State private var showListManager = false
 
-    /// The visible filtered count
     @State private var visibleCount: Int?
 
     var body: some View {

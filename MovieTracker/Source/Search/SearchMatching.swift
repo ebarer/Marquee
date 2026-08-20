@@ -2,19 +2,16 @@
 //  SearchMatching.swift
 //  MovieTracker
 //
-//  Pure, network-free matching/ranking used by SearchModel.
+//  Pure, network-free matching and ranking used by `SearchModel`.
 //
 
 import Foundation
 
 enum SearchMatching {
-    /// Lowercased, alphanumerics only — so "Spider-Man" matches "spiderman".
     static func normalized(_ text: String) -> String {
         text.lowercased().filter { $0.isLetter || $0.isNumber }
     }
 
-    /// Hero-name variants of a role — each "/"-segment, minus parentheticals and a leading
-    /// "The" — so a title-role credit reduces to a name a query can match exactly.
     static func heroSegments(of role: String) -> [String] {
         role.split(separator: "/").map { segment in
             var name = segment.lowercased()
@@ -27,8 +24,7 @@ enum SearchMatching {
         }
     }
 
-    /// Query with space/hyphen runs replaced by "·", so separator spellings match interpunct
-    /// titles TMDB matches only literally. Nil when there's nothing to convert.
+    // TMDB matches interpunct titles only literally, so a spaced or hyphenated spelling needs this.
     static func interpunctVariant(of query: String) -> String? {
         guard !query.contains("·"), query.contains(" ") || query.contains("-") else { return nil }
         var out = ""
@@ -45,16 +41,14 @@ enum SearchMatching {
         return out
     }
 
-    /// Whether `query` extends or prefixes a previously-strong anchor enough to re-run it,
-    /// recovering a film that TMDB's erratic incremental search drops mid-type.
+    // Recovers a film that TMDB's erratic incremental search drops mid-type.
     static func shouldTryAnchorRecovery(query: String, lastStrongQuery anchor: String,
                                         minLength: Int) -> Bool {
         guard !anchor.isEmpty, query != anchor, query.count >= minLength else { return false }
         return query.hasPrefix(anchor) || anchor.hasPrefix(query)
     }
 
-    /// A single-token query split before a trailing hero suffix ("ironman" → "iron man"),
-    /// working around TMDB's space-sensitive title search. Nil when there's no such split.
+    // Works around TMDB's space-sensitive title search ("ironman" to "iron man").
     static func spacedVariant(of query: String) -> String? {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.contains(" ") else { return nil }
@@ -66,8 +60,7 @@ enum SearchMatching {
         return nil
     }
 
-    /// Lowercased text with a leading article removed. Queries must be stripped the same
-    /// way so both sides agree (see `moviePeople`).
+    // Queries must be stripped the same way so both sides agree.
     static func articleStripped(_ text: String) -> String {
         let lowered = text.lowercased()
         for article in ["the ", "an ", "a "] where lowered.hasPrefix(article) {
@@ -76,14 +69,10 @@ enum SearchMatching {
         return lowered
     }
 
-    /// Whether a title, article-stripped and normalized, exactly equals the (likewise
-    /// stripped) query — confirms the query names this film before surfacing its leads.
     static func titleMatches(_ title: String, normalizedQuery needle: String) -> Bool {
         normalized(articleStripped(title)) == needle
     }
 
-    /// Whether the top film's leads stand in for a character match: the query exactly names
-    /// the film, or is a ≥ `minQueryLength` prefix of its title (the floor avoids churn).
     static func topFilmLeadsApply(topTitle: String, normalizedQuery needle: String,
                                   minQueryLength: Int) -> Bool {
         if titleMatches(topTitle, normalizedQuery: needle) { return true }
@@ -91,8 +80,7 @@ enum SearchMatching {
         return normalized(articleStripped(topTitle)).hasPrefix(needle)
     }
 
-    /// People from the top movie hits: whoever played the searched character, then the billing
-    /// of the films it named. Each stage only adds — none of them excludes the others.
+    // Each stage only adds; none of them excludes the others.
     static func moviePeople(query: String,
                             films: [(movie: Movie, cast: [Person])],
                             minQueryLength: Int,
@@ -101,7 +89,6 @@ enum SearchMatching {
                             minCharacterMatchVotes: Int,
                             leadFallbackCount: Int,
                             leadFallbackMinPopularity: Double) -> [Person] {
-        // Article-strip so query and titles agree.
         let needle = normalized(articleStripped(query))
         guard !films.isEmpty else { return [] }
 
@@ -111,15 +98,12 @@ enum SearchMatching {
             for person in candidates where seen.insert(person.id).inserted { people.append(person) }
         }
 
-        // A query that names a character is answered by the people who played them, most
-        // notable film first: "batman" is Bale, then Pattinson, then Affleck, then Keaton.
+        // A query naming a character is answered by the people who played them, most notable film first.
         if needle.count >= minQueryLength {
             add(characterMatches(films, needle: needle, topBilledPerFilm: topBilledPerFilm,
                                  minVotes: minCharacterMatchVotes))
         }
 
-        // Then the billing of the films the query named — the whole answer when it names a
-        // title rather than a character ("avengers" is nobody's role).
         for group in filmLeads(query: query, films: films,
                                leadPrefixMinLength: leadPrefixMinLength,
                                topBilledPerFilm: topBilledPerFilm,
@@ -129,8 +113,6 @@ enum SearchMatching {
         return people
     }
 
-    /// The billing of each film the query names, keyed by film. A title that merely shares a
-    /// word lends nobody, and neither does one too obscure to speak for the search.
     static func filmLeads(query: String,
                           films: [(movie: Movie, cast: [Person])],
                           leadPrefixMinLength: Int,
@@ -145,8 +127,7 @@ enum SearchMatching {
         }
     }
 
-    /// Cast credited as `needle`, ranked by their film's vote count rather than volatile
-    /// `popularity`. The vote floor skips obscure films that merely name a character after it.
+    // Ranked on vote count rather than volatile popularity; the floor skips films that merely name a character.
     static func characterMatches(_ films: [(movie: Movie, cast: [Person])],
                                  needle: String, topBilledPerFilm: Int,
                                  minVotes: Int) -> [Person] {
@@ -174,8 +155,7 @@ enum SearchMatching {
             .map(\.person)
     }
 
-    /// How well a title matches, lower = stronger: 0 exact, 1 title prefix, 2 word prefix,
-    /// 3 contains, 4 none. Both sides are article-stripped so "The Office"/"office" agree.
+    // Lower is stronger: 0 exact, 1 title prefix, 2 word prefix, 3 contains, 4 none.
     static func titleRelevance(_ title: String, normalizedQuery needle: String) -> Int {
         guard !needle.isEmpty else { return 1 }
         let full = normalized(articleStripped(title))
@@ -189,8 +169,7 @@ enum SearchMatching {
         return 4
     }
 
-    /// Trims TV noise: keeps US-aired shows that are established or trending, plus any exact
-    /// title match — so a directly-searched foreign show ("Squid Game") still appears.
+    // Any exact title match is kept, so a directly-searched foreign show ("Squid Game") still appears.
     static func relevantShows(_ shows: [Show], normalizedQuery needle: String,
                               voteFloor: Int, popularityFloor: Double) -> [Show] {
         shows.filter { show in
@@ -200,8 +179,7 @@ enum SearchMatching {
         }
     }
 
-    /// Votes decide IN/OUT (a stable floor junk can't spike past), popularity decides ORDER
-    /// (trending beats older-but-voted); the low-vote tail sinks below.
+    // Votes decide in/out, being a floor junk can't spike past; popularity decides order.
     static func rankedForDisplay(_ movies: [Movie], minVotes: Int) -> [Movie] {
         func byPopularity(_ lhs: Movie, _ rhs: Movie) -> Bool {
             (lhs.popularity ?? 0) > (rhs.popularity ?? 0)
@@ -211,8 +189,6 @@ enum SearchMatching {
         return notable + noise
     }
 
-    /// Cast matches first (from films and the top show), then name matches by popularity, deduped
-    /// and capped. A name match with neither a photo nor `namedNoiseFloor` popularity is dropped.
     static func featuredPeople(castMatched: [Person], named: [Person], cap: Int,
                                namedNoiseFloor: Float = 0, query: String = "",
                                titleOwnsQuery: Bool = false) -> [Person] {
@@ -220,8 +196,8 @@ enum SearchMatching {
             $0.popularity >= namedNoiseFloor || $0.profilePicture != nil
         }
         let byPopularity = credibleNamed.sorted { $0.popularity > $1.popularity }
-        // A name query opens on the people who bear it. A title that *is* the query holds it
-        // against a lone namesake ("dune"), but not against a name several notable people share.
+        // A title that is the query holds it against a lone namesake ("dune"), but not against a name
+        // several notable people share.
         let needle = normalized(articleStripped(query))
         let namesakes = byPopularity.filter {
             $0.popularity >= namedNoiseFloor && nameMatches($0.name, normalizedQuery: needle)
@@ -237,16 +213,13 @@ enum SearchMatching {
         return Array(merged.prefix(cap))
     }
 
-    /// Whether the query is one of this person's names. Whole segments only: "office" must not
-    /// claim someone called "Officer", and a partly-typed name waits until it's a name.
+    // Whole segments only: "office" must not claim someone called "Officer".
     static func nameMatches(_ name: String, normalizedQuery needle: String) -> Bool {
         guard needle.count >= 3 else { return false }
         return name.split(whereSeparator: { $0 == " " || $0 == "-" })
             .contains { normalized(String($0)) == needle }
     }
 
-    /// Length of `featured`'s inline "prominent" prefix — cast matches, plus named people
-    /// clearing `inlinePopularityFloor` *and* having a photo. Falls back to `minInline`.
     static func inlinePeopleCount(_ featured: [Person], castMatchedIDs: Set<Int>,
                                   inlinePopularityFloor: Float, minInline: Int,
                                   previewLimit: Int) -> Int {
@@ -262,23 +235,19 @@ enum SearchMatching {
         return min(inline, previewLimit, featured.count)
     }
 
-    /// What a weaker title match costs in notability: clearing one relevance step takes this
-    /// factor, so relevance decides between peers but can't bury a phenomenon.
+    // Clearing one relevance step costs this factor, so relevance can't bury a phenomenon.
     private static let relevanceDiscount = 8.0
 
     static func matchWeight(relevance: Int) -> Double {
         pow(relevanceDiscount, -Double(max(0, relevance - 1)))
     }
 
-    /// Accumulated attention (`voteCount`) scaled by how much of a phenomenon the title is
-    /// today, so a current hit isn't buried by a back catalogue's years of votes.
+    // Votes scaled by how much of a phenomenon the title is today, so a back catalogue can't bury a current hit.
     static func notability(_ ref: MediaRef, popularityBenchmark benchmark: Double) -> Double {
         let trending = benchmark > 0 ? ref.popularity / benchmark : 0
         return Double(ref.voteCount) * (1 + trending)
     }
 
-    /// Movies and shows in one ranked list, by notability discounted for a weaker title match
-    /// — "House of the Dragon" for "dragon" beats an obscure film the query merely prefixes.
     static func interlaced(movies: [Movie], shows: [Show], query: String = "",
                            voteFloor: Int = 0, relatedMovies: [Int: Int] = [:],
                            now: Date = .now,
@@ -286,8 +255,7 @@ enum SearchMatching {
         let needle = normalized(articleStripped(query))
         let refs = movies.map(MediaRef.movie) + shows.map(MediaRef.show)
 
-        // A sibling is as relevant as the match that pulled it in — never on a stronger
-        // footing than its own seed.
+        // A sibling is as relevant as the match that pulled it in, never on a stronger footing than its seed.
         func relevance(_ ref: MediaRef) -> Int {
             let literal = titleRelevance(ref.title, normalizedQuery: needle)
             guard case .movie(let movie) = ref, let seeded = relatedMovies[movie.id] else {
@@ -322,8 +290,7 @@ enum SearchMatching {
             .map(\.element)
     }
 
-    /// Per tier, the title in release now that leads it on popularity — what the query means
-    /// today, before its votes accrue. The floor stops any sequel displacing its classic.
+    // The vote floor stops a sequel displacing its classic.
     private static func currentReleaseLeaders(_ tiers: [Int: [MediaRef]], voteFloor: Int,
                                               popularityFloor: Double,
                                               now: Date) -> Set<String> {
@@ -340,6 +307,6 @@ enum SearchMatching {
         return leaders
     }
 
-    /// Roughly a theatrical run — how long a title still counts as the current release.
+    // Roughly a theatrical run: how long a title still counts as the current release.
     private static let inReleaseDays = 90
 }

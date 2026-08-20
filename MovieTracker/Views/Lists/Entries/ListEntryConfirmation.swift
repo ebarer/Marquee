@@ -7,9 +7,7 @@ import SwiftUI
 
 /// A confirmation a swipe is waiting on, and the entry that raised it.
 enum ListEntryConfirmation: Identifiable {
-    /// Removing an in-progress show whose watched episodes would otherwise re-add it.
     case removeFromWatchList(MediaSnapshot)
-    /// Marking a whole show, which sweeps every episode of every season.
     case showWatched(MediaSnapshot, watched: Bool)
 
     var entry: MediaSnapshot {
@@ -46,7 +44,6 @@ enum ListEntryConfirmation: Identifiable {
         }
     }
 
-    /// Removing and un-watching both discard something the person recorded.
     var isDestructive: Bool {
         switch self {
         case .removeFromWatchList: return true
@@ -59,7 +56,6 @@ private struct EntryConfirmationDialog: ViewModifier {
     let entry: MediaSnapshot
     let actions: ListEntryActions
 
-    /// Non-nil only for the entry that raised the confirmation, so the dialog presents from it.
     private var item: Binding<ListEntryConfirmation?> {
         Binding(get: { actions.pending.wrappedValue?.entry.id == entry.id ? actions.pending.wrappedValue : nil },
                 set: { actions.pending.wrappedValue = $0 })
@@ -80,8 +76,6 @@ private struct EntryConfirmationDialog: ViewModifier {
 }
 
 extension View {
-    /// Anchored to the entry it's asking about. The item-based dialog holds the change: nothing
-    /// is written until an action here runs.
     func listEntryConfirmation(for entry: MediaSnapshot, actions: ListEntryActions) -> some View {
         modifier(EntryConfirmationDialog(entry: entry, actions: actions))
     }

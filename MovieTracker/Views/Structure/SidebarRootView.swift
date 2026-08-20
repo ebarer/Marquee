@@ -10,7 +10,7 @@ struct SidebarRootView: View {
 
     @State private var selection: SidebarItem? = .collection(.nowPlaying)
     @State private var presented: DetailRoot?
-    /// Waits here while the outgoing modal finishes dismissing; `onDismiss` presents it.
+    // Waits while the outgoing modal finishes dismissing; `onDismiss` presents it.
     @State private var pending: DetailRoot?
     @State private var scrollTopToken = 0
 
@@ -27,8 +27,7 @@ struct SidebarRootView: View {
                 DetailRootView(root: root)
                     .detailDestinations()
             }
-            // Injected on the stack so every pushed screen (cast → person, related
-            // → movie) inherits it and keeps its own Close button.
+            // Injected on the stack so every pushed screen inherits it and keeps its own Close button.
             .environment(\.closeModal) { presented = nil }
             .presentationSizing(.fitted)
             .frame(minWidth: 500, idealWidth: 600, maxWidth: 800, minHeight: 600, idealHeight: 800)

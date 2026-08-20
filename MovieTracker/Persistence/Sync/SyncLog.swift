@@ -20,8 +20,8 @@ enum SyncLog {
         let itemCount = (try? context.fetchCount(FetchDescriptor<MediaItem>())) ?? -1
         logger.log("📚 \(label, privacy: .public): \(lists.count) list(s), \(entryCount) entries, \(itemCount) items")
 
-        // TV progress is three separate record types, so drift there is invisible on the line
-        // above — the Watched count is movies + `WatchedSeason`, not entries.
+        // TV progress is three record types, so drift there is invisible above: the Watched count is
+        // movies plus `WatchedSeason`, not entries.
         let episodes = (try? context.fetchCount(FetchDescriptor<WatchedEpisode>())) ?? -1
         let watchedSeasons = (try? context.fetchCount(FetchDescriptor<WatchedSeason>())) ?? -1
         let trackedSeasons = (try? context.fetchCount(FetchDescriptor<TrackedSeason>())) ?? -1

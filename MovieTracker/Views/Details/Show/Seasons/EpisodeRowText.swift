@@ -9,8 +9,6 @@ import SwiftUI
 struct EpisodeRowText: View {
     let episode: Episode
     var tint: Color = .appAccent
-    /// The character played, which a person's episode list shows in place of duration and
-    /// rating — in their credits, who they were beats how long the episode ran.
     var role: String? = nil
 
     var body: some View {

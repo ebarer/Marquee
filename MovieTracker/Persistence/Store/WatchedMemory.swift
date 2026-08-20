@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// What un-marking something watched threw away, held for the length of the session so
-/// re-marking it restores the date the user entered rather than dating it today.
+/// What un-marking watched threw away, held for the session so re-marking restores the user's date.
 @MainActor
 final class WatchedMemory {
     /// A season carries a rating the snapshot's deletion takes with it, so both come back.
@@ -38,7 +37,6 @@ final class WatchedMemory {
         titles[TitleKey(tmdbID: tmdbID, mediaTypeRaw: mediaType.rawValue)] = date
     }
 
-    /// Consumed on restore: it becomes the live date, and the next un-mark records it again.
     func takeDate(for key: MediaKey) -> Date? {
         titles.removeValue(forKey: TitleKey(tmdbID: key.tmdbID, mediaTypeRaw: key.mediaType.rawValue))
     }

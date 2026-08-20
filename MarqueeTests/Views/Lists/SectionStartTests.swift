@@ -32,7 +32,6 @@ import Foundation
         #expect(start?.id == DateComponents(year: 2026, month: 9))   // 2 months out vs. 3
     }
 
-    /// A gap either side resolves backwards, so the list opens on what is already out.
     @Test func aTieGoesToTheEarlierMonth() {
         let sections = [section(2026, 5), section(2026, 9)]
 
@@ -49,7 +48,6 @@ import Foundation
         #expect(start?.id == DateComponents(year: 2025, month: 12))
     }
 
-    /// Rating, initial and "Older" buckets name no month, so there is nothing to open on.
     @Test func ignoresSectionsWithoutAMonth() {
         let sections = [SectionSnapshot(id: SectionSnapshot.olderID, title: "Older",
                                         entries: [], isCollapsible: true),

@@ -5,15 +5,13 @@
 
 import SwiftUI
 
-/// A single labelled metadata cell (uppercase caption over a value) shared by the
-/// movie and show metadata strips.
+/// A single labelled metadata cell, uppercase caption over a value.
 struct MetadataCell<Content: View>: View {
     let header: String
     var minWidth: CGFloat = 44
     @ViewBuilder let content: Content
 
-    /// Two lines of the value font, and the certification badge's height. A floor, so a cell
-    /// filling in (a dash becoming a badge, one genre becoming two) can't resize the strip.
+    // A floor, so a cell filling in (a dash becoming a badge) can't resize the strip.
     private static var valueHeight: CGFloat { 34 }
 
     init(header: String, minWidth: CGFloat = 44, @ViewBuilder content: () -> Content) {
@@ -33,8 +31,8 @@ struct MetadataCell<Content: View>: View {
                 .multilineTextAlignment(.center)
                 // Centred in the reserved space; the header above stays pinned to the top.
                 .frame(minHeight: Self.valueHeight, alignment: .center)
-                // Placeholders are hidden from accessibility, so this element existing means the
-                // cell has disclosed a value — which is what the UI tests assert on.
+                // Placeholders are hidden from accessibility, so this element existing means the cell has
+            // disclosed a value, which is what the UI tests assert on.
                 .accessibilityIdentifier("metadata-value-\(header)")
         }
         .fixedSize()
@@ -74,18 +72,14 @@ struct MetadataDivider: View {
     }
 }
 
-/// The stand-in for a metadata value TMDB has nothing for.
 var metadataUnavailable: Text {
     Text("—").foregroundColor(.secondary)
 }
 
-/// A metadata value, or the em dash where there's nothing to show — including the "N/A" the
-/// display strings fall back to when a value won't fit a cell.
 func metadataText(_ value: String) -> Text {
     value.isEmpty || value == "N/A" ? metadataUnavailable : Text(value)
 }
 
-/// The TMDB score on a 5-point scale formatted as "N / 5" (secondary suffix), or an em dash.
 func tmdbScoreText(_ rating: Double?) -> Text {
     guard let rating, rating > 0 else { return metadataUnavailable }
     let score = (rating / 2 * 10).rounded() / 10

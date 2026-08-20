@@ -5,12 +5,11 @@
 
 import SwiftUI
 
-/// A single star filled left-to-right by `fraction` (0…1) — the visual unit of ``StarRating``.
+/// A single star filled left-to-right by `fraction`, the visual unit of `StarRating`.
 struct RatingStar: View {
     let fraction: Double
     let tint: Color
     var size: CGFloat = 20
-    /// The symbol's point size as a fraction of the frame, so stars keep their weight at any size.
     var symbolScale: CGFloat = 0.75
     var emptyStyle: HierarchicalShapeStyle = .secondary
 

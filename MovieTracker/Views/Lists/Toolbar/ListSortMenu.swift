@@ -86,8 +86,6 @@ struct ListSortMenu: View {
         Label(filter.title, systemImage: filter.symbol)
     }
 
-    /// One sort-key row, ticked while selected. Re-picking the current key is a no-op, so the
-    /// group behaves like a radio set; switching keys also resets the order to that key's default.
     private func sortToggle<Key: SortKey>(_ key: Key, selection: Binding<Key>) -> some View {
         Toggle(isOn: Binding(get: { selection.wrappedValue == key },
                              set: { isOn in

@@ -5,13 +5,11 @@
 
 import Foundation
 
-/// What Wikidata adds to a title beyond TMDB's payload: the awards behind the metadata cell,
-/// and the outside pages the nav bar links to. Both land after the detail request.
+/// What Wikidata adds beyond TMDB's payload: awards, and the outside pages the nav bar links to.
 struct TitleExtras: Equatable, Sendable {
     var awards = AwardsDigest()
     var links: [ExternalLink] = []
-    /// Wikidata has answered. Separates "still fetching" from "fetched, and this title won
-    /// nothing" — only the second may report "None".
+    // Separates "still fetching" from "fetched, and this title won nothing"; only the second may report "None".
     var resolved = false
 }
 
@@ -25,8 +23,6 @@ extension TitleExtras {
         ].compactMap { $0 }, resolved: true)
     }
 
-    /// The common thin case: TMDB knows the IMDb id, Wikidata has no entry — so the awards cell
-    /// reads "None", and Rotten Tomatoes falls back to a search.
     static var previewUnknown: TitleExtras {
         TitleExtras(awards: AwardsDigest(), links: [
             ExternalLink.rottenTomatoes(slug: nil, title: "Some Obscure Film"),

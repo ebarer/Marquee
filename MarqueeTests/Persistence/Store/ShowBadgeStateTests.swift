@@ -29,7 +29,6 @@ import SwiftData
         return show
     }
 
-    /// The precedence `ShowRow` applies, so a test reads like the badge the user sees.
     private func badge(_ store: PersistenceCoordinator, _ showID: Int) -> PosterStatus? {
         if store.isShowWatchedCached(showID: showID) { return .watched }
         if store.hasWatchedEpisodes(showID: showID) { return .partial }

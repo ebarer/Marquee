@@ -5,11 +5,9 @@
 
 import SwiftUI
 
-/// The poster + "Season N • x of y Episodes" body shared by the Watched-list season rows and
-/// the tracked-season rows. Partial seasons get the half-filled corner badge.
+/// The poster and "Season N - x of y Episodes" body shared by the Watched and tracked-season rows.
 struct SeasonRowContent: View {
     let entry: MediaSnapshot
-    /// Appended to the season line — the watched date on the Watched list.
     var detail: String? = nil
     var tint: Color = .appAccent
 
@@ -52,7 +50,6 @@ struct SeasonRowContent: View {
 
     static let separator = "  •  "
 
-    /// The season, its episode progress while there's more to watch, and `detail` — one line.
     var subtitle: String {
         [season, detail].compactMap { $0 }.joined(separator: Self.separator)
     }
@@ -73,7 +70,6 @@ struct SeasonRowContent: View {
 
 #Preview("Season rows") {
     List {
-        // A backlog episode that already aired, and one still to come.
         SeasonRowContent(entry: .preview(id: 1, title: "In Progress", mediaType: .tv, season: 2,
                                          seasonWatched: 3, seasonTotal: 10,
                                          nextEpisodeDate: .now.addingTimeInterval(-40 * 24 * 3600)))

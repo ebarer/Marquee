@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// Which media types fold their backlog into the collapsed "Older" bucket. Movies go stale once
-/// they're out, but working through an old show is normal, so each type folds on its own.
+/// Which media types fold their backlog into the collapsed "Older" bucket.
 struct OlderFold: OptionSet, Sendable, Hashable {
     let rawValue: Int
 

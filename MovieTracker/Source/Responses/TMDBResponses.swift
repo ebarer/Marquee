@@ -2,8 +2,7 @@
 //  TMDBResponses.swift
 //  MovieTracker
 //
-//  Shared raw `Codable` shapes for the TMDB API. Type-specific shapes live in the
-//  TMDBResponses+Movie / +Person / +TV extension files.
+//  Shared raw `Codable` shapes for the TMDB API; type-specific ones live in the extension files.
 //
 
 import Foundation

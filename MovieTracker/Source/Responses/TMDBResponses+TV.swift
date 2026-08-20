@@ -2,8 +2,7 @@
 //  TMDBResponses+TV.swift
 //  MovieTracker
 //
-//  Raw `Codable` shapes for TMDB TV endpoints. Reuses the movie DTOs for
-//  watch providers (see TMDBResponses+Movie), trailers, genres, and cast where identical.
+//  Raw `Codable` shapes for TMDB TV endpoints. Reuses the movie DTOs where identical.
 //
 
 import Foundation
@@ -33,7 +32,6 @@ extension TMDBWrapper {
         var watchRaw: MovieRaw.WatchProvidersRaw?
         var externalIDs: ExternalIDsRaw?
 
-        /// The US-style TV rating for the user's region, falling back to the US entry.
         func certification() -> String? {
             guard let results = contentRatingsRaw?.results, !results.isEmpty else { return nil }
             let region = NSLocale.current.region?.identifier ?? "US"
@@ -58,18 +56,14 @@ extension TMDBWrapper {
             }
         }
 
-        /// The series regulars, in billing order.
         func recurringCast() -> [Person] {
             aggregateCreditsRaw?.regularCast() ?? []
         }
 
-        /// Every other billed credit across the run, which only search covers.
         func guestCast() -> [Person] {
             aggregateCreditsRaw?.guestCast() ?? []
         }
 
-        /// Episodes each cast member is in across the whole run, keyed by person id — every
-        /// member, not just the ranked ones, since a season's roster is drawn from its own credits.
         func castEpisodeCounts() -> [Int: Int] {
             var counts: [Int: Int] = [:]
             for member in aggregateCreditsRaw?.cast ?? [] {
@@ -120,8 +114,7 @@ extension TMDBWrapper {
             var name: String
         }
 
-        /// Just the air date of `next_episode_to_air` — the rest of that payload duplicates
-        /// what the season fetch already carries.
+        /// Just the air date of `next_episode_to_air`; the rest duplicates what the season fetch carries.
         struct ScheduledEpisodeRaw: Codable {
             var airDateString: String?
 
@@ -151,7 +144,6 @@ extension TMDBWrapper {
         var airDateString: String?
         var episodeCount: Int?
         var episodes: [EpisodeRaw]?
-        /// Present only when the season is fetched with `append_to_response=aggregate_credits`.
         var aggregateCreditsRaw: AggregateCreditsRaw?
 
         func season() -> Season {
@@ -202,8 +194,8 @@ extension TMDBWrapper {
                 .sorted { $0.order < $1.order }
                 .map { Person(id: $0.id, name: $0.name, role: $0.role,
                               pic: $0.profilePicture, type: .Cast) }
-            // Directors first, then the rest, so `CastSection` surfaces them on top.
-            // Dedupe by id (a person may hold several jobs) to keep list identity stable.
+            // Directors first so `CastSection` surfaces them on top. Dedupe by id, since a person may hold
+        // several jobs, to keep list identity stable.
             let directors = (crew ?? []).filter { $0.role == "Director" }
             let others = (crew ?? []).filter { $0.role != "Director" }
             var seen = Set<Int>()
@@ -228,8 +220,7 @@ extension TMDBWrapper {
     struct AggregateCreditsRaw: Codable {
         var cast: [AggregateCastRaw]
 
-        /// The regulars — anyone in at least half the longest run — in billing order. Presence
-        /// decides membership: a fixed count cut a long ensemble short and padded a small one.
+        // Presence decides membership: a fixed count cut long ensembles short and padded small ones.
         func regularCast() -> [Person] {
             let floor = regularFloor()
             return cast
@@ -240,8 +231,7 @@ extension TMDBWrapper {
                 .map(\.person)
         }
 
-        /// Everyone billed below the regulars' run — guest and one-off credits — most-seen first.
-        /// Billing order says nothing about a guest, so episode count ranks them.
+        // Billing order says nothing about a guest, so episode count ranks them.
         func guestCast() -> [Person] {
             let floor = regularFloor()
             return cast
@@ -252,8 +242,7 @@ extension TMDBWrapper {
                 .map(\.person)
         }
 
-        /// The run that makes someone a regular, whose billing order means something. Half the
-        /// longest run: Ben Miles is billed second on Andor for 7 of 24.
+        // Half the longest run: Ben Miles is billed second on Andor for 7 of 24 episodes.
         private func regularFloor() -> Int {
             max(2, (cast.map(\.totalEpisodeCount).max() ?? 0) / 2)
         }
@@ -266,7 +255,6 @@ extension TMDBWrapper {
             var totalEpisodeCount: Int
             var roles: [RoleRaw]?
 
-            /// The first non-empty character the actor plays across the series.
             var characterName: String? {
                 roles?.compactMap { $0.character.isEmpty ? nil : $0.character }.first
             }

@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The still-backed episode header: the image extends up under the nav bar and fades into the
-/// background, with ``EpisodeHeaderOverlay`` bottom-left. Grows on pull-down.
+/// The still-backed episode header: the image extends under the nav bar and grows on pull-down.
 struct EpisodeDetailHeader: View {
     let episode: Episode
     let tint: Color

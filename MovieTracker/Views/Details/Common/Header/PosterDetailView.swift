@@ -2,9 +2,8 @@
 //  PosterDetailView.swift
 //  MovieTracker
 //
-//  Full-screen poster with pinch/double-tap zoom and edge-locked pan (gestures in
-//  PosterDetailView+Zoom). NOTE: must NOT be wrapped in a NavigationStack — that falls
-//  back to a slide-up and the zoom transition is lost.
+//  Full-screen poster with pinch, double-tap zoom and edge-locked pan.
+//  Must not be wrapped in a NavigationStack: that falls back to a slide-up and loses the zoom.
 //
 
 import SwiftUI
@@ -22,14 +21,11 @@ struct PosterDetailView: View {
     @State var lastScale: CGFloat = 1
     @State var offset: CGSize = .zero
     @State var lastOffset: CGSize = .zero
-    /// The padded, scaled element's unscaled size (used for double-tap centering).
     @State var posterSize: CGSize = .zero
-    /// The full-screen container the poster is centered in (used to lock pan edges).
     @State var containerSize: CGSize = .zero
 
     let maxScale: CGFloat = 4
     let doubleTapScale: CGFloat = 2.5
-    /// Margin around the poster at rest; the actual image lives inside this inset.
     let posterPadding: CGFloat = 16
 
     var body: some View {
@@ -60,8 +56,8 @@ struct PosterDetailView: View {
                     containerSize = size
                 }
         }
-        // While zoomed in, a pinch-out must adjust our scale — not trigger the zoom
-        // transition's interactive (pinch/drag) dismissal.
+        // While zoomed in, a pinch-out must adjust our scale rather than trigger the zoom transition's
+        // interactive dismissal.
         .interactiveDismissDisabled(scale > 1)
         .presentationBackground {
             Rectangle()
@@ -86,8 +82,6 @@ struct PosterDetailView: View {
         .environment(\.colorScheme, .dark)
     }
 
-    /// 0 at rest, ramping to 1 once zoomed a little; drives the corners and border away so an
-    /// edge-locked image reads as bare artwork rather than a framed card.
     private var zoomProgress: CGFloat {
         min(1, max(0, (scale - 1) / 0.15))
     }

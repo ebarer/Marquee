@@ -13,7 +13,6 @@ struct LibraryBackup: Codable {
     var version = currentVersion
     var exportedAt = Date()
     var lists: [List]
-    /// TV watched progress, which lives outside list membership. Absent in v1 files.
     var shows: [Progress]
 
     enum CodingKeys: String, CodingKey {
@@ -46,13 +45,11 @@ struct LibraryBackup: Codable {
 
     struct Entry: Codable {
         var movieID: Int
-        /// `MediaType.rawValue`. Absent in files written before shows were tracked, which held
-        /// movies only — so a missing key decodes as `.movie`.
+        // Absent in files written before shows were tracked, so a missing key decodes as `.movie`.
         var mediaType: Int
         var title: String
         var posterPath: String?
         var releaseDate: Date?
-        /// A show's timeline anchor; nil for movies, which sort by `releaseDate`.
         var sortDate: Date?
         var dateAdded: Date
         var dateWatched: Date?
@@ -99,8 +96,7 @@ struct LibraryBackup: Codable {
         }
     }
 
-    /// One show's watched progress: the episode records, the completed-season snapshots, and
-    /// the season the show is tracked at.
+    /// One show's watched progress: episode records, completed-season snapshots, and the tracked season.
     struct Progress: Codable {
         var tmdbID: Int
         var name: String

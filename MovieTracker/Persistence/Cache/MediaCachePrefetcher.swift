@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// Best-effort background pass that fills `MediaCacheStore` (and warms the image `URLCache`)
-/// in `MediaCachePlan` order, so saved and Discovery titles open offline even if never viewed.
+/// Best-effort background pass filling `MediaCacheStore` and warming the image `URLCache`.
 enum MediaCachePrefetcher {
     static let refreshTTL: TimeInterval = 60 * 60 * 24 * 14
 
@@ -25,7 +24,6 @@ enum MediaCachePrefetcher {
         }
     }
 
-    /// Returns `false` when a fetch failed, which stops the whole pass.
     private static func prefetchMovie(_ target: MediaCacheTarget) async -> Bool {
         if await MediaCacheStore.shared.isFresh(id: target.tmdbID, ttl: refreshTTL) { return true }
         guard let movie = try? await TMDBWrapper.getMovie(id: target.tmdbID) else { return false }
@@ -49,8 +47,7 @@ enum MediaCachePrefetcher {
 
             await cacheImage(show.posterURL(.w342))
             await cacheImage(show.backgroundURL())
-            // Re-read: the save merges episodes cached on an earlier launch back in, and the
-            // season pass below needs to see them.
+            // Re-read: the save merges episodes cached on an earlier launch back in, and the season pass needs them.
             cached = await MediaCacheStore.shared.loadShow(id: target.tmdbID)
         }
         guard target.seasonDepth > 0, let show = cached?.show else { return true }

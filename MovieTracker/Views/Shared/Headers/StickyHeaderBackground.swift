@@ -7,8 +7,7 @@ import SwiftUI
 
 /// The glass a pinned header, a search field, and a collapsed detail header share.
 struct SectionHeaderGlass: View {
-    /// Puts the glass's own refracting edge outside the view's bounds on all four sides, for the
-    /// caller to clip.
+    // Puts the glass's own refracting edge outside the view's bounds on all four sides, for the caller to clip.
     private static let bleed: CGFloat = 24
 
     var tint: Color = Color.appBackground.opacity(0.55)
@@ -20,8 +19,7 @@ struct SectionHeaderGlass: View {
     }
 }
 
-/// The view's bounds extended upward, so a pinned header's glass can reach the scroll view's
-/// top edge.
+/// The view's bounds extended upward, so a pinned header's glass reaches the scroll view's top edge.
 struct HeaderSlabClip: Shape {
     let extraTop: CGFloat
 
@@ -31,15 +29,11 @@ struct HeaderSlabClip: Shape {
     }
 }
 
-/// Chrome for a header pinned in a scroll view: the page colour at rest, and glass reaching the
-/// top edge once it is pinned with content scrolled under it, so bar and header read as one slab.
+/// Chrome for a pinned header: the page colour at rest, glass once content scrolls under it.
 struct StickyHeaderBackground: ViewModifier {
-    /// The scroll content's coordinate space, in which the pin line is measured.
     let space: String
-    /// Where a pinned header comes to rest — the scroll view's top content inset.
     let pinLine: CGFloat
     let scrolled: Bool
-    /// How far the glass reaches above the header, to meet the bar over it.
     var glassTop: CGFloat = 0
     var onPinnedChange: (Bool) -> Void = { _ in }
 

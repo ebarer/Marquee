@@ -2,9 +2,7 @@
 //  RankMoviesTool.swift
 //  MovieTracker
 //
-//  Orders the movie candidates for display — notable films first by popularity,
-//  low-vote noise sunk — so downstream cast extraction and interlacing see the
-//  strongest matches first. Runs after the movie-augmenting tools.
+//  Orders the movie candidates for display, notable films first and low-vote noise sunk.
 //
 
 import Foundation

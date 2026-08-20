@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// Text truncated to `lineLimit` with a tap-to-expand "More" pill. The single
-/// truncated-text control shared by movie/show/episode descriptions and person bios.
+/// Text truncated to `lineLimit` with a tap-to-expand "More" pill.
 struct ExpandableText: View {
     let text: String
     var lineLimit: Int = 3
@@ -103,7 +102,6 @@ struct ExpandableText: View {
     }
 }
 
-// Long (shows the More pill), short (no pill), and a 5-line .body bio.
 #Preview {
     VStack(alignment: .leading, spacing: 24) {
         ExpandableText(text: Movie.preview.overview ?? "")

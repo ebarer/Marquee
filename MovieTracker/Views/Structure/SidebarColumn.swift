@@ -39,7 +39,6 @@ private struct ListRow: Identifiable {
 
 struct SidebarColumn: View {
     @Binding var selection: SidebarItem?
-    /// Called when the selected row is tapped again, whichever row it is.
     var onReselect: () -> Void = {}
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
@@ -68,8 +67,7 @@ struct SidebarColumn: View {
     @State private var discoverExpanded = true
     @State private var listsExpanded = true
 
-    /// A tap on the selected row writes the same value back rather than nothing, which is the
-    /// only signal that it was tapped again.
+    // A tap on the selected row writes the same value back, which is the only signal it was tapped again.
     private var tappedSelection: Binding<SidebarItem?> {
         Binding {
             selection
@@ -121,7 +119,6 @@ struct SidebarColumn: View {
         .tag(SidebarItem.collection(collection))
     }
 
-    /// The Lists section in canonical order: Watch List, Watched, custom lists, Viewed.
     private var listRows: [ListRow] {
         (watchList.map { [ListRow($0)] } ?? [])
         + [ListRow(name: "Watched", symbol: "checkmark.rectangle.stack",

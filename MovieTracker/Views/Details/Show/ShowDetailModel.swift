@@ -13,22 +13,14 @@ final class ShowDetailModel {
     private(set) var recommendations: [Show] = []
     private(set) var extras = TitleExtras()
 
-    /// Episodes fetched lazily per season number, so long-running shows don't
-    /// pull every episode up front.
     private(set) var seasonEpisodes: [Int: [Episode]] = [:]
-    /// The billed cast per season (from each season's aggregate credits), so the detail's
-    /// cast list follows the selected season — anthologies especially.
     private(set) var seasonCast: [Int: [Person]] = [:]
     private(set) var loadingSeasons: Set<Int> = []
 
     private let posterPath: String?
-    /// The payload landed; nothing left to fetch.
     private var loaded = false
-    /// A fetch is in flight, so a re-entrant `load` doesn't start a second one.
     private var loading = false
 
-    /// `seed` is what the caller already had on screen — name, poster, first-air date. A show
-    /// already fetched this session comes back whole from memory instead, so nothing faults in twice.
     init(seed: Show? = nil) {
         posterPath = seed?.poster
         let cached = MediaMemoryCache.show(id: seed?.id)
@@ -38,8 +30,8 @@ final class ShowDetailModel {
         } else {
             show = seed
         }
-        // Only the seed's poster: it is the one the caller had on screen — a season's, off a
-        // tracked row — and the header opens on it. A show-level tint would be the wrong season.
+        // Only the seed's poster, which is the one the caller had on screen and the header opens on.
+        // A show-level tint would be the wrong season.
         if let color = PosterTint.cached(forPath: posterPath) { tint = color }
     }
 
@@ -51,8 +43,8 @@ final class ShowDetailModel {
         if let cached = await MediaCacheStore.shared.loadShow(id: id) {
             show = cached.show
             hydrateEpisodes(from: cached.show)
-            // Its colour is the SHOW poster's, kept for other surfaces. Taking it here would
-            // repaint the page off the wrong artwork: the header is showing a season's poster.
+            // The show poster's colour, kept for other surfaces. Taking it here would repaint the page off the
+        // wrong artwork, since the header is showing a season's poster.
             MediaMemoryCache.store(cached.show, tint: cached.color)
         }
 
@@ -64,8 +56,8 @@ final class ShowDetailModel {
             let full = try await Self.fetchDetail(id: id)
             show = full
             invalidateGrownSeasons(against: full)
-            // Cached for other surfaces only. The visible tint comes from `applyTint`, which
-            // follows the poster on screen — assigning it here too would race with that.
+            // Cached for other surfaces only. The visible tint comes from `applyTint`, which follows the
+        // poster on screen, so assigning it here too would race with that.
             let showTint = await PosterTint.resolve(forPath: full.poster) ?? tint
             MediaMemoryCache.store(full, tint: showTint)
             await MediaCacheStore.shared.save(full, tint: showTint)
@@ -91,8 +83,7 @@ final class ShowDetailModel {
         loaded = !interrupted
     }
 
-    /// Awards and the outside links. `nonisolated` so the SPARQL response decodes off the
-    /// main actor. A failure here reports no awards and no slug; none of it is load-bearing.
+    // `nonisolated` so the SPARQL response decodes off the main actor. A failure here is not load-bearing.
     nonisolated private static func resolveExtras(for show: Show?) async -> TitleExtras {
         guard let show else { return TitleExtras() }
         let imdb = ExternalLink.imdb(id: show.imdbID)
@@ -113,22 +104,16 @@ final class ShowDetailModel {
         ].compactMap { $0 }, resolved: true)
     }
 
-    /// The detail request, held back when a UI test needs the unknown-fields window to be
-    /// long enough to observe.
     private static func fetchDetail(id: Int) async throws -> Show {
         if let delay = UITestHooks.detailDelay { try? await Task.sleep(for: delay) }
         return try await TMDBWrapper.getShow(id: id)
     }
 
-    /// Re-tint the page for the poster now on screen. Seasons carry their own artwork, so
-    /// picking a season re-colours the screen to match the poster the header just swapped in.
     func applyTint(forPoster path: String?) async {
         guard let color = await PosterTint.resolve(forPath: path), color != tint else { return }
         withAnimation(.easeInOut) { tint = color }
     }
 
-    /// Refresh the show's list membership after a mutation. Loads the first-incomplete
-    /// season's episodes first so it can anchor on the precise next-episode air date.
     func reconcileMembership(using store: PersistenceCoordinator?) async {
         guard let store, let show else { return }
         if let season = store.firstIncompleteSeason(show) {
@@ -137,8 +122,8 @@ final class ShowDetailModel {
         store.reconcileMembership(show, episodesBySeason: seasonEpisodes)
     }
 
-    /// Hydrated episodes stay on screen while a stale season refetches behind them, so the
-    /// refresh costs no spinner and a failure offline leaves the cached roster in place.
+    // Hydrated episodes stay on screen while a stale season refetches, so a failure offline leaves
+    // the cached roster in place.
     func loadSeason(showID: Int, seasonNumber: Int) async {
         guard !loadingSeasons.contains(seasonNumber) else { return }
         if seasonEpisodes[seasonNumber] != nil,
@@ -158,8 +143,6 @@ final class ShowDetailModel {
         }
     }
 
-    /// Seed the per-season episode/cast dictionaries from a cached show whose seasons already
-    /// carry episodes, so the episodes section renders instantly (and offline) without a fetch.
     private func hydrateEpisodes(from show: Show) {
         for season in show.seasons where !season.episodes.isEmpty {
             seasonEpisodes[season.seasonNumber] = season.episodes
@@ -167,8 +150,7 @@ final class ShowDetailModel {
         }
     }
 
-    /// Drop hydrated episodes for any season that has since grown (a new episode aired), so
-    /// `loadSeason` re-fetches it. The fresh show payload carries the up-to-date episode count.
+    // A season that has since grown must be re-fetched; the fresh show payload carries the current count.
     private func invalidateGrownSeasons(against show: Show) {
         for season in show.seasons {
             if let have = seasonEpisodes[season.seasonNumber], have.count < season.episodeCount {
@@ -182,8 +164,6 @@ final class ShowDetailModel {
 // MARK: - Previews
 
 extension ShowDetailModel {
-    /// A fully-seeded model whose `load(id:)` no-ops (`loaded == true`); every season's
-    /// episodes are pre-filled so the episodes section renders offline without a fetch.
     static func preview(_ show: Show, recommendations: [Show] = [], tint: Color = .appAccent,
                         extras: TitleExtras = .preview) -> ShowDetailModel {
         let model = ShowDetailModel()
@@ -199,8 +179,6 @@ extension ShowDetailModel {
         return model
     }
 
-    /// A model holding the caller's stub with the payload still pending, for the preview of
-    /// the page's faulting-in state.
     static func previewPending(_ seed: Show) -> ShowDetailModel {
         let model = ShowDetailModel(seed: seed)
         model.loaded = true

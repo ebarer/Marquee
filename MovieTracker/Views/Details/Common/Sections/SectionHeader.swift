@@ -31,7 +31,6 @@ enum SectionHeaderMetrics {
 
 enum SectionHeaderControl {
     static let diameter: CGFloat = 32
-    /// The circle a control draws inside itself to show it is doing something, inset 4pt.
     static let fill = CGSize(width: diameter - 8, height: diameter - 8)
 }
 
@@ -45,7 +44,6 @@ extension View {
             .padding(.bottom, bottom)
     }
 
-    /// The glass circle a detail section header puts its controls in.
     func sectionHeaderControl() -> some View {
         frame(width: SectionHeaderControl.diameter, height: SectionHeaderControl.diameter)
             .contentShape(Rectangle())

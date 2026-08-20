@@ -12,8 +12,8 @@ struct CompactRootView: View {
     @State private var selectedTab: RootTab = .discover
     @State private var listsPath = NavigationPath()
     @State private var listsResetToken = 0
-    /// The tint published by each tab's list page. Detail screens deliberately publish
-    /// nothing: a tint arriving mid-push changes `.tint` here and costs the row its highlight.
+    // Detail screens deliberately publish nothing: a tint arriving mid-push changes `.tint` here and
+    // costs the row its highlight.
     @State private var tabTints: [RootTab: Color] = [:]
 
     var body: some View {
@@ -63,8 +63,7 @@ struct CompactRootView: View {
         .tint(tabTints[selectedTab] ?? .appAccent)
     }
 
-    /// A search result pushes a pass after the tap: straight out of the focused search field, the
-    /// stack skips the push animation.
+    // Straight out of the focused search field, the stack skips the push animation.
     private func pushResult(_ value: AnyHashable) {
         guard let root = DetailRoot(value) else { return }
         Task { @MainActor in

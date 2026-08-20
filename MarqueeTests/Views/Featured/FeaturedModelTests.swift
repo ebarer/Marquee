@@ -9,7 +9,6 @@ import Foundation
 
 @MainActor
 @Suite(.serialized) struct FeaturedModelTests {
-    /// Serves page 1 as [1,2] and page 2 as [2,3] (overlap tests dedup), total 2 pages.
     private func installPagedStub() {
         URLProtocolStub.install { request in
             let page = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
@@ -68,7 +67,6 @@ import Foundation
 
     // MARK: - TV shelves
 
-    /// Same paging shape as the movie stub, but with `name` so `ShowRaw` decodes.
     private func installShowStub() {
         URLProtocolStub.install { request in
             let page = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?

@@ -128,7 +128,6 @@ extension AwardsDigest {
         .preferredColorScheme(.dark)
 }
 
-// A single unglamorous win, which is what most titles with any awards data look like.
 #Preview("Sparse") {
     AwardsListView(
         title: "The Brutalist",

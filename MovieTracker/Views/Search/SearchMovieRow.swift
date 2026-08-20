@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// A search result's movie row: insets, swipes and the membership menu around a `MovieRow`. Only
-/// the iPhone lists results as rows — iPad uses ``SearchResultsGrid``.
+/// A search result's movie row: insets, swipes and the membership menu around a `MovieRow`.
 struct SearchMovieRow<Leading: View, Trailing: View>: View {
     let movie: Movie
     let lists: [MediaList]

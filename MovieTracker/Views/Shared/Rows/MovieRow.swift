@@ -9,7 +9,6 @@ struct MovieRow: View {
     let movie: Movie
     var subtitle: String? = nil
     var role: String? = nil
-    /// Non-acting jobs on the title, on a line of their own so the character keeps one.
     var jobs: String? = nil
     var showsSubtitle: Bool = true
     var duration: String? = nil

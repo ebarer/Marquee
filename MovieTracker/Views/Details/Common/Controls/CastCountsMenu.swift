@@ -5,17 +5,14 @@
 
 import SwiftUI
 
-/// The episode-count switch a cast list carries: a tap shows or hides the counts, a long press
-/// opens the same switch as a checklist.
+/// The episode-count switch a cast list carries: a tap toggles counts, a long press opens a checklist.
 struct CastCountsMenu: View {
     @Binding var showsCounts: Bool
     var style: Style = .sectionHeader
     var tint: Color = .appAccent
 
     enum Style {
-        /// Draws its own circle, opposite a section header.
         case sectionHeader
-        /// Sits in a navigation bar, which supplies the glass the fill goes inside.
         case bar
     }
 
@@ -48,8 +45,7 @@ struct CastCountsMenu: View {
     }
 }
 
-/// The bar's fill goes on the menu rather than its label, so it is centred on the item the bar
-/// lays out.
+/// The bar's fill goes on the menu rather than its label, so it centres on the item the bar lays out.
 private struct StyleChrome: ViewModifier {
     let style: CastCountsMenu.Style
     let showsCounts: Bool

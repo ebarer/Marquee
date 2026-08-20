@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// A detail-header title that breaks at the colon of a "Main: Subtitle" shape when it
-/// can't fit on one line. Callers apply font/line-limit/scale modifiers around it.
+/// A detail-header title that breaks at the colon of a "Main: Subtitle" shape when it can't fit one line.
 struct HeaderTitle: View {
     let title: String
 

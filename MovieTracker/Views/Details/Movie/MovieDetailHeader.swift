@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// Movie adapter over the shared ``CollapsingBackdropHeader``: maps the movie's backdrop,
-/// poster, title, and subtitle onto the shared bar and supplies the movie action bar.
+/// Movie adapter over the shared `CollapsingBackdropHeader`.
 struct MovieDetailHeader: View {
     let movie: Movie
     let tint: Color
@@ -46,7 +45,6 @@ struct MovieDetailHeader: View {
         return parts.joined(separator: "  •  ")
     }
 
-    /// Runtime rides in on the detail payload, so a list or search record doesn't have it yet.
     private var pendingDuration: Bool { movie.duration == nil && !movie.isDetailPayload }
 }
 

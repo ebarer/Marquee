@@ -23,8 +23,7 @@ extension PersistenceCoordinator {
         applyWatched(watched, forKey: key); save()
     }
 
-    /// Un-marking parks the watched date and re-marking restores it, so an accidental toggle
-    /// costs nothing. With none remembered, marking watched dates to today as usual.
+    // Un-marking parks the watched date and re-marking restores it, so an accidental toggle costs nothing.
     private func applyWatched(_ watched: Bool, forKey key: MediaKey) {
         guard watched else {
             watchedMemory.remember(MediaItem.dateWatched(for: key, in: context), for: key)
@@ -37,8 +36,7 @@ extension PersistenceCoordinator {
         }
     }
 
-    /// Watched movies plus watched TV seasons (which track separately). Memoised against
-    /// `revision`: both counts sit in view bodies that re-run constantly.
+    // Memoised against `revision`: both counts sit in view bodies that re-run constantly.
     var watchedCount: Int {
         cachedCount(.watched) {
             let movieType = MediaType.movie.rawValue
@@ -83,8 +81,7 @@ extension PersistenceCoordinator {
         MediaItem.recordView(key: show.mediaKey, in: context); save()
     }
 
-    /// Refresh a tracked show's snapshot once its detail loads — search-added shows start with
-    /// only a premiere date, so this corrects their timeline placement.
+    // Search-added shows start with only a premiere date, which misplaces them on the timeline.
     func refreshSnapshot(for show: Show) {
         let key = show.mediaKey
         let tmdbID = key.tmdbID
@@ -104,7 +101,6 @@ extension PersistenceCoordinator {
         if changed { save() }
     }
 
-    // Key-based writes, so shared controls (StarRating, WatchedDateButton) work for either type.
     func setRating(_ stars: Double?, forKey key: MediaKey) {
         MediaItem.setRating(stars, for: key, in: context); save()
     }

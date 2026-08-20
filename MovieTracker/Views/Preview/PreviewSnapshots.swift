@@ -7,8 +7,7 @@ import Foundation
 import SwiftData
 
 extension MediaSnapshot {
-    /// A snapshot needs a real `PersistentIdentifier`, so every fixture inserts a throwaway
-    /// model into the preview container; only its id is meaningful.
+    // A snapshot needs a real `PersistentIdentifier`, so each fixture inserts a throwaway model.
     @MainActor
     static func preview(id: Int, title: String, mediaType: MediaType = .movie,
                         posterPath: String? = "preview-poster",

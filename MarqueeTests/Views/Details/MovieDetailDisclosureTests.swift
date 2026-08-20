@@ -17,8 +17,6 @@ import UIKit
 @Suite(.serialized) struct MovieDetailDisclosureTests {
     private let cache = MediaCacheStore.shared
 
-    /// The shape a Discover or search row hands over: no certification, genres or cast, and an
-    /// empty — but not nil — provider map, which is what once passed for a complete payload.
     private func leanRecord(id: Int = 42) -> Movie {
         var movie = makeMovie(id: id, title: "M", poster: "/p.jpg")
         movie.overview = "Straight off the list row."

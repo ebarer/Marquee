@@ -5,13 +5,11 @@
 
 import SwiftUI
 
-/// The Lists navigation title: list name, tinted, over its title count — the label for
-/// the `ListTitleMenu` switcher.
+/// The Lists navigation title: list name, tinted, over its title count.
 struct ListTitleLabel: View {
     let name: String
     let color: Color
     let count: Int
-    /// How many of `count` the screen is showing; nil (or equal) when nothing is filtered out.
     var visible: Int?
 
     var body: some View {

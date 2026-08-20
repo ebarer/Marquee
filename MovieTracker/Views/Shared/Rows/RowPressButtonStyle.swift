@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// Press feedback for rows that can't be `List` cells (the detail screens scroll one
-/// container). A style only sees the press, so the highlight can't hold through the push.
+/// Press feedback for rows that can't be `List` cells. A style only sees the press, so it can't hold through the push.
 struct RowPressButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

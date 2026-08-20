@@ -6,27 +6,21 @@
 import SwiftUI
 import SwiftData
 
-/// The Liquid Glass controls beside the show poster: bookmark, checkmark (confirm-first),
-/// custom lists, trailer. Mirrors ``MovieActionBar`` over the coordinator's Show overloads.
+/// The Liquid Glass controls beside the show poster, mirroring `MovieActionBar`.
 struct ShowActionBar: View {
     let show: Show
     let lists: [MediaList]
     let tint: Color
-    /// Loaded episodes per season number, so marking the whole show watched can date each
-    /// season to its finale rather than today.
     var episodesBySeason: [Int: [Episode]] = [:]
-    /// Owned by the detail screen, which reads it before the payload lands — seeding it here
-    /// would draw an untracked bar for a frame and then flip.
+    // Owned by the detail screen: seeding it here would draw an untracked bar for a frame and then flip.
     @Binding var progress: ShowProgress
-    /// Refine list membership after a mutation (advance the tracked season, precise
-    /// next-episode date) — supplied by the detail screen, which can load episodes.
     var onChange: () -> Void = {}
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
     @Namespace private var glassNamespace
     @State private var wasOnWatchList = false
     @State private var showRemoveConfirm = false
-    // Only changes after the first frame animate the bookmark↔checkmark transition.
+    // Only changes after the first frame animate the bookmark-to-checkmark transition.
     @State private var didAppear = false
 
     private var isSeen: Bool { progress.isWatched }
@@ -70,8 +64,8 @@ struct ShowActionBar: View {
         }
     }
 
-    // An in-progress show is auto-kept on the Watch List — removing it takes a confirmation
-    // (and sticks). Adding it back is a plain tap that re-tracks the next-episode season.
+    // An in-progress show is auto-kept on the Watch List, so removing it takes a confirmation and
+        // sticks. Adding it back is a plain tap that re-tracks the next-episode season.
     private func handleBookmarkTap() {
         guard let store else { return }
         if progress.isTracked, progress.hasProgress {
@@ -136,14 +130,13 @@ struct ShowActionBar: View {
         }
     }
 
-    /// Persisted facts only. Deriving these from `show.regularSeasons` meant a stub payload read
-    /// as unwatched, so the controls flipped once detail loaded — and it cost a fetch per season.
+    // Persisted facts only. Deriving these from `show.regularSeasons` made a stub payload read as
+    // unwatched, so the controls flipped once detail loaded, and it cost a fetch per season.
     private func refresh() {
         progress = store?.showProgress(showID: show.id) ?? ShowProgress()
     }
 }
 
-// Interactive: tap Watched to confirm and watch the pill span, or bookmark/list live.
 #Preview {
     @Previewable @State var progress = ShowProgress()
     let context = previewModelContainer.mainContext

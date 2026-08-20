@@ -13,7 +13,7 @@ import Foundation
                name: name ?? "Season \(number)", episodeCount: episodes)
     }
 
-    /// A season TMDB named only through its episodes, so its count is unknown.
+    // A season TMDB named only through its episodes, so its count is unknown.
     private func unsized(_ number: Int) -> Season {
         Season(id: -(number + 1), seasonNumber: number, name: "Season \(number)")
     }
@@ -37,7 +37,6 @@ import Foundation
         #expect(!credit.needsEpisodeList)
     }
 
-    /// Every episode listed individually still reads as the season.
     @Test func everyEpisodeListedNamesTheSeason() {
         let credit = EpisodeCredit(seasons: [
             .init(season: season(2, episodes: 3), episodeNumbers: [1, 2, 3]),
@@ -63,8 +62,6 @@ import Foundation
         #expect(credit.needsEpisodeList)
     }
 
-    /// A season stood up from its episodes has no count, so one episode must not read
-    /// as the whole run.
     @Test func unsizedSeasonWithOneEpisodeNamesTheEpisode() {
         let credit = EpisodeCredit(seasons: [.init(season: unsized(1), episodeNumbers: [4])])
         #expect(credit.summary == .episode(season: 1, number: 4))
@@ -115,7 +112,6 @@ import Foundation
         #expect(merged?.summary == .spread(3))
     }
 
-    /// Cast for the whole run and crew on one episode still means the whole run.
     @Test func mergingLetsWholeSeasonWin() {
         let merged = EpisodeCredit.merging([
             EpisodeCredit(seasons: [.init(season: season(1, episodes: 10), episodeNumbers: [4])]),
@@ -145,7 +141,6 @@ import Foundation
         #expect(raw.credit().summary == .episode(season: 1, number: 4))
     }
 
-    /// No episodes named means the whole run of every season listed.
     @Test func decodesSeasonsWithNoEpisodesAsWholeRun() throws {
         let json = """
         {"media": {"episodes": [], "seasons": [
@@ -159,7 +154,6 @@ import Foundation
         #expect(credit.summary?.label == "Season 1 • 13 Episodes")   // specials dropped
     }
 
-    /// A guest spot: TMDB names the episode and the season holding it, and the episode wins.
     @Test func decodingKeepsAGuestSpotToItsEpisode() throws {
         let json = """
         {"media": {
@@ -173,8 +167,6 @@ import Foundation
         #expect(credit.summary == .episode(season: 7, number: 5))
     }
 
-    /// A regular who also has specials named comes back as both shapes at once (Zendaya on
-    /// Euphoria): the named episodes are that season's credit, the rest are whole runs.
     @Test func decodingReadsNamedEpisodesBesideWholeSeasons() throws {
         let json = """
         {"media": {
@@ -198,8 +190,7 @@ import Foundation
         #expect(credit.total == 16)
     }
 
-    /// Ben Miles on Andor: TMDB names season 1 but not season 2, so season 2's date has to come
-    /// off its episodes or both seasons file under the show's 2022 premiere.
+    // Ben Miles on Andor: TMDB names season 1 but not season 2, so season 2's date must come off its episodes.
     @Test func decodingDatesAnOmittedSeasonFromItsEpisodes() throws {
         let json = """
         {"media": {

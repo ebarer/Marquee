@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The trailer play control shared by the detail action bars, presenting the player full screen.
-/// Always holds its slot — disabled with nothing to play — so it can't pop in with the payload.
+/// The trailer control shared by the detail action bars. Always holds its slot so it can't pop in with the payload.
 struct TrailerButton: View {
     let trailer: MediaTrailer?
     let tint: Color
@@ -32,7 +31,6 @@ struct TrailerButton: View {
     }
 }
 
-// With a trailer, and without one (disabled, still holding its slot).
 #Preview {
     HStack(spacing: ActionBarMetrics.spacing) {
         TrailerButton(trailer: Movie.preview.primaryTrailer, tint: .appAccent)

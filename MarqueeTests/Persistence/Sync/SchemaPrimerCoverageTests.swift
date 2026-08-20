@@ -15,8 +15,6 @@ import SwiftData
 
 @Suite struct SchemaPrimerCoverageTests {
 
-    /// Every optional attribute the primer is known to populate. When a test below fails, teach
-    /// `SchemaPrimer.prime` to set the new field, then add its name here.
     private static let primed: [String: Set<String>] = [
         "MediaItem": ["posterPath", "releaseDate", "sortDate", "runtime", "userRating",
                       "watchedAt", "lastViewedAt", "showWatched", "showCaughtUp", "watchListOptOut"],
@@ -46,7 +44,6 @@ import SwiftData
         }
     }
 
-    /// The primer has to actually write a record of every type, or the deploy misses that type.
     @MainActor
     @Test func primingWritesOneRecordOfEveryType() {
         let store = makeInMemoryStore()

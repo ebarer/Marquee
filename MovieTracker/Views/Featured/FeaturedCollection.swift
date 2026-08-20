@@ -18,7 +18,6 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
 
     var id: Int { rawValue }
 
-    /// Whether this shelf lists TV shows rather than movies.
     var isShow: Bool {
         switch self {
         case .popularShows, .showsOnTheAir: return true
@@ -46,8 +45,7 @@ enum FeaturedCollection: Int, CaseIterable, Identifiable {
         }
     }
 
-    /// A name SF Symbols doesn't know is an asset-catalog symbol, which `Image(systemName:)`
-    /// (and so `Label(_:systemImage:)`) can't resolve.
+    // A name SF Symbols doesn't know is an asset-catalog symbol, which `Image(systemName:)` can't resolve.
     var icon: Image {
         UIImage(systemName: symbol) == nil ? Image(symbol) : Image(systemName: symbol)
     }

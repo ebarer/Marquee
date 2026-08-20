@@ -15,13 +15,12 @@ import OSLog
 final class PersistenceCoordinator {
     let context: ModelContext
 
-    /// Held separately from `context` so `readingOffMain` never reaches through the
-    /// main-actor-isolated, non-Sendable `ModelContext` to get at it.
+    // Held apart from `context` so `readingOffMain` never reaches through the main-actor-isolated,
+    // non-Sendable `ModelContext` to get at it.
     @ObservationIgnored nonisolated let container: ModelContainer
 
     private(set) var revision = 0
 
-    /// Session-only: watched dates parked by an un-mark, restored if it's re-marked.
     let watchedMemory = WatchedMemory()
 
     private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PersistenceCoordinator",
@@ -29,14 +28,13 @@ final class PersistenceCoordinator {
 
     @ObservationIgnored private var launchRoutineClaimed = false
 
-    /// Run a Lists read on a background thread. The coordinator and its `ModelContext` are built
-    /// and finished inside the detached task, so nothing crosses back but the Sendable result.
+    // The coordinator and its `ModelContext` are built and finished inside the detached task, so
+    // nothing crosses back but the Sendable result.
     nonisolated func readingOffMain<T: Sendable>(_ read: @Sendable @escaping (ListCoordinator) -> T) async -> T {
         let container = self.container
         return await Task.detached { read(ListCoordinator(container: container)) }.value
     }
 
-    /// Diagnostic for FrameBudgetTests, over the same hop the real reads take.
     func listReadRunsOnMainThread() async -> Bool {
         await readingOffMain { $0.runsOnMainThread() }
     }
@@ -46,7 +44,7 @@ final class PersistenceCoordinator {
         self.container = context.container
     }
 
-    /// Returns `true` only on the first call. Safe without locking: `@MainActor`.
+    // Safe without locking: `@MainActor`.
     func claimLaunchRoutine() -> Bool {
         guard !launchRoutineClaimed else { return false }
         launchRoutineClaimed = true
@@ -55,8 +53,8 @@ final class PersistenceCoordinator {
 
     // MARK: - Deferred writes
 
-    /// Persist once the tap that asked for it has committed. A write, and the `revision` tick it
-    /// raises, would otherwise run inside the gesture and cost its animation the opening frames.
+    // A write, and the `revision` tick it raises, would otherwise run inside the gesture and cost
+    // its animation the opening frames.
     func afterCommit(_ mutation: @MainActor @escaping () -> Void) {
         Task { @MainActor in mutation() }
     }
@@ -71,8 +69,7 @@ final class PersistenceCoordinator {
     @ObservationIgnored private var badgesPrimed = false
     @ObservationIgnored private var badgeRefresh: Task<Void, Never>?
 
-    /// Badge state for every tracked title. Built once on the first read, then refreshed off the
-    /// main actor after each save — a badge costs a set lookup and never a fetch.
+    // Refreshed off the main actor after each save, so a badge costs a set lookup and never a fetch.
     var badges: MediaBadgeIndex {
         if !badgesPrimed {
             badgesPrimed = true
@@ -81,7 +78,7 @@ final class PersistenceCoordinator {
         return badgeIndex
     }
 
-    /// Lands a frame or two after the write, so it can't share a frame with the animation.
+    // Lands a frame or two after the write, so it can't share a frame with the animation.
     private func refreshBadges() {
         guard badgesPrimed else { return }
         badgeRefresh?.cancel()
@@ -92,8 +89,8 @@ final class PersistenceCoordinator {
         }
     }
 
-    /// A count held until `revision` moves. Reading `revision` here is what makes callers
-    /// re-render when it does, so the memo can't hand back a stale number.
+    // Reading `revision` here is what makes callers re-render when it moves, so the memo can't hand
+    // back a stale number.
     func cachedCount(_ kind: CountKind, compute: () -> Int) -> Int {
         let current = revision
         if countsRevision != current {

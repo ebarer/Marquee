@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The title, watched checkmark, and code/date/duration/rating line laid over the episode
-/// still. Reveals the nav-bar title once the on-page title scrolls behind the bar.
+/// Title, watched checkmark and metadata laid over the episode still.
 struct EpisodeHeaderOverlay: View {
     let episode: Episode
     let tint: Color
@@ -51,8 +50,6 @@ struct EpisodeHeaderOverlay: View {
 
     private static let checkmarkSize: CGFloat = 52
 
-    /// Inert until the episode airs — there's nothing to have watched yet, and the dimmed
-    /// checkmark says so rather than letting a tap record a future viewing.
     private var watchedButton: some View {
         Button { toggleWatched() } label: {
             Image(systemName: "checkmark")

@@ -44,7 +44,6 @@ import SwiftData
         #expect(subtitle == "Watched \(stamp)")
     }
 
-    /// A season is finished, not watched: the show it belongs to may still be running.
     @Test func seasonOnWatchedListReadsAsFinished() {
         let entry = snapshot(mediaType: .tv, season: 1, seasonWatched: 10, seasonTotal: 10)
         #expect(context(.watched).subtitle(for: entry) == "Finished \(stamp)")
@@ -72,7 +71,6 @@ import SwiftData
         #expect(row.subtitle == "Season 2\(SeasonRowContent.separator)Finished \(stamp)")
     }
 
-    /// Without a date the line is the season alone — no dangling separator or trailing space.
     @Test func seasonLineAloneWhenThereIsNoDetail() {
         let entry = snapshot(mediaType: .tv, season: 2, seasonWatched: 10, seasonTotal: 10)
         #expect(SeasonRowContent(entry: entry).subtitle == "Season 2")
@@ -86,7 +84,6 @@ import SwiftData
                 == "Season 3\(separator)Ep. 6 of 8")
     }
 
-    /// A tracked-season row carries no season number until the show resolves.
     @Test func noSeasonNumberYieldsAnEmptyLine() {
         #expect(SeasonRowContent(entry: snapshot(mediaType: .tv)).subtitle.isEmpty)
     }

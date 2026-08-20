@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// Session memo for a movie's runtime, which `/search/*` and a person's credits both omit.
-/// Repeat and concurrent lookups collapse into one request; an absent runtime memoes as 0.
+/// Session memo for a movie's runtime, which /search/* and a person's credits both omit.
 @MainActor
 final class MovieRuntimeStore {
     static let shared = MovieRuntimeStore()

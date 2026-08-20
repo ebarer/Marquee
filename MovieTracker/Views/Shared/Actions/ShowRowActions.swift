@@ -7,12 +7,11 @@ import SwiftUI
 
 // MARK: - TV swipe buttons
 
-/// A full swipe fires the action and THEN springs the row back. The row keeps its identity,
-/// so hold the write until it's home or the in-place crossfade cuts the swipe short.
+// A full swipe fires the action and then springs the row back. The row keeps its identity, so hold
+    // the write until it is home or the in-place crossfade cuts the swipe short.
 private let rowSettleDelay: Duration = .milliseconds(450)
 
-/// Leading swipe for a tracked-season row: marks the season's next unwatched episode, so each
-/// swipe advances the row one episode.
+/// Leading swipe for a tracked-season row: marks the next unwatched episode, advancing the row by one.
 struct EpisodeWatchedSwipeButton: View {
     let showID: Int
     let seasonNumber: Int
@@ -21,8 +20,8 @@ struct EpisodeWatchedSwipeButton: View {
     var body: some View {
         Button {
             guard let store else { return }
-            // Detached from this row's lifetime on purpose — the write must land even if
-            // reconcile moves the row out from under us.
+            // Detached from this row's lifetime on purpose: the write must land even if reconcile moves the
+        // row out from under us.
             Task { @MainActor in
                 try? await Task.sleep(for: rowSettleDelay)
                 await store.markNextEpisodeWatched(showID: showID, seasonNumber: seasonNumber)
@@ -34,8 +33,7 @@ struct EpisodeWatchedSwipeButton: View {
     }
 }
 
-/// Secondary leading swipe for a Watch List / custom-list season row: completes the displayed
-/// season through the id-only entry point, so reconcile then advances the row to the next one.
+/// Secondary leading swipe: completes the displayed season, so reconcile advances the row to the next one.
 struct SeasonWatchedSwipeButton: View {
     let showID: Int
     let seasonNumber: Int
@@ -55,12 +53,9 @@ struct SeasonWatchedSwipeButton: View {
     }
 }
 
-/// Leading swipe for an untracked TV show row: toggles the whole show through the episode
-/// model, so the icon reflects real TV progress rather than the movie `watchedAt` flag.
+/// Leading swipe for an untracked show: toggles the whole show through the episode model, not `watchedAt`.
 struct ShowWatchedSwipeButton: View {
     let showID: Int
-    /// Receives the intended new watched value so the caller can confirm first. Nil applies
-    /// the change immediately.
     var onRequest: ((Bool) -> Void)? = nil
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 

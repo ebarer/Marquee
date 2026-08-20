@@ -14,8 +14,8 @@ import Observation
 final class CloudSyncMonitor {
     private(set) var isSyncing = false
 
-    /// NSPersistentCloudKitContainer reports each event twice (begin, no end date;
-    /// then finish), so track the in-flight ones to know when all are done.
+    // NSPersistentCloudKitContainer reports each event twice (begin, then finish), so track the
+    // in-flight ones to know when all are done.
     @ObservationIgnored private var inProgress: Set<UUID> = []
 
     @ObservationIgnored nonisolated(unsafe) private var observer: (any NSObjectProtocol)?
@@ -69,8 +69,8 @@ final class CloudSyncMonitor {
         isSyncing = !inProgress.isEmpty
     }
 
-    /// A `CKError.partialFailure`'s own `localizedDescription` is a generic "error 2";
-    /// the real reasons are per-record in `partialErrorsByItemID`, so unwrap those.
+    // A `CKError.partialFailure` describes itself as a generic "error 2"; the real reasons are
+    // per-record in `partialErrorsByItemID`.
     private static func describe(_ error: Error) -> String {
         guard let ckError = error as? CKError else { return error.localizedDescription }
 
@@ -82,7 +82,7 @@ final class CloudSyncMonitor {
                 .sorted { $0.value.count > $1.value.count }
                 .map { "\(name(for: $0.key))×\($0.value.count)" }
                 .joined(separator: ", ")
-            // A record's own error carries the real reason; skip cascaded batch failures.
+            // A record's own error carries the real reason, so skip cascaded batch failures.
             let sample = underlying.first(where: { $0.code != .batchRequestFailed }) ?? underlying.first
             let detail = sample.map { " — e.g. \($0.localizedDescription)" } ?? ""
             return "partialFailure across \(partials.count) record(s): [\(summary)]\(detail)"

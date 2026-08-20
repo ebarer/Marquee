@@ -9,10 +9,7 @@ struct SectionSnapshot: Identifiable, Sendable, Equatable {
     let id: DateComponents
     let title: String
     let entries: [MediaSnapshot]
-    /// True for the "Older" archive bucket, which the list renders collapsed.
     let isCollapsible: Bool
-    /// When set (rating-sorted sections), the header renders this many filled stars
-    /// instead of `title`. Nil for month/older/unrated sections, which show `title`.
     let ratingStars: Double?
 
     init(id: DateComponents, title: String, entries: [MediaSnapshot],
@@ -24,14 +21,11 @@ struct SectionSnapshot: Identifiable, Sendable, Equatable {
         self.ratingStars = ratingStars
     }
 
-    /// Sentinel id for the "Older" section; the negative year never collides with a
-    /// real `[.year, .month]` key.
+    // Sentinel id: the negative year never collides with a real `[.year, .month]` key.
     static let olderID = DateComponents(year: -1, month: -1)
 }
 
 extension Array where Element == SectionSnapshot {
-    /// The month section a list scrolls back to: `monthsBack` before `date`, or the nearest month
-    /// either side of it when that one has no section. Nil when no section names a month.
     func monthSection(monthsBack: Int, from date: Date = Date(),
                       calendar: Calendar = .current) -> SectionSnapshot? {
         let anchor = calendar.date(byAdding: .month, value: -monthsBack, to: date) ?? date

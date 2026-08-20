@@ -5,11 +5,9 @@
 
 import SwiftUI
 
-/// Horizontal strip of show metadata cells, mirroring `MovieMetadataStrip`'s layout.
-/// Rating and watched dates are tracked per season, not at the show level.
+/// Horizontal strip of show metadata cells. Rating and watched dates are tracked per season, not per show.
 struct ShowMetadataStrip: View {
-    /// What the cells render, held separately because `Show`'s `==` is id-only (it doubles as a
-    /// navigation value): handed the whole struct, SwiftUI never sees the payload replace a stub.
+    /// Held apart because `Show`'s `==` is id-only, so SwiftUI would never see the payload replace a stub.
     struct Fields: Equatable {
         var nextAirDate: Date?
         var certification: String?
@@ -31,10 +29,8 @@ struct ShowMetadataStrip: View {
     let fields: Fields
     let name: String
     var tint: Color = .appAccent
-    /// The detail payload is still in flight, so cells it fills read as placeholders.
     var isLoading: Bool = false
     var awards: AwardsDigest = AwardsDigest()
-    /// Wikidata lands after the TMDB payload, so the awards cell has its own pending state.
     var awardsResolved: Bool = true
 
     init(show: Show, tint: Color = .appAccent, isLoading: Bool = false,
@@ -101,7 +97,6 @@ struct ShowMetadataStrip: View {
         }
     }
 
-    /// A value the caller's stub can't know yet stands in as a bar, not as an empty one.
     @ViewBuilder
     private func value<V: View>(known: Bool, width: CGFloat,
                                 @ViewBuilder content: () -> V) -> some View {
@@ -150,7 +145,6 @@ struct ShowMetadataStrip: View {
     .preferredColorScheme(.dark)
 }
 
-// Every step of the next-episode cell: named and tinted inside the week, plain past it.
 #Preview("Next episode timing") {
     func show(inDays days: Int) -> Show {
         // Built the way TMDB's air dates arrive: UTC midnight on a calendar day.
@@ -174,8 +168,8 @@ struct ShowMetadataStrip: View {
         .preferredColorScheme(.dark)
 }
 
-// A stub straight off a list row, with the payload still pending: bars, not em dashes. Must
-// match the filled strip's height — it sits under the header and can't grow as cells fill in.
+// A stub straight off a list row, with the payload still pending: bars, not em dashes. Must match
+    // the filled strip's height, since it sits under the header and can't grow as cells fill in.
 #Preview("Height across states") {
     let bare = Show(id: 1, name: "Unknown")
 

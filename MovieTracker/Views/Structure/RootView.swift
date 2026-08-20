@@ -19,7 +19,6 @@ struct RootView: View {
     @State private var syncMonitor = CloudSyncMonitor()
     @State private var store = PersistenceCoordinator(RootView.sharedContainer.mainContext)
 
-    /// Shared across shells so the query survives a shell switch.
     @State private var searchModel = SearchModel()
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass

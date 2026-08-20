@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// A section header that toggles its content: title plus a chevron that points down when
-/// expanded and rotates to -90° when collapsed. Shared by the Related/Recommendations strips.
+/// A section header that toggles its content, with a chevron that rotates when collapsed.
 struct CollapsibleSectionHeader: View {
     let title: String
     let tint: Color

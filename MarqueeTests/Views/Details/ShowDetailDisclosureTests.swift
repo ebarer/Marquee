@@ -16,7 +16,6 @@ import UIKit
 @Suite(.serialized) struct ShowDetailDisclosureTests {
     private let cache = MediaCacheStore.shared
 
-    /// The shape a list row or search result hands over: no seasons, status, network or cast.
     private func leanRecord(id: Int = 77) -> Show {
         var show = Show(id: id, name: "S")
         show.poster = "/p.jpg"

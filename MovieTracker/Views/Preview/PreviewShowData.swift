@@ -29,7 +29,6 @@ extension Show {
             creator.type = .Crew
             return creator
         }()]
-        // Counts across the run, as aggregate credits carry them.
         show.recurringCast = Person.previewTeam.filter { $0.type == .Cast }.enumerated().map {
             var member = $0.element
             member.episodeCount = 62 - $0.offset * 5
@@ -46,8 +45,6 @@ extension Show {
         return show
     }
 
-    /// What a list row or search result carries: no seasons, status, network or overview, so the
-    /// detail screen opens on this and faults the rest in.
     static var previewStub: Show {
         var stub = Show(id: Show.preview.id, name: Show.preview.name)
         stub.poster = Show.preview.poster
@@ -55,8 +52,7 @@ extension Show {
         return stub
     }
 
-    /// Nightfall under distinct ids so the season-watched and season-partial previews can carry
-    /// different watched progress in the one shared `detailPreviewContainer` without colliding.
+    // Distinct ids so the season-watched and season-partial previews don't collide in the shared container.
     static var previewWatched: Show {
         var show = Show.preview
         show.id = 1010

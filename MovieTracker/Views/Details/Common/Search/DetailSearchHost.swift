@@ -10,14 +10,11 @@ enum DetailSearch {
     static let minimumRows = 8
     static let duration = 0.25
     static let entry = Animation.easeOut(duration: duration)
-    /// The rows arriving after the field has landed.
     static let reveal = Animation.easeOut(duration: 0.15)
-    /// A control moving between a section header and the navigation bar.
     static let barHandoff = Animation.easeInOut(duration: 0.2)
 }
 
-/// What a section needs to open ``DetailSearchScreen``. `open` takes the frame of the control that
-/// was tapped, which the field grows out of.
+/// What a section needs to open `DetailSearchScreen`; `open` takes the frame the field grows out of.
 struct DetailSearchAction {
     let isPresented: Bool
     let open: (DetailSearchRequest, CGRect?) -> Void
@@ -65,16 +62,15 @@ private struct DetailSearchHost: ViewModifier {
 
     private var isSearching: Bool { request != nil && !isClosing }
 
-    /// Whether a kind these rows actually have is hidden — what the filter glyph reflects.
     private var hidesCredits: Bool {
         request?.filterKinds.contains(where: creditFilter.hides) == true
     }
 
-    /// A modal's bar leaves with the keyboard and would take the field with it, so the flying copy
-    /// is the real field there and the only one that ever takes focus.
+    // A modal's bar leaves with the keyboard and would take the field with it, so the flying copy is
+    // the real field there and the only one that ever takes focus.
     private var fieldStaysInPlace: Bool { closeModal != nil }
 
-    /// A view over the navigation bar takes no touches, so elsewhere the settled field is a bar item.
+    // A view over the navigation bar takes no touches, so the settled field is a bar item.
     private var fieldInBar: Bool { landed && !fieldStaysInPlace }
 
     func body(content: Content) -> some View {
@@ -184,8 +180,7 @@ private struct DetailSearchHost: ViewModifier {
         }
     }
 
-    /// Where search's own trailing items sit. A page's bar items aren't necessarily the trailing
-    /// ones — a detail screen adds its own beside the search button — so their frames don't apply.
+    // A page's bar items aren't necessarily the trailing ones, so their frames don't apply.
     private var learnedSlot: CGRect? {
         [cancelSlot, countsSlot, filterSlot].compactMap { $0 }
             .reduce(into: CGRect?.none) { union, slot in

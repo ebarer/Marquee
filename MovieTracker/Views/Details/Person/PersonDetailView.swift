@@ -15,7 +15,6 @@ struct PersonDetailView: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
 
-
     @Namespace private var photoNamespace
     @State private var showPhoto = false
     @State private var headerPinned = false
@@ -23,11 +22,7 @@ struct PersonDetailView: View {
     // The page's top edge in window coordinates. A sheet sits inset in the window, so a bare
     // `.global` reading would count the sheet's offset as nav-bar height.
     @State private var pageTop: CGFloat = 0
-    /// Remembered across people and launches; talk-show and courtesy credits are the default
-    /// selection, so an untouched filter behaves as it always has.
     @AppStorage("personCreditFilter") private var filter = CreditFilter()
-    /// Handed up by the credits section, so the bar carries its search button from the moment the
-    /// filmography is known.
     @State private var creditSearch: DetailSearchRequest?
 
     @ScaledMetric(relativeTo: .title2) private var nameLine: CGFloat = 27
@@ -63,8 +58,8 @@ struct PersonDetailView: View {
 
     private var detailContent: some View {
         GeometryReader { container in
-            // This reader sits below the nav bar, so its distance from the page's top edge is the
-            // bar's bottom edge — the offset the header's collapsed layout works from.
+            // This reader sits below the nav bar, so its distance from the page's top edge is the bar's
+        // bottom edge: the offset the header's collapsed layout works from.
             let navBarBottom = container.frame(in: .global).minY - pageTop
             let pinLine = navBarBottom + headerMetrics.collapsedExtent
 
@@ -103,8 +98,8 @@ struct PersonDetailView: View {
                 }
                 .coordinateSpace(name: "scroll")
                 .scrollEdgeEffectHidden(!headerPinned, for: .top)
-                // Also ignore horizontal safe area — otherwise the content sits inset and the
-                // background shows as a trailing gutter.
+                // Also ignore horizontal safe area, or the content sits inset and the background shows as a
+            // trailing gutter.
                 .ignoresSafeArea(edges: [.top, .horizontal])
                 .onScrollGeometryChange(for: CGFloat.self) { geo in
                     max(0, -(geo.contentOffset.y + geo.contentInsets.top))
@@ -116,8 +111,8 @@ struct PersonDetailView: View {
         .swipeActionsContainerIfAvailable()
     }
 
-    /// Zero-height, at the top of the scroll content: window position minus scroll-space position
-    /// is where the page begins. `ignoresSafeArea` widens what the ScrollView draws, not its frame.
+    // Window position minus scroll-space position is where the page begins.
+    // `ignoresSafeArea` widens what the ScrollView draws, not its frame.
     private var pageTopProbe: some View {
         Color.clear
             .frame(height: 0)
@@ -152,7 +147,7 @@ struct PersonDetailView: View {
 }
 
 private extension View {
-    /// `swipeActionsContainer()` requires iOS 27; earlier releases go without it.
+    // `swipeActionsContainer()` requires iOS 27; earlier releases go without it.
     @ViewBuilder
     func swipeActionsContainerIfAvailable() -> some View {
         if #available(iOS 27.0, *) {

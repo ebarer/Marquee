@@ -8,18 +8,15 @@
 
 import Foundation
 
-/// A transient person hydrated from TMDB (not persisted). Identity is the TMDB id,
-/// so it works as a navigation value.
+/// A transient person hydrated from TMDB. Identity is the TMDB id, so it works as a navigation value.
 struct Person: Hashable, Identifiable, Codable, Sendable {
     var id: Int
     var name: String
     var popularity: Float = 0.0
     var type: PersonType?
     var role: String?
-    /// Episodes they appear in (from a show's or season's aggregate credits). Nil elsewhere.
     var episodeCount: Int?
-    /// TMDB credit ids for their roles on one show, which resolve to the episodes they are in.
-    /// Optional so cache entries written before it existed still decode.
+    // Optional so cache entries written before it existed still decode.
     var creditIDs: [String]?
     var profilePicture: String?
     var birthday: Date?
@@ -50,7 +47,6 @@ struct Person: Hashable, Identifiable, Codable, Sendable {
     static func == (lhs: Person, rhs: Person) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 
-    /// Movie and TV credits interlaced, newest first (undated last) — the "Credits" list.
     var allCredits: [MediaRef] {
         let refs = (credits ?? []).map(MediaRef.movie) + (tvCredits ?? []).map(MediaRef.show)
         return refs.sorted {

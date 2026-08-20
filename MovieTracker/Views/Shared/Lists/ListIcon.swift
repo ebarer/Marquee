@@ -21,7 +21,7 @@ enum ListSymbol {
         canonical(symbol)
     }
 
-    /// A stored symbol is an emoji when it isn't a valid SF Symbol name.
+    // A stored symbol is an emoji when it isn't a valid SF Symbol name.
     static func isEmoji(_ symbol: String) -> Bool {
         !symbol.isEmpty && UIImage(systemName: symbol) == nil
     }
@@ -30,7 +30,7 @@ enum ListSymbol {
         isEmoji(symbol) ? emojiImage(symbol, pointSize: pointSize) : nil
     }
 
-    /// Rasterizes an emoji so it can sit in a menu's icon slot, which only accepts images.
+    // A menu's icon slot accepts only images, so an emoji has to be rasterized.
     static func emojiImage(_ emoji: String, pointSize: CGFloat = 22) -> UIImage {
         let font = UIFont.systemFont(ofSize: pointSize)
         let string = emoji as NSString

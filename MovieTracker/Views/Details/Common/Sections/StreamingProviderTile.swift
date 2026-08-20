@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// A streaming-provider logo tile that opens the provider's app/page (or the JustWatch
-/// fallback link). Used in ``WhereToWatchSection``.
+/// A streaming-provider logo tile opening the provider's page, or the JustWatch fallback link.
 struct StreamingProviderTile: View {
     let group: ProviderGroup
     let fallback: URL?

@@ -6,13 +6,12 @@
 import SwiftUI
 import SwiftData
 
-/// The rows a detail search shows. Its own view so that moving the field doesn't rebuild them.
+/// The rows a detail search shows. Its own view so moving the field doesn't rebuild them.
 struct DetailSearchResults: View {
     let request: DetailSearchRequest
     let query: String
     var barHeight: CGFloat = 0
     var onFieldGlassChange: (Bool) -> Void = { _ in }
-    /// Reports where these rows start, which is the edge the caller measures the field against.
     var onTopChange: (CGFloat) -> Void = { _ in }
 
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
@@ -22,7 +21,7 @@ struct DetailSearchResults: View {
 
     @State private var pinLine: CGFloat = 0
     @State private var pinnedSections: Set<String> = []
-    /// Matches system behavior: glass only becomes visible once content scrolls under the header.
+    // Matches system behavior: glass only becomes visible once content scrolls under the header.
     @State private var scrolled = false
 
     private static let space = "detailSearchResults"
@@ -111,16 +110,13 @@ struct DetailSearchResults: View {
         }
     }
 
-    /// Nil for a crew member whose roster carries no credit ids, leaving nothing to resolve. A
-    /// cast member always has episodes, which the screen resolves even from an id-less roster.
+    // Nil for a crew member whose roster carries no credit ids, leaving nothing to resolve.
     private func episodes(for person: Person) -> ShowEpisodeCredits? {
         guard let show = request.creditedShow else { return nil }
         guard person.type == .Cast || !(person.creditIDs ?? []).isEmpty else { return nil }
         return ShowEpisodeCredits(person: person, in: show)
     }
 
-    /// Credit rows drop by kind as the filter in the bar changes, so search shows what the page
-    /// itself would.
     private var visibleGroups: [DetailSearchGroup] {
         guard !request.filterKinds.isEmpty else { return request.groups }
         return request.groups.compactMap { group in

@@ -25,7 +25,6 @@ enum DetailRoot: Hashable, Identifiable {
         }
     }
 
-    /// Maps a type-erased navigation value to a detail root, if it's a known kind.
     init?(_ value: AnyHashable) {
         switch value.base {
         case let movie as Movie: self = .movie(movie)
@@ -41,12 +40,12 @@ enum DetailRoot: Hashable, Identifiable {
     }
 }
 
-/// The detail screen for a `DetailRoot` — the modal's content router.
+/// The detail screen for a `DetailRoot`, the modal's content router.
 struct DetailRootView: View {
     let root: DetailRoot
 
-    // Whatever this renders is what the modal opened on — nothing is pushed over it yet, so
-    // its Close button owns the leading side.
+    // Whatever this renders is what the modal opened on. Nothing is pushed over it yet, so its Close
+        // button owns the leading side.
     var body: some View {
         destination
             .environment(\.isModalRoot, true)

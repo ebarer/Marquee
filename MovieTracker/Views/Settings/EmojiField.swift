@@ -6,8 +6,7 @@
 import SwiftUI
 import UIKit
 
-/// Picks a single emoji for a list icon. UIKit has no public emoji picker, so this
-/// forces the emoji keyboard, grabs the first emoji typed, and dismisses itself.
+/// UIKit has no public emoji picker, so this forces the emoji keyboard and takes the first emoji typed.
 struct EmojiField: UIViewRepresentable {
     @Binding var isActive: Bool
     var onPick: (String) -> Void

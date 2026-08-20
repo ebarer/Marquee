@@ -2,10 +2,8 @@
 //  TrailerPlayerView.swift
 //  MovieTracker
 //
-//  Plays a trailer in-app. Studio trailers usually block third-party embedding,
-//  so this loads YouTube's watch page with inline playback disabled — starting
-//  the video hands it to iOS's native fullscreen player. Permits landscape while
-//  on screen (via `AppDelegate.isPlayingTrailer`); the rest of the app is portrait.
+//  Plays a trailer in-app. Studio trailers usually block embedding, so this loads YouTube's watch
+//  page with inline playback disabled, handing the video to the native fullscreen player.
 //
 
 import SwiftUI
@@ -28,8 +26,7 @@ final class TrailerPlayerViewController: UIViewController {
     private let trailer: MediaTrailer
     private var webView: WKWebView!
     private var fullscreenObservation: NSKeyValueObservation?
-    /// Tracks whether playback ever reached fullscreen, so we only treat a
-    /// *return* from fullscreen (video ended or dismissed) as "finished".
+    // Only a return from fullscreen counts as finished, so track whether it was ever entered.
     private var didEnterFullscreen = false
     private var isFinished = false
 
@@ -82,8 +79,7 @@ final class TrailerPlayerViewController: UIViewController {
         }
     }
 
-    // Allow the user to rotate the trailer freely; the rest of the app is
-    // portrait-only (enforced at the app level via `AppDelegate.isPlayingTrailer`).
+    // The rest of the app is portrait-only, enforced via `AppDelegate.isPlayingTrailer`.
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .allButUpsideDown }
 
     override func viewWillAppear(_ animated: Bool) {

@@ -56,7 +56,6 @@ extension Movie {
         ]
     }
 
-    /// Under ten minutes, so its cell carries the "(Short)" tag.
     static var previewShort: Movie {
         var movie = Movie(id: 7, title: "Peter's To-Do List")
         movie.releaseDate = DateComponents(calendar: .current, year: 2019, month: 9, day: 17).date
@@ -65,7 +64,6 @@ extension Movie {
         return movie
     }
 
-    /// A movie that belongs to a franchise — drives the "Related" strip in the detail.
     static var previewSeries: Movie {
         var movie = Movie(id: 3, title: "Spider-Man: Brand New Day")
         movie.releaseDate = DateComponents(calendar: .current, year: 2026, month: 7, day: 31).date
@@ -83,7 +81,6 @@ extension Movie {
         return movie
     }
 
-    /// Sibling films of `previewSeries`, for the franchise strip.
     static var previewSeriesCollection: [Movie] {
         [(4, "Spider-Man: Homecoming", 2017), (5, "Spider-Man: Far From Home", 2019),
          (6, "Spider-Man: No Way Home", 2021)].map { id, title, year in
@@ -94,8 +91,7 @@ extension Movie {
         }
     }
 
-    /// The standard movie under a distinct id, so a "watched" preview can mark it seen
-    /// without also flipping the unwatched Standard preview (same shared container).
+    // A distinct id so marking it seen doesn't also flip the unwatched Standard preview.
     static var previewWatched: Movie {
         var movie = Movie.preview
         movie.id = 7
@@ -137,7 +133,6 @@ extension Person {
                 return movie
             }(),
             {
-                // Credited three ways on Tenet: all of them listed, most prominent first.
                 var movie = Movie(id: 21, title: "Tenet")
                 movie.releaseDate = DateComponents(calendar: .current, year: 2020, month: 9, day: 3).date
                 movie.creditJobs = ["Director", "Writer", "Executive Producer"]
@@ -225,8 +220,8 @@ extension Person {
 
 // MARK: - Sample SwiftData container
 
-/// Everything is inserted, never fetched — a fresh in-memory store has no connection until
-/// SwiftUI attaches it, so fetching here crashes with "No eligible connection available".
+// Everything is inserted, never fetched: a fresh in-memory store has no connection until SwiftUI
+    // attaches it, so fetching here crashes with "No eligible connection available".
 @MainActor
 let previewModelContainer: ModelContainer = {
     let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
@@ -257,8 +252,7 @@ let previewModelContainer: ModelContainer = {
 
 // MARK: - Detail-screen preview store
 
-/// One shared in-memory store for the Movie/Show detail previews (a fresh `ModelContainer` per
-/// preview is the slow part). Scenario state is keyed to distinct sample ids, so none bleed.
+// One shared in-memory store; a fresh `ModelContainer` per preview is the slow part.
 @MainActor
 let detailPreviewContainer: ModelContainer = {
     let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
@@ -267,13 +261,11 @@ let detailPreviewContainer: ModelContainer = {
     context.insert(MediaList(name: "Watch List", symbol: "bookmark", sortOrder: 0, isWatchList: true))
     context.insert(MediaList(name: "Favorites", symbol: "heart", sortOrder: 1, colorIndex: 2))
 
-    // Movie "Watched": a rated, watched movie.
     let watched = MediaItem(movie: .previewWatched)
     watched.watchedAt = MediaItem.floatingDay(from: Date())
     watched.userRating = 4.0
     context.insert(watched)
 
-    // Show "Season watched" (id 1010): all of S1. "Season partial" (id 1011): two of three.
     for episode in 1...3 {
         context.insert(WatchedEpisode(showTmdbID: 1010, seasonNumber: 1, episodeNumber: episode))
     }

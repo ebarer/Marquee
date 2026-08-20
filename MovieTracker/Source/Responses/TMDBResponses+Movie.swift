@@ -2,8 +2,7 @@
 //  TMDBResponses+Movie.swift
 //  MovieTracker
 //
-//  Raw `Codable` shapes for TMDB movie endpoints. `MovieRaw.WatchProvidersRaw` and its
-//  `availabilityByRegion()` are shared with TV (see TMDBResponses+TV).
+//  Raw `Codable` shapes for TMDB movie endpoints. Watch providers are shared with TV.
 //
 
 import Foundation
@@ -47,8 +46,8 @@ extension TMDBWrapper {
                 release = filteredReleases[0].dates.filter { $0.type == .TheatricalLimited }
             }
 
-            // Earliest theatrical date: TMDB lists re-releases as additional Theatrical
-            // entries in no order, so `dates[0]` can surface one over the original.
+            // TMDB lists re-releases as additional Theatrical entries in no order, so `dates[0]` can surface
+        // one over the original.
             guard let earliest = release.min(by: { $0.releaseDate < $1.releaseDate }) else {
                 return (nil, nil)
             }
@@ -91,8 +90,7 @@ extension TMDBWrapper {
             return crewMembers + castMembers
         }
 
-        /// TMDB lists a separate credit per job, so collapse repeated ids into one
-        /// row (joining roles) or the same id breaks list identity.
+        // TMDB lists a separate credit per job, so repeated ids would break list identity.
         private static func dedupedPeople(
             _ raw: [(id: Int, name: String, role: String, pic: String?)],
             type: Person.PersonType
@@ -302,7 +300,7 @@ extension TMDBWrapper {
                     return displayPriorities[region] != nil
                 }
 
-                // Lower priority number = more popular in the region.
+                // A lower priority number is more popular in the region.
                 func priority(in region: String) -> Int {
                     displayPriorities?[region] ?? displayPriority ?? .max
                 }
@@ -317,8 +315,7 @@ extension TMDBWrapper {
         var parts: [MovieRaw]
     }
 
-    /// `append_to_response=external_ids`, shared by movies and TV. TMDB gives TV's `imdb_id`
-    /// only here, never at the top level of `/tv/{id}`.
+    /// TMDB gives TV's `imdb_id` only under `append_to_response=external_ids`, never at the top level of /tv/{id}.
     struct ExternalIDsRaw: Codable {
         var imdbID: String?
         var wikidataID: String?
@@ -337,8 +334,6 @@ extension TMDBWrapper {
 // MARK: - Shared watch-provider mapping (movies + TV)
 
 extension TMDBWrapper.MovieRaw.WatchProvidersRaw {
-    /// Collapses TMDB's per-bucket provider lists into one ranked list per region.
-    /// Shared by movies and shows so both surface the same "where to watch" data.
     func availabilityByRegion() -> [String: WatchAvailability] {
         var out: [String: WatchAvailability] = [:]
         for (code, region) in results {

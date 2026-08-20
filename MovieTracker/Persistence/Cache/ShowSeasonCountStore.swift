@@ -13,7 +13,6 @@ final class ShowSeasonCountStore {
     private var resolved: [Int: Show] = [:]
     private var tasks: [Int: Task<Show?, Never>] = [:]
 
-    /// The fuller show for `id` (season list + air range), or nil if it can't be fetched.
     func show(for id: Int) async -> Show? {
         if let cached = resolved[id] { return cached }
         if let inFlight = tasks[id] { return await inFlight.value }

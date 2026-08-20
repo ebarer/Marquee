@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// Payloads already fetched this session, readable synchronously. `MediaCacheStore` sits behind
-/// an actor and a disk read, so a detail page can't consult it before its first frame.
+/// Payloads already fetched this session, readable synchronously before a first frame.
 @MainActor
 enum MediaMemoryCache {
     struct Entry {

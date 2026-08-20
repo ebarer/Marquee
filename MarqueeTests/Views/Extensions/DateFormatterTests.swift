@@ -23,7 +23,7 @@ import SwiftUI
             .map { DateFormatter.iso8601DAw.string(from: $0) } == day)
     }
 
-    /// An air date `days` out, built the way TMDB's are: UTC midnight on a calendar day.
+    // An air date `days` out, built the way TMDB's are: UTC midnight on a calendar day.
     private func airDate(inDays days: Int) -> Date {
         DateFormatter.utcCalendar
             .date(byAdding: .day, value: days, to: MediaItem.floatingDay(from: Date()))!
@@ -50,8 +50,7 @@ import SwiftUI
         #expect(!airDate.isInTheFuture(asOf: now), "\(hour):00 local")
     }
 
-    /// Shared by the episode controls and the Watch List's leading swipe, so both turn on at
-    /// the same moment: local midnight on the air day.
+    // Shared by the episode controls and the Watch List swipe, so both turn on at local midnight.
     @Test func stopsBeingFutureAtLocalMidnight() {
         let calendar = Calendar.current
         let airDay = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: Date()))!

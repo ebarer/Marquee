@@ -44,20 +44,17 @@ import SwiftData
         #expect(context(caughtUp: [entry.tmdbID]).leadingSwipe(for: entry) == nil)
     }
 
-    /// The whole-show swipe would mark aired episodes only, and there are none left.
     @Test func caughtUpShowOffersNothingWithoutATrackedSeason() {
         let entry = snapshot()
         #expect(context().leadingSwipe(for: entry) == .toggleShowWatched)
         #expect(context(caughtUp: [entry.tmdbID]).leadingSwipe(for: entry) == nil)
     }
 
-    /// Being caught up on one show says nothing about the next row.
     @Test func otherShowsKeepTheirSwipe() {
         let entry = snapshot(id: 7, season: 1, nextEpisodeDate: .utc(2020, 1, 1))
         #expect(context(caughtUp: [99]).leadingSwipe(for: entry) == .trackedSeason(1))
     }
 
-    /// Already covered before this: nothing to mark until the next episode airs.
     @Test func unairedNextEpisodeOffersNothing() {
         let entry = snapshot(season: 2, nextEpisodeDate: .distantFuture)
         #expect(context().leadingSwipe(for: entry) == nil)

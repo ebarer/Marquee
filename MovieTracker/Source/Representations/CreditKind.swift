@@ -6,10 +6,8 @@
 import Foundation
 
 /// What a person did on a title, from TMDB's cast/crew split and the crew department.
-/// Ranks their duplicate credits, and gives the filmography something to filter by.
 enum CreditKind: String, Codable, CaseIterable, Identifiable, Sendable {
-    // Declaration order ranks a person's several roles on one title. Acting leads: Cranston
-    // directed a few Malcolms, but he's known for playing Hal.
+    // Declaration order ranks a person's several roles on one title, and acting leads.
     case acting, directing, writing, producing, crew, appearance
 
     var id: String { rawValue }
@@ -38,24 +36,20 @@ enum CreditKind: String, Codable, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// Courtesy credits rather than work on the title: appearing as yourself, a thanks, or an
-    /// attribution-only job ("Idea", which TMDB files under Writing beside real screenplays).
+    // TMDB files attribution-only jobs such as "Idea" under Writing beside real screenplays.
     static func isExtraneous(_ role: String?) -> Bool {
         guard let role = role?.lowercased() else { return false }
         if role.contains("thanks") || role == "idea" { return true }
-        // Hand-entered, so "Self" gets a character of slack for typos ("Selft"). First word
-        // only, and no longer: "Herself" and "Selfish Man" are parts someone played.
+        // Hand-entered, so "Self" gets a character of slack for typos. First word only and no longer:
+    // "Herself" and "Selfish Man" are parts someone played.
         let firstWord = role.prefix { !" -–/,(".contains($0) }
         return firstWord.hasPrefix("self") && firstWord.count <= "self".count + 1
     }
 
-    /// The kinds these credits actually cover, in ranking order — what a filter can offer.
     static func present(in credits: [MediaRef]) -> [CreditKind] {
         allCases.filter { kind in credits.contains { $0.creditKind == kind } }
     }
 
-    /// Several credits on one title as the lines a row shows: the characters played on one,
-    /// the jobs held on another (most prominent first), filed under the top-ranking kind.
     static func merge(_ credits: [(kind: CreditKind, role: String?, isCast: Bool)])
         -> (kind: CreditKind, character: String?, jobs: [String]) {
         let ordered = credits.enumerated()
@@ -75,8 +69,7 @@ enum CreditKind: String, Codable, CaseIterable, Identifiable, Sendable {
 
 /// Crew job titles as a credit row shows them.
 enum CreditJob {
-    // Matched as substrings, so a compound title keeps the rest of itself
-    // ("Co-Executive Producer" → "Co-EP"). Longest first: several overlap.
+    // Matched as substrings, so a compound title keeps the rest of itself. Longest first: several overlap.
     private static let abbreviations = [
         ("Director of Photography", "DP"),
         ("Original Music Composer", "Composer"),
@@ -91,7 +84,6 @@ enum CreditJob {
         return job
     }
 
-    /// The jobs line of a credit row; nil when the person only acted.
     static func line(_ jobs: [String]?) -> String? {
         guard let jobs, !jobs.isEmpty else { return nil }
         return jobs.map(short).joined(separator: ", ")

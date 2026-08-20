@@ -5,12 +5,9 @@
 
 import SwiftUI
 
-/// A glass checkmark toggling a whole season's watched state. Marking covers only *aired*
-/// episodes, so a season still airing lands in a third state: caught up.
+/// A glass checkmark for a whole season. Marking covers only aired episodes, so an airing season reads as caught up.
 struct SeasonWatchedToggle: View {
     let allWatched: Bool
-    /// Every aired episode watched. With unaired ones left this is "caught up", not complete:
-    /// the toggle fills as a half-circle and stops responding.
     var allAiredWatched: Bool = false
     let canToggle: Bool
     let tint: Color

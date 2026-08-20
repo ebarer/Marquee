@@ -14,7 +14,6 @@ import Foundation
 
     // MARK: - Defaults
 
-    /// An untouched filter behaves as the old Self/Thanks toggle did.
     @Test func defaultsToHidingSelfAndThanks() {
         let filter = CreditFilter()
         #expect(filter.isOn)
@@ -62,8 +61,6 @@ import Foundation
         #expect(filter.active == [.appearance, .producing])
     }
 
-    /// The filter can be on with nothing selected — that's a filter hiding nothing, not an
-    /// invalid state, and it survives storage.
     @Test func anEmptySelectionIsAllowed() {
         var filter = CreditFilter()
         filter.setHidden(false, for: .appearance)
@@ -90,26 +87,21 @@ import Foundation
         }
     }
 
-    /// Sorted, so the same selection always stores the same string.
     @Test func rawValueIsStableRegardlessOfInsertionOrder() {
         #expect(CreditFilter(hidden: [.writing, .directing]).rawValue
                 == CreditFilter(hidden: [.directing, .writing]).rawValue)
     }
 
-    /// Storage that isn't in the "flag|kinds" shape at all is rejected, so `@AppStorage` falls
-    /// back to the default rather than seeding something nonsensical.
     @Test func malformedStorageIsRejected() {
         for raw in ["", "on", "directing"] {
             #expect(CreditFilter(rawValue: raw) == nil, "\(raw) should not decode")
         }
     }
 
-    /// Anything but "on" in the flag reads as off — the only writer is `rawValue`.
     @Test func anUnrecognizedFlagReadsAsOff() {
         #expect(CreditFilter(rawValue: "|directing")?.isOn == false)
     }
 
-    /// A kind dropped from a future build shouldn't take the rest of the selection with it.
     @Test func unknownKindsAreSkipped() {
         let filter = CreditFilter(rawValue: "on|directing,dancing")
         #expect(filter?.active == [.directing])
@@ -128,7 +120,6 @@ import Foundation
         #expect(merged.jobs == ["Director", "Screenplay", "Producer"])
     }
 
-    /// Equal-ranking jobs keep TMDB's own order rather than being re-sorted.
     @Test func tiesKeepTheOrderTheyArrivedIn() {
         let merged = CreditKind.merge([(.writing, "Story", false),
                                        (.writing, "Screenplay", false),
@@ -156,8 +147,6 @@ import Foundation
         #expect(empty.jobs.isEmpty)
     }
 
-    /// Acting outranks crew work: someone who acted in a show and directed some of it is
-    /// known for the part, so that's what the credit files as — on a line of its own.
     @Test func actingAndCrewWorkSplitIntoTwoLines() {
         let merged = CreditKind.merge([(.directing, "Director", false), (.acting, "Hal", true)])
         #expect(merged.kind == .acting)
@@ -165,7 +154,6 @@ import Foundation
         #expect(merged.jobs == ["Director"])
     }
 
-    /// Several characters on one title still read as one line.
     @Test func severalCharactersJoinOneLine() {
         let merged = CreditKind.merge([(.acting, "Sam", true), (.acting, "Dean", true)])
         #expect(merged.character == "Sam, Dean")
@@ -181,7 +169,6 @@ import Foundation
         #expect(CreditJob.short("Original Music Composer") == "Composer")
     }
 
-    /// Matched as a substring, so a compound title keeps the rest of itself.
     @Test func compoundTitlesKeepTheirPrefix() {
         #expect(CreditJob.short("Co-Executive Producer") == "Co-EP")
     }

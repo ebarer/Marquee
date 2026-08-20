@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// A watched date for a title, season, or episode, tappable to open ``WatchedDatePicker``.
-/// `Target` routes the edited day to the right `PersistenceCoordinator` write.
+/// A watched date for a title, season, or episode; `Target` routes the edit to the right write.
 struct WatchedDateButton: View {
     enum Target {
         case movie(MediaKey)
@@ -24,8 +23,8 @@ struct WatchedDateButton: View {
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
-    /// Release and air dates arrive at UTC midnight, while the picker works in `Calendar.current`:
-    /// a quick-set day would land the evening before west of UTC without this.
+    // Dates arrive at UTC midnight while the picker works in `Calendar.current`. Without this a
+    // quick-set day lands the evening before west of UTC.
     private static func localDay(_ date: Date?) -> Date? { date.map(MediaItem.localDay) }
 
     init(key: MediaKey, watchedDate: Date?, tint: Color, font: Font? = nil) {

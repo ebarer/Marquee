@@ -13,15 +13,14 @@ extension Date {
         return DateFormatter.detailPresentation.string(from: self)
     }
 
-    /// Calendar year in UTC, matching the ISO-8601 formatters used across the app.
     var year: Int {
         var calendar = Calendar(identifier: .iso8601)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         return calendar.component(.year, from: self)
     }
 
-    /// Whole calendar days from `reference`'s day to this date's day. Air dates parse at UTC
-    /// midnight, so comparing days (not instants) stops tomorrow reading as past at 5pm here.
+    // Air dates parse at UTC midnight, so comparing days rather than instants stops tomorrow reading
+    // as past at 5pm here.
     func calendarDays(from reference: Date) -> Int? {
         let calendar = DateFormatter.utcCalendar
         let day = calendar.dateComponents([.year, .month, .day], from: self)
@@ -31,8 +30,7 @@ extension Date {
         return calendar.dateComponents([.day], from: now, to: then).day
     }
 
-    /// True while this date's calendar day is still ahead of the device's own today, so an
-    /// episode airing tomorrow can't be watched no matter how late in the evening it is here.
+    // Compares calendar days, so an episode airing tomorrow can't be watched late in the evening here.
     func isInTheFuture(asOf reference: Date = Date()) -> Bool {
         guard let days = calendarDays(from: reference) else { return false }
         return days > 0
@@ -40,8 +38,6 @@ extension Date {
 
     var inTheFuture: Bool { isInTheFuture() }
 
-    /// True while this falls in the next seven days — the window `toRelativeDayString()` names
-    /// a day in, so callers can highlight it.
     var isWithinTheComingWeek: Bool {
         guard let days = calendarDaysFromToday else { return false }
         return (0...6).contains(days)
@@ -49,8 +45,6 @@ extension Date {
 
     private var calendarDaysFromToday: Int? { calendarDays(from: Date()) }
 
-    /// "Today", "Tomorrow" or "Thursday" within the coming week — a bare weekday name only
-    /// reads unambiguously that close. Otherwise the full date, "Aug 13, 2026".
     func toRelativeDayString() -> String {
         switch calendarDaysFromToday {
         case 0: return "Today"

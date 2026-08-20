@@ -21,8 +21,6 @@ import SwiftData
         return SectionFormatter.sections(from: list, ascending: ascending)
     }
 
-    /// Seeds a custom list with entries carrying explicit release/added dates. `shows` adds the
-    /// same rows as TV entries, so the fold can be exercised per media type.
     private func seedList(_ rows: [(id: Int, title: String, release: Date?, added: Date)],
                           shows: [(id: Int, title: String, release: Date?, added: Date)] = [],
                           isWatchList: Bool = false) -> UUID {
@@ -144,8 +142,6 @@ import SwiftData
         #expect(result.isEmpty)
     }
 
-    /// Watch List rows: `recent` upcoming titles + `old` archived ones, plus `oldShows` archived
-    /// TV entries. Folds into "Older" only when both counts clear their thresholds.
     private func seedWatchList(recent: Int, old: Int, oldShows: Int = 0) -> UUID {
         var rows: [(id: Int, title: String, release: Date?, added: Date)] = []
         for offset in 0..<recent {

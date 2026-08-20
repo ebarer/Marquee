@@ -21,8 +21,7 @@ struct ListManagerView: View {
     private var watchList: MediaList? { visibleLists.first { $0.isWatchList } }
     private var customLists: [MediaList] { visibleLists.filter { !$0.isWatchList } }
 
-    /// One past the highest custom sort order so new lists land at the bottom.
-    /// Orders can be non-contiguous (e.g. after an import), so use max + 1, not count.
+    // Orders can be non-contiguous, as after an import, so use max + 1 rather than count.
     private var nextCustomSortOrder: Int {
         (customLists.map(\.sortOrder).max() ?? 0) + 1
     }
@@ -307,7 +306,7 @@ struct ListManagerView: View {
         offsets.map { customLists[$0] }.forEach { store?.delete($0) }
     }
 
-    /// Sort orders start at 1; the Watch List holds 0.
+    // Sort orders start at 1; the Watch List holds 0.
     private func move(from source: IndexSet, to destination: Int) {
         store?.perform {
             var reordered = customLists

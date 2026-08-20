@@ -5,34 +5,21 @@
 
 import SwiftUI
 
-/// A show list row mirroring `MovieRow`, but with the air-year range and season
-/// count (both gray) beneath the name so it reads clearly as a series.
+/// A show list row mirroring `MovieRow`, with the air-year range and season count beneath the name.
 struct ShowRow: View {
     let show: Show
-    /// A credit role (character/job) shown under the name, e.g. in a person's credits.
     var role: String? = nil
-    /// Non-acting jobs on the title, on a line of their own so the character keeps one.
     var jobs: String? = nil
-    /// Credits pass `false` to skip the lazy per-row season-count fetch.
     var showsSeasonCount: Bool = true
-    /// When set (a person's TV credits), replaces the year range — "S7 · E5", "Season 1",
-    /// or "12 Episodes", resolved by the caller from ``EpisodeCredit``.
     var episodeSummary: String? = nil
-    /// Art to use in place of the show's own — the season's, in a person's credits, so a run
-    /// split across years doesn't repeat one poster down the list.
     var posterOverride: URL? = nil
-    /// An explicit poster badge; leave nil and set `derivesStatus` to read it from the store.
     var status: PosterStatus? = nil
-    /// Derive the badge from watched progress / Watch List membership (lists, search).
     var derivesStatus: Bool = false
-    /// The poster's size. A row heading a list of episode stills passes their width, so its text
-    /// lines up with theirs.
     var posterSize = CGSize(width: 51, height: 76)
 
     @Environment(PersistenceCoordinator.self) private var store: PersistenceCoordinator?
 
-    /// Search/list stubs carry only a premiere date, so the year range shows a single year.
-    /// Resolve the fuller show lazily to upgrade it to a real range (e.g. "2022–2025").
+    // Search and list stubs carry only a premiere date, so the fuller show is resolved lazily.
     @State private var resolvedYearRange: String?
 
     private var yearRange: String { resolvedYearRange ?? show.yearRange }
@@ -83,8 +70,8 @@ struct ShowRow: View {
             Spacer()
         }
         .task(id: show.id) {
-            // A stub (no seasons loaded) lacks last-air/status, so upgrade the year range
-            // independently of the season-count text — otherwise "2021–Present" never shows.
+            // A stub with no seasons loaded lacks last-air and status, so upgrade the year range independently
+            // of the season-count text, or "2021-Present" never shows.
             guard episodeSummary == nil, show.seasonCount == 0,
                   let full = await ShowSeasonCountStore.shared.show(for: show.id) else { return }
             resolvedYearRange = full.yearRange

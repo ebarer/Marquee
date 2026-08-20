@@ -6,7 +6,6 @@
 import SwiftUI
 
 extension View {
-    /// A list row body in a rounded-rect card, for the iPad list grid.
     func gridCard() -> some View {
         padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -15,8 +15,6 @@ struct Season: Hashable, Identifiable, Codable, Sendable {
     var airDate: Date?
     var episodeCount: Int
     var episodes: [Episode] = []
-    /// The season's billed cast (from its aggregate credits), ranked by episodes in the
-    /// season — so the show detail's cast list follows the selected season.
     var cast: [Person] = []
 
     init(id: Int, seasonNumber: Int, name: String, episodeCount: Int = 0) {
@@ -31,7 +29,6 @@ struct Season: Hashable, Identifiable, Codable, Sendable {
 
     var isSpecials: Bool { seasonNumber == 0 }
 
-    /// The year the season began airing, shown alongside the season name.
     var startYear: Int? { airDate?.year }
 
     func posterURL(_ size: PosterSize = .w342) -> URL? {

@@ -18,8 +18,7 @@ final class MovieDetailDisclosureUITests: XCTestCase {
 
     override func setUp() { continueAfterFailure = false }
 
-    /// Opens the first movie on Discover, from empty caches and with the detail request held back
-    /// — otherwise a cached title lands complete and there's no loading state to test.
+    // Empty caches and the detail request held back, or a cached title lands complete with no loading state.
     @MainActor
     private func pushFirstMovie() -> XCUIApplication {
         let app = XCUIApplication()
@@ -33,7 +32,6 @@ final class MovieDetailDisclosureUITests: XCTestCase {
         return app
     }
 
-    /// Samples repeatedly for `seconds`, keeping each distinct value a probe reported, in order.
     @MainActor
     private func record(forSeconds seconds: TimeInterval,
                         _ sample: @MainActor () -> [String: String]) -> [String: [String]] {
@@ -47,7 +45,6 @@ final class MovieDetailDisclosureUITests: XCTestCase {
         return seen
     }
 
-    /// Asserts a cell disclosed something, and that an em dash was its last word on the matter.
     private func assertNoFillInAfterEmpty(_ identifier: String, _ seen: [String]) {
         XCTAssertFalse(seen.isEmpty,
                        "\(identifier) never disclosed a value — the test would pass vacuously")
@@ -59,8 +56,6 @@ final class MovieDetailDisclosureUITests: XCTestCase {
         }
     }
 
-    /// Every field is watched over one shared load: they all live on the same page, and a launch
-    /// apiece cost ~19s each to prove the same thing.
     @MainActor
     func testNoFieldFillsInAfterReportingEmpty() {
         let app = pushFirstMovie()

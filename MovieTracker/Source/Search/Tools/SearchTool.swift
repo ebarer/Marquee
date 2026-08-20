@@ -2,7 +2,6 @@
 //  SearchTool.swift
 //  MovieTracker
 //
-//
 
 /// One step of a `SearchPolicy`, applied in list order.
 

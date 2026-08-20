@@ -66,8 +66,7 @@ extension PosterDetailView {
         }
     }
 
-    /// Clamps a pan so the scaled image's edges lock to the container — panning is allowed
-    /// only by the amount it overflows, so an edge can't be pulled in from the screen edge.
+    // Panning is allowed only by the amount the scaled image overflows, so an edge can't be pulled inward.
     func clampedOffset(_ proposed: CGSize) -> CGSize {
         guard posterSize != .zero, containerSize != .zero else { return proposed }
         // The image sits inside the padded element, so its scaled extent excludes

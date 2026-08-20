@@ -8,8 +8,7 @@ import SwiftData
 
 /// A horizontal strip of metadata cells; watched movies lead with the user's rating and date.
 struct MovieMetadataStrip: View {
-    /// What the cells render, held separately because `Movie`'s `==` is id-only (it doubles as a
-    /// navigation value): handed the whole struct, SwiftUI never sees the payload replace a stub.
+    /// Held apart because `Movie`'s `==` is id-only, so SwiftUI would never see the payload replace a stub.
     struct Fields: Equatable {
         var certification: String?
         var bonus: String
@@ -28,10 +27,8 @@ struct MovieMetadataStrip: View {
     let fields: Fields
     var tint: Color = .appAccent
     var isWatched: Bool = false
-    /// The detail payload is still in flight, so cells it fills read as placeholders.
     var isLoading: Bool = false
     var awards: AwardsDigest = AwardsDigest()
-    /// Wikidata lands after the TMDB payload, so the awards cell has its own pending state.
     var awardsResolved: Bool = true
 
     init(movie: Movie, tint: Color = .appAccent, isWatched: Bool = false, isLoading: Bool = false,
@@ -98,8 +95,8 @@ struct MovieMetadataStrip: View {
         }
     }
 
-    // A fact read takes no observation dependency, so `revision` is what re-renders these cells
-    // once a write lands — a re-mark restoring a remembered date arrives a turn after the tap.
+    // A fact read takes no observation dependency, so `revision` is what re-renders these cells once
+        // a write lands. A re-mark restoring a remembered date arrives a turn after the tap.
     private var watchedDate: Date? {
         guard let store else { return nil }
         _ = store.revision
@@ -112,7 +109,6 @@ struct MovieMetadataStrip: View {
         return store.rating(for: movie) ?? 0
     }
 
-    /// A value the caller's stub can't know yet stands in as a bar, not as an empty one.
     @ViewBuilder
     private func value<V: View>(known: Bool, width: CGFloat,
                                 @ViewBuilder content: () -> V) -> some View {
@@ -146,7 +142,6 @@ struct MovieMetadataStrip: View {
         .preferredColorScheme(.dark)
 }
 
-// The awards cell lands a beat after TMDB's fields: pending, then a count or "None".
 #Preview("Awards cell") {
     // A strip's dividers are vertically greedy, so these need a ScrollView to size naturally.
     ScrollView {
@@ -160,8 +155,6 @@ struct MovieMetadataStrip: View {
     .preferredColorScheme(.dark)
 }
 
-// Two genres, one genre, nothing at all (em dashes), and still pending (bars). The four must be
-// the same height: the strip sits under the header and can't grow as cells fill in.
 #Preview("Height across states") {
     var single = Movie.preview
     single.genres = ["Action"]

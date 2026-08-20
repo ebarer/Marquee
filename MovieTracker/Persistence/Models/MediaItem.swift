@@ -14,23 +14,17 @@ final class MediaItem {
     var title: String = ""
     var posterPath: String?
     var releaseDate: Date?
-    /// Timeline anchor for list sorting; nil means "use releaseDate" (all movies, and
-    /// shows whose most-recent air date isn't known yet). Additive/optional for CloudKit.
+    // Additive and optional so CloudKit accepts it; nil means use `releaseDate`.
     var sortDate: Date?
     var runtime: Int?
     var userRating: Double?
-    /// Stored as a canonical UTC-midnight day (see `floatingDay`).
+    // Stored as a canonical UTC-midnight day (see `floatingDay`).
     var watchedAt: Date?
     var lastViewedAt: Date?
     var addedAt: Date = Date()
-    /// Cached "every aired season is watched" for `.tv`, so show detail is right on entry.
-    /// Kept in sync by `reconcileMembership`/`unwatchSeason`; nil for movies.
     var showWatched: Bool?
-    /// Cached "every aired episode watched, unaired ones remain" for `.tv`. Same choke point;
-    /// nil for movies, and while no loaded episodes can settle it.
     var showCaughtUp: Bool?
-    /// The user removed this show from the auto-managed Watch List; persisted so watched
-    /// progress can't bounce it back on. Cleared by `restoreToWatchList`.
+    // Persisted so watched progress can't bounce the show back onto the Watch List.
     var watchListOptOut: Bool?
 
     init(tmdbID: Int, mediaType: MediaType = .movie, title: String) {
@@ -154,7 +148,7 @@ extension MediaItem {
         setDateWatched(date, for: movie.mediaKey, in: context)
     }
 
-    /// Marking watched removes it from the Watch List — the two are mutually exclusive.
+    // Watched and the Watch List are mutually exclusive, so marking watched removes it.
     static func setWatched(_ watched: Bool, for key: MediaKey, in context: ModelContext) {
         if watched {
             let item = upsert(key: key, in: context)
@@ -190,7 +184,7 @@ extension MediaItem {
 // MARK: - Watched-date timezone
 
 extension MediaItem {
-    /// Stores a local calendar day as midnight UTC, so it reads as the same day on every device.
+    // Stores a local calendar day as midnight UTC, so it reads as the same day on every device.
     static func floatingDay(from localDate: Date) -> Date {
         var utc = Calendar(identifier: .gregorian)
         utc.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -209,7 +203,7 @@ extension MediaItem {
 // MARK: - De-duplication
 
 extension MediaItem {
-    /// CloudKit has no unique constraint, so sync can create duplicates to collapse.
+    // CloudKit has no unique constraint, so sync can create duplicates to collapse.
     @discardableResult
     static func deduplicate(in context: ModelContext) -> Bool {
         let all = (try? context.fetch(FetchDescriptor<MediaItem>())) ?? []

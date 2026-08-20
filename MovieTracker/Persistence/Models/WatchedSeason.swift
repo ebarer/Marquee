@@ -6,8 +6,7 @@
 import Foundation
 import SwiftData
 
-/// A completed season's Watched-list row. Derived from `WatchedEpisode`, but persisted as a
-/// snapshot so the list renders offline; removed when the season is no longer complete.
+/// A completed season's Watched-list row, persisted as a snapshot so the list renders offline.
 @Model
 final class WatchedSeason {
     var showTmdbID: Int = 0
@@ -15,14 +14,11 @@ final class WatchedSeason {
     var showName: String = ""
     var seasonName: String = ""
     var posterPath: String?
-    /// Timeline anchor: the season's finale air date (or its start when episodes are unknown).
     var airDate: Date?
-    /// Total episodes, stored so "x of y" renders offline; the *watched* count is always
-    /// derived from `WatchedEpisode` rather than cached.
+    // Only the total is stored; the watched count is always derived from `WatchedEpisode`.
     var episodeCount: Int = 0
     var watchedAt: Date = Date()
     var addedAt: Date = Date()
-    /// The user's star rating for this season (0–5, half-star steps); nil when unrated.
     var userRating: Double?
 
     init(showTmdbID: Int, seasonNumber: Int, showName: String, seasonName: String,

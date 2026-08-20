@@ -32,14 +32,11 @@ private final class StallProbe {
 
     // MARK: - Harness
 
-    /// Best of `runs`: the minimum is what the machine manages when it isn't busy, so a loose
-    /// bound catches an algorithmic regression without flaking under load.
     private func fastest(_ runs: Int = 7, _ body: () -> Void) -> Duration {
         (0..<runs).map { _ in ContinuousClock().measure(body) }.min() ?? .zero
     }
 
-    /// The longest the main actor went unresponsive while `work` ran. A dropped frame is exactly
-    /// this exceeding the display interval, so it's the honest measure of "did we block the UI".
+    // A dropped frame is exactly this exceeding the display interval, so it is the honest measure.
     private func mainActorStall(during work: () async -> Void) async -> Duration {
         let probe = StallProbe()
         let ticker = Task { @MainActor in
@@ -54,12 +51,11 @@ private final class StallProbe {
         return probe.worst
     }
 
-    /// One frame at 60Hz. Anything the main actor does during an interaction has to fit inside it.
+    // One frame at 60Hz. Anything the main actor does during an interaction has to fit inside it.
     private let frame = Duration.milliseconds(16)
 
     // MARK: - Fixtures
 
-    /// 800 watched movies, 400 on the Watch List, 200 shows with watched episodes.
     private func badgeLibrary() -> PersistenceCoordinator {
         let store = makeInMemoryStore()
         for index in 1...800 { store.setWatched(true, for: makeMovie(id: index)) }
@@ -71,7 +67,6 @@ private final class StallProbe {
         return store
     }
 
-    /// A list big enough that sorting and grouping it on the main actor would be visible.
     private func bigList() -> (PersistenceCoordinator, UUID) {
         let store = makeInMemoryStore()
         let list = MediaList(name: "Big")
@@ -150,8 +145,7 @@ private final class StallProbe {
                 "showProgress regressed to per-season episode fetches (\(elapsed))")
     }
 
-    /// The bug this replaced: a list row pushes a stub with no seasons, so anything derived from
-    /// the payload read as unwatched until detail loaded, and the controls visibly flipped.
+    // The bug this replaced: a stub with no seasons read as unwatched until detail loaded.
     @Test func showProgressIsRightBeforeThePayloadLoads() async {
         let store = makeInMemoryStore()
         let show = makeShow(seasons: 3)
@@ -163,16 +157,12 @@ private final class StallProbe {
         #expect(store.showProgress(showID: Show(id: show.id, name: show.name).id).isWatched)
     }
 
-    /// Calibrates the probe: an idle await must read as no stall at all, or every bound below
-    /// is measuring the harness rather than the code.
     @Test func theStallProbeReadsZeroWhenNothingBlocks() async {
         let idle = await mainActorStall { try? await Task.sleep(for: .milliseconds(200)) }
         #expect(idle < Duration.milliseconds(5), "idle baseline is \(idle)")
     }
 
-    /// The load-bearing assumption behind moving fetching, formatting and the badge rebuild onto
-    /// `listReader`. If SwiftData ever binds that actor to the main queue, everything else here
-    /// is measuring a lie.
+    // The load-bearing assumption behind moving fetching, formatting and the badge rebuild off main.
     @Test func theListReaderIsNotOnTheMainThread() async {
         let store = makeInMemoryStore()
         #expect(await store.listReadRunsOnMainThread() == false,

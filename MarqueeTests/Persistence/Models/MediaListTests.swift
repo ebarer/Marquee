@@ -98,8 +98,6 @@ import SwiftUI
         #expect(list.entry(for: 1) === earliest)
     }
 
-    /// Nothing else on `ListEntry` is synced to break the tie, so keeping both beats two
-    /// devices picking different survivors and dropping the row entirely.
     @Test func dedupeEntriesKeepsBothWhenAddedAtTies() {
         let list = MediaList(name: "Custom")
         ctx.insert(list)

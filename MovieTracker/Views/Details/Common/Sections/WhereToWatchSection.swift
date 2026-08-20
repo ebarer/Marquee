@@ -5,14 +5,12 @@
 
 import SwiftUI
 
-/// Streaming availability for the user's region (grouped provider logos), an in-theaters
-/// note, and a settings sheet to filter services. Shared by movie and show detail.
+/// Streaming availability for the user's region, an in-theaters note, and a service filter sheet.
 struct WhereToWatchSection: View {
     let availabilityByRegion: [String: WatchAvailability]?
     var releaseDate: Date?
     var isShow: Bool = false
     var tint: Color = .appAccent
-    /// The detail payload is still in flight; only matters until availability arrives.
     var isLoading: Bool = false
 
     private let store = StreamingServicesStore.shared
@@ -36,8 +34,8 @@ struct WhereToWatchSection: View {
         return groups.filter { store.selected.isSelected($0) }
     }
 
-    /// An empty map counts as no answer too: a stub carries none, and saying "unavailable"
-    /// before the payload replies is the one thing this must not do.
+    // An empty map counts as no answer: a stub carries none, and claiming "unavailable" before the
+    // payload replies is the one thing this must not do.
     private var pending: Bool { isLoading && (availabilityByRegion?.isEmpty ?? true) }
 
     var body: some View {

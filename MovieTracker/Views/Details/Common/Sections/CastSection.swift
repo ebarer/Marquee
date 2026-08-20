@@ -11,37 +11,25 @@ struct CastSearchRoster {
     let people: [Person]
 }
 
-/// Cast & crew for a detail screen: lead crew credit on top, a Cast/Guests/Crew picker below.
-/// Shared by movie, show, and episode detail via its role/title parameters.
+/// Cast and crew for a detail screen: lead crew credit on top, a Cast/Guests/Crew picker below.
 struct CastSection: View {
     let cast: [Person]
-    /// Episode guest stars, surfaced as a separate "Guests" tab (empty elsewhere).
     var guests: [Person] = []
     var tint: Color = .appAccent
-    /// An episode count describes a run, so a single episode's page has no use for one.
     var countsEpisodes: Bool = true
-    /// The crew role surfaced above the tabs (Director for films, Creator for shows),
-    /// matched exactly against a person's joined roles.
     var leadRole: String = "Director"
     var leadTitleSingular: String = "Director"
     var leadTitlePlural: String = "Directors"
     var castTitle: String = "Cast"
-    /// How many cast members show before the "Show More" expander.
     var castLimit: Int = 10
-    /// A roster only search covers, under its own heading: a show lists its top cast but every
-    /// guest credit is searchable.
     var searchRoster: CastSearchRoster?
-    /// The show these credits belong to, which sends a search hit to their episodes in it.
     var creditedShow: Show?
-    /// Set to hand the section's search request to the screen, which then owns the control in its
-    /// navigation bar. Unset, the section's own header carries it.
     var onSearchRequest: ((DetailSearchRequest?) -> Void)?
 
     @State private var selection: CastCategory?
     @State private var castExpanded = false
     @AppStorage("castEpisodeCounts") private var showsEpisodeCounts = true
 
-    /// Only TV credits carry a count, so only they get the control that hides it.
     private var hasEpisodeCounts: Bool {
         countsEpisodes && (cast + guests).contains { ($0.episodeCount ?? 0) > 0 }
     }
@@ -57,8 +45,7 @@ struct CastSection: View {
         (person.role ?? "").components(separatedBy: ", ").contains(leadRole)
     }
 
-    /// A host-led show, where the episode's guests are its cast to a viewer, so the two share
-    /// one list instead of hiding one behind a tab. Two regulars covers a host and a co-host.
+    // A host-led show, whose guests read as its cast. Two regulars covers a host and a co-host.
     private var mergesGuests: Bool {
         (1...2).contains(castMembers.count) && guests.count > castMembers.count
     }
@@ -150,8 +137,7 @@ struct CastSection: View {
                                    creditedShow: creditedShow)
     }
 
-    /// The request is rebuilt off this rather than diffed: a guest roster runs to thousands, which
-    /// is too much to compare on every layout pass.
+    // The request is rebuilt off this rather than diffed: a guest roster runs to thousands.
     private var searchSignature: [Int] {
         [directors.count, castMembers.count, castMembers.first?.id ?? 0, guests.count,
          crewMembers.count, searchRoster?.people.count ?? 0, hasEpisodeCounts ? 1 : 0]
@@ -194,7 +180,6 @@ struct CastSection: View {
     }
 }
 
-// Hosted, so the search button is present and tapping it zooms into search in the canvas.
 #Preview {
     NavigationStack {
         ScrollView {

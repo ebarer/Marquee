@@ -2,8 +2,7 @@
 //  WikidataWrapper.swift
 //  MovieTracker
 //
-//  Awards and the Rotten Tomatoes slug, neither of which TMDB carries. Keyed on the
-//  `wikidata_id` TMDB returns in `external_ids`, so no title matching is involved.
+//  Awards and the Rotten Tomatoes slug, keyed on the `wikidata_id` TMDB returns in `external_ids`.
 //
 
 import Foundation
@@ -12,12 +11,10 @@ enum WikidataWrapper {
     private static let sparqlURL = "https://query.wikidata.org/sparql"
     private static let apiURL = "https://www.wikidata.org/w/api.php"
 
-    /// Wikidata blocks requests that don't identify the client, so this header is required
-    /// rather than courteous.
+    // Wikidata rejects requests that don't identify the client.
     private static let userAgent = "Marquee/1.0 (https://github.com/ebarer/MovieTracker)"
 
-    /// "group of awards" — the Wikidata class that marks an item as an award series rather
-    /// than an individual category, which is what the list groups rows under.
+    // "Group of awards": the Wikidata class marking an award series rather than a single category.
     private static let awardSeriesClass = "Q107655869"
 
     static func awards(qid: String) async throws -> AwardsDigest {
@@ -36,8 +33,7 @@ enum WikidataWrapper {
         return AwardsDigest(awards: awards)
     }
 
-    /// The Rotten Tomatoes slug ("m/inception", "tv/severance"). Read through `wbgetclaims`
-    /// rather than SPARQL: one property off one entity doesn't warrant a query service hit.
+    // One property off one entity doesn't warrant a query-service hit, so read `wbgetclaims`.
     static func rottenTomatoesID(qid: String) async throws -> String? {
         guard isEntityID(qid) else { return nil }
         var components = URLComponents(string: apiURL)!
@@ -52,8 +48,7 @@ enum WikidataWrapper {
         return response.claims?["P1258"]?.first?.mainsnak.datavalue?.value
     }
 
-    /// Guards the string interpolated into the SPARQL query below. Anything that isn't a
-    /// bare entity id is rejected instead of escaped.
+    // Guards the value interpolated into the SPARQL query below; anything but a bare entity id is rejected.
     private static func isEntityID(_ value: String) -> Bool {
         value.count > 1 && value.first == "Q" && value.dropFirst().allSatisfy(\.isNumber)
     }
@@ -62,8 +57,8 @@ enum WikidataWrapper {
 // MARK: - Queries
 
 private extension WikidataWrapper {
-    /// P166 is "award received" and P1411 "nominated for"; P585 dates the ceremony. A category
-    /// reaches its series through either "part of" or "instance of" — Wikidata uses both.
+    // P166 is "award received", P1411 "nominated for", P585 the ceremony date.
+    // A category reaches its series through either "part of" or "instance of"; Wikidata uses both.
     static func awardsQuery(qid: String) -> String {
         """
         SELECT DISTINCT ?catLabel ?seriesLabel ?year ?won WHERE {

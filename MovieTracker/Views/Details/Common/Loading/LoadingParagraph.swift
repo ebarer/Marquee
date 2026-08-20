@@ -5,11 +5,9 @@
 
 import SwiftUI
 
-/// Bars standing in for a description that hasn't loaded, sized to the text they'll become so
-/// the real copy doesn't shift the page when it lands.
+/// Bars standing in for a description, sized to the text they become so the page doesn't shift.
 struct LoadingParagraph: View {
     var lines: Int = 3
-    /// Fraction of the width the last bar runs to, so the block reads as a paragraph.
     var lastLineWidth: CGFloat = 0.55
 
     @ScaledMetric(relativeTo: .body) private var lineHeight: CGFloat = 13

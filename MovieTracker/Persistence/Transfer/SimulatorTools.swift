@@ -2,8 +2,7 @@
 //  SimulatorTools.swift
 //  MovieTracker
 //
-//  Simulator-only seeding helpers: populate from a bundled backup, or wipe to factory state.
-//  Excluded from device and TestFlight builds via `#if targetEnvironment(simulator)`.
+//  Simulator-only seeding helpers, excluded from device and TestFlight builds.
 //
 
 #if targetEnvironment(simulator)
@@ -11,7 +10,6 @@ import Foundation
 import SwiftData
 
 enum SimulatorTools {
-    /// Merges the bundled sample library so the simulator has content to work with.
     @MainActor
     static func populate(using store: PersistenceCoordinator) -> ImportSummary? {
         guard let url = Bundle.main.url(forResource: "sample-data", withExtension: "json"),
@@ -22,7 +20,6 @@ enum SimulatorTools {
         return LibraryBackup.merge(archive, using: store)
     }
 
-    /// Wipes every list, entry, tracked item, and TV progress record, then re-seeds the Watch List.
     @MainActor
     static func reset(using store: PersistenceCoordinator) {
         let context = store.context

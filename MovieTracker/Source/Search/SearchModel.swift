@@ -2,9 +2,7 @@
 //  SearchModel.swift
 //  MovieTracker
 //
-//  Debounced, cancellable search over one query. A SearchPolicy does the fetching,
-//  augmenting and ranking (see Engine/); the model drives it, recovers results
-//  TMDB drops mid-type, tracks recents, and publishes for the view.
+//  Debounced, cancellable search over one query; a `SearchPolicy` does the fetching and ranking.
 //
 
 import SwiftUI
@@ -15,12 +13,9 @@ final class SearchModel {
     var query = ""
     private(set) var movies: [Movie] = []
     private(set) var shows: [Show] = []
-    /// Movies and shows interlaced and ranked — the list the view renders.
     private(set) var results: [MediaRef] = []
 
     private(set) var namedPeople: [Person] = []
-    /// Cast surfaced from matched titles: a film's leads/character matches plus the
-    /// top show's recurring cast.
     private(set) var castMatchedPeople: [Person] = []
     private(set) var isLoading = false
 
@@ -32,7 +27,6 @@ final class SearchModel {
     private let provider: SearchProvider
     private var searchTask: Task<Void, Never>?
 
-    /// The last query whose own results were strong; anchors recall recovery below.
     private var lastStrongQuery = ""
 
     private let recentsKey = "recentSearches"
@@ -42,7 +36,6 @@ final class SearchModel {
     private let inlinePopularityFloor: Float = 1
     private let minInlinePeople = 3
     private let namedNoiseFloor: Float = 1
-    /// Votes a title needs before it outranks people who share its name.
     private let titleOwnsVoteFloor = 300
     private let minRoleMatchLength = 4
     private let minLeadPrefixLength = 3
@@ -58,8 +51,7 @@ final class SearchModel {
                                       titleOwnsQuery: titleOwnsQuery)
     }
 
-    /// Whether a notable title is literally what was typed. Then it owns the query and its
-    /// cast leads: "dune" means the film, not an obscure actor christened Dune.
+    // A notable exact title owns the query: "dune" means the film, not an actor named Dune.
     private var titleOwnsQuery: Bool {
         let needle = SearchMatching.normalized(SearchMatching.articleStripped(query))
         guard !needle.isEmpty else { return false }
@@ -102,8 +94,8 @@ final class SearchModel {
             var result = await policy.run(query: query, using: provider)
             guard !Task.isCancelled else { return }
 
-            // Recall recovery: TMDB's incremental search is erratic, so the real match can
-            // drop mid-type. Re-run the last strong anchor while the query still leads to it.
+            // TMDB's incremental search is erratic and the real match can drop mid-type, so re-run the last
+        // strong anchor while the query still leads to it.
             let originalStrong = isStrong(result)
             if !originalStrong,
                SearchMatching.shouldTryAnchorRecovery(query: query,
@@ -120,8 +112,7 @@ final class SearchModel {
             }
 
             publish(result)
-            // Advance the anchor only when the typed query itself was strong, so
-            // recovery always re-runs a real query, never a recovered one.
+            // Advance the anchor only when the typed query was strong, so recovery re-runs a real query.
             if originalStrong { lastStrongQuery = query }
         }
     }

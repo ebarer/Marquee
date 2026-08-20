@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// Displays "N Seasons" for a show, resolving the count lazily and showing an
-/// optional placeholder (typically the air year) until it arrives.
+/// Displays "N Seasons" for a show, resolving the count lazily behind an optional placeholder.
 struct ShowSeasonCountText: View {
     let show: Show
     var placeholder: String? = nil

@@ -6,8 +6,7 @@
 import SwiftUI
 import UIKit
 
-/// Decoded-image cache keyed by URL. `URLCache` only holds encoded bytes, so
-/// without this, re-decoding on every appearance makes images visibly "fault in".
+/// Decoded-image cache keyed by URL. `URLCache` holds only encoded bytes, so images would re-decode on every appearance.
 final class RemoteImageCache: @unchecked Sendable {
     static let shared = RemoteImageCache()
     private let cache = NSCache<NSURL, UIImage>()
@@ -22,19 +21,16 @@ private enum RemoteImageRevalidation {
     static var done: Set<URL> = []
 }
 
-/// A remote image that fills its frame, revalidating once per session and
-/// cross-fading in changed artwork. Callers supply the placeholder.
+/// A remote image filling its frame, revalidating once per session and cross-fading in changed artwork.
 struct RemoteImage<Placeholder: View>: View {
     let url: URL?
-    /// Fade artwork that has to be fetched, for backdrops where the arrival is large and abrupt.
-    /// Artwork already on hand is never faded, whatever this says.
+    // Artwork already on hand is never faded, whatever this is set to.
     var fadesIn: Bool = false
     @ViewBuilder var placeholder: () -> Placeholder
 
     @State private var image: Image?
     @State private var loadedURL: URL?
-    /// Whether the artwork was on hand when this view appeared, decided once. Fading something
-    /// we could have drawn for the push reads as a flash.
+    // Decided once: fading something we could have drawn for the push reads as a flash.
     @State private var readyOnAppear: Bool?
 
     private var displayed: Image? {
@@ -45,7 +41,6 @@ struct RemoteImage<Placeholder: View>: View {
         return nil
     }
 
-    /// Showable now, or decodable from the URL cache without a fetch.
     private var artworkOnHand: Bool {
         guard let url else { return false }
         if RemoteImageCache.shared.image(for: url) != nil { return true }

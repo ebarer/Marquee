@@ -26,8 +26,7 @@ struct InAppSafariView: UIViewControllerRepresentable {
 }
 
 extension View {
-    /// Presents `link` in an in-app Safari view. Keyed on the link's identity so switching
-    /// sites rebuilds the controller.
+    // Keyed on the link's identity so switching sites rebuilds the controller.
     func safariSheet(link: Binding<ExternalLink?>) -> some View {
         sheet(item: link) { link in
             InAppSafariView(url: link.url)

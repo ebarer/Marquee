@@ -17,7 +17,6 @@ struct ProviderGroup: Identifiable {
 }
 
 enum ProviderCatalog {
-    /// Collapses variants of a service into one group, dropping rent/buy storefronts.
     static func grouped(_ providers: [WatchProvider]) -> [ProviderGroup] {
         var order: [String] = []
         var members: [String: [WatchProvider]] = [:]
@@ -58,7 +57,6 @@ enum ProviderCatalog {
         return value.split(separator: " ").joined(separator: " ")
     }
 
-    /// Rent/buy storefronts — excluded, since we only surface streaming.
     static let purchaseOnly: Set<Int> = [
         2,    // Apple TV (iTunes) store
         3,    // Google Play Movies
@@ -69,13 +67,11 @@ enum ProviderCatalog {
         192,  // YouTube (rent/buy)
     ]
 
-    /// Rebrands where the same service has two distinct names.
     private static let aliases = ["hbo max": "max"]
 
-    /// The member whose logo/branding a merged group should adopt.
     private static let preferred = ["max": 1899]
 
-    /// Display names pinned regardless of TMDB's current wording.
+    // Display names pinned regardless of TMDB's current wording.
     private static let nameOverrides = [350: "Apple TV+"]
 
     private static let qualifiers = tierWords + ["plus"]

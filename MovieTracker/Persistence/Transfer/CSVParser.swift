@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// A minimal RFC 4180 CSV reader: handles quoted fields, embedded commas and
-/// newlines, and doubled quotes as an escaped quote.
+/// A minimal RFC 4180 CSV reader: quoted fields, embedded commas and newlines, doubled quotes.
 enum CSVParser {
     static func rows(from text: String) -> [[String]] {
         var rows: [[String]] = []

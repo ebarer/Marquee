@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// A section's name pinned at the leading edge of its shelf, like a tab in a deck of cards.
+/// A section's name pinned at the leading edge of its shelf.
 struct ListSectionBookmark: View {
     let section: SectionSnapshot
     let tint: Color
@@ -35,8 +35,7 @@ struct ListSectionBookmark: View {
         .background { backdrop }
     }
 
-    /// Opaque in every layer, so a card scrolling past passes under it and never shows to its
-    /// left. Square where it meets the page, rounded where it meets the cards.
+    // Opaque in every layer, so a card scrolling past passes under it rather than showing to its left.
     private var backdrop: some View {
         let shape = UnevenRoundedRectangle(bottomTrailingRadius: 14, topTrailingRadius: 14,
                                            style: .continuous)
@@ -54,13 +53,10 @@ struct ListSectionBookmark: View {
 }
 
 extension ListSectionBookmark {
-    /// How far a card takes to fade in behind the bookmark, once the shelf is scrolled.
     static let fadeSpan: CGFloat = 64
 }
 
 extension SectionSnapshot {
-    /// The month and year this section groups, when its key names one. Nil for the buckets whose
-    /// keys carry no month — rating, initial, "Older" — and for the flat layout's one section.
     var monthAndYear: (month: String, year: String)? {
         guard let month = id.month, (1...12).contains(month), let year = id.year else { return nil }
         return (Calendar.current.standaloneMonthSymbols[month - 1],
@@ -78,7 +74,6 @@ extension SectionSnapshot {
                                 entries: (1...12).map { .preview(id: $0, title: "T\($0)") },
                                 isCollapsible: true)
 
-    // Each one stands the height of the shelf it would be pinned to.
     VStack(alignment: .leading, spacing: 12) {
         ListSectionBookmark(section: month, tint: .appAccent)
         ListSectionBookmark(section: rated, tint: ListDestination.watchedColor)

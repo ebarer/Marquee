@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// The nav bar's way out to a title's pages on other sites, each opened in-app.
+/// Links to a title's pages on other sites, each opened in-app.
 struct ExternalLinksMenu: View {
     let links: [ExternalLink]
     var onSelect: (ExternalLink) -> Void
@@ -24,7 +24,7 @@ struct ExternalLinksMenu: View {
     }
 }
 
-/// Wraps the menu as a bar item, and stands down when there's nowhere to go.
+/// The menu as a bar item; renders nothing when there is nowhere to go.
 struct ExternalLinksToolbarItem: ToolbarContent {
     let links: [ExternalLink]
     var onSelect: (ExternalLink) -> Void

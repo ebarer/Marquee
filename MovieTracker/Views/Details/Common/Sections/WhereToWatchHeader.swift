@@ -5,22 +5,19 @@
 
 import SwiftUI
 
-/// The header row of ``WhereToWatchSection``: title (tappable to expand when available),
-/// an info button to choose services, an expand chevron, and an in-theaters note.
+/// The header row of `WhereToWatchSection`: title, services info button, expand chevron, in-theaters note.
 struct WhereToWatchHeader: View {
     let available: Bool
     let inTheatres: Bool
     let tint: Color
-    /// Availability isn't known yet, so the title stands in as a placeholder rather than
-    /// claiming the title isn't streaming.
     var isLoading: Bool = false
     @Binding var expanded: Bool
     let onInfo: () -> Void
 
     var body: some View {
         VStack(alignment: .leading) {
-            // Nothing here is knowable yet — not the verdict, not the theaters note, not whether
-            // there's anything to expand — so the whole row stands in as one bar.
+            // Nothing here is knowable yet: not the verdict, not the theaters note, not whether there is
+            // anything to expand. The whole row stands in as one bar.
             if isLoading {
                 titlePlaceholder
             } else {
@@ -53,7 +50,6 @@ struct WhereToWatchHeader: View {
         .sectionHeaderInsets()
     }
 
-    /// Sized to the title it replaces, so the row doesn't jump when the answer arrives.
     private var titlePlaceholder: some View {
         Text("Available to Stream")
             .font(.headline)
@@ -94,7 +90,6 @@ struct WhereToWatchHeader: View {
     }
 }
 
-// Available, unavailable + in theaters, and awaiting the payload.
 #Preview {
     VStack(spacing: 24) {
         WhereToWatchHeader(available: true, inTheatres: false, tint: .appAccent,

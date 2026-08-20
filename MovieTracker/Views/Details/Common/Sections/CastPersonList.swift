@@ -17,8 +17,7 @@ struct CastPersonList: View {
     }
 }
 
-/// The same rows without a stack of their own. A nested `LazyVStack` builds all of its rows as
-/// soon as its parent reaches it, so a caller that already has one uses this instead.
+/// A nested `LazyVStack` builds every row as soon as its parent reaches it, so a caller with one uses this.
 struct CastPersonRows: View {
     let people: [Person]
     var showsEpisodeCounts = false
@@ -37,7 +36,6 @@ struct CastPersonRows: View {
 struct CastPersonRow: View {
     let person: Person
     var showsEpisodeCount = false
-    /// Set where their episodes in one show are the better destination than their own page.
     var episodes: ShowEpisodeCredits?
     var imageSize: CGFloat = 44
 

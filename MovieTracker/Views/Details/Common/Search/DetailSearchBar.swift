@@ -5,14 +5,12 @@
 
 import SwiftUI
 
-/// The search field for a detail search. Hand-built because `.searchable` gives the caller no say
-/// over where its field is placed or when it is dismissed.
+/// Hand-built because `.searchable` gives the caller no say over where its field is placed or when it is dismissed.
 struct DetailSearchBar: View {
     @Binding var text: String
     let prompt: String
     var tint: Color = .appAccent
     var focused = false
-    /// False while the field is still button-sized, where the prompt shows as a stray letter.
     var showsPrompt = true
 
     @State private var isEditing = false
@@ -43,8 +41,8 @@ struct DetailSearchBar: View {
     // The system's placeholder grey; `.secondary` is much brighter.
     static let promptColor = Color.white.opacity(0.33)
 
-    /// A toolbar item's frame is its glyph's; the bar draws a `rowHeight` glass circle around it,
-    /// and that circle is what the field is placed from.
+    // A toolbar item's frame is its glyph's. The bar draws a `rowHeight` glass circle around it, and
+    // that circle is what the field is placed from.
     static func barCircle(around glyph: CGRect) -> CGRect {
         CGRect(x: glyph.midX - rowHeight / 2, y: glyph.midY - rowHeight / 2,
                width: rowHeight, height: rowHeight)
@@ -124,7 +122,7 @@ private struct SearchTextField: UIViewRepresentable {
         }
     }
 
-    /// A text field's intrinsic width is its text's, which would leave the capsule empty.
+    // A text field's intrinsic width is its text's, which would leave the capsule empty.
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: SearchField,
                       context: Context) -> CGSize? {
         CGSize(width: proposal.width ?? uiView.intrinsicContentSize.width,
@@ -163,8 +161,7 @@ private struct SearchTextField: UIViewRepresentable {
     }
 }
 
-/// Takes the keyboard only once the navigation transition it arrives in has ended. Raising it
-/// mid-pop stalls the main thread, hitching the transition and drawing the keyboard clipped.
+/// Raising the keyboard mid-pop stalls the main thread, so it waits for the transition to end.
 private final class SearchField: UITextField {
     var wantsFocus = false
 
@@ -197,8 +194,6 @@ private final class SearchField: UITextField {
 }
 
 extension View {
-    /// Sizes and places the field as the control it came from while `collapsed`, so animating that
-    /// flag widens it out of that control.
     func flying(from source: CGRect?, to target: CGRect, collapsed: Bool) -> some View {
         modifier(FieldFlight(source: source, target: target, collapsed: collapsed))
     }
@@ -223,7 +218,6 @@ private struct FieldFlight: ViewModifier {
 
     private var start: CGRect? { collapsed ? source : nil }
 
-    /// The pill of the field that is visible, which grows from the button's circle to the whole bar.
     private var window: CGSize {
         guard let start else {
             return CGSize(width: target.width, height: DetailSearchBar.capsuleHeight)
@@ -232,7 +226,6 @@ private struct FieldFlight: ViewModifier {
                       height: min(start.height, DetailSearchBar.capsuleHeight))
     }
 
-    /// Keeps that pill centred on the magnifying glass rather than on the field's leading edge.
     private var windowInset: CGFloat {
         guard start != nil else { return 0 }
         return max(0, DetailSearchBar.glyphCenter - window.width / 2)
@@ -247,7 +240,7 @@ private struct FieldFlight: ViewModifier {
     }
 }
 
-/// Stands in for a list whose search matched nothing.
+/// Shown when a search matched nothing.
 struct DetailSearchNoResults: View {
     let query: String
 

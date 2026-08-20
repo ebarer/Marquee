@@ -145,8 +145,6 @@ import Foundation
         #expect(moviePeople(query: "batman", films).map(\.name) == ["Christian Bale", "Robert Pattinson"])
     }
 
-    /// Every actor who played the character, ordered by their film's notability, ahead of the
-    /// top hit's other cast — Kravitz is no Batman, so she follows the four who are.
     @Test func charactersLeadAheadOfTheTopHitsOtherCast() {
         let films = [
             film(1, "The Batman", votes: 12_241, popularity: 32, cast: [

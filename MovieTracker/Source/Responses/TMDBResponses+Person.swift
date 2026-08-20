@@ -2,7 +2,7 @@
 //  TMDBResponses+Person.swift
 //  MovieTracker
 //
-//  Raw `Codable` shapes for TMDB person endpoints (movie + TV credits).
+//  Raw `Codable` shapes for TMDB person endpoints, movie and TV credits.
 //
 
 import Foundation
@@ -20,8 +20,7 @@ extension TMDBWrapper {
         var creditsRaw: CreditsRaw?
         var tvCreditsRaw: TVCreditsRaw?
 
-        // TMDB lists a title once per job, so a director who also wrote and produced appears
-        // three times. Each title becomes one credit listing every role they had.
+        // TMDB lists a title once per job, so a director who also wrote and produced appears three times.
         func credits() -> [Movie] {
             guard let creditsRaw = self.creditsRaw else { return [] }
 
@@ -146,13 +145,10 @@ extension TMDBWrapper {
                 var poster: String?
                 var character: String?
                 var job: String?
-                /// TMDB's crew department ("Directing", "Writing", "Production", …), which
-                /// groups a job without having to know the job itself. Nil for cast credits.
                 var department: String?
                 var popularity: Double?
                 var voteCount: Int?
                 var episodeCount: Int?
-                /// The handle for `/credit/{id}`, which resolves the episodes behind the count.
                 var creditID: String?
 
                 var role: String? { character ?? job }
@@ -180,14 +176,11 @@ extension TMDBWrapper {
                 var poster: String?
                 var character: String?
                 var job: String?
-                /// TMDB's crew department ("Directing", "Writing", "Production", …), which
-                /// groups a job without having to know the job itself. Nil for cast credits.
                 var department: String?
                 var popularity: Double?
                 var voteCount: Int?
                 var order: Int?
 
-                /// Cast credits carry a `character`; crew credits carry a `job`.
                 var role: String? { character ?? job }
 
                 enum CodingKeys: String, CodingKey {
@@ -200,8 +193,7 @@ extension TMDBWrapper {
         }
     }
 
-    /// `/credit/{credit_id}` — the episode-level detail behind one TV credit. TMDB names the
-    /// individual episodes of a guest credit, and names the season for a whole run.
+    /// /credit/{credit_id}: the episode-level detail behind one TV credit.
     struct CreditRaw: Codable {
         var media: MediaRaw?
 
@@ -213,8 +205,7 @@ extension TMDBWrapper {
             var episodes: [EpisodeRaw]?
             var seasons: [SeasonRaw]?
 
-            /// Decided per season, not per credit: a regular who also has a special named
-            /// gets both shapes at once, and reading it either/or loses one of them.
+            // A regular who also has a named special carries both shapes at once; reading either/or loses one.
             func seasonCredits() -> [EpisodeCredit.SeasonCredit] {
                 let listed = Dictionary(grouping: episodes ?? [], by: \.seasonNumber)
                 var known: [Int: Season] = [:]
@@ -225,8 +216,8 @@ extension TMDBWrapper {
                     .filter { listed[$0.key] == nil }
                     .map { EpisodeCredit.SeasonCredit(season: $0.value) }
 
-                // Episodes named within a season are the credit — TMDB sometimes omits the
-                // season itself, so stand any missing one up from its episodes.
+                // Episodes named within a season are the credit. TMDB sometimes omits the season itself, so stand
+            // any missing one up from its episodes.
                 credits += listed.map { number, episodes in
                     let season = known[number] ?? standIn(number: number, from: episodes)
                     return EpisodeCredit.SeasonCredit(
@@ -236,8 +227,7 @@ extension TMDBWrapper {
                 return credits.sorted { $0.season.seasonNumber < $1.season.seasonNumber }
             }
 
-            /// The air date has to come off the episodes: without one the credit falls back to
-            /// the show's premiere and every season of a long run files under the same year.
+            // Take the air date off the episodes, or every season files under the show's premiere year.
             private func standIn(number: Int, from episodes: [EpisodeRaw]) -> Season {
                 var season = Season(id: -(number + 1), seasonNumber: number,
                                     name: "Season \(number)")

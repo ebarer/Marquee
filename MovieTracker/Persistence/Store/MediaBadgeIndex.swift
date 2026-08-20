@@ -6,8 +6,7 @@
 import Foundation
 import SwiftData
 
-/// Every title's badge state in one snapshot, so a row or card resolves its mark with a set
-/// lookup. Derived in `body`, the per-title fetches this replaces cost a frame each.
+/// Every title's badge state in one snapshot, so a row resolves its mark with a set lookup.
 struct MediaBadgeIndex: Sendable {
     struct Key: Hashable, Sendable {
         let tmdbID: Int
@@ -32,7 +31,6 @@ struct MediaBadgeIndex: Sendable {
     private let showsInProgress: Set<Int>
     private let seasonsWatched: Set<SeasonKey>
 
-    /// Empty, for previews and a missing store.
     init() {
         watched = []
         watchList = []
@@ -42,8 +40,8 @@ struct MediaBadgeIndex: Sendable {
         seasonsWatched = []
     }
 
-    // Every fetch here names `propertiesToFetch`: materialising whole models to read two columns
-    // costs an order of magnitude more, and this runs on the main actor after each save.
+    // Every fetch names `propertiesToFetch`: materialising whole models to read two columns costs an
+    // order of magnitude more, and this runs on the main actor after each save.
     init(context: ModelContext) {
         var items = FetchDescriptor<MediaItem>(
             predicate: #Predicate {
@@ -76,8 +74,7 @@ struct MediaBadgeIndex: Sendable {
         episodes.propertiesToFetch = [\.showTmdbID]
         showsInProgress = Set(((try? context.fetch(episodes)) ?? []).map(\.showTmdbID))
 
-        // A `WatchedSeason` exists exactly while the season is complete, so its presence is
-        // the answer — no per-row episode counting.
+        // A `WatchedSeason` exists exactly while the season is complete, so its presence is the answer.
         var seasons = FetchDescriptor<WatchedSeason>()
         seasons.propertiesToFetch = [\.showTmdbID, \.seasonNumber]
         seasonsWatched = Set(((try? context.fetch(seasons)) ?? [])
@@ -92,11 +89,8 @@ struct MediaBadgeIndex: Sendable {
         watchList.contains(Key(tmdbID, mediaType))
     }
 
-    /// The persisted "every aired season watched" flag, matching `isShowWatchedCached`.
     func isShowWatched(showID: Int) -> Bool { showsWatched.contains(showID) }
 
-    /// Every aired episode watched with unaired ones still to come. Marking stops at today, so
-    /// there is nothing left for a mark-watched action to do.
     func isShowCaughtUp(showID: Int) -> Bool { showsCaughtUp.contains(showID) }
 
     func hasWatchedEpisodes(showID: Int) -> Bool { showsInProgress.contains(showID) }

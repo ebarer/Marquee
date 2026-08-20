@@ -15,7 +15,6 @@ extension PersistenceCoordinator {
     var lists: [MediaList] { MediaList.all(in: context) }
     var customLists: [MediaList] { MediaList.customLists(in: context) }
 
-    /// Drops duplicates; the canonical Watch List is the oldest copy, UUID breaking ties.
     func canonicalLists(_ lists: [MediaList]) -> [MediaList] {
         let visible = lists.filter { !$0.isDeduplicated }
         guard let watch = visible.filter(\.isWatchList)
@@ -36,12 +35,12 @@ extension PersistenceCoordinator {
     func toggleWatchList(_ show: Show) { watchList.toggle(key: show.mediaKey); save() }
     func addToWatchList(_ show: Show) { watchList.add(key: show.mediaKey); save() }
 
-    /// The Watch List un-marks Watched, so park the date first: re-marking watched restores it.
+    // The Watch List un-marks Watched, so park the date first; re-marking restores it.
     private func parkWatchedDate(_ key: MediaKey) {
         watchedMemory.remember(MediaItem.dateWatched(for: key, in: context), for: key)
     }
 
-    /// Unlike `watchList`, never creates the list — safe to call from a view body.
+    // Unlike `watchList`, never creates the list, so it is safe to call from a view body.
     func isInWatchList(_ movie: Movie) -> Bool {
         MediaList.watchList(in: context)?.contains(movie.id) ?? false
     }
@@ -61,8 +60,6 @@ extension PersistenceCoordinator {
 
     // MARK: - Lists screen
 
-    /// Load a list's raw rows + layout off the main context via `ListCoordinator`. Grouping into
-    /// display sections is `SectionFormatter`'s job — see the `sections(for:…)` convenience.
     func list(for request: ListRequest, filter: String,
               mediaFilter: MediaTypeFilter = .all) async -> ListResult {
         await readingOffMain { $0.load(request: request, filter: filter, mediaFilter: mediaFilter) }

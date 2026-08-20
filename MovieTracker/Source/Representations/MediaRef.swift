@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// A movie-or-show reference for mixed collections (unified search, a person's credits).
-/// Reads route through the shared facets below; writes stay type-specific at the call site.
+/// A movie-or-show reference for mixed collections; writes stay type-specific at the call site.
 enum MediaRef: Hashable, Identifiable, Sendable {
     case movie(Movie)
     case show(Show)
@@ -25,7 +24,6 @@ enum MediaRef: Hashable, Identifiable, Sendable {
         }
     }
 
-    /// Enduring notability (TMDB vote count), used to tier strong matches above noise.
     var voteCount: Int {
         switch self {
         case .movie(let movie): return movie.voteCount ?? 0
@@ -45,7 +43,6 @@ enum MediaRef: Hashable, Identifiable, Sendable {
         }
     }
 
-    /// Release date (movie) or first air date (show), for date-based grouping/sorting.
     var date: Date? {
         switch self {
         case .movie(let movie): return movie.releaseDate

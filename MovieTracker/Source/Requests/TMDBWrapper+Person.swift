@@ -12,7 +12,6 @@ extension TMDBWrapper {
         return translate(person: try decode(PersonRaw.self, from: data))
     }
 
-    /// The episodes behind one of a person's TV credits (see ``CreditRaw``).
     static func getCredit(id: String) async throws -> EpisodeCredit {
         let data = try await fetch("/credit/\(id)")
         return try decode(CreditRaw.self, from: data).credit()

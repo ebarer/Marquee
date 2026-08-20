@@ -6,7 +6,7 @@
 import Foundation
 import SwiftData
 
-/// A title's membership in one `MediaList` — a display snapshot, no personal facts.
+/// A title's membership in one `MediaList`: a display snapshot, no personal facts.
 @Model
 final class ListEntry {
     var tmdbID: Int = 0
@@ -14,8 +14,7 @@ final class ListEntry {
     var title: String = ""
     var posterPath: String?
     var releaseDate: Date?
-    /// Timeline anchor for list sorting; nil means "use releaseDate". Additive/optional
-    /// for CloudKit (a show's most-recent air date vs. its premiere).
+    // Additive and optional so CloudKit accepts it; nil means use `releaseDate`.
     var sortDate: Date?
     var runtime: Int?
     var addedAt: Date = Date()
@@ -36,7 +35,6 @@ final class ListEntry {
         self.runtime = key.runtime
     }
 
-    /// Update the display snapshot when richer data arrives (e.g. a show's last-air date).
     func refreshSnapshot(from key: MediaKey) {
         title = key.title
         posterPath = key.posterPath

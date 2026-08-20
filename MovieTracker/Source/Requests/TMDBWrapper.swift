@@ -16,7 +16,6 @@ class TMDBWrapper {
     private static let regionCode = NSLocale.current.region?.identifier ?? "US"
     private static let languageCode = NSLocale.current.language.languageCode?.identifier ?? "en"
 
-    /// Keywords identifying during/after credit extras (read by `MovieRaw`).
     static let bonusKeywords = ["during": 179431, "after": 179430]
 }
 
@@ -47,7 +46,6 @@ extension TMDBWrapper {
         return data
     }
 
-    /// A `YYYY-MM-DD` bound for the discover date filters.
     static func dateParam(daysFromNow days: Int) -> String {
         let date = Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
         return DateFormatter.iso8601DAw.string(from: date)

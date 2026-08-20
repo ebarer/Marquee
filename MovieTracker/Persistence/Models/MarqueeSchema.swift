@@ -6,8 +6,7 @@
 import Foundation
 import SwiftData
 
-/// The one list of CloudKit-backed models. Everything that builds a container reads it, so a new
-/// `@Model` can't reach the store without tripping `SchemaPrimerCoverageTests`.
+/// The one list of CloudKit-backed models; everything that builds a container reads it.
 enum MarqueeSchema {
     static let models: [any PersistentModel.Type] = [
         MediaItem.self, MediaList.self, ListEntry.self,

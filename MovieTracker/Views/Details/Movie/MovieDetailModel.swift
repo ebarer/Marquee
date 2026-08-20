@@ -15,13 +15,9 @@ final class MovieDetailModel {
     private(set) var extras = TitleExtras()
 
     private let posterPath: String?
-    /// The payload landed; nothing left to fetch.
     private var loaded = false
-    /// A fetch is in flight, so a re-entrant `load` doesn't start a second one.
     private var loading = false
 
-    /// `seed` is what the caller already had on screen — title, poster, date. A movie already
-    /// fetched this session comes back whole from memory instead, so nothing faults in twice.
     init(seed: Movie? = nil) {
         posterPath = seed?.poster
         if let cached = MediaMemoryCache.movie(id: seed?.id) {
@@ -43,8 +39,8 @@ final class MovieDetailModel {
         async let posterTint = PosterTint.resolve(forPath: posterPath)
         async let detail = Self.fetchDetail(id: id)
 
-        // Cached content renders as itself. Whether it counts as an answer is carried by the
-        // record — `isFullDetail` — not decided here.
+        // Cached content renders as itself. Whether it counts as an answer is carried by the record's
+        // `isFullDetail`, not decided here.
         if let cached = await MediaCacheStore.shared.load(id: id) {
             if let color = cached.color { tint = color }
             movie = cached.movie
@@ -97,8 +93,7 @@ final class MovieDetailModel {
         loaded = !interrupted
     }
 
-    /// Awards and the outside links. `nonisolated` so the SPARQL response decodes off the
-    /// main actor. A failure here reports no awards and no slug; none of it is load-bearing.
+    // `nonisolated` so the SPARQL response decodes off the main actor. A failure here is not load-bearing.
     nonisolated private static func resolveExtras(for movie: Movie?) async -> TitleExtras {
         guard let movie else { return TitleExtras() }
         let imdb = ExternalLink.imdb(id: movie.imdbID)
@@ -119,15 +114,13 @@ final class MovieDetailModel {
         ].compactMap { $0 }, resolved: true)
     }
 
-    /// The detail request, held back when a UI test needs the unknown-fields window to be
-    /// long enough to observe.
     private static func fetchDetail(id: Int) async throws -> Movie {
         if let delay = UITestHooks.detailDelay { try? await Task.sleep(for: delay) }
         return try await TMDBWrapper.getMovie(id: id)
     }
 
-    /// A tint arriving on its own cross-fades. Where it's set alongside `movie` it's assigned
-    /// plainly, or SwiftUI folds the payload's layout changes into the same animation.
+    // Assigned plainly where it lands with `movie`, or SwiftUI folds the payload's layout changes
+    // into the same animation.
     private func apply(_ color: Color) {
         guard color != tint else { return }
         withAnimation(.easeInOut) { tint = color }
@@ -137,8 +130,6 @@ final class MovieDetailModel {
 // MARK: - Previews
 
 extension MovieDetailModel {
-    /// A fully-seeded model whose `load(id:)` no-ops (`loaded == true`), so previews render
-    /// populated content offline instead of sticking on the loading state.
     static func preview(_ movie: Movie, collection: [Movie] = [], recommendations: [Movie] = [],
                         tint: Color = .appAccent,
                         extras: TitleExtras = .preview) -> MovieDetailModel {
@@ -153,8 +144,6 @@ extension MovieDetailModel {
         return model
     }
 
-    /// A model holding the caller's stub with the payload still pending, for the preview of
-    /// the page's faulting-in state.
     static func previewPending(_ seed: Movie) -> MovieDetailModel {
         let model = MovieDetailModel(seed: seed)
         model.loaded = true

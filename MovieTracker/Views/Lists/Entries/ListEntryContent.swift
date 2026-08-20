@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The body for one list entry: a movie, a season, or a show. The rows and the grid render the
-/// same content from the same context — only the container chrome around it differs.
+/// The body for one list entry: a movie, a season, or a show. Only the container chrome differs.
 struct ListEntryContent: View {
     let entry: MediaSnapshot
     let context: ListEntryContext

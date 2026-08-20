@@ -24,8 +24,7 @@ struct CachedShow: Codable {
     var tint: [Double]?
     var cachedAt: Date
     var version: Int?
-    /// When each season's episodes and cast were fetched, by season number. `cachedAt` covers
-    /// the show payload only, which never carries either.
+    // `cachedAt` covers the show payload only, which never carries episodes or cast.
     var seasonsCachedAt: [Int: Date]?
 
     var color: Color? {
@@ -36,16 +35,13 @@ struct CachedShow: Codable {
 }
 
 /// Bounded on-disk JSON cache of fetched media, keyed by TMDB id, so detail renders offline.
-/// Each entry carries a `MediaCachePriority` that ranks it for eviction ahead of recency.
 actor MediaCacheStore {
     static let shared = MediaCacheStore()
 
-    /// Bump when the shape or the derivation of a cached payload changes: entries stamped with
-    /// another version read as misses, so they refetch rather than render superseded data.
+    // Bump when a cached payload's shape or derivation changes; other versions then read as misses.
     static let schemaVersion = 1
 
-    /// How long a cached season's episodes and cast stand before a refetch. Episode count alone
-    /// can't spot a credits correction, so a completed season needs a clock to ever refresh.
+    // Episode count can't spot a credits correction, so a completed season needs a clock to refresh.
     static let seasonRefreshTTL: TimeInterval = 60 * 60 * 24 * 14
 
     private let maxEntries: Int
@@ -76,7 +72,7 @@ actor MediaCacheStore {
         return decoder
     }()
 
-    /// Shows use a `show-` prefix so movie/TV ids can't collide.
+    // Shows use a `show-` prefix so movie and TV ids can't collide.
     private func fileName(id: Int, mediaType: MediaType) -> String {
         mediaType == .tv ? "show-\(id).json" : "media-\(id).json"
     }
@@ -85,7 +81,6 @@ actor MediaCacheStore {
         directory.appendingPathComponent(fileName(id: id, mediaType: mediaType))
     }
 
-    /// Stale entries are still returned (usable offline); freshness only gates re-fetch.
     func load(id: Int) -> CachedMedia? {
         guard let data = try? Data(contentsOf: fileURL(id: id)),
               let entry = try? decoder.decode(CachedMedia.self, from: data),
@@ -119,16 +114,14 @@ actor MediaCacheStore {
         return Date().timeIntervalSince(cached.cachedAt) < ttl
     }
 
-    /// A season the cache still holds, but stamped longer ago than `ttl`. An unstamped season
-    /// counts as stale: it predates the stamp, so its cast has never been revisited.
+    // An unstamped season counts as stale: it predates the stamp, so its cast has never been revisited.
     func isSeasonFresh(showID: Int, seasonNumber: Int, ttl: TimeInterval) -> Bool {
         guard let stamped = loadShow(id: showID)?.seasonsCachedAt?[seasonNumber] else { return false }
         return Date().timeIntervalSince(stamped) < ttl
     }
 
     func save(_ show: Show, tint: Color?, priority: MediaCachePriority = .browsed) {
-        // The /tv/{id} payload behind `show` carries only the season list, not episodes —
-        // preserve any per-season episodes already cached so a refresh doesn't wipe them.
+        // The /tv/{id} payload carries only the season list, so preserve per-season episodes already cached.
         let entry = CachedShow(show: mergingCachedEpisodes(into: show),
                                tint: tint.flatMap(Self.rgba(from:)), cachedAt: Date(),
                                version: Self.schemaVersion,
@@ -139,8 +132,6 @@ actor MediaCacheStore {
         evictIfNeeded()
     }
 
-    /// Patch one season's fetched episodes + cast into the cached show so they render
-    /// offline and needn't be re-fetched. No-op until the show itself is cached.
     func cacheSeason(showID: Int, _ season: Season) {
         guard var cached = loadShow(id: showID),
               let index = cached.show.seasons.firstIndex(where: {
@@ -154,8 +145,6 @@ actor MediaCacheStore {
         try? data.write(to: fileURL(id: showID, mediaType: .tv), options: .atomic)
     }
 
-    /// Carry cached episodes/cast forward onto a freshly-fetched show, per season, whenever
-    /// the incoming season lacks them (the show payload never includes episodes).
     private func mergingCachedEpisodes(into show: Show) -> Show {
         guard let existing = loadShow(id: show.id)?.show else { return show }
         let bySeason = Dictionary(existing.seasons.map { ($0.seasonNumber, $0) },
@@ -195,8 +184,7 @@ actor MediaCacheStore {
 
     // MARK: - Priority index
 
-    /// Retention tier per entry file name, held beside the entries rather than inside them so
-    /// eviction can rank the whole cache without decoding every payload.
+    // Held beside the entries so eviction can rank the cache without decoding every payload.
     private static let indexFileName = "priorities.json"
     private var index: [String: Int]?
 
@@ -215,7 +203,7 @@ actor MediaCacheStore {
         try? data.write(to: directory.appendingPathComponent(Self.indexFileName), options: .atomic)
     }
 
-    /// A tier only ever improves here: opening a Watch List title mustn't demote it to `.browsed`.
+    // A tier only ever improves: opening a Watch List title must not demote it to `.browsed`.
     private func retain(_ fileName: String, at priority: MediaCachePriority) {
         var next = priorityIndex()
         let best = min(next[fileName] ?? MediaCachePriority.browsed.rawValue, priority.rawValue)
@@ -224,8 +212,7 @@ actor MediaCacheStore {
         writeIndex(next)
     }
 
-    /// Re-ranks the cache against a fresh plan: planned titles take their tier, everything else
-    /// falls to `.browsed` — so a title that left the Watch List stops squatting on its claim.
+    // Everything unplanned falls to `.browsed`, so a title that left the Watch List stops squatting on its tier.
     func applyPriorities(_ targets: [MediaCacheTarget]) {
         var next: [String: Int] = [:]
         for target in targets {

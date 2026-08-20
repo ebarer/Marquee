@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// One award category a title won or was nominated for. TMDB carries no awards data, so
-/// these come from Wikidata (see ``WikidataWrapper``).
+/// One award category a title won or was nominated for. TMDB has none, so these come from Wikidata.
 struct Award: Identifiable, Hashable, Sendable {
     var category: String
     var series: String?
@@ -15,8 +14,7 @@ struct Award: Identifiable, Hashable, Sendable {
 
     var id: String { "\(series ?? "")|\(category)|\(year.map(String.init) ?? "")" }
 
-    /// Wikidata names a category with its series in front ("Academy Award for Best Sound").
-    /// The section header already carries the series, so the row shows only what follows it.
+    // Wikidata prefixes a category with its series, which the section header already carries.
     var shortCategory: String {
         guard let separator = category.range(of: " for ") else { return category }
         return String(category[separator.upperBound...])
@@ -42,8 +40,6 @@ struct AwardsDigest: Equatable, Sendable {
     var wins: Int { series.reduce(0) { $0 + $1.wins } }
     var nominations: Int { series.reduce(0) { $0 + $1.nominations } }
 
-    /// The metadata cell's two lines, wrapped at an ampersand like the genre cell beside it.
-    /// Nil when Wikidata knows of nothing, which hides the cell.
     var summary: String? {
         guard !isEmpty else { return nil }
         let parts = [
@@ -57,11 +53,9 @@ struct AwardsDigest: Equatable, Sendable {
 // MARK: - Assembly
 
 extension AwardsDigest {
-    /// The bucket for a category Wikidata files under no series.
     static let ungrouped = "Other Awards"
 
-    /// Wikidata records a win as *both* "award received" and "nominated for", so the same
-    /// category arrives twice; the win is the truthful one and the nomination row is dropped.
+    // Wikidata records a win as both "award received" and "nominated for", so the same category arrives twice.
     init(awards: [Award]) {
         var best: [String: Award] = [:]
         for award in awards {
@@ -75,8 +69,7 @@ extension AwardsDigest {
             .map { name, awards in
                 AwardSeries(name: name, awards: awards.sorted(by: Self.rowOrder))
             }
-            // Busiest series first, so the Oscars lead a film and the Emmys a show without
-            // either being named here.
+            // Busiest series first, so the Oscars lead a film and the Emmys a show without naming either.
             .sorted { left, right in
                 if left.awards.count != right.awards.count {
                     return left.awards.count > right.awards.count

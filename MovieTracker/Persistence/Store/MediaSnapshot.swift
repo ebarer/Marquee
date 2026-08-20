@@ -15,12 +15,9 @@ struct MediaSnapshot: Identifiable, Sendable, Equatable {
     let posterPath: String?
     let releaseDate: Date?
     let sortDate: Date?
-    /// Set for a watched-season row (the show's season number); nil for movies and shows.
     let seasonNumber: Int?
-    /// Season progress for a watched-season row: watched vs. total episodes.
     let seasonWatched: Int?
     let seasonTotal: Int?
-    /// Air date of the season's first unwatched episode; set only for tracked-season rows.
     let nextEpisodeDate: Date?
     let runtime: Int?
     let dateWatched: Date?
@@ -31,8 +28,7 @@ struct MediaSnapshot: Identifiable, Sendable, Equatable {
 
 // MARK: - TMDB values
 
-/// The value a row navigates to and keys its store writes by. Only what the row and the
-/// detail header need is carried; the detail screen refetches the rest.
+/// The value a row navigates to and keys its store writes by.
 extension MediaSnapshot {
     var movie: Movie {
         var movie = Movie(id: tmdbID, title: title)

@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// A read-only view over a movie or show, for shared row/card rendering and mixed
-/// collections (e.g. unified search). Writes stay type-specific.
+/// A read-only view over a movie or show, for shared row and card rendering.
 protocol MediaSummary: Identifiable, Hashable {
     var id: Int { get }
     var title: String { get }

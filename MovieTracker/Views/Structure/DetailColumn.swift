@@ -35,8 +35,8 @@ private struct DetailContent: View {
 
     var body: some View {
         content
-            // Picking a sidebar row is a move away from search, so the results give way to
-            // the pick — with the abandoned term kept in recents to search again.
+            // Picking a sidebar row is a move away from search, so the results give way to the pick. The
+            // abandoned term is kept in recents to search again.
             .onChange(of: selection) { _, _ in
                 guard isSearching else { return }
                 searchModel.commit()

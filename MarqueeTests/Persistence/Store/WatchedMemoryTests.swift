@@ -52,7 +52,6 @@ import SwiftData
         #expect(store.dateWatched(for: movie) == MediaItem.floatingDay(from: Date()))
     }
 
-    /// The Watched-list swipe deletes the row through the item, not the movie.
     @Test func unwatchingByItemRemembersTheDate() {
         let store = makeInMemoryStore()
         let movie = makeMovie(id: 3)
@@ -66,8 +65,6 @@ import SwiftData
         #expect(store.dateWatched(for: movie) == entered)
     }
 
-    /// Moving a watched movie to the Watch List un-marks it; marking it watched again keeps
-    /// the date rather than reading as watched today.
     @Test func theWatchListRoundTripKeepsTheDate() {
         let store = makeInMemoryStore()
         let movie = makeMovie(id: 4)
@@ -117,7 +114,6 @@ import SwiftData
         #expect(store.seasonRating(showID: show.id, season: 1) == 4.5)
     }
 
-    /// Un-marking one episode drops the season's snapshot; watching it again brings the date back.
     @Test func unwatchingOneEpisodeKeepsTheSeasonDate() {
         let store = makeInMemoryStore()
         let show = makeShow()
@@ -145,7 +141,6 @@ import SwiftData
         #expect(store.seasonWatchedDate(showID: show.id, season: 2) == entered)
     }
 
-    /// Nothing remembered: a completed season is dated by the caller (the finale, here).
     @Test func aSeasonWithNoRememberedDateTakesTheFinale() async {
         let store = makeInMemoryStore()
         let show = makeShow()

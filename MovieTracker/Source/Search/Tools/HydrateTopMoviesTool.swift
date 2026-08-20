@@ -2,9 +2,7 @@
 //  HydrateTopMoviesTool.swift
 //  MovieTracker
 //
-//  Fetches detail (collection + cast) for the top-ranked movies in ONE fan-out, so
-//  the franchise and cast tools read from `context.movieDetails` instead of each
-//  issuing their own per-movie round-trip. Runs after RankMoviesTool.
+//  Fetches detail for the top-ranked movies in one fan-out, for the franchise and cast tools to reuse.
 //
 
 import Foundation

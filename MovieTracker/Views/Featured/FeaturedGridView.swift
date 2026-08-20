@@ -9,7 +9,6 @@ import SwiftData
 /// The poster grid for one `FeaturedCollection`; the host chooses the collection.
 struct FeaturedGridView: View {
     let collection: FeaturedCollection
-    /// Non-nil on the Browse tab, where the navigation title doubles as the collection switcher.
     var switcher: Binding<FeaturedCollection>? = nil
 
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
@@ -58,15 +57,14 @@ struct FeaturedGridView: View {
         .onChange(of: scrollTopToken) {
             withAnimation(.easeOut(duration: 0.3)) { scrollPosition.scrollTo(edge: .top) }
         }
-        // Idempotent for an unchanged collection, so a push → pop reappear keeps the
-        // loaded movies (and scroll position) instead of reloading.
+        // Idempotent for an unchanged collection, so leaving and returning keeps the loaded movies and
+            // scroll position instead of reloading.
         .task(id: collection) { await model.load(collection) }
     }
 
     // MARK: - Cards
 
-    /// Reads the loaded collection, not the chosen one: the cards change only once the new
-    /// collection's first page has landed.
+    // Reads the loaded collection, not the chosen one, so cards change only once its first page lands.
     private var grid: some View {
         LazyVGrid(columns: columns, spacing: isRegularWidth ? 24 : 16) {
             if model.loadedCollection.isShow {

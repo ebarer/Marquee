@@ -31,7 +31,6 @@ import SwiftData
         return show
     }
 
-    /// Watching an episode puts the show on the Watch List, so the fixture starts "in progress".
     private func inProgress(_ store: PersistenceCoordinator, _ show: Show) {
         store.toggleEpisodeWatched(show: show, season: show.seasons[0], episodeNumber: 1)
     }

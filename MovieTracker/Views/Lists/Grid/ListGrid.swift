@@ -6,8 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// The iPad presentation: a shelf per section, its name pinned at the leading edge. Taps route
-/// through `DetailLink` because in-`List` row taps were being swallowed during sync.
+/// The iPad presentation. Taps route through `DetailLink` because in-`List` row taps were swallowed during sync.
 struct ListGrid: View {
     let sections: [SectionSnapshot]
     let context: ListEntryContext
@@ -17,11 +16,9 @@ struct ListGrid: View {
     @Environment(\.scrollTopToken) private var scrollTopToken
     @State private var pending: ListEntryConfirmation?
     @State private var position = ScrollPosition()
-    /// Where a pinned header comes to rest, and whether anything has scrolled under it.
     @State private var pinLine: CGFloat = 0
     @State private var scrolled = false
 
-    /// Room for a row's poster beside two lines of title and a rating.
     private static let cardWidth: CGFloat = 280
     private static let spacing: CGFloat = 16
     private static let space = "listGrid"
@@ -66,14 +63,12 @@ struct ListGrid: View {
         sections.contains { !isShelf($0) && !$0.title.isEmpty }
     }
 
-    /// Month buckets and the "Older" archive scroll sideways under a bookmark. "Older" isn't
-    /// folded here: a shelf costs no more room than the collapsed bookmark standing in for it.
     private func isShelf(_ section: SectionSnapshot) -> Bool {
         section.monthAndYear != nil || section.isCollapsible
     }
 
-    /// A headered layout takes the header's own 10pt inset plus 2pt, which lands its title on the
-    /// sidebar's section headers — the system insets those by 12pt. A shelf has no inset of its own.
+    // A headered layout takes the header's own 10pt inset plus 2pt, landing its title on the sidebar's
+    // section headers, which the system insets by 12pt. A shelf has no inset of its own.
     private var topPadding: CGFloat {
         guard let first = sections.first, !isShelf(first), !first.title.isEmpty else { return 20 }
         return 2
@@ -90,8 +85,6 @@ struct ListGrid: View {
         }
     }
 
-    /// A bucket that isn't a month — a rating or an initial — holds far more titles than a shelf
-    /// can show, so it flows under a pinned header instead. The flat layout has no header at all.
     @ViewBuilder
     private func header(for section: SectionSnapshot) -> some View {
         if !isShelf(section), !section.title.isEmpty {
@@ -111,8 +104,7 @@ struct ListGrid: View {
         }
     }
 
-    /// Scrolled by edge, not by section id, which doesn't resolve outside a long list's realised
-    /// range. Released once it lands so the edge isn't held against the next scroll.
+    // Scrolled by edge, not by section id, which doesn't resolve outside a long list's realised range.
     private func scrollToTop() {
         withAnimation(.easeOut(duration: 0.3)) {
             position.scrollTo(edge: .top)

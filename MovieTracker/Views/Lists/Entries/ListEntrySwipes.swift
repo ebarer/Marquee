@@ -5,8 +5,7 @@
 
 import SwiftUI
 
-/// The leading swipe an entry offers, as chosen by `ListEntryContext`. Renders nothing when the
-/// entry offers none, so the container can attach it unconditionally.
+/// The leading swipe an entry offers. Renders nothing when it offers none, so the container attaches it unconditionally.
 struct ListEntryLeadingSwipe: View {
     let entry: MediaSnapshot
     let context: ListEntryContext
@@ -34,8 +33,7 @@ struct ListEntryLeadingSwipe: View {
     }
 }
 
-/// Trailing swipe for any list entry. Deliberately NOT `role: .destructive`: that promises the
-/// entry is going, so the cell clears on tap and tears down its own dialog. Same red, no promise.
+/// Not `role: .destructive`: that clears the cell on tap and tears down its own dialog. Same red, no promise.
 struct ListEntryDeleteButton: View {
     let action: () -> Void
 
@@ -66,14 +64,12 @@ private struct EntrySwipeActions: ViewModifier {
 }
 
 extension View {
-    /// Both swipes and the confirmation they may raise, identical in the rows and the grid.
     func listEntrySwipes(entry: MediaSnapshot, context: ListEntryContext,
                          actions: ListEntryActions) -> some View {
         modifier(EntrySwipeActions(entry: entry, context: context, actions: actions))
     }
 
-    /// The list-membership menu, for movies only: it files entries as movies, so a show would
-    /// land on a list as one.
+    // Movies only: the menu files entries as movies, so a show would land on a list as one.
     @ViewBuilder
     func listEntryContextMenu(for entry: MediaSnapshot, lists: [MediaList]) -> some View {
         if entry.mediaType == .tv {

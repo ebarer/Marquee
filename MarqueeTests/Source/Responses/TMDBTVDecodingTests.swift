@@ -94,8 +94,6 @@ import Foundation
         #expect(try decodeShow(#"{"id":1,"name":"X"}"#).certification() == nil)
     }
 
-    /// Only the regulars, in billing order: the 30-of-70 lead and the one-episode guest are
-    /// both under half the run, however highly billed.
     @Test func recurringCastKeepsTheRegularsInBillingOrder() throws {
         let cast = try decodeShow(fullShowJSON()).recurringCast()
         #expect(cast.map(\.id) == [1, 3])
@@ -115,8 +113,6 @@ import Foundation
             + entries.joined(separator: ",") + "]}}"
     }
 
-    /// Ben Miles on Andor: billed second for 7 of 24 episodes. A guest that highly billed is
-    /// still not part of the ensemble the show is about.
     @Test func recurringCastExcludesAHighlyBilledGuest() throws {
         let json = castJSON([(id: 1, order: 0, episodes: 24),
                              (id: 2, order: 1, episodes: 7),
@@ -124,20 +120,17 @@ import Foundation
         #expect(try decodeShow(json).recurringCast().map(\.id) == [1, 3])
     }
 
-    /// No cap: a large ensemble is listed in full rather than cut off at a fixed count.
     @Test func recurringCastIsNotCappedAtAFixedCount() throws {
         let json = castJSON((1...20).map { (id: $0, order: $0, episodes: 40) })
         #expect(try decodeShow(json).recurringCast().count == 20)
     }
 
-    /// Steve Carell left The Office 140 episodes into its 186, and still opens its billing.
     @Test func recurringCastKeepsADepartedLeadInFront() throws {
         let json = castJSON([(id: 1, order: 0, episodes: 140),
                              (id: 2, order: 1, episodes: 186)])
         #expect(try decodeShow(json).recurringCast().map(\.id) == [1, 2])
     }
 
-    /// The cut is presence, not billing: a lead who left before the halfway mark drops out.
     @Test func recurringCastDropsAnEarlyDeparture() throws {
         let json = castJSON([(id: 1, order: 0, episodes: 30),
                              (id: 2, order: 1, episodes: 70)])

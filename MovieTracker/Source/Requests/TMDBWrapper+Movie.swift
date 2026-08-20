@@ -21,7 +21,6 @@ extension TMDBWrapper {
         return movie
     }
 
-    /// Runtime alone, for cells built from a payload that omits it (search, a person's credits).
     static func movieRuntime(id: Int) async throws -> Int? {
         let data = try await fetch("/movie/\(id)")
         return try decode(MovieRaw.self, from: data).runtime
@@ -37,8 +36,7 @@ extension TMDBWrapper {
         }
     }
 
-    /// Base fields + credits in one call: `/search/*` omits `belongs_to_collection`, so this
-    /// yields both the collection and the cast without two per-movie round-trips.
+    // /search/* omits `belongs_to_collection`, so take base fields and credits in one call.
     static func movieSearchDetail(id: Int) async throws -> Movie {
         let data = try await fetch("/movie/\(id)",
                                    queryItems: [URLQueryItem(name: "append_to_response", value: "credits")])
@@ -46,8 +44,8 @@ extension TMDBWrapper {
     }
 
     static func moviesNowPlaying(page: Int) async throws -> PagedResult<Movie> {
-        // Region release date catches a film that premiered abroad first; the primary-date floor
-        // then drops anniversary re-releases, and the vote floor the one-screening long tail.
+        // Region release date catches a film that premiered abroad first. The primary-date floor then drops
+        // anniversary re-releases, and the vote floor the one-screening long tail.
         try await discoverMovies(page: page, extra: [
             URLQueryItem(name: "with_release_type", value: "2|3"),
             URLQueryItem(name: "release_date.gte", value: dateParam(daysFromNow: -42)),
@@ -59,8 +57,8 @@ extension TMDBWrapper {
     }
 
     static func moviesPopular(page: Int) async throws -> PagedResult<Movie> {
-        // `vote_count.gte` filters out thin duplicate records that ride a title's
-        // popularity without the audience to back it (popularity alone can't tell them apart).
+        // `vote_count.gte` filters out thin duplicate records that ride a title's popularity without the
+        // audience to back it; popularity alone can't tell them apart.
         try await discoverMovies(page: page, extra: [
             URLQueryItem(name: "sort_by", value: "popularity.desc"),
             URLQueryItem(name: "vote_count.gte", value: "100"),
@@ -68,8 +66,7 @@ extension TMDBWrapper {
     }
 
     static func moviesComingSoon(page: Int) async throws -> PagedResult<Movie> {
-        // `primary_release_date` excludes re-releases of old films that a plain
-        // region release-date filter would otherwise pull in.
+        // `primary_release_date` excludes re-releases of old films that a plain region filter would pull in.
         try await discoverMovies(page: page, extra: [
             URLQueryItem(name: "primary_release_date.gte", value: dateParam(daysFromNow: 1)),
             URLQueryItem(name: "primary_release_date.lte", value: dateParam(daysFromNow: 365)),
@@ -105,8 +102,7 @@ extension TMDBWrapper {
                                    queryItems: [URLQueryItem(name: "query", value: query)])
     }
 
-    /// `/discover/movie` honors the region/language/release filters that the curated
-    /// `/movie/*` lists silently ignore, so globally-popular titles with no US release don't leak in.
+    // /discover/movie honors the region and release filters the curated /movie/* lists ignore.
     private static func discoverMovies(page: Int, extra: [URLQueryItem]) async throws -> PagedResult<Movie> {
         try await moviePage("/discover/movie", page: page, queryItems: extra)
     }

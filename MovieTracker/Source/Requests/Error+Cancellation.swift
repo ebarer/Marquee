@@ -6,8 +6,7 @@
 import Foundation
 
 extension Error {
-    /// A dropped request rather than a real failure: the caller should expect a retry, not
-    /// treat what it has as the final answer. `URLSession` reports its own, not `CancellationError`.
+    // URLSession reports its own cancellation error rather than `CancellationError`.
     var isCancellation: Bool {
         self is CancellationError || (self as? URLError)?.code == .cancelled
     }

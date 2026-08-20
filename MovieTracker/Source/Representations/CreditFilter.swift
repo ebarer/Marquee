@@ -5,10 +5,8 @@
 
 import Foundation
 
-/// Which kinds of credit a filmography hides, and whether it's hiding them at all. The two are
-/// independent, so the checklist can show the selection rather than the outcome.
+/// Which kinds of credit a filmography hides, and whether it is hiding them at all.
 struct CreditFilter: Equatable, Sendable {
-    /// The remembered selection, applied only while `isOn`.
     var hidden: Set<CreditKind>
     var isOn: Bool
 
@@ -19,7 +17,6 @@ struct CreditFilter: Equatable, Sendable {
         self.isOn = isOn
     }
 
-    /// The kinds hidden right now — nothing at all while the filter is off.
     var active: Set<CreditKind> { isOn ? hidden : [] }
 
     func hides(_ kind: CreditKind) -> Bool { active.contains(kind) }
@@ -40,7 +37,7 @@ extension CreditFilter: RawRepresentable {
     init?(rawValue: String) {
         let parts = rawValue.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
         guard parts.count == 2 else { return nil }
-        // An empty selection is legal — the filter can be on with nothing chosen.
+        // An empty selection is legal: the filter can be on with nothing chosen.
         let kinds = parts[1].split(separator: ",").compactMap { CreditKind(rawValue: String($0)) }
         self.init(hidden: Set(kinds), isOn: parts[0] == "on")
     }

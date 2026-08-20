@@ -25,8 +25,6 @@ import Foundation
         #expect(ListSortKey(rawValue: "unknown") == nil)
     }
 
-    /// Picking a key applies this order: highest first for ratings, A→Z for titles, and for dates
-    /// whichever end holds what you'd look at — a watch list's next release, a history's latest.
     @Test func defaultOrderPerSortKey() {
         #expect(WatchedSortKey.dateWatched.defaultAscending == false)
         #expect(WatchedSortKey.releaseDate.defaultAscending == false)
