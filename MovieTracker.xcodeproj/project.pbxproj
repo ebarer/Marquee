@@ -970,6 +970,56 @@
 			path = Shared;
 			sourceTree = "<group>";
 		};
+		CE6AF982303711250002656A /* Titles */ = {
+			isa = PBXGroup;
+			children = (
+				CE8DD3173029812A006213BD /* Movie.swift */,
+				CE8DD31D30298135006213BD /* MovieCollection.swift */,
+				CE8DD31F3029814A006213BD /* Show.swift */,
+				CE8DD32130298156006213BD /* Show+Display.swift */,
+				CE8DD3233029815B006213BD /* Season.swift */,
+				CE8DD32530298161006213BD /* Episode.swift */,
+			);
+			path = Titles;
+			sourceTree = "<group>";
+		};
+		CE6AF983303711270002656A /* People */ = {
+			isa = PBXGroup;
+			children = (
+				CE8DD3273029816A006213BD /* Person.swift */,
+				CEFAA210302D47CA00221EB8 /* Person+KnownFor.swift */,
+				CEA4276B3031DDF9003BCAFB /* CreditKind.swift */,
+				CEA427713032382D003BCAFB /* CreditFilter.swift */,
+				CE8688EE3032538600DFB237 /* EpisodeCredit.swift */,
+				CE8689363032821A00DFB237 /* FilmographyEntry.swift */,
+			);
+			path = People;
+			sourceTree = "<group>";
+		};
+		CE6AF9843037112B0002656A /* Extras */ = {
+			isa = PBXGroup;
+			children = (
+				CE6AF8AC3035B6100002656A /* Award.swift */,
+				CE6AF8AE3035B61B0002656A /* ExternalLink.swift */,
+				CE6AF8BA3035BE1A0002656A /* TitleExtras.swift */,
+				CE8DD31B30298134006213BD /* MediaTrailer.swift */,
+			);
+			path = Extras;
+			sourceTree = "<group>";
+		};
+		CE6AF9853037112D0002656A /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				CE8DD32930298172006213BD /* MediaType.swift */,
+				CE8DD32F30298181006213BD /* MediaKey.swift */,
+				CE8DD32D3029817C006213BD /* MediaRef.swift */,
+				CE8DD32B30298175006213BD /* MediaSummary.swift */,
+				CE8DD34C302984A8006213BD /* ImageSize.swift */,
+				CE6AF9603037078B0002656A /* RuntimeLabel.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
 		CE70BC57302FD2120059F0F3 /* Sections */ = {
 			isa = PBXGroup;
 			children = (
@@ -1360,28 +1410,10 @@
 		CE8DD30D302980F5006213BD /* Representations */ = {
 			isa = PBXGroup;
 			children = (
-				CE8DD3173029812A006213BD /* Movie.swift */,
-				CE8DD31D30298135006213BD /* MovieCollection.swift */,
-				CE8DD31F3029814A006213BD /* Show.swift */,
-				CE8DD32130298156006213BD /* Show+Display.swift */,
-				CE8DD3233029815B006213BD /* Season.swift */,
-				CE8DD32530298161006213BD /* Episode.swift */,
-				CE8DD3273029816A006213BD /* Person.swift */,
-				CE8DD32930298172006213BD /* MediaType.swift */,
-				CE8DD31B30298134006213BD /* MediaTrailer.swift */,
-				CE8DD32B30298175006213BD /* MediaSummary.swift */,
-				CE8DD32D3029817C006213BD /* MediaRef.swift */,
-				CE8DD32F30298181006213BD /* MediaKey.swift */,
-				CE8DD34C302984A8006213BD /* ImageSize.swift */,
-				CEFAA210302D47CA00221EB8 /* Person+KnownFor.swift */,
-				CEA4276B3031DDF9003BCAFB /* CreditKind.swift */,
-				CEA427713032382D003BCAFB /* CreditFilter.swift */,
-				CE8688EE3032538600DFB237 /* EpisodeCredit.swift */,
-				CE8689363032821A00DFB237 /* FilmographyEntry.swift */,
-				CE6AF8AC3035B6100002656A /* Award.swift */,
-				CE6AF8AE3035B61B0002656A /* ExternalLink.swift */,
-				CE6AF8BA3035BE1A0002656A /* TitleExtras.swift */,
-				CE6AF9603037078B0002656A /* RuntimeLabel.swift */,
+				CE6AF982303711250002656A /* Titles */,
+				CE6AF983303711270002656A /* People */,
+				CE6AF9843037112B0002656A /* Extras */,
+				CE6AF9853037112D0002656A /* Common */,
 			);
 			path = Representations;
 			sourceTree = "<group>";
@@ -2266,7 +2298,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.20.2;
+				CURRENT_PROJECT_VERSION = 2026.8.20.3;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
@@ -2293,7 +2325,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.20.2;
+				CURRENT_PROJECT_VERSION = 2026.8.20.3;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
