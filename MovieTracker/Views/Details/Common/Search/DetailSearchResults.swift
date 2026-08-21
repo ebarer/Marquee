@@ -17,7 +17,6 @@ struct DetailSearchResults: View {
     @Query(sort: [SortDescriptor(\MediaList.sortOrder), SortDescriptor(\MediaList.createdAt)])
     private var lists: [MediaList]
     @AppStorage("castEpisodeCounts") private var showsEpisodeCounts = true
-    @AppStorage("personCreditFilter") private var creditFilter = CreditFilter()
 
     @State private var pinLine: CGFloat = 0
     @State private var pinnedSections: Set<String> = []
@@ -117,11 +116,16 @@ struct DetailSearchResults: View {
         return ShowEpisodeCredits(person: person, in: show)
     }
 
+    // The filter belongs to the page that opened search; a request without one hides nothing.
+    private var creditFilter: CreditFilter {
+        request.creditFilter?.filter ?? CreditFilter(isOn: false)
+    }
+
     private var visibleGroups: [DetailSearchGroup] {
         guard !request.filterKinds.isEmpty else { return request.groups }
         return request.groups.compactMap { group in
             guard case .credits(let entries) = group.content else { return group }
-            let kept = entries.filter { !creditFilter.hides($0.ref.creditKind) }
+            let kept = entries.filter { !creditFilter.hides($0.ref.creditKinds) }
             return kept.isEmpty ? nil : DetailSearchGroup(title: group.title,
                                                           content: .credits(kept))
         }

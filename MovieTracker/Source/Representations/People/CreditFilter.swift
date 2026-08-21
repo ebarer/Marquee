@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Observation
 
 /// Which kinds of credit a filmography hides, and whether it is hiding them at all.
 struct CreditFilter: Equatable, Sendable {
@@ -20,6 +21,12 @@ struct CreditFilter: Equatable, Sendable {
     var active: Set<CreditKind> { isOn ? hidden : [] }
 
     func hides(_ kind: CreditKind) -> Bool { active.contains(kind) }
+
+    /// A title survives while any one of its kinds is still shown: hiding acting doesn't take a
+    /// film the person also directed.
+    func hides(_ kinds: Set<CreditKind>) -> Bool {
+        !kinds.isEmpty && kinds.allSatisfy(active.contains)
+    }
 
     mutating func setHidden(_ hide: Bool, for kind: CreditKind) {
         if hide { hidden.insert(kind) } else { hidden.remove(kind) }
@@ -40,19 +47,17 @@ struct CreditFilter: Equatable, Sendable {
     }
 }
 
-// MARK: - Storage
+// MARK: - Sharing
 
-/// Stored as "on|kind,kind" so `@AppStorage` can carry the whole filter under one key.
-extension CreditFilter: RawRepresentable {
-    var rawValue: String {
-        (isOn ? "on" : "off") + "|" + hidden.map(\.rawValue).sorted().joined(separator: ",")
+/// One person page's filter. A reference, since the search overlay is hosted above the page and has
+/// to edit the same value; nothing is persisted, so every page opens at the default.
+@Observable final class CreditFilterStore: Hashable {
+    var filter: CreditFilter
+
+    init(_ filter: CreditFilter = CreditFilter()) {
+        self.filter = filter
     }
 
-    init?(rawValue: String) {
-        let parts = rawValue.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
-        guard parts.count == 2 else { return nil }
-        // An empty selection is legal: the filter can be on with nothing chosen.
-        let kinds = parts[1].split(separator: ",").compactMap { CreditKind(rawValue: String($0)) }
-        self.init(hidden: Set(kinds), isOn: parts[0] == "on")
-    }
+    static func == (lhs: CreditFilterStore, rhs: CreditFilterStore) -> Bool { lhs === rhs }
+    func hash(into hasher: inout Hasher) { hasher.combine(ObjectIdentifier(self)) }
 }

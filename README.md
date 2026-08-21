@@ -14,7 +14,9 @@ The Xcode project is still named `MovieTracker`; the app target is **Marquee**
 - **Search** – unified movies/TV/people search; people surface by name *and* by the roles
   they played, and the Recent list holds what you opened, not what you typed
 - **Details** – trailers, cast and crew, episode-level TV progress, and what else a person
-  has been in, with talk-show and awards-night appearances filtered out by default
+  has been in, with talk-show and awards-night appearances filtered out by default; hiding a
+  kind of credit keeps a title the person also worked on in another, and the choice resets
+  when you open the next person
 - **Where to Watch** – region-aware streaming availability, filtered to your services
 
 ---

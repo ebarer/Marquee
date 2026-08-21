@@ -64,6 +64,14 @@ enum MediaRef: Hashable, Identifiable, Sendable {
         }
     }
 
+    // Falls back to the single kind for credits decoded before the set existed.
+    var creditKinds: Set<CreditKind> {
+        switch self {
+        case .movie(let movie): return movie.creditKinds ?? [creditKind]
+        case .show(let show): return show.creditKinds ?? [creditKind]
+        }
+    }
+
     var isExtraneousCredit: Bool {
         switch self {
         case .movie(let movie): return movie.isExtraneousCredit

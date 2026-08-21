@@ -29,6 +29,9 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     var creditRole: String?
     var creditJobs: [String]?
     var creditKind: CreditKind?
+    // Every kind the person held here, so hiding one doesn't take a title they also directed.
+    // Optional so cache entries written before it existed still decode.
+    var creditKinds: Set<CreditKind>?
     var episodeCount: Int?
     // TMDB can file one person under several credit ids for the same show.
     var creditIDs: [String] = []

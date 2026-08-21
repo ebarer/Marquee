@@ -50,6 +50,8 @@ struct DetailSearchRequest: Hashable {
     var tint: Color = .appAccent
     var countsEpisodes = false
     var filterKinds: [CreditKind] = []
+    // The page's own filter, so the overlay's control edits what the page below it is showing.
+    var creditFilter: CreditFilterStore?
     var creditedShow: Show?
 
     var rowCount: Int { groups.reduce(0) { $0 + $1.rowCount } }

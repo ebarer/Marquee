@@ -22,7 +22,8 @@ struct PersonDetailView: View {
     // The page's top edge in window coordinates. A sheet sits inset in the window, so a bare
     // `.global` reading would count the sheet's offset as nav-bar height.
     @State private var pageTop: CGFloat = 0
-    @AppStorage("personCreditFilter") private var filter = CreditFilter()
+    // Page-scoped, so pushing another person's page starts back at the default selection.
+    @State private var filterStore = CreditFilterStore()
     @State private var creditSearch: DetailSearchRequest?
     @State private var filterPinned = false
 
@@ -96,7 +97,7 @@ struct PersonDetailView: View {
                         knownForSection
 
                         PersonFilmography(entries: filmography, lists: lists,
-                                          filter: $filter,
+                                          filterStore: filterStore,
                                           isResolving: model.isResolvingCredits,
                                           pinLine: pinLine,
                                           isFilterPinned: filterPinned,
@@ -141,8 +142,9 @@ struct PersonDetailView: View {
                 .font(.headline)
                 .sectionHeaderInsets()
                 .overlay(alignment: .trailing) {
-                    CreditFilterMenu(kinds: kinds, filter: $filter) {
-                        SectionHeaderFilterGlyph(isOn: kinds.contains(where: filter.hides))
+                    CreditFilterMenu(kinds: kinds, filter: $filterStore.filter) {
+                        SectionHeaderFilterGlyph(
+                            isOn: kinds.contains(where: filterStore.filter.hides))
                     }
                     .buttonStyle(.plain)
                     .padding(.trailing, SectionHeaderMetrics.horizontal)

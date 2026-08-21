@@ -47,11 +47,11 @@ enum CreditKind: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 
     static func present(in credits: [MediaRef]) -> [CreditKind] {
-        allCases.filter { kind in credits.contains { $0.creditKind == kind } }
+        allCases.filter { kind in credits.contains { $0.creditKinds.contains(kind) } }
     }
 
     static func merge(_ credits: [(kind: CreditKind, role: String?, isCast: Bool)])
-        -> (kind: CreditKind, character: String?, jobs: [String]) {
+        -> (kind: CreditKind, kinds: Set<CreditKind>, character: String?, jobs: [String]) {
         let ordered = credits.enumerated()
             .sorted { ($0.element.kind.rank, $0.offset) < ($1.element.kind.rank, $1.offset) }
             .map(\.element)
@@ -62,7 +62,9 @@ enum CreditKind: String, Codable, CaseIterable, Identifiable, Sendable {
         }
         let characters = distinct.filter(\.isCast).compactMap(\.role)
         // TMDB repeats a title with an empty character; that row reads as acting and would outrank "Self".
-        return ((distinct.first ?? ordered.first)?.kind ?? .crew,
+        let named = distinct.isEmpty ? ordered : distinct
+        return (named.first?.kind ?? .crew,
+                Set(named.map(\.kind)),
                 characters.isEmpty ? nil : characters.joined(separator: ", "),
                 distinct.filter { !$0.isCast }.compactMap(\.role))
     }

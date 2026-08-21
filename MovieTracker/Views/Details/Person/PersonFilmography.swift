@@ -9,7 +9,7 @@ import SwiftUI
 struct PersonFilmography: View {
     let entries: [FilmographyEntry]
     let lists: [MediaList]
-    @Binding var filter: CreditFilter
+    @Bindable var filterStore: CreditFilterStore
     var isResolving: Bool = false
     var pinLine: CGFloat = 0
     var isFilterPinned: Bool = false
@@ -17,7 +17,7 @@ struct PersonFilmography: View {
     var onFilterPinned: ((Bool) -> Void)?
 
     var body: some View {
-        let credits = Credits(entries: entries, filter: filter)
+        let credits = Credits(entries: entries, filter: filterStore.filter)
         if isResolving {
             LazyVStack(spacing: 0) {
                 header(credits)
@@ -39,9 +39,9 @@ struct PersonFilmography: View {
                     }
                 }
             }
-            // Declared here so every route into the filter animates alike. A `withAnimation` around the
-            // mutation misses, since `@AppStorage` publishes outside it.
-            .animation(.easeInOut, value: filter.active)
+            // Declared here so every route into the filter animates alike: the menu mutates the
+            // store outside a `withAnimation`.
+            .animation(.easeInOut, value: filterStore.filter.active)
         }
     }
 
@@ -58,7 +58,7 @@ struct PersonFilmography: View {
             }
 
             if !credits.filterKinds.isEmpty {
-                CreditFilterMenu(kinds: credits.filterKinds, filter: $filter) {
+                CreditFilterMenu(kinds: credits.filterKinds, filter: $filterStore.filter) {
                     SectionHeaderFilterGlyph(isOn: credits.isFiltering)
                 }
                 .buttonStyle(.plain)
@@ -90,7 +90,8 @@ struct PersonFilmography: View {
         return DetailSearchRequest(prompt: "Search Credits",
                                    groups: [DetailSearchGroup(title: "Credits",
                                                               content: .credits(rows))],
-                                   filterKinds: credits.filterKinds)
+                                   filterKinds: credits.filterKinds,
+                                   creditFilter: filterStore)
     }
 }
 
@@ -106,7 +107,7 @@ private struct Credits {
     init(entries: [FilmographyEntry], filter: CreditFilter) {
         let kinds = CreditKind.present(in: entries.map(\.ref))
         let resolvedFilter = filter.resolved(for: kinds)
-        let shown = entries.filter { !resolvedFilter.hides($0.ref.creditKind) }
+        let shown = entries.filter { !resolvedFilter.hides($0.ref.creditKinds) }
         availableKinds = kinds
         resolved = resolvedFilter
         visible = shown
@@ -120,19 +121,23 @@ private struct Credits {
 }
 
 #Preview("Filtering") {
-    FilmographyPreview(filter: CreditFilter())
+    FilmographyPreview(store: CreditFilterStore())
+}
+
+#Preview("Hiding acting") {
+    FilmographyPreview(store: CreditFilterStore(CreditFilter(hidden: [.acting])))
 }
 
 #Preview("Filter off") {
-    FilmographyPreview(filter: CreditFilter(isOn: false))
+    FilmographyPreview(store: CreditFilterStore(CreditFilter(isOn: false)))
 }
 
 #Preview("Resolving") {
-    FilmographyPreview(filter: CreditFilter(), isResolving: true)
+    FilmographyPreview(store: CreditFilterStore(), isResolving: true)
 }
 
 private struct FilmographyPreview: View {
-    @State var filter: CreditFilter
+    @State var store: CreditFilterStore
     var isResolving = false
 
     private var entries: [FilmographyEntry] {
@@ -151,7 +156,7 @@ private struct FilmographyPreview: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    PersonFilmography(entries: entries, lists: [], filter: $filter,
+                    PersonFilmography(entries: entries, lists: [], filterStore: store,
                                       isResolving: isResolving)
                 }
             }

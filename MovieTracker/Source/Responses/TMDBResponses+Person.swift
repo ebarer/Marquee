@@ -115,6 +115,7 @@ extension TMDBWrapper {
             credit.creditRole = merged.character
             credit.creditJobs = merged.jobs
             credit.creditKind = merged.kind
+            credit.creditKinds = merged.kinds.isEmpty ? nil : merged.kinds
             return credit
         }
 
@@ -125,6 +126,7 @@ extension TMDBWrapper {
             credit.creditRole = merged.character
             credit.creditJobs = merged.jobs
             credit.creditKind = merged.kind
+            credit.creditKinds = merged.kinds.isEmpty ? nil : merged.kinds
             return credit
         }
 

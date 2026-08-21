@@ -144,8 +144,10 @@ extension Person {
             {
                 var movie = Movie(id: 21, title: "Tenet")
                 movie.releaseDate = DateComponents(calendar: .current, year: 2020, month: 9, day: 3).date
+                movie.creditRole = "Man in Restaurant"
                 movie.creditJobs = ["Director", "Writer", "Executive Producer"]
-                movie.creditKind = .directing
+                movie.creditKind = .acting
+                movie.creditKinds = [.acting, .directing, .writing, .producing]
                 movie.poster = "preview-poster"
                 movie.popularity = 76
                 movie.voteCount = 7_600

@@ -57,13 +57,13 @@ private struct DetailSearchHost: ViewModifier {
     @State private var fieldWidth: CGFloat = 0
 
     @AppStorage("castEpisodeCounts") private var showsEpisodeCounts = true
-    @AppStorage("personCreditFilter") private var creditFilter = CreditFilter()
     @Environment(\.closeModal) private var closeModal
 
     private var isSearching: Bool { request != nil && !isClosing }
 
     private var hidesCredits: Bool {
-        request?.filterKinds.contains(where: creditFilter.hides) == true
+        guard let request, let filter = request.creditFilter?.filter else { return false }
+        return request.filterKinds.contains(where: filter.hides)
     }
 
     // A modal's bar leaves with the keyboard and would take the field with it, so the flying copy is
@@ -134,9 +134,9 @@ private struct DetailSearchHost: ViewModifier {
                             } action: { countsSlot = $0; syncBarSlot() }
                     }
                 }
-                if !request.filterKinds.isEmpty {
+                if !request.filterKinds.isEmpty, let store = request.creditFilter {
                     ToolbarItem(placement: .topBarTrailing) {
-                        CreditFilterMenu(kinds: request.filterKinds, filter: $creditFilter) {
+                        CreditFilterMenu(kinds: request.filterKinds, filter: binding(of: store)) {
                             Image(systemName: "line.3.horizontal.decrease")
                                 .foregroundStyle(hidesCredits ? Color.black : .white)
                         }
@@ -163,6 +163,10 @@ private struct DetailSearchHost: ViewModifier {
             }
         }
         .environment(\.detailSearch, action)
+    }
+
+    private func binding(of store: CreditFilterStore) -> Binding<CreditFilter> {
+        Binding { store.filter } set: { store.filter = $0 }
     }
 
     private var action: DetailSearchAction {
