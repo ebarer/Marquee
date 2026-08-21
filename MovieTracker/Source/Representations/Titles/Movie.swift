@@ -63,7 +63,12 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
         return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
-    var isExtraneousCredit: Bool { CreditKind.isExtraneous(creditRoleSummary) }
+    // The resolved kinds where they exist: the role line is edited for reading and no longer says
+    // "Self" for every appearance. Credits that never went through the merge keep the text test.
+    var isExtraneousCredit: Bool {
+        if let creditKinds { return creditKinds == [.appearance] }
+        return CreditKind.isExtraneous(creditRoleSummary)
+    }
 
     var genresString: String {
         let chosen = (genres ?? []).prefix(2).map { $0.shorten() }

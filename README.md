@@ -15,9 +15,10 @@ The Xcode project is still named `MovieTracker`; the app target is **Marquee**
   they played, and the Recent list holds what you opened, not what you typed
 - **Details** – trailers (long-press the play button for the five best, with type and date),
   cast and crew, episode-level TV progress, and what else a person
-  has been in, with talk-show and awards-night appearances filtered out by default; hiding a
-  kind of credit keeps a title the person also worked on in another, and the choice resets
-  when you open the next person
+  has been in, with guest spots filtered out by default while the work itself stays: hosting is a
+  credit of its own, a sketch show's repertory reads as Cast, and a talk-show visit reads as Guest
+  however TMDB wrote it; hiding a kind of credit keeps a title the person also worked on in
+  another, and the choice resets when you open the next person
 - **Where to Watch** – region-aware streaming availability, filtered to your services
 
 ---

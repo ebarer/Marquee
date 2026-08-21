@@ -48,6 +48,22 @@ enum SearchMatching {
         return query.hasPrefix(anchor) || anchor.hasPrefix(query)
     }
 
+    // TMDB records "SNL" on the show as an alternative title of type "initialism", but its search
+    // endpoint never consults alternative titles, so there is nothing to derive these from.
+    private static let initialisms = [
+        "snl": "saturday night live",
+        "himym": "how i met your mother",
+        "b99": "brooklyn nine-nine",
+        "tng": "star trek the next generation",
+        "ds9": "star trek deep space nine",
+        "atla": "avatar the last airbender",
+        "lotr": "the lord of the rings",
+    ]
+
+    static func initialismExpansion(of query: String) -> String? {
+        initialisms[normalized(query)]
+    }
+
     // Works around TMDB's space-sensitive title search ("ironman" to "iron man").
     static func spacedVariant(of query: String) -> String? {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
@@ -213,11 +229,21 @@ enum SearchMatching {
         return Array(merged.prefix(cap))
     }
 
-    // Whole segments only: "office" must not claim someone called "Officer".
+    // Whole segments only: "office" must not claim someone called "Officer". Runs of them, since
+    // normalizing a full-name query strips the separators the name still has.
     static func nameMatches(_ name: String, normalizedQuery needle: String) -> Bool {
         guard needle.count >= 3 else { return false }
-        return name.split(whereSeparator: { $0 == " " || $0 == "-" })
-            .contains { normalized(String($0)) == needle }
+        let segments = name.split(whereSeparator: { $0 == " " || $0 == "-" })
+            .map { normalized(String($0)) }
+        for start in segments.indices {
+            var run = ""
+            for segment in segments[start...] {
+                run += segment
+                if run == needle { return true }
+                if run.count >= needle.count { break }
+            }
+        }
+        return false
     }
 
     static func inlinePeopleCount(_ featured: [Person], castMatchedIDs: Set<Int>,
@@ -251,13 +277,19 @@ enum SearchMatching {
     static func interlaced(movies: [Movie], shows: [Show], query: String = "",
                            voteFloor: Int = 0, relatedMovies: [Int: Int] = [:],
                            now: Date = .now,
-                           popularityBenchmark: Double = .infinity) -> [MediaRef] {
+                           popularityBenchmark: Double = .infinity,
+                           titleAliases: [String] = []) -> [MediaRef] {
         let needle = normalized(articleStripped(query))
+        // What the query abbreviates counts as the query, or a title merely carrying the letters
+        // ("SNL Korea") would outrank the show they stand for.
+        let needles = [needle] + titleAliases.map { normalized(articleStripped($0)) }
         let refs = movies.map(MediaRef.movie) + shows.map(MediaRef.show)
 
         // A sibling is as relevant as the match that pulled it in, never on a stronger footing than its seed.
         func relevance(_ ref: MediaRef) -> Int {
-            let literal = titleRelevance(ref.title, normalizedQuery: needle)
+            let literal = needles
+                .map { titleRelevance(ref.title, normalizedQuery: $0) }
+                .min() ?? 4
             guard case .movie(let movie) = ref, let seeded = relatedMovies[movie.id] else {
                 return literal
             }

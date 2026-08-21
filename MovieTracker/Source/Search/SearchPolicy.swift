@@ -34,7 +34,8 @@ struct SearchPolicy: Sendable {
         let results = SearchMatching.interlaced(movies: context.movies, shows: context.shows,
                                                 query: query, voteFloor: ranking.voteFloor,
                                                 relatedMovies: context.relatedMovies,
-                                                popularityBenchmark: await benchmark ?? .infinity)
+                                                popularityBenchmark: await benchmark ?? .infinity,
+                                                titleAliases: context.titleAliases)
         return SearchResults(movies: context.movies, shows: context.shows, results: results,
                              namedPeople: context.namedPeople,
                              castPeople: castPeople(context, results: results))

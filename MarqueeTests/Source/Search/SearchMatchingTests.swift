@@ -311,6 +311,47 @@ import Foundation
         #expect(result.map(\.title) == ["Trending New", "Old Classic", "At Floor", "Junk"])
     }
 
+    // MARK: - initialisms
+
+    // TMDB records "SNL" on the show as an alternative title of type "initialism", but its search
+    // endpoint never consults those, so the query reaches only the localised franchise versions.
+    @Test func anInitialismExpandsToTheTitleItNames() {
+        #expect(SearchMatching.initialismExpansion(of: "SNL") == "saturday night live")
+        #expect(SearchMatching.initialismExpansion(of: "snl") == "saturday night live")
+        #expect(SearchMatching.initialismExpansion(of: "himym") == "how i met your mother")
+        #expect(SearchMatching.initialismExpansion(of: "saturday night live") == nil)
+        #expect(SearchMatching.initialismExpansion(of: "batman") == nil)
+    }
+
+    @Test func theExpansionOutranksATitleMerelyCarryingTheLetters() {
+        var original = Show(id: 1, name: "Saturday Night Live")
+        original.voteCount = 517
+        original.originCountry = ["US"]
+        var localised = Show(id: 2, name: "SNL Korea")
+        localised.voteCount = 5
+        localised.originCountry = ["KR"]
+        let ranked = SearchMatching.interlaced(movies: [], shows: [localised, original],
+                                               query: "snl",
+                                               titleAliases: ["saturday night live"])
+        #expect(ranked.map(\.title) == ["Saturday Night Live", "SNL Korea"])
+    }
+
+    // Every in-app search box runs through String.matches, so a person's credits accept the
+    // initialism too.
+    @Test func anInitialismAlsoMatchesWhenFilteringCredits() {
+        var snl = Show(id: 1667, name: "Saturday Night Live")
+        snl.creditRole = "Cast"
+        let entry = FilmographyEntry(ref: .show(snl))
+        #expect(entry.matches(query: "SNL"))
+        #expect(entry.matches(query: "snl"))
+        #expect(entry.matches(query: "saturday"))
+        #expect(!entry.matches(query: "himym"))
+        #expect(!entry.matches(query: "batman"))
+        // A plain substring search is unaffected.
+        #expect("Saturday Night Live".matches(query: "night"))
+        #expect(!"Saturday Night Live".matches(query: "sopranos"))
+    }
+
     // MARK: - featuredPeople
 
     @Test func featuredPeoplePutsCastMatchesFirstThenNamedByPopularity() {
@@ -318,6 +359,35 @@ import Foundation
         let named = [namedPerson(50, "Low", popularity: 5), namedPerson(51, "High", popularity: 10)]
         let result = SearchMatching.featuredPeople(castMatched: [bale], named: named, cap: 12)
         #expect(result.map(\.name) == ["Christian Bale", "High", "Low"])
+    }
+
+    // Normalizing "cameron diaz" strips the space the name still has, so a full-name query only
+    // matched a segment at a time and the person it named ranked behind the cast of her films.
+    @Test func aFullNameQueryMatchesTheWholeName() {
+        func matches(_ query: String, _ name: String) -> Bool {
+            SearchMatching.nameMatches(
+                name, normalizedQuery: SearchMatching.normalized(SearchMatching.articleStripped(query)))
+        }
+        #expect(matches("cameron diaz", "Cameron Diaz"))
+        #expect(matches("cameron", "Cameron Diaz"))
+        #expect(matches("diaz", "Cameron Diaz"))
+        #expect(matches("mary kate olsen", "Mary-Kate Olsen"))
+        #expect(!matches("cameron diaz", "Cameron Crowe"))
+        #expect(!matches("jim carrey", "Cameron Diaz"))
+        // Whole segments still: a run has to end where a segment does.
+        #expect(!matches("cameron dia", "Cameron Diaz"))
+        #expect(!matches("office", "Officer Bob"))
+    }
+
+    @Test func theNamedPersonLeadsTheCastOfTheirOwnFilms() {
+        var diaz = namedPerson(6941, "Cameron Diaz", popularity: 4.6)
+        diaz.profilePicture = "/x.jpg"
+        let coStars = [castMember(206, "Jim Carrey", "Stanley Ipkiss"),
+                       castMember(1_215_632, "Fern Champion", "Self")]
+        let result = SearchMatching.featuredPeople(castMatched: coStars, named: [diaz],
+                                                   cap: 12, namedNoiseFloor: 1,
+                                                   query: "cameron diaz")
+        #expect(result.map(\.name) == ["Cameron Diaz", "Jim Carrey", "Fern Champion"])
     }
 
     @Test func featuredPeopleDedupesAndCaps() {

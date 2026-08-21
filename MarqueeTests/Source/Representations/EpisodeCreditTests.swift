@@ -25,8 +25,22 @@ import Foundation
             .init(season: season(7, episodes: 8), episodeNumbers: [5]),
         ])
         #expect(credit.summary == .episode(season: 7, number: 5))
-        #expect(credit.summary?.label == "S7 · E5")
+        // A count of one says less than which episode it was.
+        #expect(credit.summary?.label == "Season 7 • Episode 5")
         #expect(!credit.needsEpisodeList)
+    }
+
+    @Test func aSeasonRowNamesTheOneEpisodeRatherThanCountingIt() {
+        let single = EpisodeCredit.SeasonCredit(season: season(13, episodes: 20),
+                                               episodeNumbers: [5])
+        #expect(single.label == "Season 13 • Episode 5")
+        // More than one has no number to name, so it counts them.
+        let several = EpisodeCredit.SeasonCredit(season: season(13, episodes: 20),
+                                                episodeNumbers: [5, 9])
+        #expect(several.label == "Season 13 • 2 Episodes")
+        // A whole season is a run, not an episode.
+        let whole = EpisodeCredit.SeasonCredit(season: season(13, episodes: 1))
+        #expect(whole.label == "Season 13 • 1 Episode")
     }
 
     @Test func wholeSeasonNamesTheSeason() {
@@ -97,8 +111,9 @@ import Foundation
                                               episodeNumbers: [1, 5, 9])
         #expect(some.label == "Season 2 • 3 Episodes")
 
+        // One episode has a number to name, which says more than counting it.
         let one = EpisodeCredit.SeasonCredit(season: unsized(3), episodeNumbers: [4])
-        #expect(one.label == "Season 3 • 1 Episode")
+        #expect(one.label == "Season 3 • Episode 4")
     }
 
     // MARK: - Merging

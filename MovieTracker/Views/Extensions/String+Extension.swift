@@ -22,7 +22,11 @@ extension String {
         func fold(_ text: String) -> String {
             text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
         }
-        return fold(self).contains(fold(query))
+        let folded = fold(self)
+        if folded.contains(fold(query)) { return true }
+        // "SNL" is how people type Saturday Night Live, and the initialism is not in the title.
+        guard let expansion = SearchMatching.initialismExpansion(of: query) else { return false }
+        return folded.contains(fold(expansion))
     }
 
     func shorten() -> String {

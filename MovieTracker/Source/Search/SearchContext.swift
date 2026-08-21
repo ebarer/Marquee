@@ -22,6 +22,8 @@ struct SearchContext: Sendable {
     // Hydrated once by HydrateTopMoviesTool so the franchise and cast tools don't each re-fetch.
     var movieDetails: [Int: Movie]
     var relatedMovies: [Int: Int]
+    // An expansion the query stands for, so ranking can score a title the query only abbreviates.
+    var titleAliases: [String] = []
 
     init(query: String, movies: [Movie] = [], shows: [Show] = [],
          namedPeople: [Person] = [], filmCharacterPeople: [Person] = [],

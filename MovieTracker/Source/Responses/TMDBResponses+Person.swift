@@ -25,7 +25,7 @@ extension TMDBWrapper {
             guard let creditsRaw = self.creditsRaw else { return [] }
 
             var byID = [Int: Movie]()
-            var roles = [Int: [(kind: CreditKind, role: String?, isCast: Bool)]]()
+            var roles = [Int: [CreditKind.Entry]]()
             for (isCast, collection) in [(true, creditsRaw.cast), (false, creditsRaw.crew)] {
                 for movie in collection {
                     var credit = Movie(id: movie.id, title: movie.title)
@@ -40,7 +40,7 @@ extension TMDBWrapper {
                         credit.releaseDate = releaseDateString.toDate(format: .iso8601DAw)
                     }
                     roles[movie.id, default: []].append((credit.creditKind ?? .crew, movie.role,
-                                                        isCast))
+                                                        isCast, 0))
                     if let kept = byID[movie.id], rank(kept.creditKind) <= rank(credit.creditKind) {
                         continue
                     }
@@ -61,16 +61,19 @@ extension TMDBWrapper {
             guard let raw = tvCreditsRaw else { return [] }
 
             var byID = [Int: Show]()
-            var roles = [Int: [(kind: CreditKind, role: String?, isCast: Bool)]]()
+            var roles = [Int: [CreditKind.Entry]]()
             var creditIDs = [Int: [String]]()
             var rolesByCreditID = [Int: [String: String]]()
+            var unscripted = Set<Int>()
             for (isCast, collection) in [(true, raw.cast), (false, raw.crew)] {
                 for item in collection {
+                    let format = CreditFormat(genreIDs: item.genreIDs)
+                    if format.isUnscripted { unscripted.insert(item.id) }
                     var credit = Show(id: item.id, name: item.name)
                     credit.poster = item.poster
                     credit.creditRole = item.role
                     credit.creditKind = .resolve(isCast: isCast, role: item.role,
-                                                 department: item.department)
+                                                 department: item.department, format: format)
                     credit.popularity = item.popularity
                     credit.voteCount = item.voteCount
                     credit.episodeCount = item.episodeCount
@@ -78,23 +81,22 @@ extension TMDBWrapper {
                         credit.firstAirDate = airDateString.toDate(format: .iso8601DAw)
                     }
                     roles[item.id, default: []].append((credit.creditKind ?? .crew, item.role,
-                                                       isCast))
+                                                        isCast, item.episodeCount ?? 0))
                     if let creditID = item.creditID {
                         creditIDs[item.id, default: []].append(creditID)
                         if isCast, let role = item.role, !role.isEmpty {
                             rolesByCreditID[item.id, default: [:]][creditID] = role
                         }
                     }
-                    if let kept = byID[item.id], rank(kept.creditKind) <= rank(credit.creditKind) {
-                        continue
-                    }
+                    if let kept = byID[item.id], !supersedes(credit, kept) { continue }
                     byID[item.id] = credit
                 }
             }
 
             return byID.values
                 .map { show -> Show in
-                    var credit = merging(show, roles: roles[show.id] ?? [])
+                    var credit = merging(show, roles: roles[show.id] ?? [],
+                                         unscripted: unscripted.contains(show.id))
                     credit.creditIDs = creditIDs[show.id] ?? []
                     credit.creditRolesByID = rolesByCreditID[show.id]
                     return credit
@@ -108,8 +110,16 @@ extension TMDBWrapper {
 
         private func rank(_ kind: CreditKind?) -> Int { (kind ?? .crew).rank }
 
+        // The credit with the most episodes carries the row's count and poster, so one night back
+        // as host does not stand in for a run in the repertory.
+        private func supersedes(_ candidate: Show, _ kept: Show) -> Bool {
+            let (theirs, ours) = (candidate.episodeCount ?? 0, kept.episodeCount ?? 0)
+            guard theirs == ours else { return theirs > ours }
+            return rank(candidate.creditKind) < rank(kept.creditKind)
+        }
+
         private func merging(_ credit: Movie,
-                             roles: [(kind: CreditKind, role: String?, isCast: Bool)]) -> Movie {
+                             roles: [CreditKind.Entry]) -> Movie {
             var credit = credit
             let merged = CreditKind.merge(roles)
             credit.creditRole = merged.character
@@ -120,9 +130,10 @@ extension TMDBWrapper {
         }
 
         private func merging(_ credit: Show,
-                             roles: [(kind: CreditKind, role: String?, isCast: Bool)]) -> Show {
+                             roles: [CreditKind.Entry],
+                             unscripted: Bool) -> Show {
             var credit = credit
-            let merged = CreditKind.merge(roles)
+            let merged = CreditKind.merge(roles, unscripted: unscripted)
             credit.creditRole = merged.character
             credit.creditJobs = merged.jobs
             credit.creditKind = merged.kind
@@ -157,6 +168,7 @@ extension TMDBWrapper {
                 var voteCount: Int?
                 var episodeCount: Int?
                 var creditID: String?
+                var genreIDs: [Int]?
 
                 var role: String? { character ?? job }
 
@@ -167,6 +179,7 @@ extension TMDBWrapper {
                     case poster = "poster_path"
                     case episodeCount = "episode_count"
                     case creditID = "credit_id"
+                    case genreIDs = "genre_ids"
                 }
             }
         }

@@ -67,7 +67,10 @@ import Foundation
         #expect(credit("Self (archive footage)").isExtraneousCredit)
         #expect(credit("Special Thanks").isExtraneousCredit)
         #expect(credit("Director").isExtraneousCredit == false)
-        #expect(credit("Herself").isExtraneousCredit == false)
+        // TMDB writes an appearance as "Self" on one title and "Himself" on the next.
+        #expect(credit("Herself").isExtraneousCredit)
+        #expect(credit("Himself").isExtraneousCredit)
+        #expect(credit("Themselves").isExtraneousCredit)
 
         // Real TMDB strings. "Selft" is a typo'd self-appearance; "Idea" is an
         // attribution-only job TMDB files under Writing beside real screenplays.

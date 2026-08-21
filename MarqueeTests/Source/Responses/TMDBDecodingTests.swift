@@ -167,17 +167,45 @@ import Foundation
         let json = """
         {"id":1,"name":"Actor","popularity":9.0,"tv_credits":{
           "cast":[
-            {"id":63770,"name":"Show","character":"Self - Guest","credit_id":"a","episode_count":2},
-            {"id":63770,"name":"Show","character":"Jeff Daniels","credit_id":"b","episode_count":1},
-            {"id":63770,"name":"Show","character":"","credit_id":"c","episode_count":1}
+            {"id":63770,"name":"Show","character":"Self - Guest","credit_id":"a","episode_count":2,
+             "genre_ids":[35,10767]},
+            {"id":63770,"name":"Show","character":"Jeff Daniels","credit_id":"b","episode_count":1,
+             "genre_ids":[35,10767]},
+            {"id":63770,"name":"Show","character":"","credit_id":"c","episode_count":1,
+             "genre_ids":[35,10767]}
           ],
           "crew":[]}}
         """
         let raw = try TMDBWrapper.decode(TMDBWrapper.PersonRaw.self, from: Data(json.utf8))
         let credit = try #require(raw.tvCredits().first)
-        // A "Self" row ranks below a played part, so the merged role leads with the junk one.
-        #expect(credit.creditRole == "Jeff Daniels, Self - Guest")
+        // The stray name can't claim a talk show, so the row reads as the guest spot and hides.
+        #expect(credit.creditRole == "Guest")
+        #expect(credit.creditKinds == [.appearance])
+        #expect(CreditFilter().hides(MediaRef.show(credit).creditKinds))
+        // The per-id lookup keeps TMDB's own text, which is what the episode list matches on.
         #expect(credit.creditRolesByID == ["a": "Self - Guest", "b": "Jeff Daniels"])
+    }
+
+    // Cameron Diaz on The Tonight Show: TMDB credits the guest with no character, not "Self".
+    @Test func aGuestSpotOnATalkShowNeedsNoSelfToReadAsAnAppearance() throws {
+        let json = """
+        {"id":1,"name":"Actor","popularity":9.0,"tv_credits":{
+          "cast":[
+            {"id":2518,"name":"Talk Show","character":"","credit_id":"a","episode_count":2,
+             "genre_ids":[10767,35]},
+            {"id":99,"name":"Drama","character":"","credit_id":"b","episode_count":2,
+             "genre_ids":[18]}
+          ],
+          "crew":[]}}
+        """
+        let raw = try TMDBWrapper.decode(TMDBWrapper.PersonRaw.self, from: Data(json.utf8))
+        let credits = raw.tvCredits()
+        let talk = try #require(credits.first { $0.id == 2518 })
+        #expect(talk.creditKinds == [.appearance])
+        #expect(CreditFilter().hides(MediaRef.show(talk).creditKinds))
+        // A drama's blank character is missing data, not an appearance.
+        let drama = try #require(credits.first { $0.id == 99 })
+        #expect(drama.creditKinds == [.acting])
     }
 
     // Harrison Ford on Entertainment Tonight: a second cast row with no character at all.

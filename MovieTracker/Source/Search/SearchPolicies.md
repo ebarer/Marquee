@@ -95,8 +95,12 @@ notable people share.
 count, or a departed lead lands behind the ensemble who stayed. A regular is someone in half
 the longest run, which keeps a guest billed high in a handful of episodes out.
 
-**A name matches whole segments only.** `office` must not claim someone called "Officer", and a
-partly-typed name waits until it is a name. Below three characters, nothing matches by name.
+**A name matches whole segments, or a run of them.** `office` must not claim someone called
+"Officer", and a partly-typed name waits until it is a name — `cameron dia` matches nobody.
+A run is required because normalising drops the separator the query has and the name keeps:
+`cameron diaz` becomes `camerondiaz`, which equals no single segment of "Cameron Diaz", so
+segment-at-a-time matching left an exact full-name search ranked behind the cast of her own
+films. Below three characters, nothing matches by name.
 
 **The strip's inline prefix ends at the first person who isn't prominent.** A cast match always
 counts as prominent; a name match counts only if it clears `inlinePopularityFloor` *and* has a
@@ -112,6 +116,18 @@ siblings at the seed's relevance. `batman` reaches The Dark Knight through "Batm
 **TV noise is trimmed by origin, not by relevance alone.** `ShowFilterTool` keeps US-aired shows
 that are established (votes) or trending (popularity) — plus *any* exact title match, so a
 directly-searched foreign show ("Squid Game") still appears.
+
+**An initialism is expanded from a table, which is the one hardcoded thing here.** TMDB records
+"SNL" on the show as an alternative title of type `initialism`, but its search endpoint never
+consults alternative titles, so `snl` reaches only SNL Korea and SNL China — the original is
+unreachable by any query, and there is nothing to derive the expansion from. `SpellingVariantTool`
+re-queries the expansion against TV as well as film, and records it as a *title alias*: relevance
+takes the best score across the query and its aliases, so the show outranks a title that merely
+carries the letters. Keep the table to initialisms people actually type.
+
+The same table serves the in-app search boxes — a person's credits, a title's cast — because
+`String.matches(query:)` falls back to the expansion when the literal substring misses. That is
+one matcher behind every filter field, so the rule does not need repeating per screen.
 
 **Spelling variants exist because TMDB's title search is literal.** A compressed hero name
 ("ironman") or a separator title ("wall e") finds only obscure films, and an interpunct title
@@ -135,6 +151,7 @@ What the **People strip** opens on:
 | `avengers` | Downey Jr., Evans, Hemsworth… | Nobody's character; the named films' billing fills it |
 | `office` | Carell, Wilson, Krasinski | Show wins the list, so its cast leads the film's |
 | `robert` | Downey Jr., Pattinson, Patrick | Name query; no notable title called "Robert" |
+| `cameron diaz` | Cameron Diaz | Full name matches as a run, ahead of her own films' cast |
 | `dune` | Chalamet, Zendaya | Title holds the query against one obscure namesake |
 | `carrie` | Carrie-Anne Moss, Coon, Fisher | Several notable namesakes take it back off the film |
 | `friends` | Aniston, Cox, Kudrow | Namesake noise ("Line Friends") is below the floor |
@@ -148,6 +165,7 @@ What the **results list** opens on:
 | `superman` | Man of Steel | Sibling of a title the query only word-matches |
 | `squid game` | Squid Game | Exact title match escapes the US-origin TV filter |
 | `ironman` | Iron Man | Spaced variant; the literal query finds only obscure films |
+| `snl` | Saturday Night Live | Initialism expansion, aliased so SNL Korea can't lead |
 
 ## Changing any of this
 

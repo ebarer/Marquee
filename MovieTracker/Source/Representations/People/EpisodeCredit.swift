@@ -27,8 +27,12 @@ struct EpisodeCredit: Hashable, Sendable {
             isWhole || episodeNumbers.contains(number)
         }
 
+        // A count of one says less than which episode it was.
         var label: String {
-            "\(season.name) • \(EpisodeCredit.episodeCountLabel(count))"
+            if !isWhole, episodeNumbers.count == 1, let only = episodeNumbers.first {
+                return "\(season.name) • Episode \(only)"
+            }
+            return "\(season.name) • \(EpisodeCredit.episodeCountLabel(count))"
         }
     }
 
@@ -91,7 +95,7 @@ struct EpisodeCredit: Hashable, Sendable {
 extension EpisodeCredit.Summary {
     var label: String {
         switch self {
-        case .episode(let season, let number): return "S\(season) · E\(number)"
+        case .episode(let season, let number): return "Season \(season) • Episode \(number)"
         case .season(let season):
             return "\(season.name) • \(EpisodeCredit.episodeCountLabel(season.episodeCount))"
         case .spread(let count): return EpisodeCredit.episodeCountLabel(count)

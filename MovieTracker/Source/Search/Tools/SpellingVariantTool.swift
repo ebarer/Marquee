@@ -22,6 +22,16 @@ struct SpellingVariantTool: SearchTool {
            let spaced = SearchMatching.spacedVariant(of: context.query) {
             alternates.append(spaced)
         }
+        // An initialism names the title outright, so it also searches TV and carries its relevance.
+        if let expansion = SearchMatching.initialismExpansion(of: context.query) {
+            alternates.append(expansion)
+            context.titleAliases.append(expansion)
+            var shows = Set(context.shows.map(\.id))
+            for show in await provider.shows(matching: expansion)
+            where shows.insert(show.id).inserted {
+                context.shows.append(show)
+            }
+        }
         guard !alternates.isEmpty else { return context }
 
         var seen = Set(context.movies.map(\.id))
