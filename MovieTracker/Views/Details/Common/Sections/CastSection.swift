@@ -47,7 +47,7 @@ struct CastSection: View {
 
     // A host-led show, whose guests read as its cast. Two regulars covers a host and a co-host.
     private var mergesGuests: Bool {
-        (1...2).contains(castMembers.count) && guests.count > castMembers.count
+        (1...2).contains(castMembers.count) && !guests.isEmpty
     }
 
     private func title(for category: CastCategory) -> String {
@@ -185,6 +185,22 @@ struct CastSection: View {
     NavigationStack {
         ScrollView {
             CastSection(cast: Movie.preview.team)
+        }
+        .detailDestinations()
+        .detailSearchHost()
+    }
+    .background(Color.appBackground)
+    .modelContainer(previewModelContainer)
+    .environment(PersistenceCoordinator(previewModelContainer.mainContext))
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Host and one guest") {
+    let cast = Person.previewTeam.filter { $0.type == .Cast }
+
+    return NavigationStack {
+        ScrollView {
+            CastSection(cast: [cast[0]], guests: [cast[1]], countsEpisodes: false)
         }
         .detailDestinations()
         .detailSearchHost()

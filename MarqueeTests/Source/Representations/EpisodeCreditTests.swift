@@ -129,6 +129,27 @@ import Foundation
         #expect(EpisodeCredit.merging([]) == nil)
     }
 
+    @Test func mergingKeepsEachSeasonsCreditID() {
+        let merged = EpisodeCredit.merging([
+            EpisodeCredit(seasons: [.init(season: season(1, episodes: 10), episodeNumbers: [4],
+                                          creditID: "a")]),
+            EpisodeCredit(seasons: [.init(season: season(2, episodes: 10), episodeNumbers: [6],
+                                          creditID: "b")]),
+        ])
+        #expect(merged?.seasons.map(\.creditID) == ["a", "b"])
+    }
+
+    @Test func mergingDropsTheCreditIDWhenTwoShareASeason() {
+        let merged = EpisodeCredit.merging([
+            EpisodeCredit(seasons: [.init(season: season(1, episodes: 10), episodeNumbers: [4],
+                                          creditID: "a")]),
+            EpisodeCredit(seasons: [.init(season: season(1, episodes: 10), episodeNumbers: [6],
+                                          creditID: "b")]),
+        ])
+        #expect(merged?.seasons.first?.creditID == nil)
+        #expect(merged?.seasons.first?.episodeNumbers == [4, 6])
+    }
+
     // MARK: - Decoding
 
     @Test func decodesListedEpisodesWithoutSeasonObjects() throws {

@@ -12,9 +12,14 @@ extension TMDBWrapper {
         return translate(person: try decode(PersonRaw.self, from: data))
     }
 
+    // The response carries no character, so each season keeps the credit id its role is looked up by.
     static func getCredit(id: String) async throws -> EpisodeCredit {
         let data = try await fetch("/credit/\(id)")
-        return try decode(CreditRaw.self, from: data).credit()
+        let credit = try decode(CreditRaw.self, from: data).credit()
+        return EpisodeCredit(seasons: credit.seasons.map {
+            EpisodeCredit.SeasonCredit(season: $0.season, episodeNumbers: $0.episodeNumbers,
+                                       creditID: id)
+        })
     }
 
     static func searchForPeople(query: String, page: Int = 1) async throws -> PagedResult<Person> {

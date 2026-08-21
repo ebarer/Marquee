@@ -32,6 +32,8 @@ struct Show: Hashable, Identifiable, Codable, Sendable {
     var episodeCount: Int?
     // TMDB can file one person under several credit ids for the same show.
     var creditIDs: [String] = []
+    // Each credit id's own character, since the ids can disagree and `creditRole` joins them all.
+    var creditRolesByID: [String: String]?
     var creators: [Person] = []
     var recurringCast: [Person] = []
     // Optional so cache entries written before it existed still decode.

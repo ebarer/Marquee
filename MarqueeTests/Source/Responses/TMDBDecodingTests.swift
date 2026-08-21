@@ -162,6 +162,24 @@ import Foundation
         #expect(credits.map(\.id) == [20, 10])            // newest first
     }
 
+    // Jason Segel on The Late Show: TMDB carries another guest's name on one of his credit ids.
+    @Test func tvCreditsKeepEachCreditIDsOwnCharacter() throws {
+        let json = """
+        {"id":1,"name":"Actor","popularity":9.0,"tv_credits":{
+          "cast":[
+            {"id":63770,"name":"Show","character":"Self - Guest","credit_id":"a","episode_count":2},
+            {"id":63770,"name":"Show","character":"Jeff Daniels","credit_id":"b","episode_count":1},
+            {"id":63770,"name":"Show","character":"","credit_id":"c","episode_count":1}
+          ],
+          "crew":[]}}
+        """
+        let raw = try TMDBWrapper.decode(TMDBWrapper.PersonRaw.self, from: Data(json.utf8))
+        let credit = try #require(raw.tvCredits().first)
+        // A "Self" row ranks below a played part, so the merged role leads with the junk one.
+        #expect(credit.creditRole == "Jeff Daniels, Self - Guest")
+        #expect(credit.creditRolesByID == ["a": "Self - Guest", "b": "Jeff Daniels"])
+    }
+
     @Test func translatePersonMapsFields() throws {
         let json = #"{"id":5,"name":"Nm","popularity":3.0,"biography":"Bio","place_of_birth":"NYC","profile_path":"/p.jpg"}"#
         let person = TMDBWrapper.translate(person: try TMDBWrapper.decode(TMDBWrapper.PersonRaw.self, from: Data(json.utf8)))

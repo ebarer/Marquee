@@ -60,7 +60,7 @@ struct SeasonHeader: View {
                     Text(seasonName)
                         .font(.headline)
                         .foregroundStyle(.white)
-                    Image(systemName: "chevron.down")
+                    Image(systemName: "chevron.up.chevron.down")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(tint)
                 }

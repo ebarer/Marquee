@@ -64,7 +64,7 @@ struct CastCategoryPicker<Filter: View, Accessory: View>: View {
                 Text(titleFor(current))
                     .font(.headline)
                     .foregroundStyle(.white)
-                Image(systemName: "chevron.down")
+                Image(systemName: "chevron.up.chevron.down")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(tint)
             }

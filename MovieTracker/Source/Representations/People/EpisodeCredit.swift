@@ -13,6 +13,7 @@ struct EpisodeCredit: Hashable, Sendable {
         let season: Season
         // An empty set means every episode of the season, which is TMDB's shape for a regular.
         var episodeNumbers: Set<Int> = []
+        var creditID: String?
 
         // A season built from episodes alone has no count to compare against, so only an empty set claims the run.
         var isWhole: Bool {
@@ -75,6 +76,8 @@ struct EpisodeCredit: Hashable, Sendable {
             existing.episodeNumbers = existing.isWhole || credit.isWhole
                 ? []
                 : existing.episodeNumbers.union(credit.episodeNumbers)
+            // Two credits sharing a season leave no single character to attribute it to.
+            if existing.creditID != credit.creditID { existing.creditID = nil }
             bySeason[credit.season.seasonNumber] = existing
         }
         return EpisodeCredit(seasons: bySeason.values.sorted {

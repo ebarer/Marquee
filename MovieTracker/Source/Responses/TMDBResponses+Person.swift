@@ -63,6 +63,7 @@ extension TMDBWrapper {
             var byID = [Int: Show]()
             var roles = [Int: [(kind: CreditKind, role: String?, isCast: Bool)]]()
             var creditIDs = [Int: [String]]()
+            var rolesByCreditID = [Int: [String: String]]()
             for (isCast, collection) in [(true, raw.cast), (false, raw.crew)] {
                 for item in collection {
                     var credit = Show(id: item.id, name: item.name)
@@ -80,6 +81,9 @@ extension TMDBWrapper {
                                                        isCast))
                     if let creditID = item.creditID {
                         creditIDs[item.id, default: []].append(creditID)
+                        if isCast, let role = item.role, !role.isEmpty {
+                            rolesByCreditID[item.id, default: [:]][creditID] = role
+                        }
                     }
                     if let kept = byID[item.id], rank(kept.creditKind) <= rank(credit.creditKind) {
                         continue
@@ -92,6 +96,7 @@ extension TMDBWrapper {
                 .map { show -> Show in
                     var credit = merging(show, roles: roles[show.id] ?? [])
                     credit.creditIDs = creditIDs[show.id] ?? []
+                    credit.creditRolesByID = rolesByCreditID[show.id]
                     return credit
                 }
                 .sorted {

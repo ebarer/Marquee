@@ -11,6 +11,7 @@ final class ShowEpisodeCreditsModel {
     struct Group: Identifiable {
         let season: Season
         let episodes: [Episode]
+        var role: String? = nil
         var id: Int { season.id }
     }
 
@@ -44,9 +45,22 @@ final class ShowEpisodeCreditsModel {
             let episodes = season.episodes
                 .filter { seasonCredit.covers(episode: $0.episodeNumber) }
                 .sorted { $0.episodeNumber > $1.episodeNumber }
-            if !episodes.isEmpty { loaded.append(Group(season: season, episodes: episodes)) }
+            if !episodes.isEmpty {
+                loaded.append(Group(season: season, episodes: episodes,
+                                    role: role(for: seasonCredit, in: credit)))
+            }
         }
         groups = loaded.sorted { $0.season.seasonNumber > $1.season.seasonNumber }
+    }
+
+    // TMDB's credit ids for one show can carry different characters, and the credit's own role joins
+    // them all, so a season shows the character of the credit it came from.
+    private func role(for seasonCredit: EpisodeCredit.SeasonCredit,
+                      in credit: ShowEpisodeCredits) -> String? {
+        guard let roles = credit.show.creditRolesByID, !roles.isEmpty else {
+            return credit.show.creditRole
+        }
+        return seasonCredit.creditID.flatMap { roles[$0] }
     }
 
     static func preview(show: Show, groups: [Group]) -> ShowEpisodeCreditsModel {

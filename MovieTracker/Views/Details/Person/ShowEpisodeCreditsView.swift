@@ -70,7 +70,7 @@ struct ShowEpisodeCreditsView: View {
                         SectionHeader(title: group.season.name, color: .appAccent)
                         SeasonEpisodeList(episodes: group.episodes,
                                           watchedNumbers: watchedNumbers(in: group.season),
-                                          role: credit.show.creditRole,
+                                          role: group.role,
                                           onToggle: { toggle($0, in: group.season) })
                     }
                 }
@@ -142,8 +142,9 @@ struct ShowEpisodeCreditsView: View {
         ShowEpisodeCreditsView(
             preview: credit,
             model: .preview(show: show, groups: [
-                .init(season: seasons[1], episodes: [guestSpot]),
-                .init(season: seasons[0], episodes: [episodes[2], episodes[0]]),
+                .init(season: seasons[1], episodes: [guestSpot], role: "Detective Yang"),
+                .init(season: seasons[0], episodes: [episodes[2], episodes[0]],
+                      role: "Alex Kelly"),
             ])
         )
         .detailDestinations()
@@ -167,7 +168,8 @@ struct ShowEpisodeCreditsView: View {
         ShowEpisodeCreditsView(
             preview: ShowEpisodeCredits(person: person, in: show),
             model: .preview(show: show, groups: [
-                .init(season: seasons[0], episodes: [episodes[2], episodes[0]]),
+                .init(season: seasons[0], episodes: [episodes[2], episodes[0]],
+                      role: person.role),
             ])
         )
         .detailDestinations()
