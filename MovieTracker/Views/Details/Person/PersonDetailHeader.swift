@@ -9,7 +9,7 @@ import SwiftUI
 struct PersonHeaderMetrics {
     static let avatar: CGFloat = 120
     static let collapsedAvatar: CGFloat = 60
-    static let maxPhotoPull: CGFloat = 1.4
+    static let maxPhotoPull: CGFloat = 1.7
     // A third of the page, so the photo grows gradually and maxing it out takes a deliberate drag.
     static let photoPullSpan: CGFloat = 0.35
     static let nameScale: CGFloat = 0.7

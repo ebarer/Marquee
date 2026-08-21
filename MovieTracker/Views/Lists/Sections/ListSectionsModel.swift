@@ -19,6 +19,7 @@ final class ListSectionsModel {
         var ascending: Bool
         var filter: String
         var mediaFilter: MediaTypeFilter
+        var streamable: StreamableFilter?
         var version: Int
     }
 
@@ -36,8 +37,11 @@ final class ListSectionsModel {
             try? await Task.sleep(for: Self.refreshDebounce)
             guard !Task.isCancelled else { return }
         }
-        let result = await store.sections(for: request, ascending: input.ascending,
-                                           filter: input.filter, mediaFilter: input.mediaFilter)
+        var result = await store.sections(for: request, ascending: input.ascending,
+                                         filter: input.filter, mediaFilter: input.mediaFilter)
+        if let streamable = input.streamable {
+            result = await Self.keepingStreamable(result, using: streamable)
+        }
         guard !Task.isCancelled else { return }
         // Animate only structural changes: rows added, removed or reordered. A pure in-place change
         // crossfades before the swipe has sprung back.
@@ -52,6 +56,23 @@ final class ListSectionsModel {
     func clear() {
         sections = []
         loadedInput = nil
+    }
+
+    /// Drops rows the offline cache can't confirm are streaming, and any section left empty.
+    private static func keepingStreamable(_ sections: [SectionSnapshot],
+                                          using filter: StreamableFilter) async -> [SectionSnapshot] {
+        let identity = { (entry: MediaSnapshot) in
+            MediaCacheTarget.Identity(tmdbID: entry.tmdbID, mediaType: entry.mediaType)
+        }
+        let streamable = await StreamableIndex.shared.streamable(
+            sections.flatMap(\.entries).map(identity), using: filter)
+        return sections.compactMap { section in
+            let entries = section.entries.filter { streamable.contains(identity($0)) }
+            guard !entries.isEmpty else { return nil }
+            return SectionSnapshot(id: section.id, title: section.title, entries: entries,
+                                   isCollapsible: section.isCollapsible,
+                                   ratingStars: section.ratingStars)
+        }
     }
 
     /// True when only the store's revision, or the row count it implies, moved. The list, sort and

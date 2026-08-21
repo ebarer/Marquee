@@ -35,8 +35,14 @@ struct PersonDetailView: View {
     }
 
     private var current: Person { model.person ?? person }
-    private var entries: [FilmographyEntry] {
-        FilmographyEntry.entries(for: current.allCredits, episodeCredits: model.episodeCredits)
+
+    // Rebuilt only when the credits themselves change: `allCredits` sorts, and the entries sort
+    // again, which is far too much for a body pass the scroll drives.
+    @State private var filmography: [FilmographyEntry] = []
+
+    private var creditsSignature: [Int] {
+        [current.id, current.credits?.count ?? 0, current.tvCredits?.count ?? 0,
+         model.episodeCredits.count]
     }
 
     var body: some View {
@@ -50,6 +56,10 @@ struct PersonDetailView: View {
                 // photo morphs into the enlarged image.
                 PosterDetailView(imageURL: current.profileURL(.orig),
                                  zoomSourceID: current.id, zoomNamespace: photoNamespace)
+            }
+            .onChange(of: creditsSignature, initial: true) { _, _ in
+                filmography = FilmographyEntry.entries(for: current.allCredits,
+                                                       episodeCredits: model.episodeCredits)
             }
             .task {
                 await model.load(id: person.id)
@@ -84,7 +94,7 @@ struct PersonDetailView: View {
 
                         knownForSection
 
-                        PersonFilmography(entries: entries, lists: lists,
+                        PersonFilmography(entries: filmography, lists: lists,
                                           filter: $filter,
                                           isResolving: model.isResolvingCredits,
                                           pinLine: pinLine,

@@ -15,6 +15,11 @@ final class StreamingServicesStore {
 
     var region: String { regionOverride ?? Region.device }
 
+    // A list filters by the services the user turned on; only a detail page can widen to all of them.
+    var filter: StreamableFilter {
+        StreamableFilter(region: region, scope: .mine, selected: selected)
+    }
+
     private let store = NSUbiquitousKeyValueStore.default
     private let key = SelectedProviders.storageKey
     private let regionKey = "streamingRegion"

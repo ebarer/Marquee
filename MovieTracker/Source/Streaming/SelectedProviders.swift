@@ -6,7 +6,7 @@
 import Foundation
 
 /// The user's chosen services; empty means "not configured", so every service shows.
-struct SelectedProviders: RawRepresentable, Equatable {
+struct SelectedProviders: RawRepresentable, Equatable, Sendable {
     var ids: Set<Int>
 
     static let storageKey = "streamingServices"

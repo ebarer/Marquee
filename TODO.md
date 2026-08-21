@@ -6,8 +6,6 @@ Polish:
 - [ ] Improve layout of awards page
 
 Ideas:`
-- [ ] Filter watch list by what's streamable
-  - [ ] Add support for toggling between what you subscribe to, and whether it's streamable at all
 - [ ] Share lists
 - [ ] List of trailers on long press
 - [ ] Support landscape

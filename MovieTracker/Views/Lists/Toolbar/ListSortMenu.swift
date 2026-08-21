@@ -14,10 +14,11 @@ struct ListSortMenu: View {
     var foldOlderMovies: Binding<Bool>?
     var foldOlderShows: Binding<Bool>?
     var mediaFilter: Binding<MediaTypeFilter>?
+    var streamableOnly: Binding<Bool>?
     var tint: Color = .appAccent
 
     private var isFiltering: Bool {
-        (mediaFilter?.wrappedValue ?? .all) != .all
+        (mediaFilter?.wrappedValue ?? .all) != .all || streamableOnly?.wrappedValue == true
     }
 
     var body: some View {
@@ -64,6 +65,9 @@ struct ListSortMenu: View {
                         }
                         if let foldOlderShows, mediaFilter.wrappedValue != .movies {
                             Toggle("Hide Older Shows", isOn: foldOlderShows)
+                        }
+                        if let streamableOnly {
+                            Toggle("Streaming Only", isOn: streamableOnly)
                         }
                     }
                 } label: {
@@ -125,8 +129,10 @@ struct ListSortMenu: View {
     @Previewable @State var foldMovies = true
     @Previewable @State var foldShows = false
     @Previewable @State var mediaFilter: MediaTypeFilter = .all
+    @Previewable @State var streamableOnly = true
     ListSortMenu(ascending: $ascending, listSortKey: $key, foldOlderMovies: $foldMovies,
-                 foldOlderShows: $foldShows, mediaFilter: $mediaFilter)
+                 foldOlderShows: $foldShows, mediaFilter: $mediaFilter,
+                 streamableOnly: $streamableOnly)
         .tint(.appAccent)
         .padding()
         .background(Color.appBackground)

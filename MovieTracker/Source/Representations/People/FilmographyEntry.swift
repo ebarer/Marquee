@@ -25,10 +25,12 @@ struct FilmographyEntry: Identifiable, Hashable {
     // Entries arrive newest-first, so grouping in order preserves that. Undated ones drop out.
     static func byYear(in entries: [FilmographyEntry],
                        now: Date = Date()) -> [(year: Int, entries: [FilmographyEntry])] {
+        // `Calendar.current` builds a fresh calendar per access, so it is read once for the sweep.
+        let calendar = Calendar.current
         var groups: [(year: Int, entries: [FilmographyEntry])] = []
         for entry in entries {
             guard let date = entry.date, date <= now else { continue }
-            let year = Calendar.current.component(.year, from: date)
+            let year = calendar.component(.year, from: date)
             if let index = groups.indices.last, groups[index].year == year {
                 groups[index].entries.append(entry)
             } else {

@@ -30,11 +30,9 @@ private struct DetailChrome<Principal: View, Extra: ToolbarContent>: ViewModifie
                 // All of these would sit over the search field and take the taps meant for its
                 // cancel, so they stand down while it holds the bar's row.
                 if !isSearching {
-                    // Only the search button is contingent on a section hoisting one; `extra`
-                    // is the screen's own and must not wait on that.
-                    if let search {
-                        DetailSearchToolbarItem(request: search)
-                    }
+                    // Unconditional: a nil request means "not loaded yet", and waiting for a
+                    // section to hoist one drops the bar's glass and refills it.
+                    DetailSearchToolbarItem(request: search)
                     extra()
                     // Placement spelled out: an automatic spacer doesn't land in the trailing
                     // group, so Close would share its glass with the items before it.

@@ -77,6 +77,41 @@ import Foundation
         #expect(filter.isOn)
     }
 
+    // MARK: - Never hiding everything
+    //
+    // A filter that hides every kind a person has would take the section, and the control that
+    // undoes it, off screen.
+
+    @Test func hidingEveryKindPresentStandsTheFilterDown() {
+        let filter = CreditFilter(hidden: [.acting, .appearance])
+        let resolved = filter.resolved(for: [.acting, .appearance])
+        #expect(!resolved.isOn)
+        #expect(!resolved.hides(.acting))
+        // The stored selection is untouched, so the menu still shows what was chosen.
+        #expect(resolved.hidden == [.acting, .appearance])
+    }
+
+    @Test func aKindLeftShowingKeepsTheFilterOn() {
+        let filter = CreditFilter(hidden: [.appearance])
+        let resolved = filter.resolved(for: [.acting, .appearance])
+        #expect(resolved.isOn)
+        #expect(resolved.hides(.appearance))
+    }
+
+    // The default filter hides `.appearance`, so a person with nothing else would vanish.
+    @Test func aPersonWithOnlySelfCreditsStillShows() {
+        #expect(!CreditFilter().resolved(for: [.appearance]).hides(.appearance))
+    }
+
+    @Test func theLastKindShowingIsPinned() {
+        let filter = CreditFilter(hidden: [.appearance, .crew])
+        let kinds: [CreditKind] = [.acting, .crew, .appearance]
+        #expect(filter.isLastShown(.acting, in: kinds))
+        #expect(!filter.isLastShown(.crew, in: kinds))
+        // Nothing is pinned while two or more are showing.
+        #expect(!CreditFilter(hidden: []).isLastShown(.acting, in: kinds))
+    }
+
     // MARK: - Storage
 
     @Test func rawValueRoundTrips() {

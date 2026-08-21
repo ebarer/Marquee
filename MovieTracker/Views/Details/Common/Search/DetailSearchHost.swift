@@ -247,27 +247,35 @@ struct DetailSearchButton: View {
 
 /// The same control for a navigation bar, which supplies its own glass.
 struct DetailSearchToolbarItem: ToolbarContent {
-    let request: DetailSearchRequest
+    let request: DetailSearchRequest?
 
     @Environment(\.detailSearch) private var detailSearch
     @State private var frame: CGRect?
 
+    // Nil while the screen has no request to open yet, which leaves the item in place but inert.
+    private var ready: DetailSearchRequest? {
+        guard let detailSearch, !detailSearch.isPresented,
+              let request, request.isSearchable else { return nil }
+        return request
+    }
+
     var body: some ToolbarContent {
-        if let detailSearch, !detailSearch.isPresented, request.isSearchable {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    detailSearch.open(request, frame)
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                }
-                .tint(.white)
-                // The frame reported is the glyph's; the bar draws a `rowHeight` glass circle
-                // around it, which is what the field has to come out of.
-                .onGeometryChange(for: CGRect.self) { proxy in
-                    DetailSearchBar.barCircle(around: proxy.frame(in: .global))
-                } action: { frame = $0 }
-                .accessibilityLabel(request.prompt)
+        // One item whatever the state, so pushing between two detail screens morphs the trailing
+        // group. Declaring it only once a section hoists a request drops the glass and refills it.
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                if let ready { detailSearch?.open(ready, frame) }
+            } label: {
+                Image(systemName: "magnifyingglass")
             }
+            .tint(.white)
+            .disabled(ready == nil)
+            // The frame reported is the glyph's; the bar draws a `rowHeight` glass circle
+            // around it, which is what the field has to come out of.
+            .onGeometryChange(for: CGRect.self) { proxy in
+                DetailSearchBar.barCircle(around: proxy.frame(in: .global))
+            } action: { frame = $0 }
+            .accessibilityLabel(request?.prompt ?? "Search")
         }
     }
 }

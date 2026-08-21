@@ -24,6 +24,20 @@ struct CreditFilter: Equatable, Sendable {
     mutating func setHidden(_ hide: Bool, for kind: CreditKind) {
         if hide { hidden.insert(kind) } else { hidden.remove(kind) }
     }
+
+    /// Stands down where it would hide every kind present, which would take the section and the
+    /// control that undoes it off screen.
+    func resolved(for kinds: [CreditKind]) -> CreditFilter {
+        guard !kinds.isEmpty, kinds.allSatisfy(hides) else { return self }
+        var filter = self
+        filter.isOn = false
+        return filter
+    }
+
+    /// True when `kind` is the only one left showing, so hiding it would leave nothing.
+    func isLastShown(_ kind: CreditKind, in kinds: [CreditKind]) -> Bool {
+        kinds.filter { !hidden.contains($0) } == [kind]
+    }
 }
 
 // MARK: - Storage

@@ -30,6 +30,9 @@ struct ListContentView: View {
     @AppStorage("watchListFoldOlder") private var foldOlderMovies = true
     @AppStorage("watchListFoldOlderShows") private var foldOlderShows = false
     @AppStorage("listMediaTypeFilter") private var mediaFilter: MediaTypeFilter = .all
+    @AppStorage("watchListStreamableOnly") private var streamableOnly = false
+
+    private let streamingStore = StreamingServicesStore.shared
 
     private var filterText: String { externalFilter ?? localFilter }
 
@@ -97,6 +100,7 @@ struct ListContentView: View {
                                  foldOlderMovies: showsFoldToggle ? $foldOlderMovies : nil,
                                  foldOlderShows: showsFoldToggle ? $foldOlderShows : nil,
                                  mediaFilter: $mediaFilter,
+                                 streamableOnly: isWatchList ? $streamableOnly : nil,
                                  tint: activeColor)
                         .tint(activeColor)
                 }
@@ -107,6 +111,8 @@ struct ListContentView: View {
             if sectionsModel.sections.isEmpty, sectionsModel.loadedInput == sectionsInput {
                 if !filterText.isEmpty {
                     ContentUnavailableView.search(text: filterText)
+                } else if streamableFilter != nil, mediaCount > 0 {
+                    streamingEmptyState
                 } else {
                     emptyState
                 }
@@ -188,10 +194,17 @@ struct ListContentView: View {
         return listSortKeys.contains(stored) ? stored : .releaseDate
     }
 
+    private var isWatchList: Bool { destination.list?.isWatchList == true }
+
     // Folding only produces an "Older" bucket for the Watch List sorted by release
     // date; under date-added the list is flat, so the toggle would be a no-op.
     private var showsFoldToggle: Bool {
-        destination.list?.isWatchList == true && currentListSortKey == .releaseDate
+        isWatchList && currentListSortKey == .releaseDate
+    }
+
+    private var streamableFilter: StreamableFilter? {
+        guard isWatchList, streamableOnly else { return nil }
+        return streamingStore.filter
     }
 
     private var listSortKeyBinding: Binding<ListSortKey> {
@@ -231,13 +244,19 @@ struct ListContentView: View {
         }
     }
 
+    private var streamingEmptyState: some View {
+        ContentUnavailableView("Nothing to Stream", systemImage: "play.slash",
+                               description: Text("No titles here are on your services."))
+    }
+
     // MARK: - Data
 
     // `version` (store revision) forces a rebuild after a silent edit that leaves the count unchanged.
     private var sectionsInput: ListSectionsModel.Input {
         ListSectionsModel.Input(request: listRequest, count: mediaCount,
                                 ascending: currentAscending, filter: filterText,
-                                mediaFilter: mediaFilter, version: store?.revision ?? 0)
+                                mediaFilter: mediaFilter, streamable: streamableFilter,
+                                version: store?.revision ?? 0)
     }
 }
 

@@ -30,10 +30,8 @@ struct StreamingProviderTile: View {
             }
             .frame(width: size, height: size)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
-            }
+            // A dark logo on a dark page needs the poster's edge to read as a tile at all.
+            .posterBorder(cornerRadius: 12)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(group.name)

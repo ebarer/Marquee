@@ -77,6 +77,7 @@ struct StreamingServicesView: View {
                 }
                 .frame(width: 40, height: 40)
                 .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .posterBorder(cornerRadius: 9)
 
                 Text(group.name)
             }

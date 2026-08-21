@@ -89,15 +89,16 @@ struct CastSection: View {
                                        onSelect: { option in
                                            withAnimation(.easeInOut) { selection = option }
                                        },
+                                       filter: {
+                                           if hasEpisodeCounts {
+                                               CastCountsMenu(showsCounts: $showsEpisodeCounts,
+                                                              tint: tint)
+                                               .padding(.leading, 8)
+                                           }
+                                       },
                                        accessory: {
-                                           HStack(spacing: 8) {
-                                               if onSearchRequest == nil {
-                                                   DetailSearchButton(request: searchRequest)
-                                               }
-                                               if hasEpisodeCounts {
-                                                   CastCountsMenu(showsCounts: $showsEpisodeCounts,
-                                                                  tint: tint)
-                                               }
+                                           if onSearchRequest == nil {
+                                               DetailSearchButton(request: searchRequest)
                                            }
                                        })
                         .onChange(of: searchSignature, initial: true) { _, _ in

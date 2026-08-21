@@ -18,12 +18,13 @@ enum CastCategory: CaseIterable {
 }
 
 /// The category heading for a cast section: a Menu when more than one category exists, else a plain title.
-struct CastCategoryPicker<Accessory: View>: View {
+struct CastCategoryPicker<Filter: View, Accessory: View>: View {
     let categories: [CastCategory]
     let current: CastCategory
     let tint: Color
     let titleFor: (CastCategory) -> String
     let onSelect: (CastCategory) -> Void
+    @ViewBuilder var filter: () -> Filter
     @ViewBuilder var accessory: () -> Accessory
 
     private var selection: Binding<CastCategory> {
@@ -40,6 +41,7 @@ struct CastCategoryPicker<Accessory: View>: View {
                     .font(.headline)
                     .foregroundStyle(.white)
             }
+            filter()
             Spacer(minLength: 8)
             accessory()
         }
@@ -72,12 +74,13 @@ struct CastCategoryPicker<Accessory: View>: View {
     }
 }
 
-extension CastCategoryPicker where Accessory == EmptyView {
+extension CastCategoryPicker where Filter == EmptyView, Accessory == EmptyView {
     init(categories: [CastCategory], current: CastCategory, tint: Color,
          titleFor: @escaping (CastCategory) -> String,
          onSelect: @escaping (CastCategory) -> Void) {
         self.init(categories: categories, current: current, tint: tint,
-                  titleFor: titleFor, onSelect: onSelect, accessory: { EmptyView() })
+                  titleFor: titleFor, onSelect: onSelect,
+                  filter: { EmptyView() }, accessory: { EmptyView() })
     }
 }
 

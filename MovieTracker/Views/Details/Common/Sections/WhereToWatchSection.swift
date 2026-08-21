@@ -16,6 +16,8 @@ struct WhereToWatchSection: View {
     private let store = StreamingServicesStore.shared
     @State private var expanded = false
     @State private var showingServices = false
+    // Not remembered: every title opens on the user's own services, and widening is for that look only.
+    @State private var scope: StreamingScope = .mine
 
     private var availability: WatchAvailability? { availabilityByRegion?[store.region] }
 
@@ -27,11 +29,8 @@ struct WhereToWatchSection: View {
         return releaseDate > cutoff
     }
 
-    private var shown: [ProviderGroup] {
-        guard let availability else { return [] }
-        let groups = ProviderCatalog.grouped(availability.providers)
-        guard !store.selected.isEmpty else { return groups }
-        return groups.filter { store.selected.isSelected($0) }
+    private var resolution: StreamingResolution {
+        StreamingAvailability.resolve(availability, scope: scope, selected: store.selected)
     }
 
     // An empty map counts as no answer: a stub carries none, and claiming "unavailable" before the
@@ -39,11 +38,14 @@ struct WhereToWatchSection: View {
     private var pending: Bool { isLoading && (availabilityByRegion?.isEmpty ?? true) }
 
     var body: some View {
-        let groups = shown
+        let resolved = resolution
+        let groups = resolved.groups
         VStack(spacing: 0) {
-            WhereToWatchHeader(available: !groups.isEmpty, inTheatres: inTheatres, tint: tint,
-                               isLoading: pending,
-                               expanded: $expanded, onInfo: { showingServices = true })
+            WhereToWatchHeader(verdict: resolved.verdict, inTheatres: inTheatres, tint: tint,
+                               isLoading: pending, expandable: !groups.isEmpty,
+                               // Matches the chevron's own animation, whichever route sets the scope.
+                               expanded: $expanded, scope: $scope.animation(.easeInOut),
+                               onChooseServices: { showingServices = true })
             if expanded, !groups.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {

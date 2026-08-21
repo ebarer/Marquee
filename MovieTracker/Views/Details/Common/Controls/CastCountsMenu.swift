@@ -33,11 +33,7 @@ struct CastCountsMenu: View {
     private var label: some View {
         switch style {
         case .sectionHeader:
-            Image(systemName: "line.3.horizontal.decrease")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(showsCounts ? tint : .black)
-                .filterOnBadge(!showsCounts, size: SectionHeaderControl.fill, color: tint)
-                .sectionHeaderControl()
+            SectionHeaderFilterGlyph(isOn: !showsCounts, tint: tint)
         case .bar:
             Image(systemName: "line.3.horizontal.decrease")
                 .foregroundStyle(showsCounts ? Color.white : .black)

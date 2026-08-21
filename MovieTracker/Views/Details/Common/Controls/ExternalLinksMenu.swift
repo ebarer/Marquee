@@ -24,17 +24,18 @@ struct ExternalLinksMenu: View {
     }
 }
 
-/// The menu as a bar item; renders nothing when there is nowhere to go.
+/// The menu as a bar item, inert until the links resolve.
 struct ExternalLinksToolbarItem: ToolbarContent {
     let links: [ExternalLink]
     var onSelect: (ExternalLink) -> Void
 
     var body: some ToolbarContent {
+        // A title always resolves to at least the Rotten Tomatoes search, so the item is
+        // unconditional: appearing once Wikidata answers would refill the bar's glass.
         ToolbarItem(placement: .topBarTrailing) {
-            if !links.isEmpty {
-                ExternalLinksMenu(links: links, onSelect: onSelect)
-                    .tint(.white)
-            }
+            ExternalLinksMenu(links: links, onSelect: onSelect)
+                .tint(.white)
+                .disabled(links.isEmpty)
         }
     }
 }

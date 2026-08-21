@@ -15,20 +15,21 @@ struct PersonFilmography: View {
     var onSearchRequest: ((DetailSearchRequest?) -> Void)?
 
     var body: some View {
+        let credits = Credits(entries: entries, filter: filter)
         if isResolving {
             LazyVStack(spacing: 0) {
-                header
+                header(credits)
                 ProgressView()
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 32)
             }
-        } else if !visibleEntries.isEmpty {
+        } else if !credits.visible.isEmpty {
             LazyVStack(spacing: 0) {
-                header
-                if !upcomingEntries.isEmpty {
-                    UpcomingSection(entries: upcomingEntries, lists: lists)
+                header(credits)
+                if !credits.upcoming.isEmpty {
+                    UpcomingSection(entries: credits.upcoming, lists: lists)
                 }
-                ForEach(releasedByYear, id: \.year) { group in
+                ForEach(credits.byYear, id: \.year) { group in
                     StickySection(space: "scroll", pinLine: pinLine) {
                         SectionHeader(title: String(group.year), color: .appAccent)
                     } content: {
@@ -42,64 +43,70 @@ struct PersonFilmography: View {
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
+    private func header(_ credits: Credits) -> some View {
+        HStack {
             Text("Credits")
                 .font(.headline)
                 .foregroundStyle(.white)
+
             Spacer(minLength: 8)
+
             if onSearchRequest == nil {
-                DetailSearchButton(request: searchRequest)
+                DetailSearchButton(request: searchRequest(credits))
             }
-            if availableKinds.count > 1 {
-                CreditFilterMenu(kinds: availableKinds, filter: $filter) {
-                    Image(systemName: "line.3.horizontal.decrease")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(isFiltering ? .black : Color.appAccent)
-                        .filterOnBadge(isFiltering, size: SectionHeaderControl.fill)
-                        .sectionHeaderControl()
+
+            if credits.availableKinds.count > 1 {
+                CreditFilterMenu(kinds: credits.availableKinds, filter: $filter) {
+                    SectionHeaderFilterGlyph(isOn: credits.isFiltering)
                 }
                 .buttonStyle(.plain)
             }
         }
         .sectionHeaderInsets()
-        .onChange(of: searchSignature, initial: true) { _, _ in
-            onSearchRequest?(isResolving ? nil : searchRequest)
+        .onChange(of: signature(credits), initial: true) { _, _ in
+            onSearchRequest?(isResolving ? nil : searchRequest(credits))
         }
     }
 
     // The request is rebuilt off this rather than diffed: a filmography runs to hundreds of entries.
-    private var searchSignature: [Int] {
-        [entries.count, visibleEntries.count, filterKinds.count, isResolving ? 1 : 0]
+    private func signature(_ credits: Credits) -> [Int] {
+        [entries.count, credits.visible.count, credits.filterKinds.count, isResolving ? 1 : 0]
     }
 
-    private var availableKinds: [CreditKind] { CreditKind.present(in: entries.map(\.ref)) }
-
-    private var isFiltering: Bool { availableKinds.contains(where: filter.hides) }
-
-    private var visibleEntries: [FilmographyEntry] {
-        entries.filter { !filter.hides($0.ref.creditKind) }
-    }
-
-    private var filterKinds: [CreditKind] {
-        availableKinds.count > 1 ? availableKinds : []
-    }
-
-    private var searchRequest: DetailSearchRequest {
+    private func searchRequest(_ credits: Credits) -> DetailSearchRequest {
         // Every entry once the filter travels with search, so turning it off there reveals the
         // rest; only the visible ones when there is no filter to turn off.
-        let rows = filterKinds.isEmpty ? visibleEntries : entries
+        let rows = credits.filterKinds.isEmpty ? credits.visible : entries
         return DetailSearchRequest(prompt: "Search Credits",
                                    groups: [DetailSearchGroup(title: "Credits",
                                                               content: .credits(rows))],
-                                   filterKinds: filterKinds)
+                                   filterKinds: credits.filterKinds)
+    }
+}
+
+/// One sweep of the credits per body pass. Read as separate computed properties, the same scans
+/// ran a dozen times over hundreds of entries and cost more than a frame.
+private struct Credits {
+    let availableKinds: [CreditKind]
+    let resolved: CreditFilter
+    let visible: [FilmographyEntry]
+    let upcoming: [FilmographyEntry]
+    let byYear: [(year: Int, entries: [FilmographyEntry])]
+
+    init(entries: [FilmographyEntry], filter: CreditFilter) {
+        let kinds = CreditKind.present(in: entries.map(\.ref))
+        let resolvedFilter = filter.resolved(for: kinds)
+        let shown = entries.filter { !resolvedFilter.hides($0.ref.creditKind) }
+        availableKinds = kinds
+        resolved = resolvedFilter
+        visible = shown
+        upcoming = FilmographyEntry.upcoming(in: shown)
+        byYear = FilmographyEntry.byYear(in: shown)
     }
 
-    private var upcomingEntries: [FilmographyEntry] { FilmographyEntry.upcoming(in: visibleEntries) }
+    var isFiltering: Bool { availableKinds.contains(where: resolved.hides) }
 
-    private var releasedByYear: [(year: Int, entries: [FilmographyEntry])] {
-        FilmographyEntry.byYear(in: visibleEntries)
-    }
+    var filterKinds: [CreditKind] { availableKinds.count > 1 ? availableKinds : [] }
 }
 
 #Preview("Filtering") {

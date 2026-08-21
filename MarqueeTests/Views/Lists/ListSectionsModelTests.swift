@@ -11,9 +11,10 @@ import Foundation
 @Suite struct ListSectionsModelTests {
     private func input(request: ListRequest?, count: Int = 0, ascending: Bool = true,
                        filter: String = "", mediaFilter: MediaTypeFilter = .all,
+                       streamable: StreamableFilter? = nil,
                        version: Int = 0) -> ListSectionsModel.Input {
         .init(request: request, count: count, ascending: ascending, filter: filter,
-              mediaFilter: mediaFilter, version: version)
+              mediaFilter: mediaFilter, streamable: streamable, version: version)
     }
 
     @Test func nilSourceClearsSections() async {
@@ -51,5 +52,9 @@ import Foundation
         #expect(base != input(request:.viewed, count: 1, ascending: true, filter: "a", version: 2))
         #expect(base != input(request:.watched(sort: .dateWatched), count: 1, ascending: true, filter: "a", version: 1))
         #expect(base != input(request:.viewed, count: 1, ascending: true, filter: "a", mediaFilter: .movies, version: 1))
+        #expect(base != input(request:.viewed, count: 1, ascending: true, filter: "a",
+                              streamable: StreamableFilter(region: "US", scope: .mine,
+                                                           selected: SelectedProviders()),
+                              version: 1))
     }
 }
