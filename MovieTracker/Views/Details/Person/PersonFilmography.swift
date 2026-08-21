@@ -12,7 +12,6 @@ struct PersonFilmography: View {
     @Binding var filter: CreditFilter
     var isResolving: Bool = false
     var pinLine: CGFloat = 0
-    // The page holds a copy of the filter at the pin line, so this header's own copy stands down.
     var isFilterPinned: Bool = false
     var onSearchRequest: ((DetailSearchRequest?) -> Void)?
     var onFilterPinned: ((Bool) -> Void)?
@@ -63,8 +62,8 @@ struct PersonFilmography: View {
                     SectionHeaderFilterGlyph(isOn: credits.isFiltering)
                 }
                 .buttonStyle(.plain)
-                // Hidden rather than removed: the pinned copy takes over at the same position, and
-                // the row keeps its layout.
+                // Hidden rather than removed: the pinned copy draws at the same position, and the
+                // row keeps its layout.
                 .opacity(isFilterPinned ? 0 : 1)
                 .accessibilityHidden(isFilterPinned)
             }

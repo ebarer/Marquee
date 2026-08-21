@@ -41,10 +41,10 @@ import Foundation
             {"id":"v1","name":"Trailer","key":"xyz","type":"Trailer","site":"YouTube","official":true,"published_at":"2011-01-01"}
           ]},
           "aggregate_credits": {"cast":[
-            {"id":1,"name":"Second Billed","profile_path":"/a.jpg","order":2,"total_episode_count":70,"roles":[{"character":"Hero"}]},
-            {"id":2,"name":"Departed Lead","profile_path":null,"order":0,"total_episode_count":30,"roles":[{"character":"Sidekick"}]},
-            {"id":3,"name":"Tied Actor","order":5,"total_episode_count":70,"roles":[{"character":"Villain"}]},
-            {"id":4,"name":"One Off Guest","order":1,"total_episode_count":1,"roles":[{"character":"Waiter"}]}
+            {"id":1,"name":"Second Billed","profile_path":"/a.jpg","order":2,"total_episode_count":70,"roles":[{"character":"Hero","credit_id":"c1"}]},
+            {"id":2,"name":"Departed Lead","profile_path":null,"order":0,"total_episode_count":30,"roles":[{"character":"Sidekick","credit_id":"c2"}]},
+            {"id":3,"name":"Tied Actor","order":5,"total_episode_count":70,"roles":[{"character":"Villain","credit_id":"c3"}]},
+            {"id":4,"name":"One Off Guest","order":1,"total_episode_count":1,"roles":[{"character":"Waiter","credit_id":"c4"}]}
           ]},
           "content_ratings": {"results":[
             {"iso_3166_1":"\(region)","rating":"TV-MA"},
@@ -106,7 +106,7 @@ import Foundation
         let entries = members.map {
             """
             {"id":\($0.id),"name":"Actor \($0.id)","order":\($0.order),\
-            "total_episode_count":\($0.episodes),"roles":[{"character":"C\($0.id)"}]}
+            "total_episode_count":\($0.episodes),"roles":[{"character":"C\($0.id)","credit_id":"c\($0.id)"}]}
             """
         }
         return #"{"id":1,"name":"X","aggregate_credits":{"cast":["#

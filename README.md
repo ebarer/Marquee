@@ -14,7 +14,7 @@ The Xcode project is still named `MovieTracker`; the app target is **Marquee**
 - **Search** – unified movies/TV/people search; people surface by name *and* by the roles
   they played
 - **Details** – trailers, cast and crew, episode-level TV progress, and what else a person
-  has been in
+  has been in, with talk-show and awards-night appearances filtered out by default
 - **Where to Watch** – region-aware streaming availability, filtered to your services
 
 ---
@@ -100,7 +100,10 @@ A detail screen is one `ScrollView` in the `"scroll"` coordinate space. `Collaps
 owns the top of the page: it collapses to `CollapsedHeader.extent` below the navigation bar and
 holds there by offsetting itself at render time, since a `GeometryReader`-driven offset reads
 scroll a frame late and vibrates. `StickySection` pins a section header at that same line —
-the show's season picker — until the section's own bottom edge carries it off. Lists and search
+the show's season picker — until the section's own bottom edge carries it off. A control can
+hold there too: the person screen's credits filter leaves the Credits header and rides above
+the pinned year headers. That copy is laid out at the real position rather than offset at
+render time, which would move what is drawn and not what takes the tap. Lists and search
 use SwiftUI's `pinnedViews` instead, and both routes take their chrome from
 `StickyHeaderBackground`: the page colour at rest, glass once content is scrolled under them.
 
