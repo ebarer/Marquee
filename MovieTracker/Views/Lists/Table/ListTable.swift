@@ -18,6 +18,7 @@ struct ListTable: View, Equatable {
     @State private var olderExpanded = false
     // One per screen: two presentations of a kind would cancel each other out.
     @State private var pending: ListEntryConfirmation?
+    @State private var pinLine: CGFloat = 0
 
     // `lists` is excluded: comparing them would put a SwiftData read back in the render path.
     static func == (lhs: ListTable, rhs: ListTable) -> Bool {
@@ -28,6 +29,8 @@ struct ListTable: View, Equatable {
     private static let olderAnchor = "older-section"
 
     private static let headerInsets = SectionHeaderMetrics.listRowInsets
+
+    private static let olderFadeDistance: CGFloat = 14
 
     private var actions: ListEntryActions {
         ListEntryActions(store: store, context: context, pending: $pending)
@@ -46,6 +49,10 @@ struct ListTable: View, Equatable {
                     withAnimation { proxy.scrollTo(Self.olderAnchor, anchor: .top) }
                 }
                 .onChange(of: startToken) { scrollToOpeningMonth(proxy) }
+                // Where the month headers pin, and so where the "Older" header has to disappear.
+                .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.top } action: { _, top in
+                    pinLine = top
+                }
         }
     }
 
@@ -89,7 +96,8 @@ struct ListTable: View, Equatable {
         }
     }
 
-    // Stays a section header so it pins like the month headers.
+    // Collapsed, this section is only its header, so the list has no room to pin it: it scrolls into
+    // the bar, where the edge effect has faded to nothing and leaves it legible. Fade it out there.
     private func olderHeader(count: Int) -> some View {
         Button {
             withAnimation { olderExpanded.toggle() }
@@ -107,6 +115,11 @@ struct ListTable: View, Equatable {
         }
         .buttonStyle(.plain)
         .listRowInsets(Self.headerInsets)
+        .visualEffect { [expanded = olderExpanded, pinLine] content, proxy in
+            let crossed = proxy.frame(in: .scrollView).minY - pinLine
+            let fade = min(1, max(0, 1 + crossed / Self.olderFadeDistance))
+            return content.opacity(expanded ? 1 : fade)
+        }
     }
 
     // MARK: - Rows
