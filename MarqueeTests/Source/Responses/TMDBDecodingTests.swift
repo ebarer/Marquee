@@ -180,6 +180,22 @@ import Foundation
         #expect(credit.creditRolesByID == ["a": "Self - Guest", "b": "Jeff Daniels"])
     }
 
+    // Harrison Ford on Entertainment Tonight: a second cast row with no character at all.
+    @Test func tvCreditsIgnoreAnEmptyCharacterWhenRankingTheKind() throws {
+        let json = """
+        {"id":1,"name":"Actor","popularity":9.0,"tv_credits":{
+          "cast":[
+            {"id":1387,"name":"Show","character":"Self","credit_id":"a","episode_count":1},
+            {"id":1387,"name":"Show","character":"","credit_id":"b","episode_count":1}
+          ],
+          "crew":[]}}
+        """
+        let raw = try TMDBWrapper.decode(TMDBWrapper.PersonRaw.self, from: Data(json.utf8))
+        let credit = try #require(raw.tvCredits().first)
+        #expect(credit.creditRole == "Self")
+        #expect(credit.creditKind == .appearance)
+    }
+
     @Test func translatePersonMapsFields() throws {
         let json = #"{"id":5,"name":"Nm","popularity":3.0,"biography":"Bio","place_of_birth":"NYC","profile_path":"/p.jpg"}"#
         let person = TMDBWrapper.translate(person: try TMDBWrapper.decode(TMDBWrapper.PersonRaw.self, from: Data(json.utf8)))

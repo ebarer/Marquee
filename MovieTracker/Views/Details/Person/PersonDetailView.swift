@@ -24,6 +24,7 @@ struct PersonDetailView: View {
     @State private var pageTop: CGFloat = 0
     @AppStorage("personCreditFilter") private var filter = CreditFilter()
     @State private var creditSearch: DetailSearchRequest?
+    @State private var filterPinned = false
 
     @ScaledMetric(relativeTo: .title2) private var nameLine: CGFloat = 27
     @ScaledMetric(relativeTo: .subheadline) private var metaLine: CGFloat = 18
@@ -98,11 +99,13 @@ struct PersonDetailView: View {
                                           filter: $filter,
                                           isResolving: model.isResolvingCredits,
                                           pinLine: pinLine,
+                                          isFilterPinned: filterPinned,
                                           onSearchRequest: { request in
                                               withAnimation(DetailSearch.barHandoff) {
                                                   creditSearch = request
                                               }
-                                          })
+                                          },
+                                          onFilterPinned: { filterPinned = $0 })
                     }
                     .padding(.bottom, 24)
                 }
@@ -116,9 +119,36 @@ struct PersonDetailView: View {
                 } action: { _, newValue in
                     overscroll = newValue
                 }
+                // This overlay is aligned to the bar's bottom edge, not the page top `pinLine` is
+                // measured from, so it travels the collapsed header's extent alone.
+                .overlay(alignment: .top) {
+                    pinnedFilter(offset: headerMetrics.collapsedExtent)
+                }
             }
         }
         .swipeActionsContainerIfAvailable()
+    }
+
+    // The Credits header's filter, held at the line the year headers pin to. A real position rather
+    // than a `visualEffect` offset, which moves what is drawn and not what takes the tap.
+    @ViewBuilder
+    private func pinnedFilter(offset: CGFloat) -> some View {
+        let kinds = creditSearch?.filterKinds ?? []
+        if filterPinned, !kinds.isEmpty {
+            // A row as tall as the year header's title, with the control overlaid: laid out inline,
+            // its taller glyph would deepen this row and sit below the year it pins over.
+            Text(" ")
+                .font(.headline)
+                .sectionHeaderInsets()
+                .overlay(alignment: .trailing) {
+                    CreditFilterMenu(kinds: kinds, filter: $filter) {
+                        SectionHeaderFilterGlyph(isOn: kinds.contains(where: filter.hides))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, SectionHeaderMetrics.horizontal)
+                }
+                .offset(y: offset)
+        }
     }
 
     // Window position minus scroll-space position is where the page begins.

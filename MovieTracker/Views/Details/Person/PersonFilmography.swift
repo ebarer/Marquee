@@ -12,7 +12,10 @@ struct PersonFilmography: View {
     @Binding var filter: CreditFilter
     var isResolving: Bool = false
     var pinLine: CGFloat = 0
+    // The page holds a copy of the filter at the pin line, so this header's own copy stands down.
+    var isFilterPinned: Bool = false
     var onSearchRequest: ((DetailSearchRequest?) -> Void)?
+    var onFilterPinned: ((Bool) -> Void)?
 
     var body: some View {
         let credits = Credits(entries: entries, filter: filter)
@@ -55,17 +58,25 @@ struct PersonFilmography: View {
                 DetailSearchButton(request: searchRequest(credits))
             }
 
-            if credits.availableKinds.count > 1 {
-                CreditFilterMenu(kinds: credits.availableKinds, filter: $filter) {
+            if !credits.filterKinds.isEmpty {
+                CreditFilterMenu(kinds: credits.filterKinds, filter: $filter) {
                     SectionHeaderFilterGlyph(isOn: credits.isFiltering)
                 }
                 .buttonStyle(.plain)
+                // Hidden rather than removed: the pinned copy takes over at the same position, and
+                // the row keeps its layout.
+                .opacity(isFilterPinned ? 0 : 1)
+                .accessibilityHidden(isFilterPinned)
             }
         }
         .sectionHeaderInsets()
         .onChange(of: signature(credits), initial: true) { _, _ in
             onSearchRequest?(isResolving ? nil : searchRequest(credits))
         }
+        // Reports the crossing, not the offset: the value only changes as the header meets the line.
+        .onGeometryChange(for: Bool.self) { proxy in
+            pinLine > 0 && proxy.frame(in: .named("scroll")).minY <= pinLine
+        } action: { onFilterPinned?($0) }
     }
 
     // The request is rebuilt off this rather than diffed: a filmography runs to hundreds of entries.

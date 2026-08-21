@@ -3,6 +3,7 @@ Next:
 - [ ] 
 
 Polish:
+- [ ] Search history should store the tapped results, going directly to the movie/show/actor
 - [ ] Improve layout of awards page
 
 Ideas:`

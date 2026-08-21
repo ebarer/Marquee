@@ -61,7 +61,8 @@ enum CreditKind: String, Codable, CaseIterable, Identifiable, Sendable {
             return seen.insert(role).inserted
         }
         let characters = distinct.filter(\.isCast).compactMap(\.role)
-        return (ordered.first?.kind ?? .crew,
+        // TMDB repeats a title with an empty character; that row reads as acting and would outrank "Self".
+        return ((distinct.first ?? ordered.first)?.kind ?? .crew,
                 characters.isEmpty ? nil : characters.joined(separator: ", "),
                 distinct.filter { !$0.isCast }.compactMap(\.role))
     }
