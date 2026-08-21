@@ -30,7 +30,7 @@ struct MovieActionBar: View {
                 }
                 watchedButton
                 customListsControl
-                TrailerButton(trailer: movie.primaryTrailer, tint: tint)
+                TrailerButton(trailers: movie.rankedTrailers, tint: tint)
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isSeen)

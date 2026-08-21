@@ -8,6 +8,27 @@ import SwiftData
 
 // MARK: - Sample movies
 
+extension MediaTrailer {
+    static var previewList: [MediaTrailer] {
+        [
+            MediaTrailer(id: "t1", title: "Official Trailer", key: "dQw4w9WgXcQ", type: "Trailer",
+                         site: "YouTube", official: true, publishedAt: "2026-05-14T13:00:09.000Z"),
+            MediaTrailer(id: "t2", title: "Official Teaser", key: "dQw4w9WgXcQ", type: "Teaser",
+                         site: "YouTube", official: true, publishedAt: "2026-02-02T17:30:00.000Z"),
+            MediaTrailer(id: "t3", title: "\"Ithaca\" TV Spot", key: "dQw4w9WgXcQ", type: "Teaser",
+                         site: "YouTube", official: true, publishedAt: "2026-06-28T15:00:00.000Z"),
+            MediaTrailer(id: "t4", title: "\"Sirens\" TV Spot", key: "dQw4w9WgXcQ", type: "Teaser",
+                         site: "YouTube", official: true, publishedAt: "2026-07-02T15:00:00.000Z"),
+            MediaTrailer(id: "t5", title: "\"Homecoming\" TV Spot", key: "dQw4w9WgXcQ", type: "Teaser",
+                         site: "YouTube", official: false, publishedAt: "2026-07-09T15:00:00.000Z"),
+            MediaTrailer(id: "t6", title: "Sneak Peek", key: "dQw4w9WgXcQ", type: "Featurette",
+                         site: "YouTube", official: true, publishedAt: "2026-06-30T15:00:00.000Z"),
+        ]
+    }
+
+    static var previewSingle: [MediaTrailer] { [previewList[0]] }
+}
+
 extension Movie {
     static var preview: Movie {
         var movie = Movie(id: 1, title: "The Odyssey")
@@ -22,6 +43,7 @@ extension Movie {
         movie.poster = "preview-poster"
         movie.background = "preview-backdrop"
         movie.bonusCredits = Movie.Credits(during: false, after: true)
+        movie.trailers = MediaTrailer.previewList
         movie.team = Person.previewTeam
         movie.watchByRegion = [
             Region.device: WatchAvailability(

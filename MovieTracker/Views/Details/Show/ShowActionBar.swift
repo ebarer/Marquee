@@ -39,7 +39,7 @@ struct ShowActionBar: View {
                                   isOngoing: show.isOngoing, tint: tint,
                                   glassNamespace: glassNamespace, onApply: applyWatched)
                 customListsControl
-                TrailerButton(trailer: show.primaryTrailer, tint: tint)
+                TrailerButton(trailers: show.rankedTrailers, tint: tint)
             }
         }
         .animation(didAppear ? .spring(response: 0.4, dampingFraction: 0.8) : nil, value: isSeen)

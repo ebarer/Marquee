@@ -55,4 +55,27 @@ struct MediaTrailer: Identifiable, Codable, Sendable {
     var watchURL: URL? {
         URL(string: "https://www.youtube.com/watch?v=\(key)")
     }
+
+    // TMDB sends a full timestamp, but cached and test payloads carry a bare day.
+    var publishedDate: Date? {
+        DateFormatter.iso8601DTw.date(from: publishedAt)
+            ?? DateFormatter.iso8601DAw.date(from: publishedAt)
+    }
+
+    var subtitle: String {
+        guard let published = publishedDate else { return type.rawValue }
+        return "\(type.rawValue) · \(published.toString())"
+    }
+
+    /// Playable trailers and teasers, best first.
+    static func ranked(_ trailers: [MediaTrailer]?) -> [MediaTrailer] {
+        (trailers ?? [])
+            .filter { $0.site == "YouTube" && $0.isTrailer }
+            .sorted { lhs, rhs in
+                if lhs.primaryScore != rhs.primaryScore {
+                    return lhs.primaryScore > rhs.primaryScore
+                }
+                return lhs.publishedAt > rhs.publishedAt
+            }
+    }
 }

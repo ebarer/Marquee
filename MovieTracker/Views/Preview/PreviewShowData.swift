@@ -37,6 +37,7 @@ extension Show {
         show.castEpisodeCounts = Dictionary(uniqueKeysWithValues:
             show.recurringCast.map { ($0.id, $0.episodeCount ?? 0) })
         show.seasons = Season.previewSeasons
+        show.trailers = MediaTrailer.previewList
         show.watchByRegion = [
             Region.device: WatchAvailability(
                 providers: [WatchProvider(id: 350, name: "Apple TV+", logoPath: nil)],

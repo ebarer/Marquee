@@ -1,13 +1,10 @@
+# Todo
 
-Next:
-- [ ] 
+Ideas:
+- [ ] Share lists
 
 Polish:
 - [ ] Improve layout of awards page
-
-Ideas:`
-- [ ] Share lists
-- [ ] List of trailers on long press
 - [ ] Support landscape
 - [ ] Settings page
   - [ ] Version

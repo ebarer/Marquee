@@ -52,14 +52,7 @@ extension Show {
 
     var isExtraneousCredit: Bool { CreditKind.isExtraneous(creditRoleSummary) }
 
-    var primaryTrailer: MediaTrailer? {
-        trailers?
-            .filter { $0.site == "YouTube" && $0.isTrailer }
-            .max { lhs, rhs in
-                if lhs.primaryScore != rhs.primaryScore {
-                    return lhs.primaryScore < rhs.primaryScore
-                }
-                return lhs.publishedAt < rhs.publishedAt
-            }
-    }
+    var rankedTrailers: [MediaTrailer] { MediaTrailer.ranked(trailers) }
+
+    var primaryTrailer: MediaTrailer? { rankedTrailers.first }
 }

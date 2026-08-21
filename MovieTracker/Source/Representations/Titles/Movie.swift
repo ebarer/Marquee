@@ -54,16 +54,9 @@ struct Movie: Hashable, Identifiable, Codable, Sendable {
 
     var duration: String? { RuntimeLabel.duration(minutes: runtime) }
 
-    var primaryTrailer: MediaTrailer? {
-        trailers?
-            .filter { $0.site == "YouTube" && $0.isTrailer }
-            .max { lhs, rhs in
-                if lhs.primaryScore != rhs.primaryScore {
-                    return lhs.primaryScore < rhs.primaryScore
-                }
-                return lhs.publishedAt < rhs.publishedAt
-            }
-    }
+    var rankedTrailers: [MediaTrailer] { MediaTrailer.ranked(trailers) }
+
+    var primaryTrailer: MediaTrailer? { rankedTrailers.first }
 
     var creditRoleSummary: String? {
         let parts = ([creditRole] + (creditJobs ?? [])).compactMap { $0 }.filter { !$0.isEmpty }

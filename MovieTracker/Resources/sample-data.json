@@ -1,5 +1,5 @@
 {
-  "exportedAt" : "2026-08-20T07:27:21Z",
+  "exportedAt" : "2026-08-21T08:45:47Z",
   "lists" : [
     {
       "colorIndex" : 0,
@@ -188,7 +188,7 @@
           "movieID" : 97546,
           "posterPath" : "/uRHsiw1wLxPHFXkkv4Ix1s0O6f4.jpg",
           "releaseDate" : "2020-08-14T00:00:00Z",
-          "sortDate" : "2026-08-11T00:00:00Z",
+          "sortDate" : "2026-08-18T00:00:00Z",
           "title" : "Ted Lasso"
         },
         {
@@ -217,15 +217,6 @@
           "title" : "Mayday"
         },
         {
-          "dateAdded" : "2026-08-17T08:46:56Z",
-          "mediaType" : 1,
-          "movieID" : 83867,
-          "posterPath" : "/khZqmwHQicTYoS7Flreb9EddFZC.jpg",
-          "releaseDate" : "2022-09-21T00:00:00Z",
-          "sortDate" : "2025-05-13T00:00:00Z",
-          "title" : "Andor"
-        },
-        {
           "dateAdded" : "2026-08-18T08:06:20Z",
           "mediaType" : 1,
           "movieID" : 247718,
@@ -233,6 +224,15 @@
           "releaseDate" : "2025-03-30T00:00:00Z",
           "sortDate" : "2025-06-01T00:00:00Z",
           "title" : "MobLand"
+        },
+        {
+          "dateAdded" : "2026-08-20T10:32:41Z",
+          "mediaType" : 1,
+          "movieID" : 295778,
+          "posterPath" : "/nNNM50G7p9C3n4vgidCiybsIdHA.jpg",
+          "releaseDate" : "2026-02-25T00:00:00Z",
+          "sortDate" : "2026-04-15T00:00:00Z",
+          "title" : "Scrubs"
         }
       ],
       "kind" : 1,
@@ -509,7 +509,7 @@
     },
     {
       "colorIndex" : 0,
-      "createdAt" : "2026-08-20T07:27:20Z",
+      "createdAt" : "2026-08-21T08:45:47Z",
       "entries" : [
         {
           "dateAdded" : "2026-08-02T08:18:40Z",
@@ -2875,7 +2875,8 @@
           "movieID" : 512200,
           "posterPath" : "/jyw8VKYEiM1UDzPB7NsisUgBeJ8.jpg",
           "releaseDate" : "2019-12-13T00:00:00Z",
-          "title" : "Jumanji: The Next Level"
+          "title" : "Jumanji: The Next Level",
+          "userRating" : 2.5
         },
         {
           "dateAdded" : "2026-08-02T08:18:40Z",
@@ -6382,7 +6383,8 @@
           "movieID" : 353486,
           "posterPath" : "/pSgXKPU5h6U89ipF7HBYajvYt7j.jpg",
           "releaseDate" : "2017-12-20T00:00:00Z",
-          "title" : "Jumanji: Welcome to the Jungle"
+          "title" : "Jumanji: Welcome to the Jungle",
+          "userRating" : 3.5
         },
         {
           "dateAdded" : "2026-08-02T08:18:40Z",
@@ -7025,7 +7027,7 @@
           "posterPath" : "/56As6XEM1flWvprX4LgkPl8ii4K.jpg",
           "releaseDate" : "2008-05-22T00:00:00Z",
           "title" : "Indiana Jones and the Kingdom of the Crystal Skull",
-          "userRating" : 1
+          "userRating" : 1.5
         },
         {
           "dateAdded" : "2026-08-03T23:08:58Z",
@@ -7490,16 +7492,1148 @@
           "releaseDate" : "2010-10-01T00:00:00Z",
           "title" : "The Social Network",
           "userRating" : 5
+        },
+        {
+          "dateAdded" : "2026-08-20T10:34:37Z",
+          "dateWatched" : "2008-04-17T00:00:00Z",
+          "mediaType" : 0,
+          "movieID" : 9870,
+          "posterPath" : "/d4elOzyhNWVlxpG7BwigrumkFTe.jpg",
+          "releaseDate" : "2008-04-17T00:00:00Z",
+          "title" : "Forgetting Sarah Marshall",
+          "userRating" : 5
         }
       ],
       "kind" : 2,
       "name" : "Watched",
       "sortOrder" : 2,
       "symbol" : "checkmark.rectangle.stack",
-      "uuid" : "EC59918F-8A27-4718-A0EA-491CC1A8C98B"
+      "uuid" : "2D2F3983-BBA1-419B-943E-403A6EE84D8F"
     }
   ],
   "shows" : [
+    {
+      "episodes" : [
+        {
+          "episode" : 1,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 14,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 15,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 16,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 17,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 18,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 19,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 20,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 21,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 22,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 14,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 15,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 16,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 17,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 18,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 19,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 20,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 21,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 22,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 14,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 15,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 16,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 17,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 18,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 19,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 20,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 14,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 15,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 16,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 17,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 18,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 19,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 20,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 21,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 22,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 23,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 24,
+          "season" : 4,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 14,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 15,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 16,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 17,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 18,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 19,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 20,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 21,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 22,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 23,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 24,
+          "season" : 5,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 14,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 15,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 16,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 17,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 18,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 19,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 20,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 21,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 22,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 23,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 24,
+          "season" : 6,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 14,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 15,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 16,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 17,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 18,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 19,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 20,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 21,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 22,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 23,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 24,
+          "season" : 7,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 14,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 15,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 16,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 17,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 18,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 19,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 20,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 21,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 22,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 23,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 24,
+          "season" : 8,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 14,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 15,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 16,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 17,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 18,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 19,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 20,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 21,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 22,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 23,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        },
+        {
+          "episode" : 24,
+          "season" : 9,
+          "watchedAt" : "2026-08-20T10:33:37Z"
+        }
+      ],
+      "isWatched" : true,
+      "name" : "How I Met Your Mother",
+      "posterPath" : "/b34jPzmB0wZy7EjUZoleXOl2RRI.jpg",
+      "seasons" : [
+        {
+          "airDate" : "2005-09-19T00:00:00Z",
+          "episodeCount" : 22,
+          "name" : "Season 1",
+          "posterPath" : "/7n8OEMRgIVkyPfswdBaftEBqQnI.jpg",
+          "season" : 1,
+          "watchedAt" : "2006-05-15T00:00:00Z"
+        },
+        {
+          "airDate" : "2006-09-18T00:00:00Z",
+          "episodeCount" : 22,
+          "name" : "Season 2",
+          "posterPath" : "/8OEKsU865P88LrAO6dZ157VNvHV.jpg",
+          "season" : 2,
+          "watchedAt" : "2006-09-18T00:00:00Z"
+        },
+        {
+          "airDate" : "2007-09-24T00:00:00Z",
+          "episodeCount" : 20,
+          "name" : "Season 3",
+          "posterPath" : "/4QwuGNHzByZxXftS01EMbks7Cn7.jpg",
+          "season" : 3,
+          "watchedAt" : "2007-09-24T00:00:00Z"
+        },
+        {
+          "airDate" : "2008-09-22T00:00:00Z",
+          "episodeCount" : 24,
+          "name" : "Season 4",
+          "posterPath" : "/8Ly76CWFpQ6voKvUZmOKsBwF6qH.jpg",
+          "season" : 4,
+          "watchedAt" : "2008-09-22T00:00:00Z"
+        },
+        {
+          "airDate" : "2009-09-21T00:00:00Z",
+          "episodeCount" : 24,
+          "name" : "Season 5",
+          "posterPath" : "/hNwfnZpuiTfSRCEJz77IO3Kvib6.jpg",
+          "season" : 5,
+          "watchedAt" : "2009-09-21T00:00:00Z"
+        },
+        {
+          "airDate" : "2010-09-20T00:00:00Z",
+          "episodeCount" : 24,
+          "name" : "Season 6",
+          "posterPath" : "/fKKZ5Zns5ISPoF4lwH0a14TgBxp.jpg",
+          "season" : 6,
+          "watchedAt" : "2010-09-20T00:00:00Z"
+        },
+        {
+          "airDate" : "2011-09-19T00:00:00Z",
+          "episodeCount" : 24,
+          "name" : "Season 7",
+          "posterPath" : "/8tme9C6s75sj0Nn7DQrn6PlNa1B.jpg",
+          "season" : 7,
+          "watchedAt" : "2011-09-19T00:00:00Z"
+        },
+        {
+          "airDate" : "2012-09-24T00:00:00Z",
+          "episodeCount" : 24,
+          "name" : "Season 8",
+          "posterPath" : "/o6BepKycT39kubElBsnj5bWpDPU.jpg",
+          "season" : 8,
+          "watchedAt" : "2012-09-24T00:00:00Z"
+        },
+        {
+          "airDate" : "2013-09-23T00:00:00Z",
+          "episodeCount" : 24,
+          "name" : "Season 9",
+          "posterPath" : "/ynDSoB5ilvp2qnSJp1WFCZSRjbm.jpg",
+          "season" : 9,
+          "watchedAt" : "2014-03-31T00:00:00Z"
+        }
+      ],
+      "tmdbID" : 1100
+    },
     {
       "episodes" : [
         {
@@ -10506,6 +11640,429 @@
         }
       ],
       "tmdbID" : 1408
+    },
+    {
+      "episodes" : [
+        {
+          "episode" : 1,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 1,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 2,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 3,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 4,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 13,
+          "season" : 5,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 6,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 6,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 6,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 6,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 6,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 6,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 6,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 6,
+          "watchedAt" : "2026-08-21T08:32:35Z"
+        }
+      ],
+      "isWatched" : true,
+      "name" : "House of Cards",
+      "posterPath" : "/hKWxWjFwnMvkWQawbhvC0Y7ygQ8.jpg",
+      "seasons" : [
+        {
+          "airDate" : "2013-02-01T00:00:00Z",
+          "episodeCount" : 13,
+          "name" : "Season 1",
+          "posterPath" : "/oUfT2AbMVCYbVA3GIBbPqA6ZpUC.jpg",
+          "season" : 1,
+          "watchedAt" : "2013-02-01T00:00:00Z"
+        },
+        {
+          "airDate" : "2014-02-14T00:00:00Z",
+          "episodeCount" : 13,
+          "name" : "Season 2",
+          "posterPath" : "/e5WNFWA1ZLnHxpr9xQdZMhEpvNo.jpg",
+          "season" : 2,
+          "watchedAt" : "2014-02-14T00:00:00Z"
+        },
+        {
+          "airDate" : "2015-02-27T00:00:00Z",
+          "episodeCount" : 13,
+          "name" : "Season 3",
+          "posterPath" : "/za2XGEr1BWAuZkI0veLEwVxy30S.jpg",
+          "season" : 3,
+          "watchedAt" : "2015-02-27T00:00:00Z"
+        },
+        {
+          "airDate" : "2016-03-04T00:00:00Z",
+          "episodeCount" : 13,
+          "name" : "Season 4",
+          "posterPath" : "/1GeYr0qAYpxIGiIabzu1WqzKgtQ.jpg",
+          "season" : 4,
+          "watchedAt" : "2016-03-04T00:00:00Z"
+        },
+        {
+          "airDate" : "2017-05-30T00:00:00Z",
+          "episodeCount" : 13,
+          "name" : "Season 5",
+          "posterPath" : "/xaYAGAQwpsYhLdX9JKTaGI2zgCE.jpg",
+          "season" : 5,
+          "watchedAt" : "2017-05-30T00:00:00Z"
+        },
+        {
+          "airDate" : "2018-11-02T00:00:00Z",
+          "episodeCount" : 8,
+          "name" : "Season 6",
+          "posterPath" : "/AuXh9yFdtppv7GpoisnDnPkBjKU.jpg",
+          "season" : 6,
+          "watchedAt" : "2018-11-02T00:00:00Z"
+        }
+      ],
+      "tmdbID" : 1425
     },
     {
       "episodes" : [
@@ -17600,10 +19157,16 @@
           "episode" : 11,
           "season" : 2,
           "watchedAt" : "2026-08-20T04:55:07Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:27:02Z"
         }
       ],
+      "isWatched" : true,
       "name" : "Andor",
-      "posterPath" : "/ugkhd9olFiJwDgO3tK1ZrPxUdxQ.jpg",
+      "posterPath" : "/khZqmwHQicTYoS7Flreb9EddFZC.jpg",
       "seasons" : [
         {
           "airDate" : "2022-09-21T00:00:00Z",
@@ -17613,15 +19176,18 @@
           "season" : 1,
           "userRating" : 4.5,
           "watchedAt" : "2026-08-14T07:00:00Z"
+        },
+        {
+          "airDate" : "2025-04-22T00:00:00Z",
+          "episodeCount" : 12,
+          "name" : "Season 2",
+          "posterPath" : "/ugkhd9olFiJwDgO3tK1ZrPxUdxQ.jpg",
+          "season" : 2,
+          "userRating" : 4.5,
+          "watchedAt" : "2026-08-20T10:27:02Z"
         }
       ],
-      "tmdbID" : 83867,
-      "tracked" : {
-        "episodeCount" : 12,
-        "nextEpisodeDate" : "2025-05-13T00:00:00Z",
-        "posterPath" : "/ugkhd9olFiJwDgO3tK1ZrPxUdxQ.jpg",
-        "season" : 2
-      }
+      "tmdbID" : 83867
     },
     {
       "episodes" : [
@@ -17751,7 +19317,7 @@
       "posterPath" : "/ypmtwojDd751Peszi62DVLytqqC.jpg",
       "seasons" : [
         {
-          "airDate" : "2019-08-04T00:00:00Z",
+          "airDate" : "2019-06-16T00:00:00Z",
           "episodeCount" : 8,
           "name" : "Season 1",
           "posterPath" : "/5mi3aRl16yKmfpQJMzvqN5TXkdA.jpg",
@@ -17760,7 +19326,7 @@
           "watchedAt" : "2019-08-04T00:00:00Z"
         },
         {
-          "airDate" : "2022-02-27T00:00:00Z",
+          "airDate" : "2022-01-09T00:00:00Z",
           "episodeCount" : 8,
           "name" : "Season 2",
           "posterPath" : "/jtnfNzqZwN4E32FGGxx1YZaBWWf.jpg",
@@ -17769,7 +19335,7 @@
           "watchedAt" : "2022-01-09T00:00:00Z"
         },
         {
-          "airDate" : "2026-05-31T00:00:00Z",
+          "airDate" : "2026-04-11T00:00:00Z",
           "episodeCount" : 8,
           "name" : "Season 3",
           "posterPath" : "/aJrG7OkoTMPWG5c8opz8a93AZPY.jpg",
@@ -18255,7 +19821,7 @@
       "posterPath" : "/iqmLbzLfECQ89YNsSPkHCoOXoqs.jpg",
       "seasons" : [
         {
-          "airDate" : "2020-10-02T00:00:00Z",
+          "airDate" : "2020-08-14T00:00:00Z",
           "episodeCount" : 10,
           "name" : "Season 1",
           "posterPath" : "/oX7QdfiQEbyvIvpKgJHRCgbrLdK.jpg",
@@ -18264,7 +19830,7 @@
           "watchedAt" : "2020-10-02T00:00:00Z"
         },
         {
-          "airDate" : "2021-10-08T00:00:00Z",
+          "airDate" : "2021-07-23T00:00:00Z",
           "episodeCount" : 12,
           "name" : "Season 2",
           "posterPath" : "/39rtdG2QoPIOISmS6KNdJDes8vy.jpg",
@@ -18273,7 +19839,7 @@
           "watchedAt" : "2021-07-23T00:00:00Z"
         },
         {
-          "airDate" : "2023-05-30T00:00:00Z",
+          "airDate" : "2023-03-14T00:00:00Z",
           "episodeCount" : 12,
           "name" : "Season 3",
           "posterPath" : "/7NS4VYNTm2J1XQk5OVUwImbV4vZ.jpg",
@@ -18570,9 +20136,8 @@
           "watchedAt" : "2026-08-14T07:00:00Z"
         }
       ],
-      "isCaughtUp" : true,
       "name" : "Silo",
-      "posterPath" : "/gMYZZvnkVNTqSVnVCphWbPXwWwb.jpg",
+      "posterPath" : "/eviZTbKOXOeSaR268iJ9yqtwTNU.jpg",
       "seasons" : [
         {
           "airDate" : "2023-06-29T00:00:00Z",
@@ -18892,6 +20457,205 @@
       ],
       "tmdbID" : 126929,
       "watchListOptOut" : true
+    },
+    {
+      "episodes" : [
+        {
+          "episode" : 1,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 12,
+          "season" : 2,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 1,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 10,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        },
+        {
+          "episode" : 11,
+          "season" : 3,
+          "watchedAt" : "2026-08-20T10:32:11Z"
+        }
+      ],
+      "isWatched" : true,
+      "name" : "Shrinking",
+      "posterPath" : "/zEFKMNPBKq6JG7uuDkzTQ9WwErn.jpg",
+      "seasons" : [
+        {
+          "airDate" : "2023-01-26T00:00:00Z",
+          "episodeCount" : 10,
+          "name" : "Season 1",
+          "posterPath" : "/jFUZebOjrjZfvg7ZSrc19GvTRTg.jpg",
+          "season" : 1,
+          "watchedAt" : "2023-03-23T07:00:00Z"
+        },
+        {
+          "airDate" : "2024-10-15T00:00:00Z",
+          "episodeCount" : 12,
+          "name" : "Season 2",
+          "posterPath" : "/a10iI7VAjQiyuCssuu2BDSPhJyp.jpg",
+          "season" : 2,
+          "watchedAt" : "2024-10-15T00:00:00Z"
+        },
+        {
+          "airDate" : "2026-01-27T00:00:00Z",
+          "episodeCount" : 11,
+          "name" : "Season 3",
+          "posterPath" : "/zEFKMNPBKq6JG7uuDkzTQ9WwErn.jpg",
+          "season" : 3,
+          "watchedAt" : "2026-04-07T00:00:00Z"
+        }
+      ],
+      "tmdbID" : 136311
     },
     {
       "episodes" : [
@@ -19579,6 +21343,75 @@
         }
       ],
       "tmdbID" : 250307
+    },
+    {
+      "episodes" : [
+        {
+          "episode" : 1,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:41Z"
+        },
+        {
+          "episode" : 2,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:41Z"
+        },
+        {
+          "episode" : 3,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:41Z"
+        },
+        {
+          "episode" : 4,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:41Z"
+        },
+        {
+          "episode" : 5,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:41Z"
+        },
+        {
+          "episode" : 6,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:41Z"
+        },
+        {
+          "episode" : 7,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:41Z"
+        },
+        {
+          "episode" : 8,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:41Z"
+        },
+        {
+          "episode" : 9,
+          "season" : 1,
+          "watchedAt" : "2026-08-20T10:32:41Z"
+        }
+      ],
+      "isCaughtUp" : true,
+      "name" : "Scrubs",
+      "posterPath" : "/nNNM50G7p9C3n4vgidCiybsIdHA.jpg",
+      "seasons" : [
+        {
+          "airDate" : "2026-02-25T00:00:00Z",
+          "episodeCount" : 9,
+          "name" : "Season 1",
+          "posterPath" : "/nNNM50G7p9C3n4vgidCiybsIdHA.jpg",
+          "season" : 1,
+          "watchedAt" : "2026-04-15T00:00:00Z"
+        }
+      ],
+      "tmdbID" : 295778,
+      "tracked" : {
+        "episodeCount" : 3,
+        "nextEpisodeDate" : "2026-09-30T00:00:00Z",
+        "posterPath" : "/nNNM50G7p9C3n4vgidCiybsIdHA.jpg",
+        "season" : 2
+      }
     }
   ],
   "version" : 2

@@ -40,16 +40,26 @@ struct GlassActionMenu<S: Shape, Content: View>: View {
     var width: CGFloat = ActionBarMetrics.size
     let shape: S
     let tint: Color
+    var primaryAction: (() -> Void)?
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        Menu {
-            content()
-        } label: {
-            GlassActionLabel(systemName: systemName, isOn: isOn, width: width, tint: tint)
+        menu
+            .buttonStyle(.plain)
+            .glassEffect(isOn ? .regular.tint(tint).interactive() : .regular.interactive(), in: shape)
+    }
+
+    @ViewBuilder
+    private var menu: some View {
+        if let primaryAction {
+            Menu(content: content, label: { label }, primaryAction: primaryAction)
+        } else {
+            Menu { content() } label: { label }
         }
-        .buttonStyle(.plain)
-        .glassEffect(isOn ? .regular.tint(tint).interactive() : .regular.interactive(), in: shape)
+    }
+
+    private var label: some View {
+        GlassActionLabel(systemName: systemName, isOn: isOn, width: width, tint: tint)
     }
 }
 
