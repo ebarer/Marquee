@@ -12,7 +12,7 @@ The Xcode project is still named `MovieTracker`; the app target is **Marquee**
 - **Watch Lists** – track what you want to watch, have watched, or sorted into custom lists,
   synced across all your devices
 - **Search** – unified movies/TV/people search; people surface by name *and* by the roles
-  they played
+  they played, and the Recent list holds what you opened, not what you typed
 - **Details** – trailers, cast and crew, episode-level TV progress, and what else a person
   has been in, with talk-show and awards-night appearances filtered out by default
 - **Where to Watch** – region-aware streaming availability, filtered to your services

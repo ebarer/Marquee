@@ -44,9 +44,7 @@ struct SidebarRootView: View {
             pending = root
             presented = nil
         }
-        if !searchModel.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            searchModel.commit()
-        }
+        searchModel.recordVisit(value)
     }
 
     private func presentPending() {

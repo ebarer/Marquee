@@ -47,14 +47,6 @@ struct CompactRootView: View {
                         .onChange(of: searchModel.query) { _, newValue in
                             searchModel.search(newValue)
                         }
-                        .onSubmit(of: .search) {
-                            searchModel.commit()
-                        }
-                }
-                .onChange(of: searchPath) { oldPath, newPath in
-                    if newPath.count > oldPath.count {
-                        searchModel.commit()
-                    }
                 }
                 .onPageTintChange { tabTints[.search] = $0 }
             }
@@ -66,6 +58,7 @@ struct CompactRootView: View {
     // Straight out of the focused search field, the stack skips the push animation.
     private func pushResult(_ value: AnyHashable) {
         guard let root = DetailRoot(value) else { return }
+        searchModel.recordVisit(value)
         Task { @MainActor in
             switch root {
             case .movie(let movie): searchPath.append(movie)

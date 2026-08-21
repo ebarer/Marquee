@@ -21,7 +21,7 @@ final class SearchModel {
 
     static let placeholder = "Movies, TV, People, etc."
 
-    private(set) var recentSearches: [String] = []
+    private(set) var recentSearches: [RecentSearch] = []
 
     private let policy: SearchPolicy
     private let provider: SearchProvider
@@ -29,7 +29,7 @@ final class SearchModel {
 
     private var lastStrongQuery = ""
 
-    private let recentsKey = "recentSearches"
+    private let recentsKey = "recentSearchResults"
     private let maxRecents = 15
     private let maxFeaturedPeople = 50
     private let stripPreviewLimit = 8
@@ -74,7 +74,7 @@ final class SearchModel {
     init(policy: SearchPolicy = .standard, provider: SearchProvider = TMDBSearchProvider()) {
         self.policy = policy
         self.provider = provider
-        recentSearches = UserDefaults.standard.stringArray(forKey: recentsKey) ?? []
+        recentSearches = Self.loadRecents(forKey: recentsKey)
     }
 
     func search(_ rawQuery: String) {
@@ -142,26 +142,24 @@ final class SearchModel {
 
     // MARK: - Recent searches
 
-    func commit() {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+    /// Records an opened result. A search with nothing tapped was abandoned and is not stored.
+    func recordVisit(_ value: AnyHashable) {
+        guard let item = RecentSearch(navigationValue: value) else { return }
+        // The iPad shell routes every push through here, so a tap made outside search only
+        // counts when it re-opens a recent.
+        let isSearching = !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guard isSearching || recentSearches.contains(where: { $0.id == item.id }) else { return }
 
-        recentSearches.removeAll { $0.caseInsensitiveCompare(trimmed) == .orderedSame }
-        recentSearches.insert(trimmed, at: 0)
+        recentSearches.removeAll { $0.id == item.id }
+        recentSearches.insert(item, at: 0)
         if recentSearches.count > maxRecents {
             recentSearches = Array(recentSearches.prefix(maxRecents))
         }
         persistRecents()
     }
 
-    func selectRecent(_ term: String) {
-        query = term
-        search(term)
-        commit()
-    }
-
-    func removeRecent(_ term: String) {
-        recentSearches.removeAll { $0.caseInsensitiveCompare(term) == .orderedSame }
+    func removeRecent(_ item: RecentSearch) {
+        recentSearches.removeAll { $0.id == item.id }
         persistRecents()
     }
 
@@ -171,6 +169,13 @@ final class SearchModel {
     }
 
     private func persistRecents() {
-        UserDefaults.standard.set(recentSearches, forKey: recentsKey)
+        let data = try? JSONEncoder().encode(recentSearches)
+        UserDefaults.standard.set(data, forKey: recentsKey)
+    }
+
+    private static func loadRecents(forKey key: String) -> [RecentSearch] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let stored = try? JSONDecoder().decode([RecentSearch].self, from: data) else { return [] }
+        return stored
     }
 }

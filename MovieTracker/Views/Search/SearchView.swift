@@ -35,7 +35,7 @@ struct SearchView: View {
                 ContentUnavailableView(
                     "Search Movies, TV & People",
                     systemImage: "magnifyingglass",
-                    description: Text("Find movies, TV, cast, or crew. Your recent searches will show up here.")
+                    description: Text("Find movies, TV, cast, or crew. Whatever you open shows up here.")
                 )
             }
         }
@@ -107,24 +107,18 @@ struct SearchView: View {
     private var recentRows: some View {
         if !model.recentSearches.isEmpty {
             Section {
-                ForEach(Array(model.recentSearches.enumerated()), id: \.element) { index, term in
-                    Button {
-                        model.selectRecent(term)
-                    } label: {
-                        Label(term, systemImage: "clock.arrow.circlepath")
-                            .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .listRowSeparator(index == model.recentSearches.count - 1 ? .hidden : .automatic, edges: .bottom)
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            model.removeRecent(term)
-                        } label: {
-                            Image(systemName: "trash")
+                ForEach(Array(model.recentSearches.enumerated()), id: \.element.id) { index, item in
+                    RecentSearchRow(item: item)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .listRowSeparator(index == model.recentSearches.count - 1 ? .hidden : .automatic,
+                                          edges: .bottom)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                model.removeRecent(item)
+                            } label: {
+                                Image(systemName: "trash")
+                            }
                         }
-                    }
                 }
             } header: {
                 HStack {

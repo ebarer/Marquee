@@ -99,6 +99,15 @@ extension Movie {
     }
 }
 
+// MARK: - Sample recent searches
+
+extension RecentSearch {
+    static var previewList: [RecentSearch] {
+        [AnyHashable(Movie.preview), AnyHashable(Show.preview), AnyHashable(Person.preview)]
+            .compactMap { RecentSearch(navigationValue: $0) }
+    }
+}
+
 // MARK: - Sample people
 
 extension Person {
