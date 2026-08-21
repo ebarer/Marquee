@@ -61,7 +61,8 @@ import SwiftUI
         #expect(!airDate.isInTheFuture(asOf: midnight))
     }
 
-    @Test func todayAndTomorrowAreNamed() {
+    @Test func yesterdayTodayAndTomorrowAreNamed() {
+        #expect(airDate(inDays: -1).toRelativeDayString() == "Yesterday")
         #expect(airDate(inDays: 0).toRelativeDayString() == "Today")
         #expect(airDate(inDays: 1).toRelativeDayString() == "Tomorrow")
     }
@@ -71,17 +72,19 @@ import SwiftUI
         #expect(date.toRelativeDayString() == DateFormatter.weekdayName.string(from: date))
     }
 
-    @Test(arguments: [7, 30, -1]) func fullDateOutsideTheComingWeek(days: Int) {
+    @Test(arguments: [7, 30, -2]) func fullDateOutsideTheComingWeek(days: Int) {
         let date = airDate(inDays: days)
         #expect(date.toRelativeDayString() == date.toString())
     }
 
     /// Drives the tinting, so it has to agree with which dates get named.
-    @Test(arguments: [0, 1, 6]) func withinTheComingWeek(days: Int) {
-        #expect(airDate(inDays: days).isWithinTheComingWeek)
+    @Test(arguments: [-1, 0, 1, 6]) func namedDaysAreTinted(days: Int) {
+        let date = airDate(inDays: days)
+        #expect(date.hasRelativeDayName)
+        #expect(date.toRelativeDayString() != date.toString())
     }
 
-    @Test(arguments: [7, 30, -1]) func outsideTheComingWeek(days: Int) {
-        #expect(!airDate(inDays: days).isWithinTheComingWeek)
+    @Test(arguments: [7, 30, -2]) func plainDatesAreNotTinted(days: Int) {
+        #expect(!airDate(inDays: days).hasRelativeDayName)
     }
 }

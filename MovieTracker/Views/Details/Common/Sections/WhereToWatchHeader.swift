@@ -13,6 +13,8 @@ struct WhereToWatchHeader: View {
     var isLoading: Bool = false
     // Whether the current scope has tiles to show, which is what the row opens onto.
     var expandable: Bool = false
+    // False when the title streams nowhere in the region, so neither scope has anything to show.
+    var canChangeScope: Bool = true
     @Binding var expanded: Bool
     @Binding var scope: StreamingScope
     let onChooseServices: () -> Void
@@ -101,7 +103,7 @@ struct WhereToWatchHeader: View {
             // The symbol is the state: no fill, since scope is a choice rather than a filter.
             Image(systemName: scope.symbol)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(tint)
+                .foregroundStyle(canChangeScope ? AnyShapeStyle(tint) : AnyShapeStyle(.tertiary))
                 .sectionHeaderControl(diameter: SectionHeaderControl.inlineDiameter)
                 // The control swaps outright; only the section it governs animates.
                 .animation(nil, value: scope)
@@ -114,8 +116,11 @@ struct WhereToWatchHeader: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(scope == .mine ? "Show all services" : "Show my services only")
-        .accessibilityHint("Touch and hold to choose your services")
+        .disabled(!canChangeScope)
+        .accessibilityLabel(canChangeScope
+                            ? (scope == .mine ? "Show all services" : "Show my services only")
+                            : "No streaming services")
+        .accessibilityHint(canChangeScope ? "Touch and hold to choose your services" : "")
     }
 
     private func toggle() {
@@ -135,9 +140,13 @@ struct WhereToWatchHeader: View {
         WhereToWatchHeader(verdict: .offMyServices, inTheatres: false, tint: .appAccent,
                            expandable: true, expanded: .constant(false), scope: .constant(.all),
                            onChooseServices: {})
+        // Streams nowhere, so the scope control is dead: in theaters, then a show with no providers.
         WhereToWatchHeader(verdict: .unavailable, inTheatres: true, tint: .appAccent,
-                           expanded: .constant(false), scope: .constant(.all),
-                           onChooseServices: {})
+                           canChangeScope: false, expanded: .constant(false),
+                           scope: .constant(.mine), onChooseServices: {})
+        WhereToWatchHeader(verdict: .unavailable, inTheatres: false, tint: .appAccent,
+                           canChangeScope: false, expanded: .constant(false),
+                           scope: .constant(.mine), onChooseServices: {})
         WhereToWatchHeader(verdict: .unavailable, inTheatres: false, tint: .appAccent,
                            isLoading: true, expanded: .constant(false), scope: .constant(.mine),
                            onChooseServices: {})

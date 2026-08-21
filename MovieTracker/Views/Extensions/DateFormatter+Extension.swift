@@ -38,15 +38,17 @@ extension Date {
 
     var inTheFuture: Bool { isInTheFuture() }
 
-    var isWithinTheComingWeek: Bool {
+    // The tinting predicate for air dates, so it agrees with `toRelativeDayString`.
+    var hasRelativeDayName: Bool {
         guard let days = calendarDaysFromToday else { return false }
-        return (0...6).contains(days)
+        return (-1...6).contains(days)
     }
 
     private var calendarDaysFromToday: Int? { calendarDays(from: Date()) }
 
     func toRelativeDayString() -> String {
         switch calendarDaysFromToday {
+        case -1: return "Yesterday"
         case 0: return "Today"
         case 1: return "Tomorrow"
         case .some(2...6): return DateFormatter.weekdayName.string(from: self)

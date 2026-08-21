@@ -55,7 +55,7 @@ struct ShowMetadataStrip: View {
                             // Tinted while it's a named day, so an episode landing this week
                             // stands out from the plain dates further off.
                             Text(nextAirDate.toRelativeDayString())
-                                .foregroundStyle(nextAirDate.isWithinTheComingWeek ? tint : .white)
+                                .foregroundStyle(nextAirDate.hasRelativeDayName ? tint : .white)
                         }
                         MetadataDivider()
                     }

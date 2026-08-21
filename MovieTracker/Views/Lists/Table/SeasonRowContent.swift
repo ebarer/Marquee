@@ -35,9 +35,9 @@ struct SeasonRowContent: View {
                         .foregroundStyle(.secondary)
                 }
                 if let nextEpisodeDate = entry.nextEpisodeDate {
-                    Text(nextEpisodeDate.toString())
+                    Text(nextEpisodeDate.toRelativeDayString())
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(nextEpisodeDate.hasRelativeDayName ? tint : .secondary)
                 }
                 if let rating = entry.userRating, rating > 0 {
                     StarRating(display: rating, tint: tint)
@@ -68,17 +68,29 @@ struct SeasonRowContent: View {
     }
 }
 
+// Air dates parse as UTC midnight, so the previews have to seed them that way to read as the same day.
+private func previewAirDate(inDays days: Int) -> Date {
+    DateFormatter.utcCalendar.date(byAdding: .day, value: days,
+                                   to: MediaItem.floatingDay(from: .now)) ?? .now
+}
+
 #Preview("Season rows") {
     List {
         SeasonRowContent(entry: .preview(id: 1, title: "In Progress", mediaType: .tv, season: 2,
                                          seasonWatched: 3, seasonTotal: 10,
-                                         nextEpisodeDate: .now.addingTimeInterval(-40 * 24 * 3600)))
+                                         nextEpisodeDate: previewAirDate(inDays: -40)))
         SeasonRowContent(entry: .preview(id: 2, title: "Completed", mediaType: .tv, season: 1,
                                          seasonWatched: 8, seasonTotal: 8, userRating: 4.5),
                          detail: "Finished \(Date().toString())")
         SeasonRowContent(entry: .preview(id: 3, title: "Caught Up", mediaType: .tv, season: 3,
                                          seasonWatched: 5, seasonTotal: 8,
-                                         nextEpisodeDate: .now.addingTimeInterval(5 * 24 * 3600)))
+                                         nextEpisodeDate: previewAirDate(inDays: 5)))
+        SeasonRowContent(entry: .preview(id: 4, title: "Airing Today", mediaType: .tv, season: 1,
+                                         seasonWatched: 2, seasonTotal: 6,
+                                         nextEpisodeDate: previewAirDate(inDays: 0)))
+        SeasonRowContent(entry: .preview(id: 5, title: "Aired Yesterday", mediaType: .tv, season: 2,
+                                         seasonWatched: 4, seasonTotal: 9,
+                                         nextEpisodeDate: previewAirDate(inDays: -1)))
     }
     .listStyle(.plain)
     .modelContainer(previewModelContainer)

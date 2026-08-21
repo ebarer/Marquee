@@ -43,6 +43,8 @@ struct WhereToWatchSection: View {
         VStack(spacing: 0) {
             WhereToWatchHeader(verdict: resolved.verdict, inTheatres: inTheatres, tint: tint,
                                isLoading: pending, expandable: !groups.isEmpty,
+                               // An unavailable verdict means no provider in either scope.
+                               canChangeScope: resolved.verdict != .unavailable,
                                // Matches the chevron's own animation, whichever route sets the scope.
                                expanded: $expanded, scope: $scope.animation(.easeInOut),
                                onChooseServices: { showingServices = true })
