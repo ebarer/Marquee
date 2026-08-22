@@ -42,7 +42,11 @@ extension TMDBWrapper {
         guard let url = components.url else {
             throw FetchError.noData("Couldn't build request URL.")
         }
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        // Unchecked, TMDB's JSON error body fails to decode and a 404 or 429 reads as malformed data.
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw FetchError.http(status: http.statusCode, path: path)
+        }
         return data
     }
 
@@ -99,4 +103,13 @@ enum FetchError: Error {
     case noData(String)
     case decode(String)
     case image(String)
+    case http(status: Int, path: String)
+}
+
+extension Error {
+    // A 404 means this title has no such resource and never will; retrying the plan is pointless.
+    var isPermanentHTTPFailure: Bool {
+        guard case .http(let status, _) = self as? FetchError ?? .noData("") else { return false }
+        return (400...499).contains(status) && status != 429
+    }
 }

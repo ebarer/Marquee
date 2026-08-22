@@ -150,6 +150,29 @@ import SwiftData
         #expect(keep.watchedAt == .utc(2021, 5, 5))  // OR-ed from dup
     }
 
+    // Every user-set fact has to survive the merge, or a CloudKit dedup silently loses badge state.
+    @Test func deduplicateCarriesEveryFactOffTheDuplicate() {
+        let keep = MediaItem(tmdbID: 1, mediaType: .tv, title: "A")
+        keep.addedAt = .utc(2020, 1, 1)
+        let dup = MediaItem(tmdbID: 1, mediaType: .tv, title: "A")
+        dup.addedAt = .utc(2021, 1, 1)
+        dup.showWatched = true
+        dup.showCaughtUp = true
+        dup.watchListOptOut = true
+        dup.runtime = 42
+        dup.sortDate = .utc(2021, 6, 6)
+        dup.lastViewedAt = .utc(2021, 7, 7)
+        ctx.insert(keep); ctx.insert(dup)
+
+        #expect(MediaItem.deduplicate(in: ctx))
+        #expect(keep.showWatched == true)
+        #expect(keep.showCaughtUp == true)
+        #expect(keep.watchListOptOut == true)
+        #expect(keep.runtime == 42)
+        #expect(keep.sortDate == .utc(2021, 6, 6))
+        #expect(keep.lastViewedAt == .utc(2021, 7, 7))
+    }
+
     @Test func deduplicateNoopWhenUnique() {
         ctx.insert(MediaItem(tmdbID: 1, title: "A"))
         ctx.insert(MediaItem(tmdbID: 2, title: "B"))

@@ -41,6 +41,7 @@ extension PersistenceCoordinator {
         }
         seedWatchList()
         deduplicate()
+        await primeBadges()
         SyncLog.snapshot("after seed", in: context)
 
         let targets = MediaCachePlan.local(in: context)

@@ -67,13 +67,20 @@ final class ListCoordinator {
             return ListResult(rows: [], layout: layout(isWatchList: false))
         }
 
-        // Only the Watch List represents a show by its tracked season; custom lists show the whole show.
-        let isWatchList = entries.first?.list?.isWatchList ?? false
+        // Only the Watch List represents a show by its tracked season; custom lists show the whole
+        // show. Read from the list, not an entry: an empty Watch List would lose its fold.
+        var lists = FetchDescriptor<MediaList>(predicate: #Predicate { $0.uuid == listID })
+        lists.fetchLimit = 1
+        let isWatchList = (try? modelContext.fetch(lists))?.first?.isWatchList ?? false
 
-        let items = (try? modelContext.fetch(FetchDescriptor<MediaItem>())) ?? []
+        // Two columns of every row: naming them avoids materialising each model to read a rating.
+        var items = FetchDescriptor<MediaItem>()
+        items.propertiesToFetch = [\.tmdbID, \.mediaTypeRaw, \.userRating, \.watchedAt]
         // Key facts by (tmdbID, mediaType) so a movie and show sharing a tmdbID don't collide.
         var factsByKey: [String: (rating: Double?, watched: Date?)] = [:]
-        for item in items { factsByKey["\(item.tmdbID)-\(item.mediaTypeRaw)"] = (item.userRating, item.watchedAt) }
+        for item in (try? modelContext.fetch(items)) ?? [] {
+            factsByKey["\(item.tmdbID)-\(item.mediaTypeRaw)"] = (item.userRating, item.watchedAt)
+        }
 
         let filtered = filter.isEmpty ? entries
             : entries.filter { $0.title.localizedCaseInsensitiveContains(filter) }

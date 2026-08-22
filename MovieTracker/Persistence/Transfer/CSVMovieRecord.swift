@@ -33,8 +33,13 @@ enum CSVImportError: LocalizedError {
 }
 
 extension CSVMovieRecord {
+    // Excel's "Unicode Text" is UTF-16 and its regional exports are often Latin-1, neither of which
+    // decodes as UTF-8. Latin-1 accepts any byte, so it is last and decoding never fails outright.
+    private static let encodings: [String.Encoding] = [.utf8, .utf16, .isoLatin1]
+
     static func parse(data: Data) throws -> [CSVMovieRecord] {
-        guard let text = String(data: data, encoding: .utf8) else {
+        guard !data.isEmpty else { throw CSVImportError.emptyFile }
+        guard let text = encodings.lazy.compactMap({ String(data: data, encoding: $0) }).first else {
             throw CSVImportError.emptyFile
         }
 

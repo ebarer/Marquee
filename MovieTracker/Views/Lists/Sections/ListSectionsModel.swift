@@ -23,9 +23,12 @@ final class ListSectionsModel {
         var version: Int
     }
 
-    /// How long a store tick waits before rebuilding the same list. A save from a screen pushed over
-    /// this one would otherwise rebuild inside that tap, costing it animation frames.
+    // How long a store tick waits before rebuilding the same list. A save from a screen pushed over
+    // this one would otherwise rebuild inside that tap, costing it animation frames.
     private static let refreshDebounce = Duration.milliseconds(250)
+
+    // Typing rebuilds from scratch: a fresh `ModelContext` and a full scan. A keystroke waits.
+    private static let filterDebounce = Duration.milliseconds(200)
 
     func rebuild(for input: Input, store: PersistenceCoordinator?) async {
         guard let request = input.request, let store else {
@@ -35,6 +38,9 @@ final class ListSectionsModel {
         }
         if isSilentRefresh(input) {
             try? await Task.sleep(for: Self.refreshDebounce)
+            guard !Task.isCancelled else { return }
+        } else if input.filter != loadedInput?.filter, !input.filter.isEmpty {
+            try? await Task.sleep(for: Self.filterDebounce)
             guard !Task.isCancelled else { return }
         }
         var result = await store.sections(for: request, ascending: input.ascending,
@@ -58,7 +64,7 @@ final class ListSectionsModel {
         loadedInput = nil
     }
 
-    /// Drops rows the offline cache can't confirm are streaming, and any section left empty.
+    // Drops rows the offline cache can't confirm are streaming, and any section left empty.
     private static func keepingStreamable(_ sections: [SectionSnapshot],
                                           using filter: StreamableFilter) async -> [SectionSnapshot] {
         let identity = { (entry: MediaSnapshot) in
@@ -75,8 +81,8 @@ final class ListSectionsModel {
         }
     }
 
-    /// True when only the store's revision, or the row count it implies, moved. The list, sort and
-    /// filter are what the visible rows were already built for.
+    // True when only the store's revision, or the row count it implies, moved. The list, sort and
+    // filter are what the visible rows were already built for.
     private func isSilentRefresh(_ input: Input) -> Bool {
         guard var previous = loadedInput else { return false }
         previous.count = input.count
@@ -84,8 +90,8 @@ final class ListSectionsModel {
         return previous == input
     }
 
-    /// Same row layout (section ids + entry ids, in order)? Walked in place rather than built into
-    /// two comparable signatures: this runs on the main actor once per rebuild.
+    // Same row layout (section ids and entry ids, in order)? Walked in place rather than built into
+    // two comparable signatures: this runs on the main actor once per rebuild.
     private func sameStructure(_ lhs: [SectionSnapshot], _ rhs: [SectionSnapshot]) -> Bool {
         guard lhs.count == rhs.count else { return false }
         for (left, right) in zip(lhs, rhs) {

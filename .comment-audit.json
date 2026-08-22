@@ -9,6 +9,6 @@
   "density_limit": 0.34,
   "acronyms": [
     "TMDB", "IMDB", "RT", "SPARQL", "QID", "CK", "CKERROR", "SWIFTUI", "UIKIT",
-    "P166", "P1411", "P585", "NSPERSISTENTCLOUDKITCONTAINER"
+    "P166", "P1411", "P585", "NSPERSISTENTCLOUDKITCONTAINER", "UTF", "CSV", "HTTP"
   ]
 }

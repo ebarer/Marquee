@@ -78,6 +78,15 @@ final class PersistenceCoordinator {
         return badgeIndex
     }
 
+    // Primed off the main actor at launch. Reached from a view body first, the lazy build above scans
+    // every watched title, entry and episode inside a frame.
+    func primeBadges() async {
+        guard !badgesPrimed else { return }
+        let built = await readingOffMain { $0.badgeIndex() }
+        badgesPrimed = true
+        badgeIndex = built
+    }
+
     // Lands a frame or two after the write, so it can't share a frame with the animation.
     private func refreshBadges() {
         guard badgesPrimed else { return }
@@ -125,11 +134,21 @@ final class PersistenceCoordinator {
     // MARK: - Remote-change observation (CloudKit)
 
     func observeRemoteChanges(debounce: Duration = .seconds(2),
+                              tick: Duration = .milliseconds(400),
                               onSettled: @MainActor @escaping () -> Void) async {
         var pending: Task<Void, Never>?
+        var ticking: Task<Void, Never>?
         for await _ in NotificationCenter.default.notifications(named: .NSPersistentStoreRemoteChange) {
-            revision &+= 1
-            refreshBadges()
+            // An initial sync delivers these in bursts, and each tick invalidates every memo and
+            // re-renders every observer, so coalesce them.
+            if ticking == nil {
+                ticking = Task { @MainActor in
+                    try? await Task.sleep(for: tick)
+                    ticking = nil
+                    revision &+= 1
+                    refreshBadges()
+                }
+            }
             pending?.cancel()
             pending = Task {
                 try? await Task.sleep(for: debounce)

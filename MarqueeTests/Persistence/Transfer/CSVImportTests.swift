@@ -50,8 +50,7 @@ import SwiftData
     }
 
     @Test func handlesQuotedFieldsWithCommasAndNewlines() throws {
-        // Quoted commas and an embedded newline. LF endings only — the parser mishandles
-        // CRLF (Swift reads "\r\n" as one grapheme cluster), tracked as a separate bug.
+        // Quoted commas and an embedded newline.
         let csv = "\(header)\n\"Movie, The\",\"Drama\",1/1/20,1,4,url,7,,\"Line1\nLine2\"\n"
         let records = try CSVMovieRecord.parse(data: Data(csv.utf8))
         #expect(records.count == 1)
@@ -84,6 +83,44 @@ import SwiftData
         let csv = "Title,Watched\nA,1\n"
         #expect(throws: CSVImportError.self) {
             _ = try CSVMovieRecord.parse(data: Data(csv.utf8))
+        }
+    }
+
+    // Excel, Numbers and any Windows export use CRLF. Swift reads it as one grapheme, so a
+    // Character scan matched neither "\r" nor "\n" and the whole file parsed as a single row.
+    @Test func parsesCRLFLineEndings() throws {
+        let csv = "Tmdb ID,Title,Watched\r\n550,Fight Club,1\r\n27205,Inception,0\r\n"
+        let records = try CSVMovieRecord.parse(data: Data(csv.utf8))
+        #expect(records.map(\.movieID) == [550, 27205])
+        #expect(records.map(\.title) == ["Fight Club", "Inception"])
+    }
+
+    @Test func parsesLoneCarriageReturns() throws {
+        let csv = "Tmdb ID,Title\r550,Fight Club\r27205,Inception\r"
+        let records = try CSVMovieRecord.parse(data: Data(csv.utf8))
+        #expect(records.map(\.movieID) == [550, 27205])
+    }
+
+    @Test func aQuotedFieldKeepsItsEmbeddedCRLF() throws {
+        let csv = "Tmdb ID,Title\r\n550,\"Fight\r\nClub\"\r\n"
+        let records = try CSVMovieRecord.parse(data: Data(csv.utf8))
+        #expect(records.count == 1)
+        #expect(records.first?.title == "Fight\r\nClub")
+    }
+
+    @Test func readsUTF16AndLatin1Exports() throws {
+        let csv = "Tmdb ID,Title\r\n550,Fight Club\r\n"
+        for encoding in [String.Encoding.utf16, .isoLatin1] {
+            let data = csv.data(using: encoding)!
+            #expect(try CSVMovieRecord.parse(data: data).map(\.movieID) == [550])
+        }
+    }
+
+    // Latin-1 accepts any byte, so binary decodes to mojibake rather than failing: it lands on the
+    // missing-column error, which already tells the user the file isn't an export.
+    @Test func binaryDataReportsAMissingColumn() {
+        #expect(throws: CSVImportError.missingColumns) {
+            _ = try CSVMovieRecord.parse(data: Data([0xD8, 0x00, 0x01, 0xFF]))
         }
     }
 

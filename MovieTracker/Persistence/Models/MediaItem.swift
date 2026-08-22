@@ -217,7 +217,9 @@ extension MediaItem {
                 keep.watchedAt = keep.watchedAt ?? drop.watchedAt
                 keep.lastViewedAt = keep.lastViewedAt ?? drop.lastViewedAt
                 keep.sortDate = keep.sortDate ?? drop.sortDate
+                keep.runtime = keep.runtime ?? drop.runtime
                 keep.showWatched = keep.showWatched ?? drop.showWatched
+                keep.showCaughtUp = keep.showCaughtUp ?? drop.showCaughtUp
                 keep.watchListOptOut = keep.watchListOptOut ?? drop.watchListOptOut
                 context.delete(drop)
             }
