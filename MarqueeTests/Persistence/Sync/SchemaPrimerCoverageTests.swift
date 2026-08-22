@@ -17,7 +17,7 @@ import SwiftData
                       "watchedAt", "lastViewedAt", "showWatched", "showCaughtUp", "watchListOptOut"],
         "MediaList": ["customColorHex", "deduplicatedDate"],
         "ListEntry": ["posterPath", "releaseDate", "sortDate", "runtime"],
-        "WatchedEpisode": [],
+        "WatchedEpisode": ["runtime"],
         "WatchedSeason": ["posterPath", "airDate", "userRating"],
         "TrackedSeason": ["posterPath", "nextEpisodeDate"],
     ]

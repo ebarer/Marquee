@@ -48,6 +48,7 @@ extension PersistenceCoordinator {
             await MediaCachePrefetcher.prefetch(targets)
         }
         Task { await self.refreshWatchedShows() }
+        Task { await self.repairBulkMarkedWatchDates() }
 
         await observeRemoteChanges {
             SyncLog.logger.log("🔁 remote change settled — reconciling")

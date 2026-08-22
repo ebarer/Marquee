@@ -51,7 +51,7 @@ enum SchemaPrimer {
         context.insert(entry)
 
         context.insert(WatchedEpisode(showTmdbID: sentinelID, seasonNumber: 1,
-                                      episodeNumber: 1, watchedAt: now))
+                                      episodeNumber: 1, watchedAt: now, runtime: 1))
 
         let season = WatchedSeason(showTmdbID: sentinelID, seasonNumber: 1, showName: sentinelTitle,
                                    seasonName: "Season 1", posterPath: "/primer.jpg",

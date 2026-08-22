@@ -14,13 +14,17 @@ final class WatchedEpisode {
     var episodeNumber: Int = 0
     var watchedAt: Date = Date()
     var addedAt: Date = Date()
+    // Additive and optional so CloudKit accepts it; nil means TMDB never gave one.
+    var runtime: Int?
 
-    init(showTmdbID: Int, seasonNumber: Int, episodeNumber: Int, watchedAt: Date = Date()) {
+    init(showTmdbID: Int, seasonNumber: Int, episodeNumber: Int, watchedAt: Date = Date(),
+         runtime: Int? = nil) {
         self.showTmdbID = showTmdbID
         self.seasonNumber = seasonNumber
         self.episodeNumber = episodeNumber
         self.watchedAt = watchedAt
         self.addedAt = Date()
+        self.runtime = runtime
     }
 }
 

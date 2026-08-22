@@ -203,12 +203,17 @@ extension PersistenceCoordinator {
         reconcileMembership(show, episodesBySeason: [season.seasonNumber: season.episodes])
     }
 
-    // Marking stops at today, so a season still airing stays partly watched and in progress.
+    // Marking stops at today, so a season still airing stays partly watched and in progress. Each
+    // episode is dated to when it aired: a back-filled season must not read as watched today.
     func setSeasonWatched(_ watched: Bool, show: Show, season: Season) {
-        for number in episodeNumbers(for: season, airedOnly: watched) {
-            applyEpisode(watched, showID: show.id, season: season.seasonNumber, episode: number)
+        for episode in airedEpisodes(for: season, airedOnly: watched) {
+            applyEpisode(watched, showID: show.id, season: season.seasonNumber,
+                         episode: episode.number, watchedAt: episode.airDate ?? Date(),
+                         runtime: episode.runtime)
         }
-        reconcileSeason(show: show, season: season, afterLocalEdit: true)
+        reconcileSeason(show: show, season: season,
+                        completedAt: watched ? seasonFinaleDate(season) : nil,
+                        afterLocalEdit: true)
         reconcileMembership(show, episodesBySeason: [season.seasonNumber: season.episodes])
     }
 
@@ -234,13 +239,15 @@ extension PersistenceCoordinator {
 
     // Marking stops at today and dates each newly-completed season to its finale.
     func setShowWatched(_ watched: Bool, show: Show, episodesBySeason: [Int: [Episode]] = [:]) async {
-        let known = watched ? await hydrateAiringSeasons(show, known: episodesBySeason) : episodesBySeason
+        let known = watched ? await hydrateSeasons(show, known: episodesBySeason) : episodesBySeason
         for var season in show.scheduledSeasons {
             if let episodes = known[season.seasonNumber], !episodes.isEmpty {
                 season.episodes = episodes
             }
-            for number in episodeNumbers(for: season, airedOnly: watched) {
-                applyEpisode(watched, showID: show.id, season: season.seasonNumber, episode: number)
+            for episode in airedEpisodes(for: season, airedOnly: watched) {
+                applyEpisode(watched, showID: show.id, season: season.seasonNumber,
+                             episode: episode.number, watchedAt: episode.airDate ?? Date(),
+                             runtime: episode.runtime)
             }
             reconcileSeason(show: show, season: season,
                             completedAt: watched ? seasonFinaleDate(season) : nil,
@@ -252,21 +259,36 @@ extension PersistenceCoordinator {
         reconcileMembership(show, episodesBySeason: merged)
     }
 
-    // Earlier seasons are provably finished, and fetching every one costs a request each.
-    private func hydrateAiringSeasons(_ show: Show,
-                                      known: [Int: [Episode]]) async -> [Int: [Episode]] {
-        let seasons = show.scheduledSeasons
-        guard let started = seasons.lastIndex(where: { !($0.airDate ?? .distantPast).inTheFuture })
-        else { return known }
-
+    // Every season, the airing one included: an episode's own air date and runtime are the only way
+    // a back-filled show lands on the right dates instead of piling onto each premiere.
+    private func hydrateSeasons(_ show: Show, known: [Int: [Episode]]) async -> [Int: [Episode]] {
         var hydrated = known
-        for season in seasons[started...] where hydrated[season.seasonNumber]?.isEmpty ?? true {
-            if !season.episodes.isEmpty {
+        var missing: [Int] = []
+        for season in show.scheduledSeasons where hydrated[season.seasonNumber]?.isEmpty ?? true {
+            if season.episodes.isEmpty {
+                missing.append(season.seasonNumber)
+            } else {
                 hydrated[season.seasonNumber] = season.episodes
-            } else if let full = try? await TMDBWrapper.getSeason(showID: show.id,
-                                                                 seasonNumber: season.seasonNumber) {
-                hydrated[season.seasonNumber] = full.episodes
-                await MediaCacheStore.shared.cacheSeason(showID: show.id, full)
+            }
+        }
+        guard !missing.isEmpty else { return hydrated }
+
+        // Bounded so a twenty-season show doesn't fetch serially behind the user's tap.
+        let showID = show.id
+        let maxConcurrent = 6
+        await withTaskGroup(of: Season?.self) { group in
+            var iterator = missing.makeIterator()
+            func addNext() {
+                guard let number = iterator.next() else { return }
+                group.addTask { try? await TMDBWrapper.getSeason(showID: showID, seasonNumber: number) }
+            }
+            for _ in 0..<maxConcurrent { addNext() }
+            for await season in group {
+                if let season {
+                    hydrated[season.seasonNumber] = season.episodes
+                    await MediaCacheStore.shared.cacheSeason(showID: showID, season)
+                }
+                addNext()
             }
         }
         return hydrated
@@ -305,8 +327,14 @@ extension PersistenceCoordinator {
 
     func setSeasonWatched(_ watched: Bool, showID: Int, seasonNumber: Int) async {
         guard let show = await resolveShow(id: showID),
-              let season = show.regularSeasons.first(where: { $0.seasonNumber == seasonNumber })
+              var season = show.regularSeasons.first(where: { $0.seasonNumber == seasonNumber })
         else { return }
+        // Without episodes there are no per-episode air dates or runtimes to record.
+        if watched, season.episodes.isEmpty,
+           let full = try? await TMDBWrapper.getSeason(showID: showID, seasonNumber: seasonNumber) {
+            season.episodes = full.episodes
+            await MediaCacheStore.shared.cacheSeason(showID: showID, full)
+        }
         setSeasonWatched(watched, show: show, season: season)
     }
 
@@ -436,24 +464,35 @@ extension PersistenceCoordinator {
         return count > 0
     }
 
-    // Without loaded episodes there is nothing to date-check, so the whole range is assumed.
-    private func episodeNumbers(for season: Season, airedOnly: Bool) -> [Int] {
-        guard !season.episodes.isEmpty else {
-            return season.episodeCount > 0 ? Array(1...season.episodeCount) : []
-        }
-        return season.episodes.filter { !airedOnly || $0.hasAired }.map(\.episodeNumber)
-    }
-
-    private func applyEpisode(_ watched: Bool, showID: Int, season: Int, episode: Int) {
+    private func applyEpisode(_ watched: Bool, showID: Int, season: Int, episode: Int,
+                              watchedAt: Date = Date(), runtime: Int? = nil) {
         let existing = WatchedEpisode.find(showTmdbID: showID, seasonNumber: season,
                                            episodeNumber: episode, in: context)
         if watched {
-            if existing == nil {
-                context.insert(WatchedEpisode(showTmdbID: showID, seasonNumber: season, episodeNumber: episode))
+            if let existing {
+                // Backfill a runtime the record predates without disturbing its watched date.
+                if existing.runtime == nil { existing.runtime = runtime }
+            } else {
+                context.insert(WatchedEpisode(showTmdbID: showID, seasonNumber: season,
+                                              episodeNumber: episode, watchedAt: watchedAt,
+                                              runtime: runtime))
             }
         } else if let existing {
             context.delete(existing)
         }
+    }
+
+    // Air dates already parse at UTC midnight, the same canonical day `floatingDay` produces, so they
+    // are stored as-is.
+    private func airedEpisodes(for season: Season, airedOnly: Bool)
+        -> [(number: Int, airDate: Date?, runtime: Int?)] {
+        guard !season.episodes.isEmpty else {
+            guard season.episodeCount > 0 else { return [] }
+            return (1...season.episodeCount).map { ($0, season.airDate, nil) }
+        }
+        return season.episodes
+            .filter { !airedOnly || $0.hasAired }
+            .map { ($0.episodeNumber, $0.airDate, $0.runtime) }
     }
 
     // A new snapshot takes a remembered date over `completedAt`; an existing one's date is never touched.
