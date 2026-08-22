@@ -92,6 +92,16 @@ extension Show {
     var regularSeasons: [Season] {
         seasons.filter { !$0.isSpecials && $0.episodeCount > 0 }.sorted { $0.seasonNumber < $1.seasonNumber }
     }
+
+    // TMDB opens an announced season with placeholder episodes and no air date, so anything past the last
+    // dated season isn't watchable yet. An undated season before a dated one is a data gap and still counts.
+    var scheduledSeasons: [Season] {
+        let seasons = regularSeasons
+        guard let lastDated = seasons.last(where: { $0.airDate != nil })?.seasonNumber else {
+            return seasons
+        }
+        return seasons.filter { $0.airDate != nil || $0.seasonNumber < lastDated }
+    }
 }
 
 // MARK: - Image URLs

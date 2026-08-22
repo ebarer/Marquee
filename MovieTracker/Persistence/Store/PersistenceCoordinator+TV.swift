@@ -45,9 +45,9 @@ extension PersistenceCoordinator {
         return snapshot.episodeCount >= season.episodeCount
     }
 
-    // Only aired seasons count, so an ongoing show reads as watched until its next season airs.
+    // Only scheduled seasons count, so an ongoing show reads as watched until its next season airs.
     func isShowFullyWatched(_ show: Show) -> Bool {
-        let aired = show.regularSeasons.filter { $0.episodeCount > 0 }
+        let aired = show.scheduledSeasons
         guard !aired.isEmpty else { return false }
         return aired.allSatisfy { isSeasonWatched($0, showID: show.id) }
     }
@@ -59,7 +59,7 @@ extension PersistenceCoordinator {
 
     // Nil when episodes aren't loaded. A cached flag must not be overwritten with false.
     func caughtUpState(_ show: Show, episodesBySeason: [Int: [Episode]] = [:]) -> Bool? {
-        let seasons = show.regularSeasons
+        let seasons = show.scheduledSeasons
         guard !seasons.isEmpty else { return nil }
         guard hasWatchedEpisodes(show), !isShowFullyWatched(show) else { return false }
         for season in seasons {
@@ -136,7 +136,7 @@ extension PersistenceCoordinator {
     }
 
     func firstIncompleteSeason(_ show: Show) -> Season? {
-        show.regularSeasons.first { $0.episodeCount > 0 && !isSeasonWatched($0, showID: show.id) }
+        show.scheduledSeasons.first { !isSeasonWatched($0, showID: show.id) }
     }
 
     // MARK: - Background refresh (new-season detection)
@@ -215,7 +215,7 @@ extension PersistenceCoordinator {
     // Marking stops at today and dates each newly-completed season to its finale.
     func setShowWatched(_ watched: Bool, show: Show, episodesBySeason: [Int: [Episode]] = [:]) async {
         let known = watched ? await hydrateAiringSeasons(show, known: episodesBySeason) : episodesBySeason
-        for var season in show.regularSeasons {
+        for var season in show.scheduledSeasons {
             if let episodes = known[season.seasonNumber], !episodes.isEmpty {
                 season.episodes = episodes
             }
@@ -226,7 +226,7 @@ extension PersistenceCoordinator {
                             completedAt: watched ? seasonFinaleDate(season) : nil,
                             afterLocalEdit: true)
         }
-        let merged = Dictionary(uniqueKeysWithValues: show.regularSeasons.map {
+        let merged = Dictionary(uniqueKeysWithValues: show.scheduledSeasons.map {
             ($0.seasonNumber, known[$0.seasonNumber] ?? $0.episodes)
         })
         reconcileMembership(show, episodesBySeason: merged)
@@ -235,7 +235,7 @@ extension PersistenceCoordinator {
     // Earlier seasons are provably finished, and fetching every one costs a request each.
     private func hydrateAiringSeasons(_ show: Show,
                                       known: [Int: [Episode]]) async -> [Int: [Episode]] {
-        let seasons = show.regularSeasons
+        let seasons = show.scheduledSeasons
         guard let started = seasons.lastIndex(where: { !($0.airDate ?? .distantPast).inTheFuture })
         else { return known }
 
@@ -322,7 +322,7 @@ extension PersistenceCoordinator {
         let key = show.mediaKey
         let existing = TrackedSeason.find(showTmdbID: show.id, in: context)
         let incomplete = firstIncompleteSeason(show)
-        let hasCompletable = show.regularSeasons.contains { $0.episodeCount > 0 }
+        let hasCompletable = !show.scheduledSeasons.isEmpty
 
         // The single choke point after any episode, season or show mutation, so the caches never drift.
         let fullyWatched = incomplete == nil && hasCompletable
@@ -344,7 +344,7 @@ extension PersistenceCoordinator {
             MediaList.ensureWatchList(in: context).add(key: key)
         }
 
-        guard let season = incomplete ?? show.regularSeasons.first, isOnAnyList(show.id) else {
+        guard let season = incomplete ?? show.scheduledSeasons.first, isOnAnyList(show.id) else {
             if let existing { context.delete(existing) }
             save()
             return

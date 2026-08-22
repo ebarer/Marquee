@@ -226,6 +226,61 @@ import SwiftData
         #expect(TrackedSeason.find(showTmdbID: 40, in: store.context)?.seasonNumber == 2)
     }
 
+    @Test func announcedSeasonWithNoAirDateReadsAsWatchedUntilItIsScheduled() {
+        let store = makeInMemoryStore()
+        let first = makeSeason(1, episodes: 2, airStart: .utc(2025, 1, 9))
+        // TMDB opens the next season with one undated placeholder episode.
+        var placeholder = Season(id: 210, seasonNumber: 2, name: "Season 2", episodeCount: 1)
+        placeholder.episodes = [Episode(id: 2100, seasonNumber: 2, episodeNumber: 1, name: "Episode 1")]
+        let show = makeShow(id: 41, seasons: [first, placeholder])
+
+        store.setSeasonWatched(true, show: show, season: first)
+
+        #expect(store.isShowFullyWatched(show))
+        #expect(!store.isInWatchList(show))
+        #expect(TrackedSeason.find(showTmdbID: 41, in: store.context) == nil)
+        #expect(store.watchedEpisodeNumbers(showID: 41, season: 2).isEmpty)
+
+        var scheduled = placeholder
+        scheduled.airDate = .utc(2027, 1, 7)
+        let dated = makeShow(id: 41, seasons: [first, scheduled])
+
+        store.reconcileMembership(dated)
+
+        #expect(!store.isShowFullyWatched(dated))
+        #expect(store.isInWatchList(dated))
+        let tracked = TrackedSeason.find(showTmdbID: 41, in: store.context)
+        #expect(tracked?.seasonNumber == 2)
+        #expect(tracked?.nextEpisodeDate == .utc(2027, 1, 7))
+    }
+
+    @Test func markingAShowWatchedSkipsAnUnscheduledSeason() async {
+        let store = makeInMemoryStore()
+        let first = makeSeason(1, episodes: 2, airStart: .utc(2025, 1, 9))
+        var placeholder = Season(id: 220, seasonNumber: 2, name: "Season 2", episodeCount: 1)
+        placeholder.episodes = [Episode(id: 2200, seasonNumber: 2, episodeNumber: 1, name: "Episode 1")]
+        let show = makeShow(id: 43, seasons: [first, placeholder])
+
+        await store.setShowWatched(true, show: show)
+
+        #expect(store.watchedEpisodeNumbers(showID: 43, season: 1) == [1, 2])
+        #expect(store.watchedEpisodeNumbers(showID: 43, season: 2).isEmpty)
+        #expect(store.isShowFullyWatched(show))
+    }
+
+    @Test func anUndatedSeasonBeforeADatedOneStillCounts() {
+        let store = makeInMemoryStore()
+        let first = makeSeason(1, episodes: 2, airStart: .utc(2001, 1, 1))
+        let gap = makeSeason(2, episodes: 2)                        // TMDB never recorded a date
+        let third = makeSeason(3, episodes: 2, airStart: .utc(2003, 1, 1))
+        let show = makeShow(id: 42, seasons: [first, gap, third])
+
+        store.setSeasonWatched(true, show: show, season: first)
+
+        #expect(store.firstIncompleteSeason(show)?.seasonNumber == 2)
+        #expect(!store.isShowFullyWatched(show))
+    }
+
     @Test func seasonWatchedDateIsEditableAndSurvivesReconcile() {
         let store = makeInMemoryStore()
         let season = makeSeason(1, episodes: 2, airStart: .utc(2024, 1, 1))
