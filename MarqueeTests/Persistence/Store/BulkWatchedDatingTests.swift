@@ -131,5 +131,38 @@ import SwiftData
         #expect(runtimes.allSatisfy { $0 == 30 })
     }
 
+    @Test func timeWatchedSumsEpisodeRuntimes() {
+        var show = Show(id: 9, name: "Timed")
+        show.status = "Ended"
+        let season = makeSeason(1, episodes: [
+            (1, .utc(2019, 1, 6)), (2, .utc(2019, 1, 13)), (3, .utc(2019, 1, 20))
+        ])
+        show.seasons = [season]
 
+        store.setSeasonWatched(true, show: show, season: season)
+
+        let stats = ListCoordinator(container: store.context.container).stats(scope: .year(2019))
+        #expect(stats.episodeMinutes == 90)
+        #expect(stats.episodesMissingRuntime == 0)
+    }
+
+    @Test func aBackfilledShowReportsNoActivityThisYear() {
+        var show = Show(id: 7, name: "Old Show")
+        show.status = "Ended"
+        let season = makeSeason(1, episodes: [
+            (1, .utc(2011, 4, 17)), (2, .utc(2011, 4, 24)), (3, .utc(2011, 5, 1))
+        ])
+        show.seasons = [season]
+
+        store.setSeasonWatched(true, show: show, season: season)
+
+        let coordinator = ListCoordinator(container: store.context.container)
+        let thisYear = coordinator.stats(scope: .year(Date().year))
+        #expect(thisYear.episodesWatched == 0)
+
+        let then = coordinator.stats(scope: .year(2011))
+        #expect(then.episodesWatched == 3)
+        #expect(then.months[3].episodes == 2)
+        #expect(then.months[4].episodes == 1)
+    }
 }

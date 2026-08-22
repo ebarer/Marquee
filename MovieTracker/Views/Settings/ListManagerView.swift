@@ -45,7 +45,7 @@ struct ListManagerView: View {
 #endif
 
     private enum ManagerDestination: Hashable {
-        case cache, services
+        case cache, services, stats
     }
 
     private static let separator = Color.white.opacity(0.25)
@@ -125,38 +125,21 @@ struct ListManagerView: View {
 #endif
 
                 Section {
-                    Button {
-                        pushed = .services
-                    } label: {
-                        HStack {
-                            Label("Streaming Services", systemImage: "tv")
-                                .foregroundStyle(Color.appAccent)
-                            Spacer()
-                            Image(systemName: "chevron.forward")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
+                    pushRow("Year in Review", symbol: "chart.bar", to: .stats)
                 }
                 .listRowSeparatorTint(Self.separator)
                 .moveDisabled(true)
                 .deleteDisabled(true)
 
-                // A Button (not NavigationLink) because this List is permanently in
-                // edit mode, where links don't fire; it drives a programmatic push.
                 Section {
-                    Button {
-                        pushed = .cache
-                    } label: {
-                        HStack {
-                            Label("Manage Cache", systemImage: "internaldrive")
-                                .foregroundStyle(Color.appAccent)
-                            Spacer()
-                            Image(systemName: "chevron.forward")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
+                    pushRow("Streaming Services", symbol: "tv", to: .services)
+                }
+                .listRowSeparatorTint(Self.separator)
+                .moveDisabled(true)
+                .deleteDisabled(true)
+
+                Section {
+                    pushRow("Manage Cache", symbol: "internaldrive", to: .cache)
                 } footer: {
                     Text(appInfo)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -171,6 +154,7 @@ struct ListManagerView: View {
                 switch destination {
                 case .cache: CacheManagerView()
                 case .services: StreamingServicesView()
+                case .stats: WatchStatsView()
                 }
             }
             // The whole point of this screen is reordering/deleting, so it stays in
@@ -257,6 +241,24 @@ struct ListManagerView: View {
         .frame(minHeight: 60)
         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: editable ? 0 : 20))
         .listRowSeparatorTint(Self.separator)
+    }
+
+    // A Button (not NavigationLink) because this List is permanently in edit mode,
+    // where links don't fire; it drives a programmatic push.
+    private func pushRow(_ title: String, symbol: String,
+                         to destination: ManagerDestination) -> some View {
+        Button {
+            pushed = destination
+        } label: {
+            HStack {
+                Label(title, systemImage: symbol)
+                    .foregroundStyle(Color.appAccent)
+                Spacer()
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+        }
     }
 
     private func virtualRow(title: String, symbol: String, color: Color, count: Int) -> some View {

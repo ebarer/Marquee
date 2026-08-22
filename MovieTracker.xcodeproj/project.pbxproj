@@ -291,6 +291,11 @@
 		CEEAFCEE3019D1F800D06E0E /* FeaturedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCED3019D1F800D06E0E /* FeaturedView.swift */; };
 		CEEAFCF03019D1FA00D06E0E /* ListsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCEF3019D1FA00D06E0E /* ListsView.swift */; };
 		CEEAFCF23019D1FB00D06E0E /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEAFCF13019D1FB00D06E0E /* SearchView.swift */; };
+		CEF3755530397A5000B06DA8 /* WatchStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3755430397A5000B06DA8 /* WatchStats.swift */; };
+		CEF3755730397A7C00B06DA8 /* WatchStatsBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3755630397A7C00B06DA8 /* WatchStatsBuilder.swift */; };
+		CEF3755A30397A8800B06DA8 /* WatchStatsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3755930397A8800B06DA8 /* WatchStatsModel.swift */; };
+		CEF3755C30397AB600B06DA8 /* WatchStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3755B30397AB600B06DA8 /* WatchStatsView.swift */; };
+		CEF3756830397CB100B06DA8 /* WatchStatsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3756730397CB100B06DA8 /* WatchStatsTests.swift */; };
 		CEF3756F3039806200B06DA8 /* BulkWatchedDatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3756E3039806200B06DA8 /* BulkWatchedDatingTests.swift */; };
 		CEF375713039828500B06DA8 /* WatchedDateRepair.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF375703039828500B06DA8 /* WatchedDateRepair.swift */; };
 		CEF37573303982A500B06DA8 /* WatchedDateRepairTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF37572303982A500B06DA8 /* WatchedDateRepairTests.swift */; };
@@ -629,6 +634,11 @@
 		CEEAFCEF3019D1FA00D06E0E /* ListsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListsView.swift; sourceTree = "<group>"; };
 		CEEAFCF13019D1FB00D06E0E /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		CEEE5B6521AE3B35008C8EAE /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		CEF3755430397A5000B06DA8 /* WatchStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStats.swift; sourceTree = "<group>"; };
+		CEF3755630397A7C00B06DA8 /* WatchStatsBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStatsBuilder.swift; sourceTree = "<group>"; };
+		CEF3755930397A8800B06DA8 /* WatchStatsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStatsModel.swift; sourceTree = "<group>"; };
+		CEF3755B30397AB600B06DA8 /* WatchStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStatsView.swift; sourceTree = "<group>"; };
+		CEF3756730397CB100B06DA8 /* WatchStatsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStatsTests.swift; sourceTree = "<group>"; };
 		CEF3756E3039806200B06DA8 /* BulkWatchedDatingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkWatchedDatingTests.swift; sourceTree = "<group>"; };
 		CEF375703039828500B06DA8 /* WatchedDateRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedDateRepair.swift; sourceTree = "<group>"; };
 		CEF37572303982A500B06DA8 /* WatchedDateRepairTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedDateRepairTests.swift; sourceTree = "<group>"; };
@@ -755,6 +765,7 @@
 				678D050B8159F9AC5F2C44BE /* ShowProgressTests.swift */,
 				A421A88E3DD72705190CEBD2 /* WatchListOptOutTests.swift */,
 				CE748C9930352B2C007EE787 /* WatchedMemoryTests.swift */,
+				CEF3756730397CB100B06DA8 /* WatchStatsTests.swift */,
 				CEF3756E3039806200B06DA8 /* BulkWatchedDatingTests.swift */,
 				CEF37572303982A500B06DA8 /* WatchedDateRepairTests.swift */,
 			);
@@ -1397,6 +1408,7 @@
 				CED641083031C2990057509D /* MediaBadgeIndex.swift */,
 				CED6410A3031C8B20057509D /* ShowProgress.swift */,
 				CE748C9730352A8E007EE787 /* WatchedMemory.swift */,
+				CEF3755630397A7C00B06DA8 /* WatchStatsBuilder.swift */,
 				CEF375703039828500B06DA8 /* WatchedDateRepair.swift */,
 			);
 			path = Store;
@@ -1616,6 +1628,7 @@
 		CEF3755330397A5000B06DA8 /* Stats */ = {
 			isa = PBXGroup;
 			children = (
+				CEF3755430397A5000B06DA8 /* WatchStats.swift */,
 			);
 			path = Stats;
 			sourceTree = "<group>";
@@ -1623,6 +1636,8 @@
 		CEF3755830397A8800B06DA8 /* Stats */ = {
 			isa = PBXGroup;
 			children = (
+				CEF3755930397A8800B06DA8 /* WatchStatsModel.swift */,
+				CEF3755B30397AB600B06DA8 /* WatchStatsView.swift */,
 			);
 			path = Stats;
 			sourceTree = "<group>";
@@ -1868,6 +1883,7 @@
 				CE748C9A30352B2C007EE787 /* WatchedMemoryTests.swift in Sources */,
 				7D30A8E9061E866A3A28CD3A /* ListEntrySubtitleTests.swift in Sources */,
 				CE6AF8B93035BB210002656A /* AwardsDigestTests.swift in Sources */,
+				CEF3756830397CB100B06DA8 /* WatchStatsTests.swift in Sources */,
 				3D97266F86B4C32B8067575A /* ListEntrySwipeChoiceTests.swift in Sources */,
 				D88C479DDFC19C21B22C6229 /* ListSectionsModelTests.swift in Sources */,
 				94D35F4858430F611A5F0AE2 /* ListSortOptionTests.swift in Sources */,
@@ -2007,6 +2023,7 @@
 				CED641093031C2990057509D /* MediaBadgeIndex.swift in Sources */,
 				CE569754301C19AE00DF9142 /* PersonRow.swift in Sources */,
 				CE8DD1D330296359006213BD /* HeaderTitle.swift in Sources */,
+				CEF3755C30397AB600B06DA8 /* WatchStatsView.swift in Sources */,
 				CE8DD2E4302979FF006213BD /* LibraryBackupTransfer.swift in Sources */,
 				CE8DD1AB30292305006213BD /* GlassActionButton.swift in Sources */,
 				CE3FE9C2302286CF00FCC44B /* SearchPeopleStrip.swift in Sources */,
@@ -2106,6 +2123,7 @@
 				CE8DD35830298596006213BD /* TMDBResponses+Movie.swift in Sources */,
 				CE8DD2E630297A0D006213BD /* CSVMovieRecord.swift in Sources */,
 				CEB8A487301F1C6C002FBF31 /* ListTable.swift in Sources */,
+				CEF3755530397A5000B06DA8 /* WatchStats.swift in Sources */,
 				CE8DD2D53029799E006213BD /* ListCoordinator.swift in Sources */,
 				CE6AF8DF3035C59E0002656A /* CastCountsMenu.swift in Sources */,
 				CE8DD29930297739006213BD /* MediaCachePrefetcher.swift in Sources */,
@@ -2115,6 +2133,7 @@
 				CE8DD2FB30297AB0006213BD /* TMDBWrapper+TV.swift in Sources */,
 				CE8DD1B53029236F006213BD /* ShowActionBar.swift in Sources */,
 				CE8DD37430298648006213BD /* RootView.swift in Sources */,
+				CEF3755A30397A8800B06DA8 /* WatchStatsModel.swift in Sources */,
 				CE8DD1F630296513006213BD /* WatchedDateButton.swift in Sources */,
 				CEB8A46F301F17B1002FBF31 /* SectionHeader.swift in Sources */,
 				CE8DD32230298156006213BD /* Show+Display.swift in Sources */,
@@ -2128,6 +2147,7 @@
 				CE8DD232302967D3006213BD /* UpcomingSection.swift in Sources */,
 				CE8DD22C302967B2006213BD /* PersonDetailModel.swift in Sources */,
 				CEB8A483301F1C1B002FBF31 /* BackupTransfer.swift in Sources */,
+				CEF3755730397A7C00B06DA8 /* WatchStatsBuilder.swift in Sources */,
 				CE8DD2E0302979EA006213BD /* LibraryBackup.swift in Sources */,
 				CE72A0F0302C3EC600AB2597 /* PosterStatusBadge.swift in Sources */,
 				CE569762301C1A9F00DF9142 /* ListSortOptions.swift in Sources */,
