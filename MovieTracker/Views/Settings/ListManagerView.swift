@@ -45,7 +45,7 @@ struct ListManagerView: View {
 #endif
 
     private enum ManagerDestination: Hashable {
-        case cache, services, stats
+        case cache, services, stats, notifications
     }
 
     private static let separator = Color.white.opacity(0.25)
@@ -126,6 +126,7 @@ struct ListManagerView: View {
 
                 Section {
                     pushRow("Year in Review", symbol: "chart.bar", to: .stats)
+                    pushRow("Notifications", symbol: "bell.badge", to: .notifications)
                 }
                 .listRowSeparatorTint(Self.separator)
                 .moveDisabled(true)
@@ -155,6 +156,7 @@ struct ListManagerView: View {
                 case .cache: CacheManagerView()
                 case .services: StreamingServicesView()
                 case .stats: WatchStatsView()
+                case .notifications: NotificationSettingsView()
                 }
             }
             // The whole point of this screen is reordering/deleting, so it stays in

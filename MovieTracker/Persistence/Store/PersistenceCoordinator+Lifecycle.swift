@@ -48,13 +48,22 @@ extension PersistenceCoordinator {
             await MediaCachePrefetcher.prefetch(targets)
         }
         Task { await self.refreshWatchedShows() }
-        Task { await self.repairBulkMarkedWatchDates() }
+        Task {
+            await self.repairBulkMarkedWatchDates()
+            await self.rescheduleEpisodeReminders()
+        }
 
         await observeRemoteChanges {
             SyncLog.logger.log("🔁 remote change settled — reconciling")
             self.deduplicate()
             SyncLog.snapshot("after reconcile", in: self.context)
         }
+    }
+
+    // Air dates get revised, so the batch is rebuilt each launch rather than trusted once scheduled.
+    func rescheduleEpisodeReminders() async {
+        guard NotificationSettings.shared.isEnabled else { return }
+        await EpisodeNotificationScheduler.reschedule(await episodeReminders())
     }
 
     // CloudKit imports the whole zone with no per-type ordering, so there is nothing to do but wait.

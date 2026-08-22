@@ -101,6 +101,14 @@ extension DateFormatter {
         return formatter
     }
 
+    public static var airDayShort: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }
+
     public static var detailPresentation: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"

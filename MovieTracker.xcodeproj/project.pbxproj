@@ -295,7 +295,13 @@
 		CEF3755730397A7C00B06DA8 /* WatchStatsBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3755630397A7C00B06DA8 /* WatchStatsBuilder.swift */; };
 		CEF3755A30397A8800B06DA8 /* WatchStatsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3755930397A8800B06DA8 /* WatchStatsModel.swift */; };
 		CEF3755C30397AB600B06DA8 /* WatchStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3755B30397AB600B06DA8 /* WatchStatsView.swift */; };
+		CEF3755F30397B0900B06DA8 /* NotificationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3755E30397B0900B06DA8 /* NotificationSettings.swift */; };
+		CEF3756230397B1C00B06DA8 /* EpisodeReminderPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3756130397B1C00B06DA8 /* EpisodeReminderPlanner.swift */; };
+		CEF3756430397B3300B06DA8 /* EpisodeNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3756330397B3300B06DA8 /* EpisodeNotificationScheduler.swift */; };
+		CEF3756630397B4500B06DA8 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3756530397B4500B06DA8 /* NotificationSettingsView.swift */; };
 		CEF3756830397CB100B06DA8 /* WatchStatsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3756730397CB100B06DA8 /* WatchStatsTests.swift */; };
+		CEF3756B30397CBE00B06DA8 /* EpisodeReminderPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3756A30397CBE00B06DA8 /* EpisodeReminderPlannerTests.swift */; };
+		CEF3756D30397FFC00B06DA8 /* UpcomingAiringRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3756C30397FFC00B06DA8 /* UpcomingAiringRow.swift */; };
 		CEF3756F3039806200B06DA8 /* BulkWatchedDatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3756E3039806200B06DA8 /* BulkWatchedDatingTests.swift */; };
 		CEF375713039828500B06DA8 /* WatchedDateRepair.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF375703039828500B06DA8 /* WatchedDateRepair.swift */; };
 		CEF37573303982A500B06DA8 /* WatchedDateRepairTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF37572303982A500B06DA8 /* WatchedDateRepairTests.swift */; };
@@ -638,7 +644,13 @@
 		CEF3755630397A7C00B06DA8 /* WatchStatsBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStatsBuilder.swift; sourceTree = "<group>"; };
 		CEF3755930397A8800B06DA8 /* WatchStatsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStatsModel.swift; sourceTree = "<group>"; };
 		CEF3755B30397AB600B06DA8 /* WatchStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStatsView.swift; sourceTree = "<group>"; };
+		CEF3755E30397B0900B06DA8 /* NotificationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettings.swift; sourceTree = "<group>"; };
+		CEF3756130397B1C00B06DA8 /* EpisodeReminderPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeReminderPlanner.swift; sourceTree = "<group>"; };
+		CEF3756330397B3300B06DA8 /* EpisodeNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeNotificationScheduler.swift; sourceTree = "<group>"; };
+		CEF3756530397B4500B06DA8 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		CEF3756730397CB100B06DA8 /* WatchStatsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStatsTests.swift; sourceTree = "<group>"; };
+		CEF3756A30397CBE00B06DA8 /* EpisodeReminderPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeReminderPlannerTests.swift; sourceTree = "<group>"; };
+		CEF3756C30397FFC00B06DA8 /* UpcomingAiringRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingAiringRow.swift; sourceTree = "<group>"; };
 		CEF3756E3039806200B06DA8 /* BulkWatchedDatingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkWatchedDatingTests.swift; sourceTree = "<group>"; };
 		CEF375703039828500B06DA8 /* WatchedDateRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedDateRepair.swift; sourceTree = "<group>"; };
 		CEF37572303982A500B06DA8 /* WatchedDateRepairTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedDateRepairTests.swift; sourceTree = "<group>"; };
@@ -1504,6 +1516,8 @@
 				CE8041A6301D441300F5D6F2 /* EmojiField.swift */,
 				CE822F4B301D13DF0070F69B /* ListManagerView.swift */,
 				CED63634302FF0CA00D36A81 /* SchemaPrimerSection.swift */,
+				CEF3756530397B4500B06DA8 /* NotificationSettingsView.swift */,
+				CEF3756C30397FFC00B06DA8 /* UpcomingAiringRow.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1645,6 +1659,8 @@
 		CEF3755D30397B0900B06DA8 /* Notifications */ = {
 			isa = PBXGroup;
 			children = (
+				CEF3755E30397B0900B06DA8 /* NotificationSettings.swift */,
+				CEF3756330397B3300B06DA8 /* EpisodeNotificationScheduler.swift */,
 			);
 			path = Notifications;
 			sourceTree = "<group>";
@@ -1652,6 +1668,7 @@
 		CEF3756030397B1C00B06DA8 /* Notifications */ = {
 			isa = PBXGroup;
 			children = (
+				CEF3756130397B1C00B06DA8 /* EpisodeReminderPlanner.swift */,
 			);
 			path = Notifications;
 			sourceTree = "<group>";
@@ -1659,6 +1676,7 @@
 		CEF3756930397CBE00B06DA8 /* Notifications */ = {
 			isa = PBXGroup;
 			children = (
+				CEF3756A30397CBE00B06DA8 /* EpisodeReminderPlannerTests.swift */,
 			);
 			path = Notifications;
 			sourceTree = "<group>";
@@ -1877,6 +1895,7 @@
 				1CB9C363032803C9B2C802A0 /* ShowDetailDisclosureTests.swift in Sources */,
 				AE6E813AA0C2DFE863400A42 /* ColorExtensionTests.swift in Sources */,
 				4EB0F910AB95D43FC1F4CF37 /* DateFormatterTests.swift in Sources */,
+				CEF3756B30397CBE00B06DA8 /* EpisodeReminderPlannerTests.swift in Sources */,
 				CEF3756F3039806200B06DA8 /* BulkWatchedDatingTests.swift in Sources */,
 				26FC77C962FE4BAB26245D79 /* StringExtensionTests.swift in Sources */,
 				F0A701F6504693C2709850E6 /* FeaturedModelTests.swift in Sources */,
@@ -2017,6 +2036,7 @@
 				CE8688EF3032538600DFB237 /* EpisodeCredit.swift in Sources */,
 				CE72A0FF302C496B00AB2597 /* PageTint.swift in Sources */,
 				CE8DD217302966E2006213BD /* EpisodeRow.swift in Sources */,
+				CEF3755F30397B0900B06DA8 /* NotificationSettings.swift in Sources */,
 				CE8DD29530297721006213BD /* CloudSyncMonitor.swift in Sources */,
 				CE8C0C99301BD1DC00F08C6A /* ListMembershipMenu.swift in Sources */,
 				CE85678A3031779A001D4372 /* ListSectionBookmark.swift in Sources */,
@@ -2064,6 +2084,7 @@
 				CEA427723032382D003BCAFB /* CreditFilter.swift in Sources */,
 				CE8DD1DD302963B1006213BD /* PosterDetailView+Zoom.swift in Sources */,
 				CE6AF8BD3035BE230002656A /* AwardsMetadataCell.swift in Sources */,
+				CEF3756630397B4500B06DA8 /* NotificationSettingsView.swift in Sources */,
 				CE8688F3303253EC00DFB237 /* ShowCreditRow.swift in Sources */,
 				CE8DD25230296DC5006213BD /* SeasonWatchedToggle.swift in Sources */,
 				CE6AF8B53035B6970002656A /* AwardsListView.swift in Sources */,
@@ -2127,6 +2148,7 @@
 				CE8DD2D53029799E006213BD /* ListCoordinator.swift in Sources */,
 				CE6AF8DF3035C59E0002656A /* CastCountsMenu.swift in Sources */,
 				CE8DD29930297739006213BD /* MediaCachePrefetcher.swift in Sources */,
+				CEF3756230397B1C00B06DA8 /* EpisodeReminderPlanner.swift in Sources */,
 				CE8688F53032540E00DFB237 /* ShowEpisodeCreditsModel.swift in Sources */,
 				CE70BC4A302FCB5B0059F0F3 /* PreviewSnapshots.swift in Sources */,
 				CE8DD2AD30297822006213BD /* PersistenceCoordinator+TV.swift in Sources */,
@@ -2150,6 +2172,7 @@
 				CEF3755730397A7C00B06DA8 /* WatchStatsBuilder.swift in Sources */,
 				CE8DD2E0302979EA006213BD /* LibraryBackup.swift in Sources */,
 				CE72A0F0302C3EC600AB2597 /* PosterStatusBadge.swift in Sources */,
+				CEF3756D30397FFC00B06DA8 /* UpcomingAiringRow.swift in Sources */,
 				CE569762301C1A9F00DF9142 /* ListSortOptions.swift in Sources */,
 				CE8DD1B13029232B006213BD /* MovieActionBar.swift in Sources */,
 				CE8DD37C30298670006213BD /* DetailRoot.swift in Sources */,
@@ -2159,6 +2182,7 @@
 				CE8DD3B33029CC75006213BD /* ListResult.swift in Sources */,
 				CE8DD1E73029641B006213BD /* CastCategoryPicker.swift in Sources */,
 				CE8DD2D330297962006213BD /* SectionSnapshot.swift in Sources */,
+				CEF3756430397B3300B06DA8 /* EpisodeNotificationScheduler.swift in Sources */,
 				7396EEE058C3D99BBC2CE75B /* ShowPosterCard.swift in Sources */,
 				C882E1881BCECB5AB6472CCB /* ShowRow.swift in Sources */,
 				CE748C5A30350CB3007EE787 /* DetailChrome.swift in Sources */,
