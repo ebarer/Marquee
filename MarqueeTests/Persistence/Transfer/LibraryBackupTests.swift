@@ -115,7 +115,7 @@ import SwiftData
         #expect(watchedList?.entries.first?.userRating == 3)
     }
 
-    @Test func showsSurviveExportAndImportAsTV() {
+    @Test func showsSurviveExportAndImportAsTV() async {
         let store = makeInMemoryStore()
         let list = MediaList(name: "Faves", sortOrder: 1)
         store.insert(list)
@@ -129,12 +129,12 @@ import SwiftData
 
         // Import into a fresh store: the entry must come back as a show, not a movie.
         let fresh = makeInMemoryStore()
-        _ = LibraryBackup.merge(backup, using: fresh)
+        _ = await LibraryBackup.merge(backup, using: fresh)
         let imported = fresh.customLists.first { $0.name == "Faves" }?.entries?.first
         #expect(imported?.mediaType == .tv)
     }
 
-    @Test func tvProgressSurvivesExportAndImport() {
+    @Test func tvProgressSurvivesExportAndImport() async {
         let store = makeInMemoryStore()
         var season = Season(id: 100, seasonNumber: 1, name: "Season 1", episodeCount: 3)
         season.airDate = .utc(2025, 3, 30)
@@ -151,7 +151,7 @@ import SwiftData
 
         let backup = LibraryBackup.export(from: store.context)
         let fresh = makeInMemoryStore()
-        _ = LibraryBackup.merge(backup, using: fresh)
+        _ = await LibraryBackup.merge(backup, using: fresh)
 
         #expect(fresh.watchedEpisodeNumbers(showID: 247718, season: 1) == [1, 2, 3])
         #expect(fresh.isSeasonWatched(season, showID: 247718))
@@ -159,22 +159,22 @@ import SwiftData
         #expect(fresh.isShowWatchedCached(showID: 247718))
     }
 
-    @Test func reimportingProgressKeepsTheExistingRecords() {
+    @Test func reimportingProgressKeepsTheExistingRecords() async {
         let store = makeInMemoryStore()
         let backup = LibraryBackup(lists: [], shows: [
             .init(tmdbID: 5, name: "S", posterPath: nil, isWatched: nil, isCaughtUp: nil,
                   watchListOptOut: nil, tracked: nil,
                   seasons: [], episodes: [.init(season: 1, episode: 1, watchedAt: .utc(2020, 1, 1))])
         ])
-        _ = LibraryBackup.merge(backup, using: store)
+        _ = await LibraryBackup.merge(backup, using: store)
         store.setEpisodeWatchedDate(.utc(2024, 6, 6), showID: 5, season: 1, episode: 1)
-        _ = LibraryBackup.merge(backup, using: store)
+        _ = await LibraryBackup.merge(backup, using: store)
 
         #expect(WatchedEpisode.all(showTmdbID: 5, in: store.context).count == 1)
         #expect(store.episodeWatchedDate(showID: 5, season: 1, episode: 1) == .utc(2024, 6, 6))
     }
 
-    @Test func mergeCreatesCustomListAndSetsWatchedFacts() {
+    @Test func mergeCreatesCustomListAndSetsWatchedFacts() async {
         let store = makeInMemoryStore()
         let backup = LibraryBackup(lists: [
             .init(uuid: UUID(), name: "Imported", symbol: "star", colorIndex: 1,
@@ -188,7 +188,7 @@ import SwiftData
                                                 releaseDate: nil, dateAdded: Date(),
                                                 dateWatched: .utc(2020, 5, 5), userRating: 4.5)]),
         ])
-        let summary = LibraryBackup.merge(backup, using: store)
+        let summary = await LibraryBackup.merge(backup, using: store)
         #expect(summary.listsCreated == 1)
         #expect(summary.entriesAdded == 2)
         #expect(store.customLists.contains { $0.name == "Imported" })
@@ -197,7 +197,7 @@ import SwiftData
         #expect(store.dateWatched(for: makeMovie(id: 20)) == .utc(2020, 5, 5))
     }
 
-    @Test func mergeSkipsDuplicateListEntries() {
+    @Test func mergeSkipsDuplicateListEntries() async {
         let store = makeInMemoryStore()
         let uuid = UUID()
         func backup() -> LibraryBackup {
@@ -209,14 +209,14 @@ import SwiftData
                                                     dateWatched: nil, userRating: nil)])
             ])
         }
-        _ = LibraryBackup.merge(backup(), using: store)
-        let second = LibraryBackup.merge(backup(), using: store)
+        _ = await LibraryBackup.merge(backup(), using: store)
+        let second = await LibraryBackup.merge(backup(), using: store)
         #expect(second.entriesSkipped == 1)
         #expect(second.entriesAdded == 0)
         #expect(second.listsCreated == 0)  // existing list reused by UUID
     }
 
-    @Test func mergeIgnoresViewedPseudoList() {
+    @Test func mergeIgnoresViewedPseudoList() async {
         let store = makeInMemoryStore()
         let backup = LibraryBackup(lists: [
             .init(uuid: UUID(), name: "Viewed", symbol: "eye", colorIndex: 0,
@@ -225,7 +225,7 @@ import SwiftData
                                                 releaseDate: nil, dateAdded: Date(),
                                                 dateWatched: nil, userRating: nil)])
         ])
-        let summary = LibraryBackup.merge(backup, using: store)
+        let summary = await LibraryBackup.merge(backup, using: store)
         #expect(summary.entriesAdded == 0)
         #expect(store.viewedCount == 0)
     }

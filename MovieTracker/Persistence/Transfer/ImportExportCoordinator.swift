@@ -44,15 +44,29 @@ final class ImportExportCoordinator {
     }
 
     private func importArchive(from url: URL, using store: PersistenceCoordinator) {
+        let archive: LibraryBackup
         do {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            let archive = try LibraryBackup(json: try Data(contentsOf: url))
-            importSummary = LibraryBackup.merge(archive, using: store)
+            archive = try LibraryBackup(json: try Data(contentsOf: url))
         } catch {
             transferError = error.localizedDescription
+            return
+        }
+        run { progress in await LibraryBackup.merge(archive, using: store, progress: progress) }
+    }
+
+#if targetEnvironment(simulator)
+    func populate(using store: PersistenceCoordinator) {
+        run { progress in
+            guard let summary = await SimulatorTools.populate(using: store, progress: progress) else {
+                self.transferError = "Sample data is missing from this build."
+                return nil
+            }
+            return summary
         }
     }
+#endif
 
     private func importCSV(from url: URL, using store: PersistenceCoordinator) {
         let records: [CSVMovieRecord]
@@ -70,9 +84,14 @@ final class ImportExportCoordinator {
             return
         }
 
-        importProgress = (done: 0, total: records.count)
+        run { progress in await CSVMovieRecord.merge(records, using: store, progress: progress) }
+    }
+
+    private func run(_ merge: @escaping ((Int, Int) -> Void) async -> ImportSummary?) {
+        guard importProgress == nil else { return }
+        importProgress = (done: 0, total: 1)
         Task {
-            let summary = await CSVMovieRecord.merge(records, using: store) { done, total in
+            let summary = await merge { done, total in
                 self.importProgress = (done: done, total: total)
             }
             importProgress = nil

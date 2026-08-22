@@ -11,13 +11,14 @@ import SwiftData
 
 enum SimulatorTools {
     @MainActor
-    static func populate(using store: PersistenceCoordinator) -> ImportSummary? {
+    static func populate(using store: PersistenceCoordinator,
+                         progress: (Int, Int) -> Void = { _, _ in }) async -> ImportSummary? {
         guard let url = Bundle.main.url(forResource: "sample-data", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let archive = try? LibraryBackup(json: data) else {
             return nil
         }
-        return LibraryBackup.merge(archive, using: store)
+        return await LibraryBackup.merge(archive, using: store, progress: progress)
     }
 
     @MainActor

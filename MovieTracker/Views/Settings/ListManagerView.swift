@@ -87,9 +87,7 @@ struct ListManagerView: View {
 #if targetEnvironment(simulator)
                     // Import/export are useless in a bare simulator; seed sample data or wipe instead.
                     Button {
-                        if let store, let summary = SimulatorTools.populate(using: store) {
-                            ImportExportCoordinator.shared.importSummary = summary
-                        }
+                        if let store { ImportExportCoordinator.shared.populate(using: store) }
                     } label: {
                         Label("Populate", systemImage: "wand.and.stars")
                             .foregroundStyle(Color.appAccent)

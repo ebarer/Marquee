@@ -98,15 +98,31 @@ extension LibraryBackup {
         }
     }
 
+    private static let progressChunk = 20
+
     @MainActor
     @discardableResult
-    static func merge(_ archive: LibraryBackup, using store: PersistenceCoordinator) -> ImportSummary {
+    static func merge(_ archive: LibraryBackup, using store: PersistenceCoordinator,
+                      progress: (Int, Int) -> Void = { _, _ in }) async -> ImportSummary {
         var summary = ImportSummary()
         let context = store.context
+
+        let total = archive.lists.reduce(0) { $0 + $1.entries.count } + archive.shows.count
+        var done = 0
+        progress(0, total)
+
+        // The merge runs on the main actor, so yield between chunks or the progress bar never redraws.
+        func advance() async {
+            done += 1
+            guard done % progressChunk == 0 || done == total else { return }
+            progress(done, total)
+            await Task.yield()
+        }
 
         for archivedList in archive.lists {
             switch Kind(rawValue: archivedList.kind) ?? .custom {
             case .viewed:
+                for _ in archivedList.entries { await advance() }
                 continue
             case .watched:
                 for entry in archivedList.entries {
@@ -116,65 +132,72 @@ extension LibraryBackup {
                     }
                     if item.userRating == nil { item.userRating = entry.userRating }
                     summary.entriesAdded += 1
+                    await advance()
                 }
             case .toWatch, .custom:
                 let isWatchList = Kind(rawValue: archivedList.kind) == .toWatch
                 guard let list = target(archivedList, isWatchList: isWatchList,
-                                        using: store, summary: &summary) else { continue }
+                                        using: store, summary: &summary) else {
+                    for _ in archivedList.entries { await advance() }
+                    continue
+                }
                 for entry in archivedList.entries {
                     let key = key(from: entry)
                     guard !list.contains(key.tmdbID, key.mediaType) else {
                         summary.entriesSkipped += 1
+                        await advance()
                         continue
                     }
                     let member = ListEntry(key: key)
                     member.list = list
                     context.insert(member)
                     summary.entriesAdded += 1
+                    await advance()
                 }
             }
         }
-        mergeProgress(archive.shows, using: store)
+        for show in archive.shows {
+            mergeProgress(show, using: store)
+            await advance()
+        }
         store.save()
         return summary
     }
 
     // Additive: a record already present wins, so a re-import never re-dates something since edited.
     @MainActor
-    private static func mergeProgress(_ shows: [LibraryBackup.Progress],
+    private static func mergeProgress(_ show: LibraryBackup.Progress,
                                       using store: PersistenceCoordinator) {
         let context = store.context
-        for show in shows {
-            for episode in show.episodes
-            where WatchedEpisode.find(showTmdbID: show.tmdbID, seasonNumber: episode.season,
-                                      episodeNumber: episode.episode, in: context) == nil {
-                context.insert(WatchedEpisode(showTmdbID: show.tmdbID, seasonNumber: episode.season,
-                                              episodeNumber: episode.episode,
-                                              watchedAt: episode.watchedAt))
-            }
-
-            for season in show.seasons
-            where WatchedSeason.find(showTmdbID: show.tmdbID, seasonNumber: season.season,
-                                     in: context) == nil {
-                let snapshot = WatchedSeason(
-                    showTmdbID: show.tmdbID, seasonNumber: season.season, showName: show.name,
-                    seasonName: season.name, posterPath: season.posterPath ?? show.posterPath,
-                    airDate: season.airDate, episodeCount: season.episodeCount,
-                    watchedAt: season.watchedAt)
-                snapshot.userRating = season.userRating
-                context.insert(snapshot)
-            }
-
-            if let tracked = show.tracked,
-               TrackedSeason.find(showTmdbID: show.tmdbID, in: context) == nil {
-                context.insert(TrackedSeason(
-                    showTmdbID: show.tmdbID, seasonNumber: tracked.season, showName: show.name,
-                    posterPath: tracked.posterPath ?? show.posterPath,
-                    episodeCount: tracked.episodeCount, nextEpisodeDate: tracked.nextEpisodeDate))
-            }
-
-            applyShowFlags(show, in: context)
+        for episode in show.episodes
+        where WatchedEpisode.find(showTmdbID: show.tmdbID, seasonNumber: episode.season,
+                                  episodeNumber: episode.episode, in: context) == nil {
+            context.insert(WatchedEpisode(showTmdbID: show.tmdbID, seasonNumber: episode.season,
+                                          episodeNumber: episode.episode,
+                                          watchedAt: episode.watchedAt))
         }
+
+        for season in show.seasons
+        where WatchedSeason.find(showTmdbID: show.tmdbID, seasonNumber: season.season,
+                                 in: context) == nil {
+            let snapshot = WatchedSeason(
+                showTmdbID: show.tmdbID, seasonNumber: season.season, showName: show.name,
+                seasonName: season.name, posterPath: season.posterPath ?? show.posterPath,
+                airDate: season.airDate, episodeCount: season.episodeCount,
+                watchedAt: season.watchedAt)
+            snapshot.userRating = season.userRating
+            context.insert(snapshot)
+        }
+
+        if let tracked = show.tracked,
+           TrackedSeason.find(showTmdbID: show.tmdbID, in: context) == nil {
+            context.insert(TrackedSeason(
+                showTmdbID: show.tmdbID, seasonNumber: tracked.season, showName: show.name,
+                posterPath: tracked.posterPath ?? show.posterPath,
+                episodeCount: tracked.episodeCount, nextEpisodeDate: tracked.nextEpisodeDate))
+        }
+
+        applyShowFlags(show, in: context)
     }
 
     private static func applyShowFlags(_ show: LibraryBackup.Progress, in context: ModelContext) {
