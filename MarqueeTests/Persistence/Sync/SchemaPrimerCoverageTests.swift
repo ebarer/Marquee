@@ -2,17 +2,14 @@
 //  SchemaPrimerCoverageTests.swift
 //  MarqueeTests
 //
-//  A tripwire, not a proof. It can't check that SchemaPrimer sets the right field — only that
-//  changing the schema is impossible without being made to look at it. That's the failure mode:
-//  `.automatic` materializes a CloudKit field only when a record writes it, so a field the primer
-//  misses never reaches Production and sync breaks silently (twice in Aug 2026).
-//
 
 import Testing
 import Foundation
 import SwiftData
 @testable import Marquee
 
+/// A tripwire, not a proof: CloudKit materializes a field only when a record writes it, so a field
+/// the primer misses never reaches Production and sync breaks silently (twice in Aug 2026).
 @Suite struct SchemaPrimerCoverageTests {
 
     private static let primed: [String: Set<String>] = [

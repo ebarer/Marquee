@@ -46,7 +46,7 @@ extension PersistenceCoordinator {
     }
 
     // Only scheduled seasons count, so an ongoing show reads as watched until its next season airs.
-    // Seasons before the resume point were skipped on purpose and don't hold it open.
+    // Seasons before the resume point fall outside the intended run and don't hold it open.
     func isShowFullyWatched(_ show: Show) -> Bool {
         guard let resume = nextSeasonToWatch(show) else { return false }
         return isSeasonWatched(resume, showID: show.id)
@@ -327,7 +327,7 @@ extension PersistenceCoordinator {
         await setShowWatched(watched, show: show)
     }
 
-    // `editedSeason` is the one just changed, whose episode records can be trusted.
+    // `editedSeason` is the one that changed, whose episode records can be trusted.
     func reconcileSeasons(for show: Show, editedSeason: Int? = nil) {
         for season in show.regularSeasons {
             reconcileSeason(show: show, season: season,

@@ -98,7 +98,7 @@ import SwiftUI
         await store.applyPriorities([
             MediaCacheTarget(tmdbID: 2, mediaType: .movie, priority: .customList)
         ])
-        // Off the plan (left the Watch List) — no longer squatting on its old claim.
+        // Off the plan, having left the Watch List, so it no longer holds its old tier.
         #expect(await store.priority(id: 1) == .browsed)
         #expect(await store.priority(id: 2) == .customList)
         await store.clear()

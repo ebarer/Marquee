@@ -35,8 +35,8 @@ enum SchemaPrimer {
         item.watchListOptOut = true
         context.insert(item)
 
-        // Marked de-duplicated purely to keep it out of `MediaList.all`, which filters those. The pruner
-        // only collects watch lists, so this one can't be deleted behind us.
+        // Marked de-duplicated to keep it out of `MediaList.all`, which filters those. The pruner
+        // collects only watch lists, so this one survives.
         let list = MediaList(name: sentinelTitle, symbol: "ladybug", sortOrder: 0, colorIndex: 1)
         list.customColorHex = "#FF00FF"
         list.sortAscending = false
