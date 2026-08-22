@@ -39,18 +39,23 @@ actor MediaCacheStore {
     static let shared = MediaCacheStore()
 
     // Bump when a cached payload's shape or derivation changes; other versions then read as misses.
-    static let schemaVersion = 2
+    static let schemaVersion = 3
 
     // Episode count can't spot a credits correction, so a completed season needs a clock to refresh.
     static let seasonRefreshTTL: TimeInterval = 60 * 60 * 24 * 14
 
     private let maxEntries: Int
+    private let maxBytes: Int64
     private let directoryName: String
     private let fileManager = FileManager.default
 
-    init(directoryName: String = "MediaCache", maxEntries: Int = 400) {
+    // Bytes are the real limit: a movie entry runs ~70 KB against ~250 KB for a long-running show, so
+    // a count alone lets a few shows crowd out hundreds of movies. The count is only a backstop.
+    init(directoryName: String = "MediaCache", maxEntries: Int = 5_000,
+         maxBytes: Int64 = 256 * 1024 * 1024) {
         self.directoryName = directoryName
         self.maxEntries = maxEntries
+        self.maxBytes = maxBytes
     }
 
     private lazy var directory: URL = {
@@ -137,7 +142,7 @@ actor MediaCacheStore {
               let index = cached.show.seasons.firstIndex(where: {
                   $0.seasonNumber == season.seasonNumber
               }) else { return }
-        cached.show.seasons[index].episodes = season.episodes
+        cached.show.seasons[index].episodes = Self.withoutEpisodePeople(season.episodes)
         if !season.cast.isEmpty { cached.show.seasons[index].cast = season.cast }
         cached.seasonsCachedAt = (cached.seasonsCachedAt ?? [:])
             .merging([season.seasonNumber: Date()]) { _, new in new }
@@ -146,13 +151,17 @@ actor MediaCacheStore {
     }
 
     private func mergingCachedEpisodes(into show: Show) -> Show {
-        guard let existing = loadShow(id: show.id)?.show else { return show }
-        let bySeason = Dictionary(existing.seasons.map { ($0.seasonNumber, $0) },
+        let existing = loadShow(id: show.id)?.show
+        let bySeason = Dictionary((existing?.seasons ?? []).map { ($0.seasonNumber, $0) },
                                   uniquingKeysWith: { first, _ in first })
         var show = show
         show.seasons = show.seasons.map { season in
-            guard season.episodes.isEmpty,
-                  let cached = bySeason[season.seasonNumber], !cached.episodes.isEmpty
+            guard season.episodes.isEmpty else {
+                var stripped = season
+                stripped.episodes = Self.withoutEpisodePeople(season.episodes)
+                return stripped
+            }
+            guard let cached = bySeason[season.seasonNumber], !cached.episodes.isEmpty
             else { return season }
             var merged = season
             merged.episodes = cached.episodes
@@ -160,6 +169,17 @@ actor MediaCacheStore {
             return merged
         }
         return show
+    }
+
+    // Guest cast and per-episode crew are over half a long-running show's payload and only the episode
+    // screen shows them, so it fetches them on demand instead.
+    private static func withoutEpisodePeople(_ episodes: [Episode]) -> [Episode] {
+        episodes.map { episode in
+            var stripped = episode
+            stripped.guestCast = []
+            stripped.crew = []
+            return stripped
+        }
     }
 
     struct Usage: Sendable {
@@ -235,25 +255,33 @@ actor MediaCacheStore {
     }
 
     private func evictIfNeeded() {
-        let key: URLResourceKey = .contentModificationDateKey
-        let files = entryURLs(keys: [key])
-        guard files.count > maxEntries else { return }
-
+        let keys: [URLResourceKey] = [.contentModificationDateKey, .fileSizeKey]
+        let files = entryURLs(keys: keys)
         let tiers = priorityIndex()
         let ranked = files.map { url in
-            (url: url,
-             tier: tiers[url.lastPathComponent] ?? MediaCachePriority.browsed.rawValue,
-             modified: (try? url.resourceValues(forKeys: [key]))?.contentModificationDate ?? .distantPast)
+            let values = try? url.resourceValues(forKeys: Set(keys))
+            return (url: url,
+                    tier: tiers[url.lastPathComponent] ?? MediaCachePriority.browsed.rawValue,
+                    modified: values?.contentModificationDate ?? .distantPast,
+                    size: Int64(values?.fileSize ?? 0))
         }
+
+        var count = ranked.count
+        var bytes = ranked.reduce(Int64(0)) { $0 + $1.size }
+        guard count > maxEntries || bytes > maxBytes else { return }
+
         // Most expendable first: worst tier, and oldest within a tier.
         let doomed = ranked.sorted { lhs, rhs in
             lhs.tier == rhs.tier ? lhs.modified < rhs.modified : lhs.tier > rhs.tier
         }
 
         var next = tiers
-        for entry in doomed.prefix(files.count - maxEntries) {
+        for entry in doomed {
+            guard count > maxEntries || bytes > maxBytes else { break }
             try? fileManager.removeItem(at: entry.url)
             next.removeValue(forKey: entry.url.lastPathComponent)
+            count -= 1
+            bytes -= entry.size
         }
         writeIndex(next)
     }

@@ -65,8 +65,11 @@ metadata is re-fetched or read from the cache, never treated as the source of tr
   of `SearchTool`s (spelling variants, ranking, franchise expansion, cast lookup). New search
   behaviour means adding or reordering a tool — not threading a special case through the model.
   Everything runs against the `SearchProvider` protocol, so tests use canned data.
-- **`MediaCacheStore`** is a bounded (400-entry) on-disk JSON cache, keyed by TMDB id, so
-  detail screens render offline. Entries carry a `MediaCachePriority`, and eviction drops the
+- **`MediaCacheStore`** is an on-disk JSON cache keyed by TMDB id, so detail screens render
+  offline. It is bounded by bytes (256 MB) with a 5,000-entry backstop, since a movie entry runs
+  ~70 KB against ~250 KB for a long-running show. Episode-level guest cast and crew are dropped on
+  write — over half a long show's payload — and the episode screen fetches them on demand.
+  Entries carry a `MediaCachePriority`, and eviction drops the
   worst tier first (oldest within a tier) rather than plain LRU. `MediaCachePlan` buckets what
   to keep — Watch List (shows pull their latest 3 seasons), Discovery, this year's watched,
   custom lists, then the rest of Watched — and `MediaCachePrefetcher` works through it at launch.

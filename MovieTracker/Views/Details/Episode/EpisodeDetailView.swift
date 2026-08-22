@@ -12,17 +12,24 @@ struct EpisodeDetailView: View {
     @State private var tint: Color = .appAccent
     @State private var showNavTitle = false
     @State private var seriesCast: [Person] = []
+    // The cache drops episode-level people, so they arrive separately.
+    @State private var guests: [Person] = []
+    @State private var crew: [Person] = []
 
     @Environment(\.detailSearch) private var detailSearch
     private var isSearching: Bool { detailSearch?.isPresented == true }
 
     init(episode: Episode) {
         self.episode = episode
+        _guests = State(initialValue: episode.guestCast)
+        _crew = State(initialValue: episode.crew)
     }
 
     init(preview episode: Episode, seriesCast: [Person]) {
         self.episode = episode
         _seriesCast = State(initialValue: seriesCast)
+        _guests = State(initialValue: episode.guestCast)
+        _crew = State(initialValue: episode.crew)
     }
 
     var body: some View {
@@ -39,7 +46,7 @@ struct EpisodeDetailView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
 
-                    CastSection(cast: seriesCast + episode.crew, guests: episode.guestCast,
+                    CastSection(cast: seriesCast + crew, guests: guests,
                                 tint: tint, countsEpisodes: false)
                 }
                 .padding(.bottom, 24)
@@ -64,6 +71,19 @@ struct EpisodeDetailView: View {
             }
         }
         .task { await loadShow() }
+        .task { await loadEpisodePeople() }
+    }
+
+    // Offline this leaves the guest list empty; the rest of the screen still renders.
+    private func loadEpisodePeople() async {
+        guard guests.isEmpty, crew.isEmpty,
+              let season = try? await TMDBWrapper.getSeason(showID: episode.showTmdbID,
+                                                            seasonNumber: episode.seasonNumber),
+              let fresh = season.episodes.first(where: {
+                  $0.episodeNumber == episode.episodeNumber
+              }) else { return }
+        guests = fresh.guestCast
+        crew = fresh.crew
     }
 
     // Reachable without passing through the show, so an uncached one is fetched for the cast tab and tint.

@@ -54,6 +54,104 @@ import SwiftUI
         MediaCacheStore(directoryName: "MediaCacheTests-\(name)", maxEntries: maxEntries)
     }
 
+    // MARK: - Byte budget
+
+    private func makeBulkyMovie(id: Int, padding: Int) -> Movie {
+        var movie = makeMovie(id: id, title: "Bulky \(id)")
+        movie.overview = String(repeating: "x", count: padding)
+        return movie
+    }
+
+    @Test func evictionHonoursTheByteCeilingBelowTheCountCap() async {
+        let store = MediaCacheStore(directoryName: "MediaCacheTests-bytes",
+                                    maxEntries: 100, maxBytes: 30_000)
+        await store.clear()
+        for id in 1...6 {
+            await store.save(makeBulkyMovie(id: id, padding: 10_000), tint: nil)
+        }
+
+        let usage = await store.usage()
+        #expect(usage.count < 6, "the count cap was never reached, so bytes had to do the evicting")
+        #expect(usage.bytes <= 30_000)
+        await store.clear()
+    }
+
+    @Test func theByteCeilingStillEvictsTheWorstTierFirst() async {
+        let store = MediaCacheStore(directoryName: "MediaCacheTests-bytetier",
+                                    maxEntries: 100, maxBytes: 30_000)
+        await store.clear()
+        await store.save(makeBulkyMovie(id: 1, padding: 10_000), tint: nil, priority: .watchList)
+        for id in 2...6 {
+            await store.save(makeBulkyMovie(id: id, padding: 10_000), tint: nil, priority: .browsed)
+        }
+
+        #expect(await store.load(id: 1) != nil, "a watch-list entry outranks browsed ones")
+        await store.clear()
+    }
+
+    // MARK: - Episode payload
+
+    private func makeShow(id: Int, episodes: Int) -> Show {
+        var show = Show(id: id, name: "Show \(id)")
+        var season = Season(id: id * 10, seasonNumber: 1, name: "Season 1", episodeCount: episodes)
+        season.airDate = .utc(2020, 1, 1)
+        show.seasons = [season]
+        return show
+    }
+
+    private func makeSeason(id: Int, episodes: Int) -> Season {
+        var season = Season(id: id * 10, seasonNumber: 1, name: "Season 1", episodeCount: episodes)
+        season.airDate = .utc(2020, 1, 1)
+        season.episodes = (1...episodes).map { number in
+            var episode = Episode(id: id * 100 + number, seasonNumber: 1,
+                                  episodeNumber: number, name: "E\(number)")
+            episode.airDate = .utc(2020, 1, number)
+            episode.runtime = 42
+            episode.guestCast = [Person(id: number, name: "Guest \(number)",
+                                        role: "Villager", pic: "/g.jpg", type: .Cast)]
+            episode.crew = [Person(id: 500 + number, name: "Crew \(number)",
+                                   role: "Director", pic: "/c.jpg", type: .Crew)]
+            return episode
+        }
+        return season
+    }
+
+    // Its own directory: other suites share `MediaCacheStore.shared` and clearing it races them.
+    @Test func cachingASeasonKeepsDatesAndRuntimesButDropsEpisodePeople() async {
+        let cache = MediaCacheStore(directoryName: "MediaCacheTests-strip")
+        await cache.clear()
+        let id = 7010
+        await cache.save(makeShow(id: id, episodes: 3), tint: nil)
+        await cache.cacheSeason(showID: id, makeSeason(id: id, episodes: 3))
+
+        let episodes = await cache.loadShow(id: id)?.show.seasons.first?.episodes ?? []
+        #expect(episodes.count == 3)
+        #expect(episodes.allSatisfy { $0.runtime == 42 })
+        #expect(episodes.map(\.airDate) == [.utc(2020, 1, 1), .utc(2020, 1, 2), .utc(2020, 1, 3)])
+        #expect(episodes.allSatisfy { $0.guestCast.isEmpty })
+        #expect(episodes.allSatisfy { $0.crew.isEmpty })
+        await cache.clear()
+    }
+
+    @Test func droppingEpisodePeopleShrinksTheEntry() async {
+        let withPeople = MediaCacheStore(directoryName: "MediaCacheTests-sizecheck")
+        await withPeople.clear()
+        await withPeople.save(makeShow(id: 7020, episodes: 40), tint: nil)
+        await withPeople.cacheSeason(showID: 7020, makeSeason(id: 7020, episodes: 40))
+        let stripped = await withPeople.usage().bytes
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        var whole = makeShow(id: 7020, episodes: 40)
+        whole.seasons = [makeSeason(id: 7020, episodes: 40)]
+        let full = Int64((try? encoder.encode(CachedShow(show: whole, tint: nil, cachedAt: Date(),
+                                                         version: MediaCacheStore.schemaVersion,
+                                                         seasonsCachedAt: [:])))?.count ?? 0)
+
+        #expect(stripped < full)
+        await withPeople.clear()
+    }
+
     @Test func evictionDropsTheWorstTierEvenWhenItIsNewest() async {
         let store = makeBoundedStore("tier", maxEntries: 2)
         await store.clear()
