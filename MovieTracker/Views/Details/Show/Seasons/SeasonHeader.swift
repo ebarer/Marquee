@@ -14,6 +14,7 @@ struct SeasonHeader: View {
     let episodeCount: Int
     let allWatched: Bool
     var allAiredWatched: Bool = false
+    var hasProgress: Bool = false
     let canToggle: Bool
     let showID: Int
     let seasonWatchedDate: Date?
@@ -38,7 +39,8 @@ struct SeasonHeader: View {
                 .id(current)
             }
             SeasonWatchedToggle(allWatched: allWatched, allAiredWatched: allAiredWatched,
-                                canToggle: canToggle, tint: tint, onToggle: onToggleAll)
+                                hasProgress: hasProgress, canToggle: canToggle,
+                                tint: tint, onToggle: onToggleAll)
         }
         .sectionHeaderInsets()
     }

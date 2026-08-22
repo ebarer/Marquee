@@ -2422,7 +2422,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.22.1;
+				CURRENT_PROJECT_VERSION = 2026.8.22.2;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
@@ -2449,7 +2449,7 @@
 				CODE_SIGN_ENTITLEMENTS = MovieTracker/Resources/MovieTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.8.22.1;
+				CURRENT_PROJECT_VERSION = 2026.8.22.2;
 				INFOPLIST_FILE = MovieTracker/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Marquee;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.6;

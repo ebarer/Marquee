@@ -36,6 +36,7 @@ struct ShowActionBar: View {
                     bookmarkButton
                 }
                 ShowWatchedButton(isSeen: isSeen, isCaughtUp: progress.isCaughtUp,
+                                  hasProgress: progress.hasProgress,
                                   isOngoing: show.isOngoing, tint: tint,
                                   glassNamespace: glassNamespace, onApply: applyWatched)
                 customListsControl

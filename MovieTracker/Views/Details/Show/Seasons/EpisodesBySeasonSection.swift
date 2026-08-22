@@ -88,6 +88,7 @@ struct EpisodesBySeasonSection: View {
                     seasonName: currentSeasonObject?.name ?? "Season",
                     startYear: currentSeasonObject?.startYear, episodeCount: episodeCount,
                     allWatched: allWatched, allAiredWatched: allAiredWatched,
+                    hasProgress: !watchedNumbers.isEmpty,
                     canToggle: !currentEpisodes.isEmpty, showID: show.id,
                     seasonWatchedDate: seasonWatchedDate,
                     lastEpisodeDate: currentEpisodes.compactMap(\.airDate).max(),
