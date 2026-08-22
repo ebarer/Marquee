@@ -46,10 +46,10 @@ extension PersistenceCoordinator {
     }
 
     // Only scheduled seasons count, so an ongoing show reads as watched until its next season airs.
+    // Seasons before the resume point were skipped on purpose and don't hold it open.
     func isShowFullyWatched(_ show: Show) -> Bool {
-        let aired = show.scheduledSeasons
-        guard !aired.isEmpty else { return false }
-        return aired.allSatisfy { isSeasonWatched($0, showID: show.id) }
+        guard let resume = nextSeasonToWatch(show) else { return false }
+        return isSeasonWatched(resume, showID: show.id)
     }
 
     // False when an incomplete season's episodes aren't loaded: there are no air dates to check.
@@ -62,7 +62,10 @@ extension PersistenceCoordinator {
         let seasons = show.scheduledSeasons
         guard !seasons.isEmpty else { return nil }
         guard hasWatchedEpisodes(show), !isShowFullyWatched(show) else { return false }
-        for season in seasons {
+        // Seasons before the resume point are ones the viewer never intends to watch, so they
+        // can't hold the show back from being caught up.
+        guard let resume = nextSeasonToWatch(show)?.seasonNumber else { return false }
+        for season in seasons where season.seasonNumber >= resume {
             let watched = watchedEpisodeNumbers(showID: show.id, season: season.seasonNumber)
             if watched.count >= season.episodeCount { continue }
             let episodes = episodesBySeason[season.seasonNumber] ?? season.episodes
@@ -137,6 +140,23 @@ extension PersistenceCoordinator {
 
     func firstIncompleteSeason(_ show: Show) -> Season? {
         show.scheduledSeasons.first { !isSeasonWatched($0, showID: show.id) }
+    }
+
+    // Resuming starts where watching started, not at season 1: joining a long-running show at
+    // season 20 skips the earlier gap, while watching season 1 later makes season 2 next.
+    func nextSeasonToWatch(_ show: Show) -> Season? {
+        let seasons = show.scheduledSeasons
+        guard let start = seasons.firstIndex(where: { hasProgress(in: $0, showID: show.id) }) else {
+            return seasons.first
+        }
+        let ahead = seasons[start...].first { !isSeasonWatched($0, showID: show.id) }
+        // Nothing left ahead: hold the last season until a new one airs.
+        return ahead ?? seasons.last
+    }
+
+    private func hasProgress(in season: Season, showID: Int) -> Bool {
+        !watchedEpisodeNumbers(showID: showID, season: season.seasonNumber).isEmpty
+            || isSeasonWatched(season, showID: showID)
     }
 
     // MARK: - Background refresh (new-season detection)
@@ -317,15 +337,13 @@ extension PersistenceCoordinator {
     }
 
     // Fully watched leaves the Watch List, in progress joins it, and `TrackedSeason` follows the
-    // first incomplete season.
+    // season to resume at.
     func reconcileMembership(_ show: Show, episodesBySeason: [Int: [Episode]] = [:]) {
         let key = show.mediaKey
         let existing = TrackedSeason.find(showTmdbID: show.id, in: context)
-        let incomplete = firstIncompleteSeason(show)
-        let hasCompletable = !show.scheduledSeasons.isEmpty
 
         // The single choke point after any episode, season or show mutation, so the caches never drift.
-        let fullyWatched = incomplete == nil && hasCompletable
+        let fullyWatched = isShowFullyWatched(show)
         setShowWatchedCache(fullyWatched, show: show)
         setShowCaughtUpCache(fullyWatched ? false : caughtUpState(show, episodesBySeason: episodesBySeason),
                              show: show)
@@ -344,7 +362,7 @@ extension PersistenceCoordinator {
             MediaList.ensureWatchList(in: context).add(key: key)
         }
 
-        guard let season = incomplete ?? show.scheduledSeasons.first, isOnAnyList(show.id) else {
+        guard let season = nextSeasonToWatch(show), isOnAnyList(show.id) else {
             if let existing { context.delete(existing) }
             save()
             return

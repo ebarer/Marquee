@@ -39,7 +39,7 @@ actor MediaCacheStore {
     static let shared = MediaCacheStore()
 
     // Bump when a cached payload's shape or derivation changes; other versions then read as misses.
-    static let schemaVersion = 1
+    static let schemaVersion = 2
 
     // Episode count can't spot a credits correction, so a completed season needs a clock to refresh.
     static let seasonRefreshTTL: TimeInterval = 60 * 60 * 24 * 14

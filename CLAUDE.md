@@ -40,7 +40,9 @@ No comment may span three or more lines. Run `python3 Scripts/find_long_comments
 ## Data model
 
 - Changing a `@Model` requires updating `SchemaPrimer` in the same edit, then deploying the CloudKit production schema. Production schema drift is silent and breaks sync.
-- TV list membership tracks the next incomplete season. Watched holds completed seasons only; marking an episode watched auto-adds the show to the Watch List.
+- TV list membership tracks the season to resume at (`nextSeasonToWatch`): the earliest not-fully-watched season at or after the first season with any progress. Joining a long-running show at season 20 resumes at 21 rather than 1; later watching season 1 makes season 2 next.
+- Everything derives from that resume point. `isShowFullyWatched` is "the season to resume at is itself watched", so a contiguous run ending at the latest season leaves the Watch List even with early seasons unwatched — Watched holds seasons, so only the ones completed appear there. A still-airing season keeps the show to-watch and "caught up", since it isn't complete until its last episode airs. `firstIncompleteSeason` is the literal earliest gap and no longer decides membership.
+- Watched holds completed seasons only; marking an episode watched auto-adds the show to the Watch List.
 
 ## Copy and presentation
 

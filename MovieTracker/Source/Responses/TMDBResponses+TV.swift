@@ -253,24 +253,61 @@ extension TMDBWrapper {
             var profilePicture: String?
             var order: Int?
             var totalEpisodeCount: Int
-            var roles: [RoleRaw]?
+            var roleEntries: [RoleEntry]?
+
+            // /tv/{id} wraps each role in its own array, once per season; the season endpoint
+            // returns them flat. Both shapes decode, and the repeated credit ids collapse.
+            var roles: [RoleRaw] {
+                var seen = Set<String>()
+                return (roleEntries ?? [])
+                    .flatMap(\.roles)
+                    .filter { seen.insert($0.creditID).inserted }
+            }
 
             var characterName: String? {
-                roles?.compactMap { $0.character.isEmpty ? nil : $0.character }.first
+                roles.compactMap { $0.character.isEmpty ? nil : $0.character }.first
             }
 
             var person: Person {
                 var person = Person(id: id, name: name, role: characterName,
                                     pic: profilePicture, type: .Cast)
                 person.episodeCount = totalEpisodeCount
-                person.creditIDs = (roles ?? []).map(\.creditID)
+                person.creditIDs = roles.map(\.creditID)
                 return person
             }
 
             enum CodingKeys: String, CodingKey {
-                case id, name, roles, order
+                case id, name, order
+                case roleEntries = "roles"
                 case profilePicture = "profile_path"
                 case totalEpisodeCount = "total_episode_count"
+            }
+
+            enum RoleEntry: Codable {
+                case one(RoleRaw)
+                case many([RoleRaw])
+
+                var roles: [RoleRaw] {
+                    switch self {
+                    case .one(let role): [role]
+                    case .many(let roles): roles
+                    }
+                }
+
+                init(from decoder: any Decoder) throws {
+                    if let nested = try? [RoleRaw](from: decoder) {
+                        self = .many(nested)
+                    } else {
+                        self = .one(try RoleRaw(from: decoder))
+                    }
+                }
+
+                func encode(to encoder: any Encoder) throws {
+                    switch self {
+                    case .one(let role): try role.encode(to: encoder)
+                    case .many(let roles): try roles.encode(to: encoder)
+                    }
+                }
             }
 
             struct RoleRaw: Codable {

@@ -66,9 +66,9 @@ final class MovieDetailModel {
             interrupted = true
         }
 
-        // Wikidata is a second service; it resolves alongside the rest of the page rather
-        // than holding up the collection and recommendation rows behind it.
-        async let resolvedExtras = Self.resolveExtras(for: movie)
+        // Awards and the Rotten Tomatoes link belong to the metadata strip, so they settle before
+        // the collection and recommendation rows are even requested.
+        extras = await Self.resolveExtras(for: movie)
 
         if let franchise = movie?.collection {
             do {
@@ -87,8 +87,6 @@ final class MovieDetailModel {
             print("Movie recommendations load error: \(error)")
             interrupted = interrupted || error.isCancellation
         }
-
-        extras = await resolvedExtras
 
         loaded = !interrupted
     }

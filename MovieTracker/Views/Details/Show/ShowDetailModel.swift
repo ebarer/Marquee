@@ -20,6 +20,7 @@ final class ShowDetailModel {
     private let posterPath: String?
     private var loaded = false
     private var loading = false
+    private var interrupted = false
 
     init(seed: Show? = nil) {
         posterPath = seed?.poster
@@ -35,10 +36,13 @@ final class ShowDetailModel {
         if let color = PosterTint.cached(forPath: posterPath) { tint = color }
     }
 
+    // The page fills top down. This settles the header and the metadata strip's TMDB fields;
+    // `loadExtras` then `loadRecommendations` follow, in that order.
     func load(id: Int) async {
         guard !loaded, !loading else { return }
         loading = true
         defer { loading = false }
+        interrupted = false
 
         if let cached = await MediaCacheStore.shared.loadShow(id: id) {
             show = cached.show
@@ -47,10 +51,6 @@ final class ShowDetailModel {
             // wrong artwork, since the header is showing a season's poster.
             MediaMemoryCache.store(cached.show, tint: cached.color)
         }
-
-        // A dropped request must not count as loaded, or the next pass skips the retry and the
-        // page sits on the caller's stub for good.
-        var interrupted = false
 
         do {
             let full = try await Self.fetchDetail(id: id)
@@ -62,14 +62,22 @@ final class ShowDetailModel {
             MediaMemoryCache.store(full, tint: showTint)
             await MediaCacheStore.shared.save(full, tint: showTint)
         } catch {
+            // A dropped request must not count as loaded, or the next pass skips the retry and the
+            // page sits on the caller's stub for good.
             print("Show detail load error: \(error)")
             interrupted = true
         }
+    }
 
-        // Wikidata is a second service; it resolves alongside the recommendation row rather
-        // than holding it up behind an awards lookup.
-        async let resolvedExtras = Self.resolveExtras(for: show)
+    // Awards and the Rotten Tomatoes link complete the metadata strip.
+    func loadExtras() async {
+        guard !loaded, !extras.resolved else { return }
+        extras = await Self.resolveExtras(for: show)
+    }
 
+    // Requested last, so the recommendation row can't land ahead of the rows above it.
+    func loadRecommendations(id: Int) async {
+        guard !loaded else { return }
         do {
             let page = try await TMDBWrapper.showRecommendations(id: id)
             recommendations = page.items.filter { $0.id != id }
@@ -77,9 +85,6 @@ final class ShowDetailModel {
             print("Show recommendations load error: \(error)")
             interrupted = interrupted || error.isCancellation
         }
-
-        extras = await resolvedExtras
-
         loaded = !interrupted
     }
 
@@ -116,7 +121,7 @@ final class ShowDetailModel {
 
     func reconcileMembership(using store: PersistenceCoordinator?) async {
         guard let store, let show else { return }
-        if let season = store.firstIncompleteSeason(show) {
+        if let season = store.nextSeasonToWatch(show) {
             await loadSeason(showID: show.id, seasonNumber: season.seasonNumber)
         }
         store.reconcileMembership(show, episodesBySeason: seasonEpisodes)

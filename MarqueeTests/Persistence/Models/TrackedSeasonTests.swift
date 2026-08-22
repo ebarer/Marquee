@@ -2,9 +2,9 @@
 //  TrackedSeasonTests.swift
 //  MarqueeTests
 //
-//  A show in every list except Watched is represented by its next-incomplete "tracked"
-//  season. Watching an episode makes the show "to watch" (Watch List); completing a season
-//  advances the tracked season; fully watching removes it.
+//  A show in every list except Watched is represented by the "tracked" season it resumes at.
+//  Watching an episode makes the show "to watch" (Watch List); completing a season advances
+//  the tracked season; fully watching removes it.
 //
 
 import Testing
@@ -428,6 +428,96 @@ import SwiftData
         await store.setShowWatched(true, show: show)
 
         #expect(store.firstIncompleteSeason(show) == nil)
+    }
+
+    @Test func resumingSkipsUnwatchedSeasonsBeforeTheOnesWatched() {
+        let store = makeInMemoryStore()
+        let seasons = (1...24).map { makeSeason($0, episodes: 20, airStart: .distantPast) }
+        let show = makeShow(id: 83, seasons: seasons)
+
+        store.setSeasonWatched(true, show: show, season: seasons[19])   // season 20 only
+
+        #expect(store.firstIncompleteSeason(show)?.seasonNumber == 1)
+        #expect(store.nextSeasonToWatch(show)?.seasonNumber == 21)
+        #expect(TrackedSeason.find(showTmdbID: 83, in: store.context)?.seasonNumber == 21)
+    }
+
+    @Test func resumingFinishesTheSeasonInProgress() {
+        let store = makeInMemoryStore()
+        let seasons = (1...24).map { makeSeason($0, episodes: 20, airStart: .distantPast) }
+        let show = makeShow(id: 84, seasons: seasons)
+
+        store.toggleEpisodeWatched(show: show, season: seasons[23], episodeNumber: 1)
+
+        #expect(store.nextSeasonToWatch(show)?.seasonNumber == 24)
+    }
+
+    // A contiguous run ending at the latest season reads as done: off the Watch List, with only the
+    // seasons actually completed in Watched. Going back to season 1 makes season 2 next.
+    @Test func aRunEndingAtTheLatestSeasonReadsAsWatched() {
+        let store = makeInMemoryStore()
+        let seasons = (1...24).map { makeSeason($0, episodes: 20, airStart: .distantPast) }
+        let show = makeShow(id: 87, seasons: seasons)
+
+        for season in seasons[19...] {
+            store.setSeasonWatched(true, show: show, season: season)
+        }
+
+        #expect(store.isShowFullyWatched(show))
+        #expect(!store.isInWatchList(show))
+        #expect(TrackedSeason.find(showTmdbID: 87, in: store.context) == nil)
+        // Watched holds seasons, so the ones never watched are absent rather than claimed.
+        #expect(WatchedSeason.find(showTmdbID: 87, seasonNumber: 1, in: store.context) == nil)
+        #expect(WatchedSeason.find(showTmdbID: 87, seasonNumber: 20, in: store.context) != nil)
+        #expect(WatchedSeason.find(showTmdbID: 87, seasonNumber: 24, in: store.context) != nil)
+
+        store.setSeasonWatched(true, show: show, season: seasons[0])
+
+        #expect(store.nextSeasonToWatch(show)?.seasonNumber == 2)
+        #expect(!store.isShowFullyWatched(show))
+        #expect(store.isInWatchList(show))
+        #expect(TrackedSeason.find(showTmdbID: 87, in: store.context)?.seasonNumber == 2)
+    }
+
+    // Still airing: the aired episodes are all watched, so it's caught up but stays to-watch.
+    @Test func aRunEndingMidAiringSeasonStaysToWatchAndCaughtUp() {
+        let store = makeInMemoryStore()
+        let earlier = (1...3).map { makeSeason($0, episodes: 2, airStart: .distantPast) }
+        var current = Season(id: 704, seasonNumber: 4, name: "Season 4", episodeCount: 3)
+        current.airDate = .utc(2024, 1, 1)
+        current.episodes = (1...3).map { number in
+            var episode = Episode(id: 7040 + number, seasonNumber: 4,
+                                  episodeNumber: number, name: "E\(number)")
+            episode.airDate = number == 3 ? .utc(2999, 1, 1) : .utc(2024, 1, number)
+            return episode
+        }
+        let show = makeShow(id: 88, seasons: earlier + [current])
+
+        store.setSeasonWatched(true, show: show, season: earlier[2])
+        store.setSeasonWatched(true, show: show, season: current)
+
+        #expect(store.nextSeasonToWatch(show)?.seasonNumber == 4)
+        #expect(store.isShowCaughtUp(show))
+        #expect(!store.isShowFullyWatched(show))
+        #expect(store.isInWatchList(show))
+    }
+
+    @Test func resumingStartsAtTheFirstSeasonWithNothingWatched() {
+        let store = makeInMemoryStore()
+        let show = makeShow(id: 85, seasons: [makeSeason(1, episodes: 3), makeSeason(2, episodes: 3)])
+
+        #expect(store.nextSeasonToWatch(show)?.seasonNumber == 1)
+    }
+
+    @Test func resumingHoldsTheLastSeasonWatchedWhenNothingLiesAhead() {
+        let store = makeInMemoryStore()
+        let seasons = [makeSeason(1, episodes: 3, airStart: .distantPast),
+                       makeSeason(2, episodes: 3, airStart: .distantPast)]
+        let show = makeShow(id: 86, seasons: seasons)
+
+        store.setSeasonWatched(true, show: show, season: seasons[1])    // season 2 only
+
+        #expect(store.nextSeasonToWatch(show)?.seasonNumber == 2)
     }
 
     @Test func firstIncompleteSeasonSkipsSeasonsWithNoEpisodes() {

@@ -52,19 +52,9 @@ struct ShowDetailView: View {
                 // before the payload loads, rather than flipping once it's computed.
                 refreshProgress()
                 await model.load(id: seed.id)
-                // Only the detail payload carries seasons and air dates, so list placement and
-                // the season snapshots wait for it rather than reconciling against the stub.
-                guard let show = model.show, show.isDetailPayload else { return }
-                store?.recordView(show)
-                // Correct list placement for a show added from search (premiere-only date)
-                // now that the detail supplies its most-recent air date.
-                store?.refreshSnapshot(for: show)
-                // Recompute season snapshots (episodes may have been toggled from the episode
-                // detail) and derive the show-level watched state.
-                store?.reconcileSeasons(for: show)
-                refreshInProgressSeason()
-                await model.reconcileMembership(using: store)
-                refreshProgress()
+                await model.loadExtras()
+                await reconcileAfterPayload()
+                await model.loadRecommendations(id: seed.id)
             }
             // Also on the first pass: a re-opened page already holds the cached show's seasons, and waiting for
             // the payload leaves the section on season 1 until it lands.
@@ -142,6 +132,22 @@ struct ShowDetailView: View {
         }
     }
 
+    // Only the detail payload carries seasons and air dates, so list placement and the season
+    // snapshots wait for it rather than reconciling against the stub.
+    private func reconcileAfterPayload() async {
+        guard let show = model.show, show.isDetailPayload else { return }
+        store?.recordView(show)
+        // Correct list placement for a show added from search (premiere-only date) now that
+        // the detail supplies its most-recent air date.
+        store?.refreshSnapshot(for: show)
+        // Recompute season snapshots (episodes may have been toggled from the episode detail)
+        // and derive the show-level watched state.
+        store?.reconcileSeasons(for: show)
+        refreshInProgressSeason()
+        await model.reconcileMembership(using: store)
+        refreshProgress()
+    }
+
     // Window position minus scroll-space position is where the page begins.
     // `ignoresSafeArea` widens what the ScrollView draws, not its frame.
     private var pageTopProbe: some View {
@@ -171,7 +177,11 @@ struct ShowDetailView: View {
         guard let show = model.show, let first = show.regularSeasons.first?.seasonNumber else {
             return
         }
-        inProgressSeason = store?.firstIncompleteSeason(show)?.seasonNumber ?? first
+        guard store?.firstIncompleteSeason(show) != nil else {
+            inProgressSeason = first
+            return
+        }
+        inProgressSeason = store?.nextSeasonToWatch(show)?.seasonNumber ?? first
     }
 
     private func refreshProgress() {
